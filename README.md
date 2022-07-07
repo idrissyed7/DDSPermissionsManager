@@ -1,1 +1,1 @@
-# SecurityManager
+# PermissionsManager
