@@ -26,8 +26,3 @@ jobs:
       with:
         arguments: build
         build-root-directory: app
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always()
-      with:
-        files: "app/build/test-results/**/*.xml"
