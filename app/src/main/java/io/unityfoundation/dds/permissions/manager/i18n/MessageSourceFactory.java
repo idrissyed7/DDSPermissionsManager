@@ -16,6 +16,7 @@ class MessageSourceFactory {
                 new ResourceBundleMessageSource("i18n.groups"),
                 new ResourceBundleMessageSource("i18n.footer"),
                 new ResourceBundleMessageSource("i18n.home"),
+                new ResourceBundleMessageSource("i18n.navigation"),
                 new ResourceBundleMessageSource("i18n.users")
         ));
     }
