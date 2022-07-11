@@ -1,0 +1,15 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <form hx-post="/users/save"
+          method="post">
+        <div class="mb-3">
+            <label for="firstName" class="form-label" th:text="#{user.firstName}"></label>
+            <input type="text" name="firstName" class="form-control"
+                   id="firstName" aria-describedby="userHelp">
+
+            <label for="lastName" class="form-label" th:text="#{user.lastName}"></label>
+            <input type="text" name="lastName" class="form-control"
+                   id="lastName" aria-describedby="userHelp">
+        </div>
+        <button type="submit" class="btn btn-primary" th:text="#{user.create}"></button>
+    </form>
+</div>

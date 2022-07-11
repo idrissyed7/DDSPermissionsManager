@@ -1,0 +1,12 @@
+<tr th:fragment="tr(user)"
+    xmlns:th="http://www.thymeleaf.org">
+    <td th:text="${user.firstName}"></td>
+    <td th:text="${user.lastName}"></td>
+    <td>
+        <form hx-target="#content" hx-post="/users/delete"
+              method="post">
+            <input type="hidden" name="id" th:value="${user.id}">
+            <button type="submit" class="btn btn-danger" th:text="#{user.delete}"></button>
+        </form>
+    </td>
+</tr>

@@ -1,0 +1,16 @@
+<tr th:fragment="tr(group)"
+    xmlns:th="http://www.thymeleaf.org">
+    <td>
+        <a hx-target="#content" class="link-primary"
+           th:attr="hx-get=@{/groups/{id}(id=${group.id})}"
+           th:text="${group.name}"></a>
+
+    </td>
+    <td>
+        <form hx-target="#content" hx-post="/groups/delete"
+              method="post">
+            <input type="hidden" name="id" th:value="${group.id}">
+            <button type="submit" class="btn btn-danger" th:text="#{group.delete}"></button>
+        </form>
+    </td>
+</tr>

@@ -1,0 +1,7 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <h1 th:text="#{groups.list.heading}"></h1>
+    <table th:replace="~{groups/_table :: table(${groups})}"></table>
+
+    <button hx-get="/groups/create"  hx-target="#content" type="submit" class="btn btn-primary" th:text="#{group.create}"></button>
+
+</div>
