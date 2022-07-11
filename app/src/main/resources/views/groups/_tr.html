@@ -7,10 +7,11 @@
 
     </td>
     <td>
-        <form hx-target="#content" hx-post="/groups/delete"
-              method="post">
-            <input type="hidden" name="id" th:value="${group.id}">
-            <button type="submit" class="btn btn-danger" th:text="#{group.delete}"></button>
-        </form>
+        <button th:attr="hx-post=@{/groups/delete/{id}(id=${group.id})}"
+                type="submit"
+                hx-target="#content"
+                class="btn btn-danger"
+                th:text="#{group.delete}">
+        </button>
     </td>
 </tr>

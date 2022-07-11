@@ -56,10 +56,10 @@ public class GroupController {
     }
 
 
-    @Post("/delete")
+    @Post("/delete/{id}")
     @Produces(value = {MediaType.TEXT_HTML})
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    HttpResponse<?> delete(@Body Long id) {
+    HttpResponse<?> delete(Long id) {
         groupRepository.deleteById(id);
         return HttpResponse.seeOther(URI.create("/groups"));
     }
@@ -77,10 +77,10 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
-    @Post("/remove_member")
+    @Post("/remove_member/{groupId}/{memberId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(value = {MediaType.TEXT_HTML})
-    HttpResponse removeMemeber(@Body Long groupId, @Body Long memberId) {
+    HttpResponse removeMemeber(Long groupId, Long memberId) {
         Optional<Group> byId = groupRepository.findById(groupId);
         if (byId.isEmpty()) {
             return HttpResponse.notFound();
@@ -91,10 +91,10 @@ public class GroupController {
         return HttpResponse.seeOther(URI.create("/groups/" + groupId));
     }
 
-    @Post("/add_member")
+    @Post("/add_member/{groupId}/{candidateId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(value = {MediaType.TEXT_HTML})
-    HttpResponse addMember(@Body Long groupId, @Body Long candidateId) {
+    HttpResponse addMember(Long groupId, Long candidateId) {
         if (groupService.addMember(groupId, candidateId)) {
             return HttpResponse.seeOther(URI.create("/groups/" + groupId));
         }

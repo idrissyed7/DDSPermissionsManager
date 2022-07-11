@@ -47,10 +47,10 @@ public class UserController {
         return HttpResponse.seeOther(URI.create("/users/"));
     }
 
-    @Post("/delete")
+    @Post("/delete/{id}")
     @Produces(value = {MediaType.TEXT_HTML})
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    HttpResponse<?> delete(@Body Long id) {
+    HttpResponse<?> delete(Long id) {
         userService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/users"));
     }

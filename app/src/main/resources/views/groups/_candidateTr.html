@@ -2,11 +2,11 @@
     xmlns:th="http://www.thymeleaf.org">
     <td th:text="${candidateMember.firstName} + ' ' + ${candidateMember.lastName}"></td>
     <td>
-        <form hx-target="#content" hx-post="/groups/add_member"
-              method="post">
-            <input type="hidden" name="groupId" th:value="${group.id}">
-            <input type="hidden" name="candidateId" th:value="${candidateMember.id}">
-            <button type="submit" class="btn btn-danger" th:text="#{group.user.add}"></button>
-        </form>
+        <button hx-target="#content"
+                th:attr="hx-post=@{/groups/add_member/{groupId}/{memberId}(groupId=${group.id},memberId=${candidateMember.id})}"
+                type="submit"
+                class="btn btn-danger"
+                th:text="#{group.user.add}">
+        </button>
     </td>
 </tr>
