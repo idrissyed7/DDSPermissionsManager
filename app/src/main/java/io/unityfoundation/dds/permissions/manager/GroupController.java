@@ -10,7 +10,6 @@ import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
-import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import java.net.URI;
@@ -23,13 +22,11 @@ public class GroupController {
 
     private final GroupRepository groupRepository;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final GroupService groupService;
 
-    public GroupController(GroupRepository groupRepository, UserService userService, UserRepository userRepository, GroupService groupService) {
+    public GroupController(GroupRepository groupRepository, UserService userService, GroupService groupService) {
         this.groupRepository = groupRepository;
         this.userService = userService;
-        this.userRepository = userRepository;
         this.groupService = groupService;
     }
 
@@ -80,7 +77,7 @@ public class GroupController {
     @Post("/remove_member/{groupId}/{memberId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(value = {MediaType.TEXT_HTML})
-    HttpResponse removeMemeber(Long groupId, Long memberId) {
+    HttpResponse removeMember(Long groupId, Long memberId) {
         Optional<Group> byId = groupRepository.findById(groupId);
         if (byId.isEmpty()) {
             return HttpResponse.notFound();

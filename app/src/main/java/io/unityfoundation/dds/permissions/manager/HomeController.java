@@ -11,7 +11,7 @@ import io.micronaut.views.View;
 
 import java.util.Map;
 
-@Controller("/")
+@Controller
 public class HomeController {
 
     @Get

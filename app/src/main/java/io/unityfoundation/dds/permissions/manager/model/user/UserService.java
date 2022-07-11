@@ -31,12 +31,11 @@ public class UserService {
             if (group.removeUser(userId)) {
                 groupRepository.update(group);
             }
-            ;
         });
     }
 
     public Iterable<User> listUsersNotInGroup(Group group) {
-        List<Long> ids = group.getUsers().stream().map(user -> user.getId()).collect(Collectors.toList());
+        List<Long> ids = group.getUsers().stream().map(User::getId).collect(Collectors.toList());
         return userRepository.findAllByIdNotInList(ids);
     }
 }
