@@ -3,7 +3,7 @@
     <td th:text="${user.firstName}"></td>
     <td th:text="${user.lastName}"></td>
     <td>
-        <button hx-target="#content" th:attr="hx-post=@{/users/delete/{id}(id=${user.id})}" type="submit"
+        <button hx-target="#content" hx-confirm="Delete User?" th:attr="hx-post=@{/users/delete/{id}(id=${user.id})}" type="submit"
                 class="btn btn-danger" th:text="#{user.delete}"></button>
     </td>
 </tr>
