@@ -64,3 +64,14 @@ jpa:
       hibernate:
         hbm2ddl:
           auto: update
+---
+i18n:
+  bundles:
+    - applications
+    - footer
+    - groups
+    - home
+    - messages
+    - navigation
+    - topics
+    - users
