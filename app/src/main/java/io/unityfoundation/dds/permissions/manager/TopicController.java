@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
@@ -9,6 +10,7 @@ import io.micronaut.views.View;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 
+import javax.validation.Valid;
 import java.net.URI;
 import java.util.Map;
 
@@ -24,8 +26,8 @@ public class TopicController {
     @View("/topics/index")
     @Produces(value = {MediaType.TEXT_HTML})
     @Get
-    public HttpResponse index() {
-        return HttpResponse.ok(Map.of("topics", topicRepository.findAll()));
+    public HttpResponse index(@Valid Pageable pageable) {
+        return HttpResponse.ok(Map.of("topics", topicRepository.findAll(pageable)));
     }
 
     @View("/create")

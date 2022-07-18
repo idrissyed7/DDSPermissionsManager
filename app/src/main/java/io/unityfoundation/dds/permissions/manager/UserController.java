@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
@@ -10,6 +11,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
+import javax.validation.Valid;
 import java.net.URI;
 import java.util.Map;
 
@@ -28,8 +30,8 @@ public class UserController {
     @View("/users/index")
     @Produces(value = {MediaType.TEXT_HTML})
     @Get
-    public HttpResponse index() {
-        return HttpResponse.ok(Map.of("users", userRepository.findAll()));
+    public HttpResponse index(@Valid Pageable pageable) {
+        return HttpResponse.ok(Map.of("users", userRepository.findAll(pageable)));
     }
 
     @View("/users/create")
