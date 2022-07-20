@@ -6,7 +6,6 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
-import io.micronaut.views.View;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
@@ -32,15 +31,11 @@ public class GroupController {
         this.groupService = groupService;
     }
 
-    @View("/groups/index")
-    @Produces(value = {MediaType.TEXT_HTML})
     @Get
     public HttpResponse index(@Valid Pageable pageable) {
-        return HttpResponse.ok(Map.of("groups", groupRepository.findAll(pageable)));
+        return HttpResponse.ok(groupRepository.findAll(pageable));
     }
 
-    @View("/groups/create")
-    @Produces(value = {MediaType.TEXT_HTML})
     @Get("/create")
     public HttpResponse create() {
         return HttpResponse.ok();
@@ -48,7 +43,6 @@ public class GroupController {
 
     @Post("/save")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(value = {MediaType.TEXT_HTML})
     HttpResponse<?> save(@Body Group group) {
         groupRepository.save(group);
         return HttpResponse.seeOther(URI.create("/groups/"));
@@ -56,7 +50,6 @@ public class GroupController {
 
 
     @Post("/delete/{id}")
-    @Produces(value = {MediaType.TEXT_HTML})
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse<?> delete(Long id) {
         groupRepository.deleteById(id);
@@ -64,8 +57,6 @@ public class GroupController {
     }
 
     @Get("/{id}")
-    @View("/groups/show")
-    @Produces(value = {MediaType.TEXT_HTML})
     HttpResponse show(Long id) {
         Optional<Group> groupOptional = groupRepository.findById(id);
         if (groupOptional.isPresent()) {
@@ -78,7 +69,6 @@ public class GroupController {
 
     @Post("/remove_member/{groupId}/{memberId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(value = {MediaType.TEXT_HTML})
     HttpResponse removeMember(Long groupId, Long memberId) {
         Optional<Group> byId = groupRepository.findById(groupId);
         if (byId.isEmpty()) {
@@ -92,7 +82,6 @@ public class GroupController {
 
     @Post("/add_member/{groupId}/{candidateId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(value = {MediaType.TEXT_HTML})
     HttpResponse addMember(Long groupId, Long candidateId) {
         if (groupService.addMember(groupId, candidateId)) {
             return HttpResponse.seeOther(URI.create("/groups/" + groupId));

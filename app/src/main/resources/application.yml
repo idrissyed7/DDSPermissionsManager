@@ -1,11 +1,6 @@
 micronaut:
   application:
     name: "Permissions Manager"
-  router:
-    static-resources:
-      assets:
-        paths: "classpath:assets"
-        mapping: "/assets/**"
 ---
 netty:
   default:
@@ -64,14 +59,3 @@ jpa:
       hibernate:
         hbm2ddl:
           auto: update
----
-i18n:
-  bundles:
-    - applications
-    - footer
-    - groups
-    - home
-    - messages
-    - navigation
-    - topics
-    - users
