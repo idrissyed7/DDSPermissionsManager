@@ -1,0 +1,25 @@
+<div th:fragment="nav(security)" xmlns:th="http://www.thymeleaf.org">
+    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #e3f2fd;">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a th:unless="${security != null}" class="nav-link"
+                       href="/oauth/login/google" th:text="#{nav.login}"></a>
+                    <th:block th:if="${security != null}">
+                        <a class="nav-link" th:href="@{/}" th:text="#{nav.home}"></a><br/>
+                        <a class="nav-link" hx-target="#content"
+                           hx-get="/users/" th:text="#{nav.users}"></a>
+                        <a class="nav-link" hx-target="#content"
+                           hx-get="/topics/" th:text="#{nav.topics}"></a>
+                        <a class="nav-link" hx-target="#content"
+                           hx-get="/applications/" th:text="#{nav.apps}"></a>
+                        <a class="nav-link" hx-target="#content"
+                           hx-get="/groups/" th:text="#{nav.groups}"></a>
+                        <a class="nav-link" href="/logout"
+                           th:text="#{nav.logout}"></a>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>

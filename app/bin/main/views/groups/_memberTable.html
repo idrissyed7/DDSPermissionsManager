@@ -1,0 +1,15 @@
+<div th:fragment="table(members)" xmlns:th="http://www.thymeleaf.org">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col" th:text="#{group.user.list.name.heading}"></th>
+            <th scope="col" ></th>
+        </tr>
+        </thead>
+        <tbody id="groups-rows">
+        <tr th:each="member : ${members}"
+            th:include="groups/_memberTr :: tr(${member})"
+        />
+        </tbody>
+    </table>
+</div>
