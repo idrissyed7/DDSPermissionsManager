@@ -1,0 +1,15 @@
+<div th:fragment="table(topics)" xmlns:th="http://www.thymeleaf.org">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col" th:text="#{topic.name}"></th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody id="topics-rows">
+        <tr th:each="topic : ${topics}"
+            th:include="topics/_tr :: tr(${topic})"
+        />
+        </tbody>
+    </table>
+</div>

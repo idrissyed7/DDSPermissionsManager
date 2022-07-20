@@ -1,0 +1,13 @@
+<tr th:fragment="tr(topic)"
+    xmlns:th="http://www.thymeleaf.org">
+    <td th:text="${topic.name}"></td>
+    <td>
+        <button th:attr="hx-post=@{/topics/delete/{id}(id=${topic.id})}"
+                type="submit"
+                hx-target="#content"
+                hx-confirm="Delete Topic?"
+                class="btn btn-danger"
+                th:text="#{topic.delete}">
+        </button>
+    </td>
+</tr>
