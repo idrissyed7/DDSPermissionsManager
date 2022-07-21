@@ -19,6 +19,16 @@ public class UserService {
     }
 
     @Transactional
+    public boolean userExistsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    @Transactional
+    public void save(User user) {
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void deleteById(Long id) {
         removeUserFromGroups(id);
         userRepository.deleteById(id);
