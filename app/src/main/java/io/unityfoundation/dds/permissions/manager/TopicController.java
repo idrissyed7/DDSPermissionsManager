@@ -7,7 +7,7 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -15,15 +15,15 @@ import java.net.URI;
 @Controller("/topics")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 public class TopicController {
-    private final TopicRepository topicRepository;
+    private final TopicService topicService;
 
-    public TopicController(TopicRepository topicRepository) {
-        this.topicRepository = topicRepository;
+    public TopicController(TopicService topicService) {
+        this.topicService = topicService;
     }
 
     @Get
     public HttpResponse index(@Valid Pageable pageable) {
-        return HttpResponse.ok(topicRepository.findAll(pageable));
+        return HttpResponse.ok(topicService.findAll(pageable));
     }
 
     @Get("/create")
@@ -34,13 +34,13 @@ public class TopicController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Topic topic) {
-        topicRepository.save(topic);
+        topicService.save(topic);
         return HttpResponse.seeOther(URI.create("/topics"));
     }
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        topicRepository.deleteById(id);
+        topicService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/topics"));
     }
 }

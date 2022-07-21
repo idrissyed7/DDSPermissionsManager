@@ -17,17 +17,15 @@ import java.net.URI;
 @Secured(SecurityRule.IS_AUTHENTICATED)
 public class UserController {
 
-    private final UserRepository userRepository;
     private final UserService userService;
 
-    public UserController(UserRepository userRepository, UserService userService) {
-        this.userRepository = userRepository;
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @Get
     public HttpResponse index(@Valid Pageable pageable) {
-        return HttpResponse.ok(userRepository.findAll(pageable));
+        return HttpResponse.ok(userService.findAll(pageable));
     }
 
     @Get("/create")
@@ -38,7 +36,7 @@ public class UserController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body User user) {
-        userRepository.save(user);
+        userService.save(user);
         return HttpResponse.seeOther(URI.create("/users/"));
     }
 

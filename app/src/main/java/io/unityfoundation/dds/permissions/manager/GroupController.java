@@ -21,19 +21,15 @@ import java.util.Optional;
 @Secured(SecurityRule.IS_AUTHENTICATED)
 public class GroupController {
 
-    private final GroupRepository groupRepository;
-    private final UserService userService;
     private final GroupService groupService;
 
-    public GroupController(GroupRepository groupRepository, UserService userService, GroupService groupService) {
-        this.groupRepository = groupRepository;
-        this.userService = userService;
+    public GroupController(GroupService groupService) {
         this.groupService = groupService;
     }
 
     @Get
     public HttpResponse index(@Valid Pageable pageable) {
-        return HttpResponse.ok(groupRepository.findAll(pageable));
+        return HttpResponse.ok(groupService.findAll(pageable));
     }
 
     @Get("/create")
@@ -44,37 +40,33 @@ public class GroupController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Group group) {
-        groupRepository.save(group);
+        groupService.save(group);
         return HttpResponse.seeOther(URI.create("/groups/"));
     }
 
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        groupRepository.deleteById(id);
+        groupService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/groups"));
     }
 
     @Get("/{id}")
     HttpResponse show(Long id) {
-        Optional<Group> groupOptional = groupRepository.findById(id);
+        Optional<Map> groupOptional = groupService.getGroupAndCandidates(id);
         if (groupOptional.isPresent()) {
-            Group group = groupOptional.get();
-            Iterable<User> candidateUsers = userService.listUsersNotInGroup(group);
-            return HttpResponse.ok(Map.of("group", group, "candidateUsers", candidateUsers));
+            Map payload = groupOptional.get();
+            return HttpResponse.ok(payload);
         }
         return HttpResponse.notFound();
     }
 
     @Post("/remove_member/{groupId}/{memberId}")
     HttpResponse removeMember(Long groupId, Long memberId) {
-        Optional<Group> byId = groupRepository.findById(groupId);
-        if (byId.isEmpty()) {
+        boolean success = groupService.removeMember(groupId, memberId);
+        if (!success) {
             return HttpResponse.notFound();
         }
-        Group group = byId.get();
-        group.removeUser(memberId);
-        groupRepository.update(group);
         return HttpResponse.seeOther(URI.create("/groups/" + groupId));
     }
 
