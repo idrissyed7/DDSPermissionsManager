@@ -36,14 +36,13 @@ public class UserController {
     }
 
     @Post("/save")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body User user) {
         userRepository.save(user);
         return HttpResponse.seeOther(URI.create("/users/"));
     }
 
     @Post("/delete/{id}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse<?> delete(Long id) {
         userService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/users"));

@@ -32,14 +32,13 @@ public class TopicController {
     }
 
     @Post("/save")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Topic topic) {
         topicRepository.save(topic);
         return HttpResponse.seeOther(URI.create("/topics"));
     }
 
     @Post("/delete/{id}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse<?> delete(Long id) {
         topicRepository.deleteById(id);
         return HttpResponse.seeOther(URI.create("/topics"));

@@ -33,14 +33,13 @@ public class ApplicationController {
     }
 
     @Post("/save")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Application application) {
         applicationService.save(application);
         return HttpResponse.seeOther(URI.create("/applications/"));
     }
 
     @Post("/delete/{id}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse<?> delete(Long id) {
         applicationService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/applications"));

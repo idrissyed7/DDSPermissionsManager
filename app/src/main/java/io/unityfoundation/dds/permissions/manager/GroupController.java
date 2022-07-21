@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller("/groups")
-@Secured(SecurityRule.IS_AUTHENTICATED)
+@Secured(SecurityRule.IS_ANONYMOUS)
 public class GroupController {
 
     private final GroupRepository groupRepository;
@@ -42,7 +42,7 @@ public class GroupController {
     }
 
     @Post("/save")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Group group) {
         groupRepository.save(group);
         return HttpResponse.seeOther(URI.create("/groups/"));
@@ -50,7 +50,6 @@ public class GroupController {
 
 
     @Post("/delete/{id}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse<?> delete(Long id) {
         groupRepository.deleteById(id);
         return HttpResponse.seeOther(URI.create("/groups"));
@@ -68,7 +67,6 @@ public class GroupController {
     }
 
     @Post("/remove_member/{groupId}/{memberId}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse removeMember(Long groupId, Long memberId) {
         Optional<Group> byId = groupRepository.findById(groupId);
         if (byId.isEmpty()) {
@@ -81,7 +79,6 @@ public class GroupController {
     }
 
     @Post("/add_member/{groupId}/{candidateId}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     HttpResponse addMember(Long groupId, Long candidateId) {
         if (groupService.addMember(groupId, candidateId)) {
             return HttpResponse.seeOther(URI.create("/groups/" + groupId));
