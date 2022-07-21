@@ -13,7 +13,11 @@ import java.util.Map;
 @Singleton
 public class PostUserLogin {
 
-    @Inject UserService userService;
+    private final UserService userService;
+
+    public PostUserLogin(UserService userService) {
+        this.userService = userService;
+    }
 
     @EventListener
     public void loginSuccessful(LoginSuccessfulEvent event) {
