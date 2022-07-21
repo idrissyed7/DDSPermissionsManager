@@ -17,12 +17,16 @@ public class User {
     @NonNull
     private String lastName;
 
+    @NonNull
+    private String email;
+
     public User() {
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName) {
+    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email) {
         this.firstName = firstName;
         this.lastName = lastName;
+        this.email = email;
     }
 
     public Long getId() {
@@ -49,5 +53,14 @@ public class User {
 
     public void setLastName(@NonNull String lastName) {
         this.lastName = lastName;
+    }
+
+    @NonNull
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(@NonNull String email) {
+        this.email = email;
     }
 }

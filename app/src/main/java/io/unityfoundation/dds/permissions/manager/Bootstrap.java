@@ -23,11 +23,11 @@ public class Bootstrap {
 
     @EventListener
     public void devData(ServerStartupEvent event) {
-        User justin = userRepository.save(new User("Justin", "Wilson"));
-        User kevin = userRepository.save(new User("Kevin", "Stanley"));
-        userRepository.save(new User("Jeff", "Brown"));
-        userRepository.save(new User("Julian", "Gracia"));
-        userRepository.save(new User("Daniel", "Bellone"));
+        User justin = userRepository.save(new User("Justin", "Wilson", "jwilson@test.test"));
+        User kevin = userRepository.save(new User("Kevin", "Stanley", "kstanley@test.test"));
+        userRepository.save(new User("Jeff", "Brown", "jbrown@test.test"));
+        userRepository.save(new User("Julian", "Gracia", "jgracia@test.test"));
+        userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test"));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
         alphaGroup.setUsers(Arrays.asList(justin, kevin));
