@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller("/groups")
-@Secured(SecurityRule.IS_ANONYMOUS)
+@Secured(SecurityRule.IS_AUTHENTICATED)
 public class GroupController {
 
     private final GroupRepository groupRepository;
