@@ -8,6 +8,12 @@ netty:
       max-order: 3
 ---
 micronaut:
+  server:
+    cors:
+      enabled: true
+      configurations:
+        allowedOrigins:
+          - http://localhost:3000
   security:
     authentication: idtoken
     oauth2:
