@@ -2,8 +2,9 @@ import * as cookie from 'cookie';
 
 export const handle = async ({ event, resolve }) => {
 	const cookies = cookie.parse(event.request.headers.get('cookie') || '');
-	event.locals.userid = cookies['userid'] || crypto.randomUUID();
 
+	event.locals.userid = cookies['userid'] || crypto.randomUUID();
+	
 	const response = await resolve(event);
 
 	if (!cookies['userid']) {
@@ -16,6 +17,7 @@ export const handle = async ({ event, resolve }) => {
 				httpOnly: true
 			})
 		);
+		
 	}
 
 	return response;

@@ -1,49 +1,56 @@
 <script>
 	import { page } from '$app/stores';
+
+	export let isAuthenticated;
 </script>
 
 <header>
-	<div class="corner">
-
-	</div>
+	<div class="corner" />
 
 	<nav>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-		</svg>
-		<ul>
-			<li class:active={$page.url.pathname === '/'}>
-				<a sveltekit:prefetch href="/">Home</a>
-			</li>
-			<li class:active={$page.url.pathname === '/users'}>
-				<a sveltekit:prefetch href="/users">Users</a>
-			</li>
-			<li class:active={$page.url.pathname === '/topics'}>
-				<a sveltekit:prefetch href="/topics">Topics</a>
-			</li>
-			<li class:active={$page.url.pathname === '/applications'}>
-				<a sveltekit:prefetch href="/applications">Applications</a>
-			</li>
-			<li class:active={$page.url.pathname === '/groups'}>
-				<a sveltekit:prefetch href="/groups">Groups</a>
-			</li>
-		</ul>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
-		</svg>
+		{#if isAuthenticated}
+			<svg viewBox="0 0 2 3" aria-hidden="true">
+				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
+			</svg>
+			<ul>
+				<li class:active={$page.url.pathname === '/'}>
+					<a sveltekit:prefetch href="/">Home</a>
+				</li>
+				<li class:active={$page.url.pathname === '/users'}>
+					<a sveltekit:prefetch href="/users">Users</a>
+				</li>
+				<li class:active={$page.url.pathname === '/topics'}>
+					<a sveltekit:prefetch href="/topics">Topics</a>
+				</li>
+				<li class:active={$page.url.pathname === '/applications'}>
+					<a sveltekit:prefetch href="/applications">Applications</a>
+				</li>
+				<li class:active={$page.url.pathname === '/groups'}>
+					<a sveltekit:prefetch href="/groups">Groups</a>
+				</li>
+			</ul>
+			<svg viewBox="0 0 2 3" aria-hidden="true">
+				<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
+			</svg>
+		{/if}
 	</nav>
 
 	<div class="corner">
-	<nav>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-		</svg>
-		<ul>
-			<li class:active={$page.url.pathname === '/logout'}>
-				<a sveltekit:prefetch href="/logout">Logout</a>
-			</li>
-		</ul>
-	</nav>
+		<nav>
+			<svg viewBox="0 0 2 3" aria-hidden="true">
+				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
+			</svg>
+			<ul>
+				<li class:active={$page.url.pathname === '/login'}>
+					<a
+						href={isAuthenticated === true
+							? 'http://localhost:8080/logout'
+							: 'http://localhost:8080/oauth/login/google'}
+						>{isAuthenticated === true ? 'Logout' : 'Login'}</a
+					>
+				</li>
+			</ul>
+		</nav>
 	</div>
 </header>
 

@@ -2,7 +2,7 @@
 	"name": "frontend",
 	"version": "0.0.1",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite dev --port=3000",
 		"build": "vite build",
 		"package": "svelte-kit package",
 		"preview": "vite preview",
@@ -24,6 +24,7 @@
 	"type": "module",
 	"dependencies": {
 		"@fontsource/fira-mono": "^4.5.0",
+		"axios": "^0.27.2",
 		"cookie": "^0.4.1"
 	}
 }
