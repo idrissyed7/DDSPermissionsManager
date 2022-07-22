@@ -1,5 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.user;
 
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import jakarta.inject.Singleton;
@@ -16,6 +18,20 @@ public class UserService {
     public UserService(UserRepository userRepository, GroupRepository groupRepository) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
+    }
+
+    @Transactional
+    public boolean userExistsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    public Page<User> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+
+    @Transactional
+    public void save(User user) {
+        userRepository.save(user);
     }
 
     @Transactional

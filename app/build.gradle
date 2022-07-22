@@ -37,7 +37,7 @@ dependencies {
 
 
 application {
-    mainClass.set("io.unityfoundation.dds.permissions.manager.Application")
+    mainClass.set("io.unityfoundation.dds.permissions.manager.RunApplication")
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("11")
