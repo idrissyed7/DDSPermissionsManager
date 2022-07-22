@@ -38,7 +38,7 @@
 		</table>
 	</div>
 {:else}
-	<h1>Please Log In to Continue...</h1>
+	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
 
 <style>
