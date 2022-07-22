@@ -1,0 +1,37 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <h1 th:text="#{groups.list.heading}"></h1>
+    <table th:replace="~{groups/_table :: table(${groups})}"></table>
+    <!-- <nav aria-label="Page navigation">
+        <ul class="pagination">
+          <li class="page-item">
+            <a class="page-link" href="#" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          <li class="page-item" id="b1"><a class="page-link" hx-target="#content" hx-get="/groups/" hx-vals='{"page": "0", "size": "3"}'>1</a></li>
+          <li class="page-item" id="b2"><a class="page-link" hx-target="#content" hx-get="/groups/" hx-vals='{"page": "1", "size": "3"}' onclick="myFunction(this)">2</a></li>
+          <li class="page-item" id="b3"><a class="page-link" hx-target="#content" hx-get="/groups/" hx-vals='{"page": "2", "size": "2"}'>3</a></li>
+          <li class="page-item">
+            <a class="page-link" _="on click toggle .active on me" href="#" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav> -->
+    <button hx-get="/groups/create"  hx-target="#content" type="submit" class="btn btn-primary" th:text="#{group.create}"></button>
+
+    <div th:each="group : ${groups}">
+      <span th:text="${group.name}">
+  </div>
+
+<!-- <script>
+function myFunction(clickedElement) {
+  console.log('myFunction');
+  const collection = document.getElementsByClassName('active');
+  Array.from(collection).forEach(element => {
+    element.classList.toggle('active');
+  });
+  // clickedElement.classList.toggle('active');
+}
+</script> -->
+</div>

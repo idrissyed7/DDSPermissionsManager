@@ -1,0 +1,19 @@
+body {
+   margin: 20px;
+}
+
+button {
+    margin: 8px;
+}
+
+.nav-link {
+   cursor: pointer;
+}
+
+#content {
+   margin: 25px;
+}
+
+.red {
+   background-color: red;
+}

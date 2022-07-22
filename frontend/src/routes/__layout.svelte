@@ -8,12 +8,12 @@
 	onMount(async () => {
 		try {
 			const res = await axios.get('http://localhost:8080/token_info', { withCredentials: true });
-			console.log(res.data);
+			// console.log(res.data);
 			onLoggedIn(res.data);
-			console.log('is authenticated?', $isAuthenticated);
+			// console.log('is authenticated?', $isAuthenticated);
 		} catch (err) {
 			if (err.response.status === 401) {
-				console.log('is authenticated?', $isAuthenticated);
+				// console.log('is authenticated?', $isAuthenticated);
 			}
 		}
 	});

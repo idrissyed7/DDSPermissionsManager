@@ -28,10 +28,9 @@
 				<th><strong>Group</strong></th>
 			</tr>
 			{#if $groups}
-				{#each $groups as user}
+				{#each $groups as group}
 					<tr>
-						<!-- <td>{user.firstName}</td>
-						<td>{user.lastName}</td> -->
+						<td>{group.name}</td>
 					</tr>
 				{/each}
 			{/if}
@@ -52,6 +51,7 @@
 		margin-left: auto;
 		margin-right: auto;
 		border-collapse: collapse;
+		border: 1px solid;
 		width: 50%;
 	}
 
