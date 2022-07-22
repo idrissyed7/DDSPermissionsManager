@@ -11,13 +11,21 @@ netty:
       max-order: 3
 ---
 micronaut:
+  server:
+    cors:
+      enabled: true
+      configurations:
+        allowedOrigins:
+          - http://localhost:3000
   security:
+    redirect:
+      login-success: http://localhost:3000
     authentication: idtoken
     oauth2:
       clients:
         google:
-          client-id: "689644842460-4s7vm9qddjbt8s03eac5ci1jmj8laebj.apps.googleusercontent.com"
-          client-secret: "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"
+          client-id: "887538804956-u62ckldg4a6e4elon7diken6pna3m2v5.apps.googleusercontent.com"
+          client-secret: "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"
           openid:
             authorization:
               prompt: select_account
