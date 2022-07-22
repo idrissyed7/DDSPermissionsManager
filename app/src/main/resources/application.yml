@@ -20,6 +20,8 @@ micronaut:
   security:
     redirect:
       login-success: http://localhost:3000
+      login-failure: http://localhost:3000
+      logout: http://localhost:3000
     authentication: idtoken
     oauth2:
       clients:
