@@ -17,6 +17,7 @@ micronaut:
       configurations:
         allowedOrigins:
           - http://localhost:3000
+          - localhost:3000
   security:
     redirect:
       login-success: http://localhost:3000

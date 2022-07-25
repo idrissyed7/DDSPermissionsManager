@@ -8,7 +8,6 @@
 	onMount(async () => {
 		try {
 			const res = await axios.get('http://localhost:8080/token_info', { withCredentials: true });
-			// console.log(res.data);
 			onLoggedIn(res.data);
 			// console.log('is authenticated?', $isAuthenticated);
 		} catch (err) {
@@ -20,7 +19,6 @@
 
 	const getToken = async () => {
 		const res = await axios.get('http://localhost:8080/token_info', { withCredentials: true });
-		console.log(res);
 	};
 </script>
 
@@ -67,6 +65,15 @@
 		padding: 40px;
 	}
 
+	svg {
+		filter: drop-shadow(-5px -5px 3px rgb(0 0 0 / 1));
+	}
+
+	p {
+		position: absolute;
+		bottom: 5px;
+	}
+
 	.custom-shape-bottom {
 		position: absolute;
 		bottom: 0;
@@ -85,7 +92,7 @@
 	}
 
 	.custom-shape-bottom .shape-fill {
-		fill: #ffffff;
+		fill: linear-gradient(white, black);
 	}
 
 	@media (min-width: 480px) {

@@ -19,7 +19,6 @@
 		try {
 			const res = await axios.get('http://localhost:8080/users', { withCredentials: true });
 			users.set(res.data.content);
-			console.log($users);
 		} catch (err) {
 			console.error('Error loading Users');
 		}
@@ -29,7 +28,6 @@
 		try {
 			const res = await axios.get('http://localhost:8080/users', { withCredentials: true });
 			users.set(res.data.content);
-			console.log('new users', $users);
 		} catch (err) {
 			console.error('Error loading Users');
 		}
@@ -62,7 +60,6 @@
 
 	const userDelete = async () => {
 		confirmDeleteVisible = false;
-		console.log(`http://localhost:8080/users/delete/${selectUserId}`);
 		const res = await axios
 			.post(
 				`http://localhost:8080/users/delete/${selectUserId}`,
@@ -114,8 +111,9 @@
 			on:cancel={() => (confirmDeleteVisible = false)}
 		>
 			<div class="confirm-user-delete">
-				<button class="button" on:click={() => (confirmDeleteVisible = false)}>No</button>
-				<button class="button-delete" on:click={() => userDelete()}>Yes</button>
+				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
+				>
+				<button class="button-delete" on:click={() => userDelete()}>Delete</button>
 			</div>
 		</Modal>
 	{/if}
@@ -135,7 +133,7 @@
 							><button
 								class="button-delete"
 								on:click={() => confirmUserDelete(user.id, user.firstName, user.lastName)}
-								>Delete</button
+								><span>Delete</span></button
 							></td
 						>
 					</tr>
@@ -235,6 +233,49 @@
 
 	.button-delete:hover {
 		background-color: rgb(223, 1, 1);
+	}
+
+	.button-delete span {
+		cursor: pointer;
+		display: inline-block;
+		position: relative;
+		transition: 0.5s;
+	}
+
+	.button-delete span:after {
+		content: '\00bb';
+		position: absolute;
+		opacity: 0;
+		top: 0;
+		left: -20px;
+		transition: 0.5s;
+	}
+
+	.button-delete:hover span {
+		padding-left: 20px;
+	}
+
+	.button-delete:hover span:after {
+		opacity: 1;
+		left: 0;
+	}
+
+	.button-cancel {
+		display: inline-block;
+		border-radius: 4px;
+		background-color: rgb(128, 128, 128);
+		border: none;
+		color: #ffffff;
+		text-align: center;
+		font-size: 14px;
+		height: 2rem;
+		top: 90%;
+		transition: all 0.5s;
+		cursor: pointer;
+	}
+
+	.button-cancel:hover {
+		background-color: rgb(110, 110, 110);
 	}
 
 	.confirm-user-delete {
