@@ -1,6 +1,0 @@
-<div xmlns:th="http://www.thymeleaf.org">
-    <h2 th:text="${group.name}"></h2>
-    <h4 th:text="#{group.user.list.heading}"></h4>
-    <table th:replace="~{groups/_memberTable :: table(${group.users})}"></table>
-    <table th:replace="~{groups/_candidateTable :: table(${candidateUsers})}"></table>
-</div>

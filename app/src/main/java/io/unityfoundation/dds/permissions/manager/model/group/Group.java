@@ -18,7 +18,7 @@ public class Group {
     @NonNull
     private String name;
 
-    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER, targetEntity = User.class, cascade = CascadeType.ALL)
     private List<User> users;
 
     public Group() {

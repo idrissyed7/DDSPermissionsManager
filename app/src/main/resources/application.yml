@@ -1,11 +1,9 @@
 micronaut:
   application:
     name: "Permissions Manager"
-  router:
-    static-resources:
-      assets:
-        paths: "classpath:assets"
-        mapping: "/assets/**"
+  server:
+    cors:
+      enabled: true
 ---
 netty:
   default:
@@ -13,7 +11,18 @@ netty:
       max-order: 3
 ---
 micronaut:
+  server:
+    cors:
+      enabled: true
+      configurations:
+        allowedOrigins:
+          - http://localhost:3000
+          - localhost:3000
   security:
+    redirect:
+      login-success: http://localhost:3000
+      login-failure: http://localhost:3000
+      logout: http://localhost:3000
     authentication: idtoken
     oauth2:
       clients:
@@ -64,14 +73,3 @@ jpa:
       hibernate:
         hbm2ddl:
           auto: update
----
-i18n:
-  bundles:
-    - applications
-    - footer
-    - groups
-    - home
-    - messages
-    - navigation
-    - topics
-    - users
