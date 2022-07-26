@@ -3,6 +3,7 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 import io.micronaut.core.annotation.NonNull;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "permissions_user")
@@ -20,13 +21,19 @@ public class User {
     @NonNull
     private String email;
 
+    @ElementCollection(fetch = FetchType.EAGER, targetClass = Role.class)
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private List<Role> roles;
+
     public User() {
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email) {
+    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email, @NonNull List<Role> roles) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.roles = roles;
     }
 
     public Long getId() {
@@ -62,5 +69,13 @@ public class User {
 
     public void setEmail(@NonNull String email) {
         this.email = email;
+    }
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
     }
 }
