@@ -4,11 +4,13 @@ import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Singleton
 public class Bootstrap {
@@ -23,11 +25,12 @@ public class Bootstrap {
 
     @EventListener
     public void devData(ServerStartupEvent event) {
-        User justin = userRepository.save(new User("Justin", "Wilson", "jwilson@test.test"));
-        User kevin = userRepository.save(new User("Kevin", "Stanley", "kstanley@test.test"));
-        userRepository.save(new User("Jeff", "Brown", "jbrown@test.test"));
-        userRepository.save(new User("Julian", "Gracia", "jgracia@test.test"));
-        userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test"));
+        User justin = userRepository.save(new User("Justin", "Wilson", "jwilson@test.test", List.of(Role.ADMIN)));
+        User kevin = userRepository.save(new User("Kevin", "Stanley", "kstanley@test.test", List.of(Role.ADMIN)));
+        userRepository.save(new User("Jeff", "Brown", "jbrown@test.test", List.of(Role.ADMIN)));
+        userRepository.save(new User("Julian", "Gracia", "jgracia@test.test", List.of(Role.ADMIN)));
+        userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test", List.of(Role.ADMIN)));
+        userRepository.save(new User("Max", "Montes", "montesm@test.test", List.of(Role.ADMIN)));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
         alphaGroup.setUsers(Arrays.asList(justin, kevin));
