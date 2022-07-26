@@ -8,13 +8,25 @@
 
 	let groupsListVisible = true;
 	let groupDetailVisible = false;
+	let addGroupVisible = false;
+	let disabled = false;
 	let confirmDeleteVisible = false;
 	let confirmAddUserVisible = false;
+	let groupNameExists = false;
+	let newGroupName;
 	let selectedUserFirstName;
 	let selectedUserLastName;
 	let selectedUserEmail;
 	let selectedUserId;
 	let selectedGroupId;
+
+	$: if ($groups) {
+		if ($groups.filter((group) => group.name === newGroupName).length > 0) {
+			disabled = true;
+		} else {
+			disabled = false;
+		}
+	}
 
 	onMount(async () => {
 		try {
@@ -65,10 +77,10 @@
 		selectedUserFirstName = '';
 		selectedUserLastName = '';
 
-		reloadGroups();
+		reloadGroupDetails();
 	};
 
-	const reloadGroups = async () => {
+	const reloadGroupDetails = async () => {
 		try {
 			const res = await axios.get(`http://localhost:8080/groups/${selectedGroupId}`, {
 				withCredentials: true
@@ -77,6 +89,15 @@
 			groupDetails.set(res.data);
 		} catch (err) {
 			console.error('Error loading Group Details', err);
+		}
+	};
+
+	const reloadAllGroups = async () => {
+		try {
+			const res = await axios.get('http://localhost:8080/groups', { withCredentials: true });
+			groups.set(res.data.content);
+		} catch (err) {
+			console.error('Error loading Groups');
 		}
 	};
 
@@ -94,7 +115,7 @@
 			.catch((err) => console.error(err));
 		confirmAddUserVisible = false;
 
-		reloadGroups();
+		reloadGroupDetails();
 	};
 
 	const confirmUserCandidateAdd = (ID, firstName, lastName, email) => {
@@ -109,7 +130,29 @@
 	const returnToGroupsList = () => {
 		groupDetailVisible = false;
 		groupsListVisible = true;
-		// reloadGroups();
+	};
+
+	const addGroupModal = () => {
+		newGroupName = '';
+		addGroupVisible = true;
+	};
+
+	const addGroup = async () => {
+		if (!disabled) {
+			const res = await axios
+				.post(
+					`http://localhost:8080/groups/save/`,
+					{
+						name: newGroupName
+					},
+					{ withCredentials: true }
+				)
+				.catch((err) => console.error(err));
+
+			addGroupVisible = false;
+
+			reloadAllGroups();
+		}
 	};
 </script>
 
@@ -120,7 +163,24 @@
 
 {#if $isAuthenticated}
 	<div class="content">
-		{#if confirmDeleteVisible && confirmAddUserVisible !== true}
+		{#if addGroupVisible && confirmDeleteVisible !== true && confirmAddUserVisible !== true}
+			<Modal title="Add New Group" on:cancel={() => (addGroupVisible = false)}>
+				<div class="add-user">
+					<input type="text" placeholder="Group Name" bind:value={newGroupName} />
+					<button
+						class:button={!disabled}
+						style="margin-left: 1rem;"
+						{disabled}
+						on:click={() => addGroup()}><span>Add Group</span></button
+					>
+				</div>
+				{#if disabled}
+					<br />
+					<center><span class="group-create-error">Please choose a unique name</span></center>
+				{/if}
+			</Modal>
+		{/if}
+		{#if confirmDeleteVisible && confirmAddUserVisible !== true && addGroupVisible !== true}
 			<Modal
 				title="Remove {selectedUserFirstName} {selectedUserLastName} from {$groupDetails.group
 					.name}?"
@@ -130,11 +190,13 @@
 					<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}
 						>Cancel</button
 					>
-					<button class="button-delete" on:click={() => userMemberRemove()}>Remove</button>
+					<button class="button-delete" on:click={() => userMemberRemove()}
+						><span>Remove</span></button
+					>
 				</div>
 			</Modal>
 		{/if}
-		{#if confirmAddUserVisible && confirmDeleteVisible !== true}
+		{#if confirmAddUserVisible && confirmDeleteVisible !== true && addGroupVisible !== true}
 			<Modal
 				title="Add {selectedUserFirstName} {selectedUserLastName} to {$groupDetails.group.name}?"
 				on:cancel={() => (confirmAddUserVisible = false)}
@@ -143,7 +205,7 @@
 					<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
 						>Cancel</button
 					>
-					<button class="button" on:click={() => userCandidateAdd()}>Add</button>
+					<button class="button" on:click={() => userCandidateAdd()}><span>Add</span></button>
 				</div>
 			</Modal>
 		{/if}
@@ -166,6 +228,8 @@
 					{/each}
 				{/if}
 			</table>
+			<br /><br />
+			<center> <button class="button" on:click={() => addGroupModal()}>Add Group </button></center>
 		{/if}
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
 			<div class="group-name">
@@ -232,6 +296,19 @@
 {/if}
 
 <style>
+	.group-create-error {
+		color: red;
+		text-align: center;
+		position: absolute;
+		justify-content: center;
+		bottom: 5%;
+		left: 0;
+		right: 0;
+		margin-left: auto;
+		margin-right: auto;
+		width: 100%;
+	}
+
 	.group-name {
 		display: flex;
 		justify-content: center;
@@ -357,13 +434,26 @@
 	.button-cancel:hover {
 		background-color: rgb(110, 110, 110);
 	}
+
 	.confirm {
 		display: inline-block;
 	}
 
 	button {
-		width: 7rem;
-		position: relative;
+		display: inline-block;
+		justify-content: center;
+		border-radius: 4px;
+		background-color: rgb(123, 123, 124);
+		border: none;
+		color: #ffffff;
+		text-align: center;
+		font-size: 14px;
+		padding-left: 5x;
+		height: 2rem;
+		transition: all 0.5s;
+		cursor: pointer;
+		left: 0%;
+		min-width: 7rem;
 		margin-left: auto;
 	}
 
@@ -395,11 +485,14 @@
 
 	tr:nth-child(even) {
 		background-image: linear-gradient(
-			to right,
+			60deg,
+			rgba(255, 255, 255, 0),
 			rgba(255, 255, 255, 1),
-			rgba(255, 255, 255, 0.7),
+			rgba(255, 255, 255, 0.5),
+			rgba(255, 255, 255, 0),
 			rgba(255, 255, 255, 0)
 		);
+		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.15));
 	}
 
 	h2 {

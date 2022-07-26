@@ -37,9 +37,15 @@
 			viewBox="0 0 1200 120"
 			preserveAspectRatio="none"
 		>
+			<defs>
+				<linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+					<stop offset="0%" style="stop-color:rgb(255,255,255);stop-opacity:0.15" />
+					<stop offset="100%" style="stop-color:rgb(255,255,255);stop-opacity:0.05" />
+				</linearGradient>
+			</defs>
 			<path
 				d="M600,112.77C268.63,112.77,0,65.52,0,7.23V120H1200V7.23C1200,65.52,931.37,112.77,600,112.77Z"
-				class="shape-fill"
+				fill="url(#gradient)"
 			/>
 		</svg>
 	</div>
@@ -70,17 +76,17 @@
 	}
 
 	p {
-		position: absolute;
 		bottom: 5px;
 	}
 
 	.custom-shape-bottom {
-		position: absolute;
+		position: fixed;
 		bottom: 0;
 		left: 0;
 		width: 100%;
 		overflow: hidden;
 		line-height: 0;
+		z-index: -10;
 	}
 
 	.custom-shape-bottom svg {
@@ -89,10 +95,6 @@
 		width: calc(100% + 1.3px);
 		height: 150px;
 		mix-blend-mode: overlay;
-	}
-
-	.custom-shape-bottom .shape-fill {
-		fill: linear-gradient(white, black);
 	}
 
 	@media (min-width: 480px) {

@@ -142,11 +142,8 @@
 				<p style="margin-left: 0.3rem">No Users Found</p>
 			{/if}
 		</table>
-		<center
-			><button class="button" style="margin-top: 2rem" on:click={() => addUserModal()}
-				>Add User</button
-			></center
-		>
+		<br /><br />
+		<center><button class="button" on:click={() => addUserModal()}>Add User</button></center>
 	</div>
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
@@ -165,9 +162,10 @@
 	}
 
 	.add-user input {
-		min-width: 12rem;
+		min-width: 10rem;
 		min-height: 1.5rem;
 		margin-left: 1rem;
+		font-size: 9.5pt;
 	}
 
 	.button {
@@ -285,12 +283,11 @@
 	button {
 		width: 7rem;
 		position: relative;
-		/* left: 50%; */
 	}
 
 	table {
 		margin-left: auto;
-		margin-right: auto;
+		margin-right: 4.5rem;
 		border-collapse: collapse;
 		width: 70%;
 	}
@@ -309,11 +306,14 @@
 
 	tr:nth-child(even) {
 		background-image: linear-gradient(
-			to right,
+			60deg,
+			rgba(255, 255, 255, 0),
 			rgba(255, 255, 255, 1),
-			rgba(255, 255, 255, 0.7),
+			rgba(255, 255, 255, 0.5),
+			rgba(255, 255, 255, 0),
 			rgba(255, 255, 255, 0)
 		);
+		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.1));
 	}
 
 	input::placeholder {
