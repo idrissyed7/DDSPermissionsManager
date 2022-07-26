@@ -19,11 +19,18 @@ micronaut:
           - http://localhost:3000
           - localhost:3000
   security:
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              secret: pleaseChangeThisSecretForANewOne
+              jws-algorithm: HS256
     redirect:
       login-success: http://localhost:3000
       login-failure: http://localhost:3000
       logout: http://localhost:3000
-    authentication: idtoken
+    authentication: cookie
     oauth2:
       clients:
         google:

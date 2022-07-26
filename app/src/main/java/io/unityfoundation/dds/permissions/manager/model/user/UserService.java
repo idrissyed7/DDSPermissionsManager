@@ -8,6 +8,7 @@ import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -21,8 +22,8 @@ public class UserService {
     }
 
     @Transactional
-    public boolean userExistsByEmail(String email) {
-        return userRepository.findByEmail(email).isPresent();
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public Page<User> findAll(Pageable pageable) {
