@@ -22,8 +22,14 @@ public class User {
     private String email;
 
     @ElementCollection(fetch = FetchType.EAGER, targetClass = Role.class)
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "User_roles",
+            joinColumns = @JoinColumn(name = "User_id"),
+            foreignKey = @ForeignKey(
+                    name = "user_fk",
+                    foreignKeyDefinition = "FOREIGN KEY (User_id) REFERENCES PERMISSIONS_USER(id) ON DELETE CASCADE")
+    )
     private List<Role> roles;
 
     public User() {
