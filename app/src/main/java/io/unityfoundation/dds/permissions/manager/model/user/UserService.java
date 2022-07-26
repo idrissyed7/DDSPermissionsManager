@@ -32,7 +32,11 @@ public class UserService {
 
     @Transactional
     public void save(User user) {
-        userRepository.save(user);
+        if (user.getId() == null) {
+            userRepository.save(user);
+        } else {
+            userRepository.update(user);
+        }
     }
 
     @Transactional
