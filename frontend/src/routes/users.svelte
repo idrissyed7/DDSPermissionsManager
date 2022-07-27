@@ -15,19 +15,61 @@
 	let selectedUserLastName;
 	let selectUserId;
 
+	const usersPerPage = 3;
+	let usersPageIndex;
+	let usersPages = [];
+	let currentPage = 0;
+
 	onMount(async () => {
 		try {
-			const res = await axios.get('http://localhost:8080/users', { withCredentials: true });
-			users.set(res.data.content);
+			const usersData = await axios.get('http://localhost:8080/users', { withCredentials: true });
+			users.set(usersData.data.content);
+
+			// Pagination
+			let totalUsersCount = 0;
+			usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
+			if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
+
+			// Populate the usersPage Array
+			let pageArray = [];
+			for (let page = 0; page < usersPageIndex; page++) {
+				for (let i = 0; i < usersPerPage && totalUsersCount < usersData.data.content.length; i++) {
+					pageArray.push(usersData.data.content[page * usersPerPage + i]);
+					totalUsersCount++;
+				}
+				usersPages.push(pageArray);
+				pageArray = [];
+			}
 		} catch (err) {
 			console.error('Error loading Users');
 		}
 	});
 
+	const calculatePagination = () => {
+		usersPages = [];
+		let totalUsersCount = 0;
+		usersPageIndex = Math.floor($users.length / usersPerPage);
+		if ($users.length % usersPerPage > 0) usersPageIndex++;
+
+		if (usersPageIndex === currentPage) currentPage--;
+
+		// Populate the usersPage Array
+		let pageArray = [];
+		for (let page = 0; page < usersPageIndex; page++) {
+			for (let i = 0; i < usersPerPage && totalUsersCount < $users.length; i++) {
+				pageArray.push($users[page * usersPerPage + i]);
+				totalUsersCount++;
+			}
+			usersPages.push(pageArray);
+			pageArray = [];
+		}
+	};
+
 	const reloadUsers = async () => {
 		try {
 			const res = await axios.get('http://localhost:8080/users', { withCredentials: true });
 			users.set(res.data.content);
+			calculatePagination();
 		} catch (err) {
 			console.error('Error loading Users');
 		}
@@ -55,7 +97,9 @@
 
 		addUserVisible = false;
 
-		reloadUsers();
+		await reloadUsers().then(() => {
+			currentPage = usersPages.length - 1;
+		});
 	};
 
 	const userDelete = async () => {
@@ -124,8 +168,8 @@
 				<th><strong>First Name</strong></th>
 				<th><strong>Last Name</strong></th>
 			</tr>
-			{#if $users}
-				{#each $users as user}
+			{#if usersPages.length > 0}
+				{#each usersPages[currentPage] as user}
 					<tr>
 						<td>{user.firstName}</td>
 						<td>{user.lastName}</td>
@@ -142,6 +186,40 @@
 				<p style="margin-left: 0.3rem">No Users Found</p>
 			{/if}
 		</table>
+		<br /><br />
+		{#if $users}
+			<center
+				><button
+					on:click={() => {
+						if (currentPage > 0) currentPage--;
+					}}
+					class="button-pagination"
+					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
+					disabled={currentPage === 0}>Previous</button
+				>
+				{#if usersPageIndex > 2}
+					{#each usersPages as page, i}
+						<button
+							on:click={() => {
+								currentPage = i;
+							}}
+							class="button-pagination"
+							class:button-pagination-selected={i === currentPage}>{i + 1}</button
+						>
+					{/each}
+				{/if}
+
+				<button
+					on:click={() => {
+						if (currentPage < usersPages.length) currentPage++;
+					}}
+					class="button-pagination"
+					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
+					disabled={currentPage === usersPages.length - 1}>Next</button
+				></center
+			>
+		{/if}
+
 		<br /><br />
 		<center><button class="button" on:click={() => addUserModal()}>Add User</button></center>
 	</div>
@@ -181,7 +259,7 @@
 		height: 2rem;
 		transition: all 0.5s;
 		cursor: pointer;
-		margin-right: 1rem;
+		/* margin-right: 1rem; */
 		left: 0%;
 		min-width: 7rem;
 	}
@@ -276,13 +354,38 @@
 		background-color: rgb(110, 110, 110);
 	}
 
+	.button-pagination {
+		display: inline-block;
+		font-size: 10pt;
+		width: 2.1rem;
+		height: 2rem;
+		border: solid;
+		border-width: 1px;
+		border-color: rgb(149, 149, 149);
+		border-radius: 3%;
+		cursor: pointer;
+	}
+
+	.button-pagination:disabled:hover {
+		background-color: rgba(239, 239, 239, 0.3);
+	}
+
+	.button-pagination-selected {
+		background-color: rgb(217, 217, 217);
+	}
+
+	.button-pagination:hover {
+		background-color: rgb(217, 217, 217);
+	}
+
 	.confirm-user-delete {
 		display: inline-block;
 	}
 
 	button {
-		width: 7rem;
+		width: 5rem;
 		position: relative;
+		text-align: center;
 	}
 
 	table {

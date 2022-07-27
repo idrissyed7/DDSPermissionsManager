@@ -35,9 +35,10 @@
 	.modal {
 		position: fixed;
 		top: 10vh;
-		margin-left: -5rem;
-		max-height: 80vh;
-		min-width: 47vw;
+		max-height: fit-content;
+		min-width: 710px;
+		max-width: 50vw;
+		left: calc(50% - 355px);
 		background: white;
 		border-radius: 15px;
 		z-index: 100;
@@ -70,9 +71,6 @@
 		height: 1px;
 		border: none;
 	}
-	/* footer {
-		padding-bottom: 1.5rem;
-	} */
 
 	button {
 		display: inline-block;
@@ -98,12 +96,13 @@
 		background-color: #db491c;
 	}
 
-	@media (min-width: 768px) {
+	/* @media (min-width: 768px) {
 		.modal {
 			width: 40rem;
-			left: calc(50% - 20rem);
+			left: calc(50% - 10rem);
+			left: calc(50% - 200px);
 		}
-	}
+	} */
 
 	.close-button {
 		position: absolute;
