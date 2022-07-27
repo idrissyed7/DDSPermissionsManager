@@ -7,10 +7,7 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
-import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import javax.validation.Valid;
 import java.net.URI;
