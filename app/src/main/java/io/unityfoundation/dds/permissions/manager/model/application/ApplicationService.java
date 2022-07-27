@@ -2,8 +2,6 @@ package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
-import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Singleton;
 
 @Singleton

@@ -5,7 +5,6 @@ import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.event.LoginSuccessfulEvent;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.Map;
