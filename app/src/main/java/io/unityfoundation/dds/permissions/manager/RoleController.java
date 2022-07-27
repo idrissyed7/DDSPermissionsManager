@@ -7,7 +7,7 @@ import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.user.Role;
 
 @Controller("/roles")
-@Secured(SecurityRule.IS_ANONYMOUS)
+@Secured(SecurityRule.IS_AUTHENTICATED)
 public class RoleController {
 
     @Get
