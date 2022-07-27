@@ -3,6 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.annotation.Body;
+import io.micronaut.security.authentication.Authentication;
+import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
@@ -39,7 +41,7 @@ public class GroupService {
     }
 
     @Transactional
-    public boolean addMember(@Body Long groupId, @Body Long candidateId) {
+    public boolean addMember(@Body Long groupId, @Body Long candidateId, boolean addAdmin) {
         Optional<Group> groupOptional = groupRepository.findById(groupId);
         Optional<User> userOptional = userRepository.findById(candidateId);
         if (groupOptional.isEmpty() || userOptional.isEmpty()) {
@@ -47,7 +49,11 @@ public class GroupService {
         }
         Group group = groupOptional.get();
         User user = userOptional.get();
-        group.addUser(user);
+        if (addAdmin) {
+            group.addAdmin(user);
+        } else {
+            group.addUser(user);
+        }
         groupRepository.update(group);
         return true;
     }
@@ -62,15 +68,31 @@ public class GroupService {
         return Optional.empty();
     }
 
-    public boolean removeMember(Long groupId, Long memberId) {
+    public boolean removeMember(Long groupId, Long memberId, boolean addAdmin) {
         Optional<Group> byId = groupRepository.findById(groupId);
         if (byId.isEmpty()) {
             return false;
         }
         Group group = byId.get();
-        group.removeUser(memberId);
+        if (addAdmin) {
+            group.removeAdmin(memberId);
+        } else {
+            group.removeUser(memberId);
+        }
         groupRepository.update(group);
 
         return true;
+    }
+
+    public boolean isAdminOrGroupAdmin(Authentication authentication, Long groupId) {
+        String userEmail = authentication.getName();
+        Optional<User> user = userRepository.findByEmail(userEmail);
+        Optional<Group> group = groupRepository.findById(groupId);
+
+        if (user.isEmpty() || group.isEmpty()) {
+            return false;
+        }
+
+        return user.get().getRoles().contains(Role.ADMIN) || group.get().getAdmins().contains(user.get());
     }
 }
