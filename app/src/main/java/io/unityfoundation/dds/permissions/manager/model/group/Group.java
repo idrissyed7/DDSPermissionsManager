@@ -72,6 +72,7 @@ public class Group {
     }
 
     public List<User> getAdmins() {
+        if (admins == null) return null;
         return Collections.unmodifiableList(admins);
     }
 
