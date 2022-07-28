@@ -18,7 +18,11 @@ public class ApplicationService {
     }
 
     public void save(Application application) {
-        applicationRepository.save(application);
+        if (application.getId() == null) {
+            applicationRepository.save(application);
+        } else {
+            applicationRepository.update(application);
+        }
     }
 
     public void deleteById(Long id) {

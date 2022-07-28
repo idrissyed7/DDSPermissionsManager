@@ -18,7 +18,11 @@ public class TopicService {
     }
 
     public void save(Topic topic) {
-        topicRepository.save(topic);
+        if (topic.getId() == null) {
+            topicRepository.save(topic);
+        } else {
+            topicRepository.update(topic);
+        }
     }
 
     public void deleteById(Long id) {

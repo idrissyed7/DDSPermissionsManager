@@ -46,6 +46,7 @@ public class Group {
     }
 
     public List<User> getUsers() {
+        if (users == null) return null;
         return Collections.unmodifiableList(users);
     }
 
