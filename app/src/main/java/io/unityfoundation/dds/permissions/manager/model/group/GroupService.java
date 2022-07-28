@@ -31,7 +31,11 @@ public class GroupService {
     }
 
     public void save(Group group) {
-        groupRepository.save(group);
+        if (group.getId() == null) {
+            groupRepository.save(group);
+        } else {
+            groupRepository.update(group);
+        }
     }
 
     public void deleteById(Long id) {

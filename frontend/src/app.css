@@ -44,12 +44,6 @@ body::before {
 	opacity: 0.05;
 }
 
-/* #svelte {
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-} */
-
 h1,
 h2,
 p {
