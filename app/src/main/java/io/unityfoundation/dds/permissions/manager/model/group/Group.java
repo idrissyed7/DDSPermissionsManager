@@ -3,6 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.Collections;
@@ -18,8 +20,15 @@ public class Group {
     @NonNull
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER, targetEntity = User.class, cascade = CascadeType.ALL)
+    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JoinTable(name="permissions_group_members")
     private List<User> users;
+
+    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
+    @JoinTable(name="permissions_group_admins")
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private List<User> admins;
 
     public Group() {
     }
@@ -60,5 +69,21 @@ public class Group {
 
     public void addUser(User user) {
         users.add(user);
+    }
+
+    public List<User> getAdmins() {
+        return Collections.unmodifiableList(admins);
+    }
+
+    public void setAdmins(List<User> admins) {
+        this.admins = admins;
+    }
+
+    public boolean removeAdmin(Long userId) {
+        return admins.removeIf(user -> userId != null && userId.equals(user.getId()));
+    }
+
+    public void addAdmin(User user) {
+        admins.add(user);
     }
 }

@@ -34,6 +34,7 @@ public class Bootstrap {
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
         alphaGroup.setUsers(Arrays.asList(justin, kevin));
+        alphaGroup.setAdmins(List.of(justin));
         groupRepository.update(alphaGroup);
 
         groupRepository.save(new Group("Beta"));
