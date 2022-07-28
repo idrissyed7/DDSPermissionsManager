@@ -5,6 +5,8 @@
 	import users from '../stores/users';
 	import Modal from '../lib/Modal.svelte';
 
+	const URL_PREFIX = 'http://localhost:8080';
+
 	let addUserVisible = false;
 	let confirmDeleteVisible = false;
 	let userFirstName;
@@ -22,7 +24,7 @@
 
 	onMount(async () => {
 		try {
-			const usersData = await axios.get('http://localhost:8080/users', { withCredentials: true });
+			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(usersData.data.content);
 
 			// Pagination
@@ -67,7 +69,7 @@
 
 	const reloadUsers = async () => {
 		try {
-			const res = await axios.get('http://localhost:8080/users', { withCredentials: true });
+			const res = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(res.data.content);
 			calculatePagination();
 		} catch (err) {
@@ -85,7 +87,7 @@
 	const addUser = async () => {
 		const res = await axios
 			.post(
-				'http://localhost:8080/users/save',
+				`${URL_PREFIX}/users/save`,
 				{
 					firstName: userFirstName,
 					lastName: userLastName,
@@ -106,7 +108,7 @@
 		confirmDeleteVisible = false;
 		const res = await axios
 			.post(
-				`http://localhost:8080/users/delete/${selectUserId}`,
+				`${URL_PREFIX}/users/delete/${selectUserId}`,
 				{
 					firstName: userFirstName,
 					lastName: userLastName
