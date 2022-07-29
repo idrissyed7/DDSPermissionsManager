@@ -40,9 +40,7 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
             return AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND);
         }
 
-        List<String> userRoles = Stream.of(user.get().getRoles())
-                .map(Object::toString)
-                .collect(Collectors.toList());
+        List<String> userRoles = user.get().getRoles().stream().map(Enum::toString).collect(Collectors.toList());
 
         return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
                 userRoles,

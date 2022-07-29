@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
+//@Property(name = "micronaut.security.enabled", value= StringUtils.FALSE)
 public class GroupApiTest {
 
     private BlockingHttpClient blockingClient;
@@ -91,6 +92,7 @@ public class GroupApiTest {
         assertEquals(OK, response.getStatus());
 
         // add member to group
+        // To see mocked authentication see MockSecurityService
         long initialMemberCount = groupRepository.findById(1L).get().getUsers().size();
 
         request = HttpRequest.POST("/groups/add_member/1/3", Map.of());
@@ -106,6 +108,7 @@ public class GroupApiTest {
         assertEquals(initialMemberCount + 1, postAddUserCount);
 
         // remove member from group
+        // To see mocked authentication see MockSecurityService
         request = HttpRequest.POST("/groups/remove_member/1/3", Map.of());
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
