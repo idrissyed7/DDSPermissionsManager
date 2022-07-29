@@ -6,7 +6,6 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
@@ -61,10 +60,10 @@ public class GroupController {
     }
 
     @Post(uris = {"/remove_member/{groupId}/{memberId}", "/remove_admin/{groupId}/{memberId}"})
-    HttpResponse removeMember(Long groupId, Long memberId, HttpRequest request, Authentication authentication) {
+    HttpResponse removeMember(Long groupId, Long memberId, HttpRequest request) {
 
         String path = request.getPath();
-        if (groupService.isAdminOrGroupAdmin(authentication, groupId)) {
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeMember(groupId, memberId, path.contains("admin"))) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
             }
@@ -76,10 +75,10 @@ public class GroupController {
     }
 
     @Post(uris = {"/add_member/{groupId}/{candidateId}", "/add_admin/{groupId}/{candidateId}"})
-    HttpResponse addMember(Long groupId, Long candidateId, HttpRequest request, Authentication authentication) {
+    HttpResponse addMember(Long groupId, Long candidateId, HttpRequest request) {
 
         String path = request.getPath();
-        if (groupService.isAdminOrGroupAdmin(authentication, groupId)) {
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.addMember(groupId, candidateId, path.contains("admin"))) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
             }

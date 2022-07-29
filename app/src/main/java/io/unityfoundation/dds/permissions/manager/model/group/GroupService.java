@@ -4,6 +4,7 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
+import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
@@ -18,14 +19,16 @@ import java.util.Optional;
 public class GroupService {
 
     private final UserRepository userRepository;
-    private final UserService userService;
     private final GroupRepository groupRepository;
+    private final UserService userService;
+    private final SecurityService securityService;
 
 
-    public GroupService(UserRepository userRepository, GroupRepository groupRepository, UserService userService) {
+    public GroupService(UserRepository userRepository, GroupRepository groupRepository, UserService userService, SecurityService securityService) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
         this.userService = userService;
+        this.securityService = securityService;
     }
 
     public Page<Group> findAll(Pageable pageable) {
@@ -88,15 +91,20 @@ public class GroupService {
         return true;
     }
 
-    public boolean isAdminOrGroupAdmin(Authentication authentication, Long groupId) {
-        String userEmail = authentication.getName();
-        Optional<User> user = userRepository.findByEmail(userEmail);
+    public boolean isAdminOrGroupAdmin(Long groupId) {
+
         Optional<Group> group = groupRepository.findById(groupId);
 
-        if (user.isEmpty() || group.isEmpty()) {
+        if (group.isEmpty()) {
             return false;
         }
 
-        return user.get().getRoles().contains(Role.ADMIN) || group.get().getAdmins().contains(user.get());
+        Authentication authentication = securityService.getAuthentication().get();
+        String userEmail = authentication.getName();
+
+        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
+        boolean isGroupAdmin = group.get().getAdmins().stream().anyMatch(groupAdmins -> groupAdmins.getEmail().equals(userEmail));
+
+        return isAdmin || isGroupAdmin;
     }
 }
