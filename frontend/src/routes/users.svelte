@@ -7,15 +7,13 @@
 
 	const URL_PREFIX = 'http://localhost:8080';
 
-	let addUserVisible = false;
 	let confirmDeleteVisible = false;
 	let userFirstName;
 	let userLastName;
-	let userEmail;
 
 	let selectedUserFirstName;
 	let selectedUserLastName;
-	let selectUserId;
+	let selectedUserId;
 
 	const usersPerPage = 3;
 	let usersPageIndex;
@@ -77,38 +75,12 @@
 		}
 	};
 
-	const addUserModal = () => {
-		userFirstName = '';
-		userLastName = '';
-		userEmail = '';
-		addUserVisible = true;
-	};
-
-	const addUser = async () => {
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/users/save`,
-				{
-					firstName: userFirstName,
-					lastName: userLastName,
-					email: userEmail
-				},
-				{ withCredentials: true }
-			)
-			.catch((err) => console.error(err));
-
-		addUserVisible = false;
-
-		await reloadUsers().then(() => {
-			currentPage = usersPages.length - 1;
-		});
-	};
-
 	const userDelete = async () => {
 		confirmDeleteVisible = false;
+		console.log(`${URL_PREFIX}/users/delete/${selectedUserId}`);
 		const res = await axios
 			.post(
-				`${URL_PREFIX}/users/delete/${selectUserId}`,
+				`${URL_PREFIX}/users/delete/${selectedUserId}`,
 				{
 					firstName: userFirstName,
 					lastName: userLastName
@@ -117,7 +89,7 @@
 			)
 			.catch((err) => console.error(err));
 
-		selectUserId = '';
+		selectedUserId = '';
 		selectedUserFirstName = '';
 		selectedUserLastName = '';
 
@@ -129,7 +101,7 @@
 
 		selectedUserFirstName = firstName;
 		selectedUserLastName = lastName;
-		selectUserId = ID;
+		selectedUserId = ID;
 	};
 </script>
 
@@ -139,30 +111,19 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if addUserVisible && confirmDeleteVisible != true}
-		<Modal title="Add New User" on:cancel={() => (addUserVisible = false)}>
-			<div class="add-user">
-				<input type="text" placeholder="First Name" bind:value={userFirstName} />
-				<input type="text" placeholder="Last Name" bind:value={userLastName} />
-				<input type="text" placeholder="E-Mail" bind:value={userEmail} />
-				<button class="button" style="margin-left: 1rem;" on:click={() => addUser()}
-					><span>Add User</span></button
-				>
-			</div>
-		</Modal>
-	{/if}
-	{#if confirmDeleteVisible && addUserVisible != true}
+	{#if confirmDeleteVisible}
 		<Modal
 			title="Delete {selectedUserFirstName} {selectedUserLastName}?"
 			on:cancel={() => (confirmDeleteVisible = false)}
 		>
-			<div class="confirm-user-delete">
+			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
 				>
-				<button class="button-delete" on:click={() => userDelete()}>Delete</button>
+				<button class="button-delete" on:click={() => userDelete()}><span>Delete</span></button>
 			</div>
 		</Modal>
 	{/if}
+
 	<div class="content">
 		<h1>Users</h1>
 		<table>
@@ -189,6 +150,7 @@
 			{/if}
 		</table>
 		<br /><br />
+
 		{#if $users}
 			<center
 				><button
@@ -221,208 +183,9 @@
 				></center
 			>
 		{/if}
-
 		<br /><br />
-		<center><button class="button" on:click={() => addUserModal()}>Add User</button></center>
+		<!-- <center><button class="button" on:click={() => addUserModal()}>Add User</button></center> -->
 	</div>
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
-
-<style>
-	.content {
-		width: 100%;
-		max-width: var(--column-width);
-		margin: var(--column-margin-top) auto 0 auto;
-	}
-
-	.add-user {
-		display: flex;
-		justify-content: center;
-	}
-
-	.add-user input {
-		min-width: 10rem;
-		min-height: 1.5rem;
-		margin-left: 1rem;
-		font-size: 9.5pt;
-	}
-
-	.button {
-		display: inline-block;
-		justify-content: center;
-		border-radius: 4px;
-		background-color: rgb(54, 70, 255);
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		padding-left: 5x;
-		height: 2rem;
-		transition: all 0.5s;
-		cursor: pointer;
-		/* margin-right: 1rem; */
-		left: 0%;
-		min-width: 7rem;
-	}
-
-	.button:hover {
-		background-color: rgb(44, 58, 209);
-	}
-
-	.button span {
-		cursor: pointer;
-		display: inline-block;
-		position: relative;
-		transition: 0.5s;
-	}
-
-	.button span:after {
-		content: '\00ab';
-		position: absolute;
-		opacity: 0;
-		top: 0;
-		right: -20px;
-		transition: 0.5s;
-	}
-
-	.button:hover span {
-		padding-right: 20px;
-	}
-
-	.button:hover span:after {
-		opacity: 1;
-		right: 0;
-	}
-
-	.button-delete {
-		display: inline-block;
-		border-radius: 4px;
-		background-color: red;
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		height: 2rem;
-		top: 90%;
-		transition: all 0.5s;
-		cursor: pointer;
-	}
-
-	.button-delete:hover {
-		background-color: rgb(223, 1, 1);
-	}
-
-	.button-delete span {
-		cursor: pointer;
-		display: inline-block;
-		position: relative;
-		transition: 0.5s;
-	}
-
-	.button-delete span:after {
-		content: '\00bb';
-		position: absolute;
-		opacity: 0;
-		top: 0;
-		left: -20px;
-		transition: 0.5s;
-	}
-
-	.button-delete:hover span {
-		padding-left: 20px;
-	}
-
-	.button-delete:hover span:after {
-		opacity: 1;
-		left: 0;
-	}
-
-	.button-cancel {
-		display: inline-block;
-		border-radius: 4px;
-		background-color: rgb(128, 128, 128);
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		height: 2rem;
-		top: 90%;
-		transition: all 0.5s;
-		cursor: pointer;
-	}
-
-	.button-cancel:hover {
-		background-color: rgb(110, 110, 110);
-	}
-
-	.button-pagination {
-		display: inline-block;
-		font-size: 10pt;
-		width: 2.1rem;
-		height: 2rem;
-		border: solid;
-		border-width: 1px;
-		border-color: rgb(149, 149, 149);
-		border-radius: 3%;
-		cursor: pointer;
-	}
-
-	.button-pagination:disabled:hover {
-		background-color: rgba(239, 239, 239, 0.3);
-	}
-
-	.button-pagination-selected {
-		background-color: rgb(217, 217, 217);
-	}
-
-	.button-pagination:hover {
-		background-color: rgb(217, 217, 217);
-	}
-
-	.confirm-user-delete {
-		display: inline-block;
-	}
-
-	button {
-		width: 5rem;
-		position: relative;
-		text-align: center;
-	}
-
-	table {
-		margin-left: auto;
-		margin-right: 4.5rem;
-		border-collapse: collapse;
-		width: 70%;
-	}
-
-	th {
-		font-size: 13.5pt;
-		padding-left: 1rem;
-		padding-bottom: 0.3rem;
-		text-align: left;
-	}
-
-	td {
-		font-size: 13pt;
-		padding: 0.3rem 1rem 0.3rem 1rem;
-	}
-
-	tr:nth-child(even) {
-		background-image: linear-gradient(
-			60deg,
-			rgba(255, 255, 255, 0),
-			rgba(255, 255, 255, 1),
-			rgba(255, 255, 255, 0.5),
-			rgba(255, 255, 255, 0),
-			rgba(255, 255, 255, 0)
-		);
-		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.1));
-	}
-
-	input::placeholder {
-		font-size: 8pt;
-		padding-left: 0.1rem;
-	}
-</style>
