@@ -71,6 +71,7 @@ h1 {
 
 h2 {
 	font-size: 1.4rem;
+	text-align: center;
 }
 
 pre {
@@ -90,12 +91,263 @@ button {
 	font-family: inherit;
 }
 
+input {
+	text-align: center;
+}
+
 button:focus:not(:focus-visible) {
 	outline: none;
+}
+
+input::placeholder {
+	font-size: 8pt;
+	padding-left: 0.1rem;
+}
+
+table {
+	margin-left: auto;
+	margin-right: auto;
+	border-collapse: collapse;
+	width: 60%;
+	white-space: nowrap;
+}
+
+th {
+	font-size: 13.5pt;
+	padding: 0.2rem;
+	text-align: left;
+	/* padding: 0.3rem 1rem 0.3rem 5rem; */
+}
+
+td {
+	font-size: 13pt;
+	padding-left: 0.3rem;
+	padding-top: 0.25rem;
+	padding-bottom: 0.25rem;
+	text-align: left;
+	vertical-align: baseline;
+}
+
+tr:nth-child(even) {
+	background-image: linear-gradient(
+		60deg,
+		rgba(255, 255, 255, 0),
+		rgba(255, 255, 255, 1),
+		rgba(255, 255, 255, 0.5),
+		rgba(255, 255, 255, 0),
+		rgba(255, 255, 255, 0)
+	);
+	filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.1));
 }
 
 @media (min-width: 720px) {
 	h1 {
 		font-size: 2.4rem;
 	}
+}
+
+.content {
+	width: 100%;
+	max-width: var(--column-width);
+	margin: var(--column-margin-top) auto 0 auto;
+}
+
+.button {
+	display: inline-block;
+	justify-content: center;
+	border-radius: 4px;
+	background-color: rgb(54, 70, 255);
+	border: none;
+	color: #ffffff;
+	text-align: center;
+	font-size: 14px;
+	padding-left: 5x;
+	height: 2rem;
+	transition: all 0.5s;
+	cursor: pointer;
+	left: 0%;
+	width: 6rem;
+}
+
+.button:hover {
+	background-color: rgb(44, 58, 209);
+}
+
+.button span {
+	cursor: pointer;
+	display: inline-block;
+	position: relative;
+	transition: 0.5s;
+}
+
+.button span:after {
+	content: '\00ab';
+	position: absolute;
+	opacity: 0;
+	top: 0;
+	right: -20px;
+	transition: 0.5s;
+}
+
+.button:hover span {
+	padding-right: 20px;
+}
+
+.button:hover span:after {
+	opacity: 1;
+	right: 0;
+}
+
+.button-delete {
+	display: inline-block;
+	border-radius: 4px;
+	background-color: red;
+	border: none;
+	color: #ffffff;
+	text-align: center;
+	font-size: 14px;
+	height: 2rem;
+	top: 90%;
+	transition: all 0.5s;
+	cursor: pointer;
+	width: 5rem;
+}
+
+.button-delete:hover {
+	background-color: rgb(223, 1, 1);
+}
+
+.button-delete span {
+	cursor: pointer;
+	display: inline-block;
+	position: relative;
+	transition: 0.5s;
+}
+
+.button-delete span:after {
+	content: '\00bb';
+	position: absolute;
+	opacity: 0;
+	top: 0;
+	left: -20px;
+	transition: 0.5s;
+}
+
+.button-delete:hover span {
+	padding-left: 20px;
+}
+
+.button-delete:hover span:after {
+	opacity: 1;
+	left: 0;
+}
+
+.button-cancel {
+	display: inline-block;
+	border-radius: 4px;
+	background-color: rgb(128, 128, 128);
+	border: none;
+	color: #ffffff;
+	text-align: center;
+	font-size: 14px;
+	height: 2rem;
+	top: 90%;
+	transition: all 0.5s;
+	cursor: pointer;
+	width: 4rem;
+}
+
+.button-cancel:hover {
+	background-color: rgb(110, 110, 110);
+}
+
+.button-pagination {
+	display: inline-block;
+	font-size: 10pt;
+	width: 1.9rem;
+	height: 2rem;
+	border: solid;
+	border-width: 1px;
+	border-color: rgb(149, 149, 149);
+	border-radius: 3%;
+	cursor: pointer;
+}
+
+.button-pagination:disabled:hover {
+	background-color: rgba(239, 239, 239, 0.3);
+}
+
+.button-pagination-selected {
+	background-color: rgb(217, 217, 217);
+}
+
+.button-pagination:hover {
+	background-color: rgb(217, 217, 217);
+}
+
+.add input {
+	min-width: 10rem;
+	min-height: 1.5rem;
+	margin-left: 1rem;
+	font-size: 9.5pt;
+}
+
+.add {
+	display: flex;
+	justify-content: center;
+}
+
+.confirm {
+	display: inline-block;
+}
+
+.tooltip {
+    position: relative;
+    display: flex;
+}
+
+.tooltip .tooltiptext {
+visibility: hidden;
+background-color: rgba(0, 0, 0, 0.6);
+color: #fff;
+line-height: 17px;
+border-radius: 5px;
+padding: 3px;
+transition: all 300ms;
+
+/* Position the tooltip */
+position: absolute;
+top: -22px;
+height: fit-content;
+width: fit-content;
+transform: rotateY(180deg);
+z-index: 100;
+}
+
+.tooltip:hover .tooltiptext {
+visibility: visible;
+transition-delay: 1s;
+animation: fadeIn 0.2s ease-in-out;
+-webkit-animation: fadeIn 0.2s ease-in-out;
+}
+
+@-webkit-keyframes fadeIn {
+0% {
+	opacity: 0;
+	transform: scale(0.6);
+}
+
+100% {
+	opacity: 100%;
+	transform: scale(1);
+}
+}
+
+@keyframes fadeIn {
+0% {
+	opacity: 0;
+}
+100% {
+	opacity: 100%;
+}
 }
