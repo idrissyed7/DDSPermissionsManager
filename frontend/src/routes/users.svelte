@@ -92,7 +92,7 @@
 			users.set(res.data.content);
 			calculatePagination();
 		} catch (err) {
-			console.error('Error Loading Users');
+			ErrorMessage('Error Loading Users', err.message);
 		}
 	};
 

@@ -140,8 +140,8 @@
 				calculatePagination();
 			}
 		} catch (err) {
-			// TODO Error Modal
-			console.error('Error loading Applications');
+			applications.set();
+			ErrorMessage('Error Loading Applications', err.message);
 		}
 	};
 
@@ -154,7 +154,7 @@
 		selectedAppName = name;
 		selectedAppId = id;
 
-		const res = await axios
+		await axios
 			.post(
 				`${URL_PREFIX}/applications/save/`,
 				{
@@ -164,21 +164,9 @@
 				{ withCredentials: true }
 			)
 			.catch((err) => {
-				// dispatch error message
-				console.error(err);
+				ErrorMessage('Error Saving New Application Name', err.message);
 			});
-		reloadAllApps();
-	};
-
-	const reloadAllApps = async () => {
-		try {
-			const res = await axios.get(`${URL_PREFIX}/applications`, { withCredentials: true });
-			applications.set(res.data.content);
-
-			calculatePagination();
-		} catch (err) {
-			console.error('Error loading Applications');
-		}
+		reloadApps();
 	};
 
 	const calculatePagination = () => {
