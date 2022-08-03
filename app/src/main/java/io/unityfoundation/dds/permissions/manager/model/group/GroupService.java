@@ -11,6 +11,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Singleton;
 
+import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +36,7 @@ public class GroupService {
         return groupRepository.findAll(pageable);
     }
 
-    public void save(Group group) {
+    public void save(Group group) throws PersistenceException {
         if (group.getId() == null) {
             groupRepository.save(group);
         } else {

@@ -18,6 +18,7 @@ public class Group {
     private Long id;
 
     @NonNull
+    @Column(unique = true)
     private String name;
 
     @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)

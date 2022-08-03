@@ -10,6 +10,7 @@ import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
 
+import javax.persistence.PersistenceException;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.Map;
@@ -38,7 +39,11 @@ public class GroupController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Group group) {
-        groupService.save(group);
+        try {
+            groupService.save(group);
+        } catch (PersistenceException persistenceException) {
+            return HttpResponse.badRequest();
+        }
         return HttpResponse.seeOther(URI.create("/groups/"));
     }
 

@@ -7,6 +7,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static io.micronaut.http.HttpStatus.BAD_REQUEST;
 import static io.micronaut.http.HttpStatus.OK;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -119,5 +121,25 @@ public class GroupApiTest {
         firstGroup = groups1.get(0);
         userList = (List<Map>) firstGroup.get("users");
         assertEquals(postAddUserCount - 1, userList.size());
+    }
+
+    @Test
+    public void rejectGroupWithSameNameAsAnExistingGroup() {
+
+        // save group without members
+        Group myGroup = new Group("MyGroup");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", myGroup);
+        HttpResponse<?> response = blockingClient.exchange(request);
+        assertEquals(OK, response.getStatus());
+
+        // save group without members
+        Group myGroupDup = new Group("MyGroup");
+        request = HttpRequest.POST("/groups/save", myGroupDup);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, thrown.getStatus());
+
     }
 }
