@@ -3,6 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let title;
+	export let description = '';
 
 	const dispatch = createEventDispatcher();
 
@@ -17,6 +18,7 @@
 	<h1>{title}</h1>
 	<hr />
 	<div class="content">
+		{description}
 		<slot />
 	</div>
 </div>

@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import axios from 'axios';
 	import groups from '../stores/groups';
 	import groupDetails from '../stores/groupDetails';
@@ -8,18 +8,26 @@
 
 	const URL_PREFIX = 'http://localhost:8080';
 
-	const dispatch = createEventDispatcher();
+	// Error Handling
+	let errorMessage, errorObject;
 
+	// Modals
+	let errorMessageVisible = false;
 	let groupsListVisible = true;
 	let groupDetailVisible = false;
 	let addGroupVisible = false;
-	let addGroupErrorModal = false;
 	let confirmRemoveUserVisible = false;
 	let confirmAddUserVisible = false;
 	let confirmDeleteVisible = false;
+
+	// Validation
 	let disabled = false;
+
+	// Group Name
 	let newGroupName;
 	let editGroupName;
+
+	// Selection
 	let selectedUserFirstName;
 	let selectedUserLastName;
 	let selectedUserEmail;
@@ -27,6 +35,7 @@
 	let selectedGroupId;
 	let selectedGroupName;
 
+	// Pagination
 	const groupsPerPage = 3;
 	let groupsPageIndex;
 	let groupsPages = [];
@@ -66,9 +75,21 @@
 				pageArray = [];
 			}
 		} catch (err) {
-			console.error('Error loading Groups');
+			ErrorMessage('Error Loading Groups', err.message);
 		}
 	});
+
+	const ErrorMessage = (errMsg, errObj) => {
+		errorMessage = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const ErrorMessageClear = () => {
+		errorMessage = '';
+		errorObject = '';
+		errorMessageVisible = false;
+	};
 
 	const calculatePagination = () => {
 		groupsPages = [];
@@ -102,7 +123,7 @@
 			selectedGroupId = $groupDetails.group.id;
 			selectedGroupName = $groupDetails.group.name;
 		} catch (err) {
-			console.error('Error loading Group Details', err);
+			ErrorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -125,7 +146,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Removing Group Member', err.message);
+			});
 
 		selectedUserId = '';
 		selectedUserFirstName = '';
@@ -142,7 +165,7 @@
 
 			groupDetails.set(res.data);
 		} catch (err) {
-			console.error('Error loading Group Details', err);
+			ErrorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -153,7 +176,7 @@
 
 			calculatePagination();
 		} catch (err) {
-			console.error('Error loading Groups');
+			ErrorMessage('Error Loading Groups', err.message);
 		}
 	};
 
@@ -168,7 +191,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Adding Candidate Member', err.message);
+			});
 		confirmAddUserVisible = false;
 
 		reloadGroupDetails();
@@ -205,8 +230,7 @@
 				)
 				.catch((err) => {
 					addGroupVisible = false;
-					addGroupErrorModal = true;
-					console.error(err);
+					ErrorMessage('Error Adding Group', err.message);
 				});
 
 			addGroupVisible = false;
@@ -219,7 +243,7 @@
 
 	const saveNewGroupName = async () => {
 		editGroupName = false;
-		const res = await axios
+		await axios
 			.post(
 				`${URL_PREFIX}/groups/save/`,
 				{
@@ -229,8 +253,7 @@
 				{ withCredentials: true }
 			)
 			.catch((err) => {
-				// dispatch error message
-				console.error(err);
+				ErrorMessage('Error Editing Group Name', err.message);
 			});
 
 		reloadAllGroups();
@@ -248,8 +271,7 @@
 				{ withCredentials: true }
 			)
 			.catch((err) => {
-				// dispatch error message
-				console.error(err);
+				ErrorMessage('Error Deleting Group', err.message);
 			});
 
 		returnToGroupsList();
@@ -265,8 +287,28 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	<!-- <div class="content"> -->
-	{#if confirmDeleteVisible}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMessage}
+			description={errorObject}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				ErrorMessageClear();
+			}}
+			><br /><br />
+			<div class="confirm">
+				<button
+					class="button-delete"
+					on:click={() => {
+						errorMessageVisible = false;
+						ErrorMessageClear();
+					}}>Ok</button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmDeleteVisible && !errorMessageVisible}
 		<Modal
 			title="Delete Group {selectedGroupName}?"
 			on:cancel={() => (confirmDeleteVisible = false)}
@@ -279,15 +321,7 @@
 		</Modal>
 	{/if}
 
-	{#if addGroupErrorModal}
-		<Modal title="Error Creating Group">
-			<div class="confirm">
-				<button class="button-delete" on:click={() => (addGroupErrorModal = false)}>Ok</button>
-			</div>
-		</Modal>
-	{/if}
-
-	{#if addGroupVisible}
+	{#if addGroupVisible && !errorMessageVisible}
 		<Modal title="Add New Group" on:cancel={() => (addGroupVisible = false)}>
 			<div class="confirm">
 				<input
@@ -310,7 +344,7 @@
 		</Modal>
 	{/if}
 
-	{#if confirmRemoveUserVisible}
+	{#if confirmRemoveUserVisible && !errorMessageVisible}
 		<Modal
 			title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
 			on:cancel={() => (confirmRemoveUserVisible = false)}
@@ -326,7 +360,7 @@
 		</Modal>
 	{/if}
 
-	{#if confirmAddUserVisible}
+	{#if confirmAddUserVisible && !errorMessageVisible}
 		<Modal
 			title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
 			on:cancel={() => (confirmAddUserVisible = false)}
@@ -434,9 +468,10 @@
 							</td>
 							<button
 								class="button-delete"
+								style="width: 5.5rem;"
 								on:click={() =>
 									confirmUserMemberRemove(userMember.id, userMember.firstName, userMember.lastName)}
-								><span>Delete</span></button
+								><span>Remove</span></button
 							>
 						</tr>
 					{/each}
