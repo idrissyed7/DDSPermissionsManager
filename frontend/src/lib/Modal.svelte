@@ -49,9 +49,6 @@
 	.content {
 		padding-bottom: 2rem;
 		margin-top: 2rem;
-		/* display: ; */
-		/* justify-content: center; */
-		/* align-items: center; */
 		text-align: center;
 	}
 

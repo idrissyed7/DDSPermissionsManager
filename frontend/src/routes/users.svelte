@@ -183,8 +183,6 @@
 				></center
 			>
 		{/if}
-		<br /><br />
-		<!-- <center><button class="button" on:click={() => addUserModal()}>Add User</button></center> -->
 	</div>
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
