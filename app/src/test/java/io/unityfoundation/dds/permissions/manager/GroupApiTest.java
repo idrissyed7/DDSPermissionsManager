@@ -132,7 +132,7 @@ public class GroupApiTest {
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        // save group without members
+        // Add a new group with same name
         Group myGroupDup = new Group("MyGroup");
         request = HttpRequest.POST("/groups/save", myGroupDup);
         HttpRequest<?> finalRequest = request;
@@ -140,6 +140,14 @@ public class GroupApiTest {
             blockingClient.exchange(finalRequest);
         });
         assertEquals(BAD_REQUEST, thrown.getStatus());
+
+        // Attempt to update an existing group with name of another group
+        request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "MyGroup"));
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException thrown1 = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        assertEquals(BAD_REQUEST, thrown1.getStatus());
 
     }
 }
