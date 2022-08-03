@@ -13,17 +13,27 @@
 
 	const URL_PREFIX = 'http://localhost:8080';
 
+	// Error Handling
+	let errorMessage, errorObject;
+	let duplicateAppName = false;
+
+	// Modals
+	let errorMessageVisible = false;
+	let addApplicationVisible = false;
+	let confirmDeleteVisible = false;
+
+	// Pagination
 	const applicationsPerPage = 3;
 	let applicationsPageIndex;
 	let applicationsPages = [];
 	let currentPage = 0;
 
+	// App
 	let appName;
 	let appElement;
+
+	// Selection
 	let selectedAppName, selectedAppId;
-	let duplicateAppName = false;
-	let addApplicationVisible = false;
-	let confirmDeleteVisible = false;
 
 	onMount(async () => {
 		try {
@@ -58,9 +68,23 @@
 				}
 			}
 		} catch (err) {
-			console.log(err);
+			ErrorMessage('Error Loading Applications', err.message);
 		}
 	});
+
+	const ErrorMessage = (errMsg, errObj) => {
+		errorMessage = errMsg;
+		errorObject = errObj;
+		addApplicationVisible = false;
+		confirmDeleteVisible = false;
+		errorMessageVisible = true;
+	};
+
+	const ErrorMessageClear = () => {
+		errorMessage = '';
+		errorObject = '';
+		errorMessageVisible = false;
+	};
 
 	const addApplication = async () => {
 		try {
@@ -73,8 +97,7 @@
 			);
 			addApplicationVisible = false;
 		} catch (err) {
-			// show error in modal
-			console.error(err);
+			ErrorMessage('Error Creating Application', err.message);
 		}
 
 		await reloadApps().then(() => {
@@ -91,7 +114,7 @@
 
 	const appDelete = async () => {
 		confirmDeleteVisible = false;
-		const res = await axios
+		await axios
 			.post(
 				`${URL_PREFIX}/applications/delete/${selectedAppId}`,
 				{
@@ -99,7 +122,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Deleting Application', err.message);
+			});
 
 		selectedAppId = '';
 		selectedAppName = '';
@@ -204,7 +229,28 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if confirmDeleteVisible}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMessage}
+			description={errorObject}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				ErrorMessageClear();
+			}}
+			><br /><br />
+			<div class="confirm">
+				<button
+					class="button-delete"
+					on:click={() => {
+						errorMessageVisible = false;
+						ErrorMessageClear();
+					}}>Ok</button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmDeleteVisible && !errorMessageVisible}
 		<Modal title="Delete {selectedAppName}?" on:cancel={() => (confirmDeleteVisible = false)}>
 			<div class="confirm-delete">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
@@ -214,7 +260,7 @@
 		</Modal>
 	{/if}
 
-	{#if addApplicationVisible}
+	{#if addApplicationVisible && !errorMessageVisible}
 		<div class="add">
 			<Modal
 				title="Create Application"

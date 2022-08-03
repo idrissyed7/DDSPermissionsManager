@@ -7,14 +7,23 @@
 
 	const URL_PREFIX = 'http://localhost:8080';
 
+	// Error Handling
+	let errorMessage, errorObject;
+
+	// Modals
+	let errorMessageVisible = false;
 	let confirmDeleteVisible = false;
+
+	// Users
 	let userFirstName;
 	let userLastName;
 
+	// Selection
 	let selectedUserFirstName;
 	let selectedUserLastName;
 	let selectedUserId;
 
+	// Pagination
 	const usersPerPage = 3;
 	let usersPageIndex;
 	let usersPages = [];
@@ -41,9 +50,21 @@
 				pageArray = [];
 			}
 		} catch (err) {
-			console.error('Error loading Users');
+			ErrorMessage('Error Loading Users', err.message);
 		}
 	});
+
+	const ErrorMessage = (errMsg, errObj) => {
+		errorMessage = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const ErrorMessageClear = () => {
+		errorMessage = '';
+		errorObject = '';
+		errorMessageVisible = false;
+	};
 
 	const calculatePagination = () => {
 		usersPages = [];
@@ -71,13 +92,12 @@
 			users.set(res.data.content);
 			calculatePagination();
 		} catch (err) {
-			console.error('Error loading Users');
+			console.error('Error Loading Users');
 		}
 	};
 
 	const userDelete = async () => {
 		confirmDeleteVisible = false;
-		console.log(`${URL_PREFIX}/users/delete/${selectedUserId}`);
 		const res = await axios
 			.post(
 				`${URL_PREFIX}/users/delete/${selectedUserId}`,
@@ -87,7 +107,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Deleting User', err.message);
+			});
 
 		selectedUserId = '';
 		selectedUserFirstName = '';
@@ -111,7 +133,28 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if confirmDeleteVisible}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMessage}
+			description={errorObject}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				ErrorMessageClear();
+			}}
+			><br /><br />
+			<div class="confirm">
+				<button
+					class="button-delete"
+					on:click={() => {
+						errorMessageVisible = false;
+						ErrorMessageClear();
+					}}>Ok</button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmDeleteVisible && !errorMessageVisible}
 		<Modal
 			title="Delete {selectedUserFirstName} {selectedUserLastName}?"
 			on:cancel={() => (confirmDeleteVisible = false)}
