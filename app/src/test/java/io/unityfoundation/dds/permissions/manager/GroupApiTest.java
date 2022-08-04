@@ -120,4 +120,29 @@ public class GroupApiTest {
         userList = (List<Map>) firstGroup.get("users");
         assertEquals(postAddUserCount - 1, userList.size());
     }
+
+    @Test
+    public void userWithAdminRoleShouldSeeAllGroups() {
+
+        long initialGroupCount = groupRepository.count();
+
+        HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> groups = (List<Map>) responseMap.get("content");
+        assertEquals(initialGroupCount, groups.size());
+    }
+
+    // Change 'ADMIN' to 'GROUP_ADMIN' in MockSecurityService in order for this test to pass.
+    // Why? I can't seem to dynamically change the role of the
+    // authenticated user. Need to come up with a better to mock authentication.
+//    @Test
+//    public void userWithNonAdminRoleShouldNotSeeAllGroups() {
+//
+//        long initialGroupCount = groupRepository.count();
+//
+//        HttpRequest<?> request = HttpRequest.GET("/groups");
+//        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+//        List<Map> groups = (List<Map>) responseMap.get("content");
+//        assertNotEquals(initialGroupCount, groups.size());
+//    }
 }

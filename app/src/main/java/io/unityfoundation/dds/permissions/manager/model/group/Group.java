@@ -22,11 +22,21 @@ public class Group {
 
     @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
-    @JoinTable(name="permissions_group_members")
+    @JoinTable(name="permissions_group_members",
+            joinColumns=
+            @JoinColumn(name="group_id", referencedColumnName="id"),
+            inverseJoinColumns=
+            @JoinColumn(name="user_id", referencedColumnName="id")
+    )
     private List<User> users;
 
     @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_admins")
+    @JoinTable(name="permissions_group_admins",
+            joinColumns=
+            @JoinColumn(name="group_id", referencedColumnName="id"),
+            inverseJoinColumns=
+            @JoinColumn(name="user_id", referencedColumnName="id")
+    )
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<User> admins;
 

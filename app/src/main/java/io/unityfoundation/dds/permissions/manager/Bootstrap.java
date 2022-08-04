@@ -27,13 +27,13 @@ public class Bootstrap {
     public void devData(ServerStartupEvent event) {
         User justin = userRepository.save(new User("Justin", "Wilson", "jwilson@test.test", List.of(Role.ADMIN)));
         User kevin = userRepository.save(new User("Kevin", "Stanley", "kstanley@test.test", List.of(Role.ADMIN)));
+        User max = userRepository.save(new User("Max", "Montes", "montesm@test.test", List.of(Role.ADMIN)));
         userRepository.save(new User("Jeff", "Brown", "jeff@test.test", List.of(Role.ADMIN)));
         userRepository.save(new User("Julian", "Gracia", "jgracia@test.test", List.of(Role.ADMIN)));
         userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test", List.of(Role.ADMIN)));
-        userRepository.save(new User("Max", "Montes", "montesm@test.test", List.of(Role.ADMIN)));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
-        alphaGroup.setUsers(Arrays.asList(justin, kevin));
+        alphaGroup.setUsers(Arrays.asList(kevin, max));
         alphaGroup.setAdmins(List.of(justin));
         groupRepository.update(alphaGroup);
 

@@ -32,7 +32,16 @@ public class GroupService {
     }
 
     public Page<Group> findAll(Pageable pageable) {
-        return groupRepository.findAll(pageable);
+        Authentication authentication = securityService.getAuthentication().get();
+
+        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
+        if (isAdmin) {
+            return groupRepository.findAll(pageable);
+        } else {
+            String userEmail = authentication.getName();
+            User user = userService.getUserByEmail(userEmail).get();
+            return groupRepository.findIfMemberOfGroup(user.getId(), pageable);
+        }
     }
 
     public void save(Group group) {
