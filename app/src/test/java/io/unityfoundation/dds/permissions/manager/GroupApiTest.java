@@ -126,27 +126,26 @@ public class GroupApiTest {
     @Test
     public void rejectGroupWithSameNameAsAnExistingGroup() {
 
-        // save group without members
+        // save new group should succeed
         Group myGroup = new Group("MyGroup");
         HttpRequest<?> request = HttpRequest.POST("/groups/save", myGroup);
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        // Add a new group with same name
+        // Attempt to add a new group with same name, should return the same as index
         Group myGroupDup = new Group("MyGroup");
         request = HttpRequest.POST("/groups/save", myGroupDup);
-        HttpRequest<?> finalRequest = request;
-        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest);
-        });
-        assertEquals(BAD_REQUEST, thrown.getStatus());
+        Map groupResponse = blockingClient.retrieve(request, Map.class);
+        assertNotNull(groupResponse);
 
-        // Attempt to update an existing group with name of another group
+        // Attempt to update an existing group with name of another group should yield a bad request with a message
         request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "MyGroup"));
         HttpRequest<?> finalRequest1 = request;
         HttpClientResponseException thrown1 = assertThrows(HttpClientResponseException.class, () -> {
             blockingClient.exchange(finalRequest1);
         });
+        // Note: Since the client throws an exception for a bad-request response, capturing the response's message is
+        // not straightforward. The message returned is 'Duplicate column mapping name'
         assertEquals(BAD_REQUEST, thrown1.getStatus());
 
     }

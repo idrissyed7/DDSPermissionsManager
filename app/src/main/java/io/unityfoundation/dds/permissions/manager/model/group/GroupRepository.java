@@ -12,4 +12,6 @@ import java.util.Optional;
 public interface GroupRepository extends PageableRepository<Group, Long> {
     @Join(value = "users", type = Join.Type.LEFT_FETCH)
     Optional<Group> findById(@NotNull @NonNull Long id);
+
+    Optional<Group> findByName(@NotNull @NonNull String name);
 }

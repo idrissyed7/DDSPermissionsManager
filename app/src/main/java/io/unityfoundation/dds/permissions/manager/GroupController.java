@@ -9,6 +9,7 @@ import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
+import org.hibernate.DuplicateMappingException;
 
 import javax.persistence.PersistenceException;
 import javax.validation.Valid;
@@ -41,8 +42,8 @@ public class GroupController {
     HttpResponse<?> save(@Body Group group) {
         try {
             groupService.save(group);
-        } catch (PersistenceException persistenceException) {
-            return HttpResponse.badRequest();
+        } catch (DuplicateMappingException duplicateMappingException) {
+            return HttpResponse.badRequest(duplicateMappingException.getMessage());
         }
         return HttpResponse.seeOther(URI.create("/groups/"));
     }

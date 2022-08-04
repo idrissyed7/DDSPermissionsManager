@@ -10,6 +10,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Singleton;
+import org.hibernate.DuplicateMappingException;
 
 import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
@@ -36,10 +37,17 @@ public class GroupService {
         return groupRepository.findAll(pageable);
     }
 
-    public void save(Group group) throws PersistenceException {
+    public void save(Group group) throws DuplicateMappingException {
+        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName());
+
         if (group.getId() == null) {
-            groupRepository.save(group);
+            if (searchGroupByName.isEmpty()) {
+                groupRepository.save(group);
+            }
         } else {
+            if (searchGroupByName.isPresent()) {
+                throw new DuplicateMappingException(DuplicateMappingException.Type.COLUMN, "name");
+            }
             groupRepository.update(group);
         }
     }
