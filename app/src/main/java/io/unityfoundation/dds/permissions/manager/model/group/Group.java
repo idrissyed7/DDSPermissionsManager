@@ -8,7 +8,7 @@ import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissions_group")
@@ -28,7 +28,7 @@ public class Group {
             inverseJoinColumns=
             @JoinColumn(name="user_id", referencedColumnName="id")
     )
-    private List<User> users;
+    private Set<User> users;
 
     @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
     @JoinTable(name="permissions_group_admins",
@@ -38,7 +38,7 @@ public class Group {
             @JoinColumn(name="user_id", referencedColumnName="id")
     )
     @LazyCollection(LazyCollectionOption.FALSE)
-    private List<User> admins;
+    private Set<User> admins;
 
     public Group() {
     }
@@ -64,12 +64,12 @@ public class Group {
         this.name = name;
     }
 
-    public List<User> getUsers() {
+    public Set<User> getUsers() {
         if (users == null) return null;
-        return Collections.unmodifiableList(users);
+        return Collections.unmodifiableSet(users);
     }
 
-    public void setUsers(List<User> users) {
+    public void setUsers(Set<User> users) {
         this.users = users;
     }
 
@@ -81,12 +81,12 @@ public class Group {
         users.add(user);
     }
 
-    public List<User> getAdmins() {
+    public Set<User> getAdmins() {
         if (admins == null) return null;
-        return Collections.unmodifiableList(admins);
+        return Collections.unmodifiableSet(admins);
     }
 
-    public void setAdmins(List<User> admins) {
+    public void setAdmins(Set<User> admins) {
         this.admins = admins;
     }
 

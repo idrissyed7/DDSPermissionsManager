@@ -9,8 +9,8 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Singleton;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 public class Bootstrap {
@@ -33,8 +33,8 @@ public class Bootstrap {
         userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test", List.of(Role.ADMIN)));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
-        alphaGroup.setUsers(Arrays.asList(kevin, max));
-        alphaGroup.setAdmins(List.of(justin));
+        alphaGroup.setUsers(Set.of(kevin, max));
+        alphaGroup.setAdmins(Set.of(justin));
         groupRepository.update(alphaGroup);
 
         groupRepository.save(new Group("Beta"));
