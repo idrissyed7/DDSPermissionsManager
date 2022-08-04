@@ -4,6 +4,7 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -45,6 +46,10 @@ public class GroupService {
     }
 
     public void save(Group group) {
+        if (!isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
         if (group.getId() == null) {
             groupRepository.save(group);
         } else {
@@ -53,6 +58,10 @@ public class GroupService {
     }
 
     public void deleteById(Long id) {
+        if (!isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
         groupRepository.deleteById(id);
     }
 
@@ -111,9 +120,13 @@ public class GroupService {
         Authentication authentication = securityService.getAuthentication().get();
         String userEmail = authentication.getName();
 
-        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
         boolean isGroupAdmin = group.get().getAdmins().stream().anyMatch(groupAdmins -> groupAdmins.getEmail().equals(userEmail));
 
-        return isAdmin || isGroupAdmin;
+        return isCurrentUserAdmin() || isGroupAdmin;
+    }
+
+    public boolean isCurrentUserAdmin() {
+        Authentication authentication = securityService.getAuthentication().get();
+        return authentication.getRoles().contains(Role.ADMIN.toString());
     }
 }
