@@ -3,6 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	export let title;
+	export let description = '';
 
 	const dispatch = createEventDispatcher();
 
@@ -17,6 +18,7 @@
 	<h1>{title}</h1>
 	<hr />
 	<div class="content">
+		{description}
 		<slot />
 	</div>
 </div>
@@ -47,10 +49,27 @@
 	}
 
 	.content {
-		padding: 2rem;
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		padding-bottom: 2rem;
+		margin-top: 2rem;
+		text-align: center;
+	}
+
+	.close-button {
+		position: absolute;
+		padding-left: 1.2rem;
+		padding-right: 1rem;
+		color: #ffffff;
+		background-color: coral;
+		border: none;
+		margin-left: -0.15rem;
+		height: 50px;
+		width: 60px;
+		border-radius: 0%;
+	}
+
+	.close-button:hover {
+		transition: 0.5s;
+		background-color: rgb(223, 98, 53);
 	}
 
 	h1 {
@@ -70,53 +89,5 @@
 		);
 		height: 1px;
 		border: none;
-	}
-
-	button {
-		display: inline-block;
-		justify-content: center;
-		border-radius: 4px;
-		background-color: #f4511e;
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		padding-left: 0px;
-		height: 2rem;
-		transition: all 0.5s;
-		cursor: pointer;
-		margin-left: 1rem;
-		margin-right: 1rem;
-		left: 0%;
-		width: 7rem;
-	}
-
-	button:hover {
-		transition: 0.5s;
-		background-color: #db491c;
-	}
-
-	/* @media (min-width: 768px) {
-		.modal {
-			width: 40rem;
-			left: calc(50% - 10rem);
-			left: calc(50% - 200px);
-		}
-	} */
-
-	.close-button {
-		position: absolute;
-		padding-left: 1.2rem;
-		padding-right: 1rem;
-		background-color: coral;
-		border: none;
-		margin-left: -0.15rem;
-		height: 50px;
-		width: 60px;
-		border-radius: 0%;
-	}
-
-	.close-button:hover {
-		background-color: rgb(223, 98, 53);
 	}
 </style>

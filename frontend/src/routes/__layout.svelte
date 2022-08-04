@@ -5,9 +5,11 @@
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
+	const URL_PREFIX = 'http://localhost:8080';
+
 	onMount(async () => {
 		try {
-			const res = await axios.get('http://localhost:8080/token_info', { withCredentials: true });
+			const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
 			onLoggedIn(res.data);
 			// console.log('is authenticated?', $isAuthenticated);
 		} catch (err) {
@@ -18,7 +20,7 @@
 	});
 
 	const getToken = async () => {
-		const res = await axios.get('http://localhost:8080/token_info', { withCredentials: true });
+		const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
 	};
 </script>
 

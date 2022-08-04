@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import axios from 'axios';
 	import groups from '../stores/groups';
 	import groupDetails from '../stores/groupDetails';
@@ -8,18 +8,26 @@
 
 	const URL_PREFIX = 'http://localhost:8080';
 
-	const dispatch = createEventDispatcher();
+	// Error Handling
+	let errorMessage, errorObject;
 
+	// Modals
+	let errorMessageVisible = false;
 	let groupsListVisible = true;
 	let groupDetailVisible = false;
 	let addGroupVisible = false;
-	let addGroupErrorModal = false;
 	let confirmRemoveUserVisible = false;
 	let confirmAddUserVisible = false;
-	let deleteGroupVisible = false;
+	let confirmDeleteVisible = false;
+
+	// Validation
 	let disabled = false;
+
+	// Group Name
 	let newGroupName;
 	let editGroupName;
+
+	// Selection
 	let selectedUserFirstName;
 	let selectedUserLastName;
 	let selectedUserEmail;
@@ -27,6 +35,7 @@
 	let selectedGroupId;
 	let selectedGroupName;
 
+	// Pagination
 	const groupsPerPage = 3;
 	let groupsPageIndex;
 	let groupsPages = [];
@@ -66,9 +75,21 @@
 				pageArray = [];
 			}
 		} catch (err) {
-			console.error('Error loading Groups');
+			ErrorMessage('Error Loading Groups', err.message);
 		}
 	});
+
+	const ErrorMessage = (errMsg, errObj) => {
+		errorMessage = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const ErrorMessageClear = () => {
+		errorMessage = '';
+		errorObject = '';
+		errorMessageVisible = false;
+	};
 
 	const calculatePagination = () => {
 		groupsPages = [];
@@ -102,7 +123,7 @@
 			selectedGroupId = $groupDetails.group.id;
 			selectedGroupName = $groupDetails.group.name;
 		} catch (err) {
-			console.error('Error loading Group Details', err);
+			ErrorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -125,7 +146,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Removing Group Member', err.message);
+			});
 
 		selectedUserId = '';
 		selectedUserFirstName = '';
@@ -142,7 +165,7 @@
 
 			groupDetails.set(res.data);
 		} catch (err) {
-			console.error('Error loading Group Details', err);
+			ErrorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -153,7 +176,7 @@
 
 			calculatePagination();
 		} catch (err) {
-			console.error('Error loading Groups');
+			ErrorMessage('Error Loading Groups', err.message);
 		}
 	};
 
@@ -168,7 +191,9 @@
 				},
 				{ withCredentials: true }
 			)
-			.catch((err) => console.error(err));
+			.catch((err) => {
+				ErrorMessage('Error Adding Candidate Member', err.message);
+			});
 		confirmAddUserVisible = false;
 
 		reloadGroupDetails();
@@ -205,8 +230,7 @@
 				)
 				.catch((err) => {
 					addGroupVisible = false;
-					addGroupErrorModal = true;
-					console.error(err);
+					ErrorMessage('Error Adding Group', err.message);
 				});
 
 			addGroupVisible = false;
@@ -219,7 +243,7 @@
 
 	const saveNewGroupName = async () => {
 		editGroupName = false;
-		const res = await axios
+		await axios
 			.post(
 				`${URL_PREFIX}/groups/save/`,
 				{
@@ -229,15 +253,14 @@
 				{ withCredentials: true }
 			)
 			.catch((err) => {
-				// dispatch error message
-				console.error(err);
+				ErrorMessage('Error Editing Group Name', err.message);
 			});
 
 		reloadAllGroups();
 	};
 
 	const deleteGroup = async () => {
-		deleteGroupVisible = false;
+		confirmDeleteVisible = false;
 
 		const res = await axios
 			.post(
@@ -248,8 +271,7 @@
 				{ withCredentials: true }
 			)
 			.catch((err) => {
-				// dispatch error message
-				console.error(err);
+				ErrorMessage('Error Deleting Group', err.message);
 			});
 
 		returnToGroupsList();
@@ -265,73 +287,96 @@
 </svelte:head>
 
 {#if $isAuthenticated}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMessage}
+			description={errorObject}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				ErrorMessageClear();
+			}}
+			><br /><br />
+			<div class="confirm">
+				<button
+					class="button-delete"
+					on:click={() => {
+						errorMessageVisible = false;
+						ErrorMessageClear();
+					}}>Ok</button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmDeleteVisible && !errorMessageVisible}
+		<Modal
+			title="Delete Group {selectedGroupName}?"
+			on:cancel={() => (confirmDeleteVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
+				>
+				<button class="button-delete" on:click={() => deleteGroup()}><span>Delete</span></button>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if addGroupVisible && !errorMessageVisible}
+		<Modal title="Add New Group" on:cancel={() => (addGroupVisible = false)}>
+			<div class="confirm">
+				<input
+					type="text"
+					placeholder="Group Name"
+					class="input-add-new-group"
+					bind:value={newGroupName}
+				/>
+				<button
+					class:button={!disabled}
+					style="margin-left: 1rem; width: 6.5rem"
+					{disabled}
+					on:click={() => addGroup()}><span>Add Group</span></button
+				>
+			</div>
+			{#if disabled}
+				<br />
+				<center><span class="group-create-error">Please choose a unique name</span></center>
+			{/if}
+		</Modal>
+	{/if}
+
+	{#if confirmRemoveUserVisible && !errorMessageVisible}
+		<Modal
+			title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
+			on:cancel={() => (confirmRemoveUserVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmRemoveUserVisible = false)}
+					>Cancel</button
+				>
+				<button class="button-delete" style="width: 5.5rem;" on:click={() => userMemberRemove()}
+					><span>Remove</span></button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmAddUserVisible && !errorMessageVisible}
+		<Modal
+			title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
+			on:cancel={() => (confirmAddUserVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
+					>Cancel</button
+				>
+				<button class="button" style="width: 4rem;" on:click={() => userCandidateAdd()}
+					><span>Add</span></button
+				>
+			</div>
+		</Modal>
+	{/if}
+
 	<div class="content">
-		{#if deleteGroupVisible}
-			<Modal title="Delete Group {selectedGroupName}?">
-				<div class="confirm">
-					<button class="button-cancel" on:click={() => (deleteGroupVisible = false)}>Cancel</button
-					>
-					<button class="button-delete" on:click={() => deleteGroup()}><span>Delete</span></button>
-				</div>
-			</Modal>
-		{/if}
-		{#if addGroupErrorModal}
-			<Modal title="Error Creating Group">
-				<div class="confirm">
-					<button class="button-delete" on:click={() => (addGroupErrorModal = false)}>Ok</button>
-				</div>
-			</Modal>
-		{/if}
-		{#if addGroupVisible}
-			<Modal title="Add New Group" on:cancel={() => (addGroupVisible = false)}>
-				<div class="add-user">
-					<input
-						type="text"
-						placeholder="Group Name"
-						class="input-add-new-group"
-						bind:value={newGroupName}
-					/>
-					<button
-						class:button={!disabled}
-						style="margin-left: 1rem;"
-						{disabled}
-						on:click={() => addGroup()}><span>Add Group</span></button
-					>
-				</div>
-				{#if disabled}
-					<br />
-					<center><span class="group-create-error">Please choose a unique name</span></center>
-				{/if}
-			</Modal>
-		{/if}
-		{#if confirmRemoveUserVisible}
-			<Modal
-				title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
-				on:cancel={() => (confirmRemoveUserVisible = false)}
-			>
-				<div class="confirm">
-					<button class="button-cancel" on:click={() => (confirmRemoveUserVisible = false)}
-						>Cancel</button
-					>
-					<button class="button-delete" on:click={() => userMemberRemove()}
-						><span>Remove</span></button
-					>
-				</div>
-			</Modal>
-		{/if}
-		{#if confirmAddUserVisible}
-			<Modal
-				title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
-				on:cancel={() => (confirmAddUserVisible = false)}
-			>
-				<div class="confirm">
-					<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
-						>Cancel</button
-					>
-					<button class="button" on:click={() => userCandidateAdd()}><span>Add</span></button>
-				</div>
-			</Modal>
-		{/if}
 		{#if groupsPages && groupsListVisible && !groupDetailVisible}
 			<h1>Groups</h1>
 			<table>
@@ -342,6 +387,7 @@
 					{#each groupsPages[currentPage] as group}
 						<tr>
 							<td
+								class="group-td"
 								on:click={() => {
 									loadGroup(group.id);
 									selectedGroupId = group.id;
@@ -390,20 +436,23 @@
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
 			<div class="group-name">
 				<span on:click={() => returnToGroupsList()}>&laquo;</span>
-				<input
-					id="group-name"
-					on:click={() => (editGroupName = true)}
-					on:blur={() => saveNewGroupName()}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							saveNewGroupName();
-							document.querySelector('#group-name').blur();
-						}
-					}}
-					bind:value={selectedGroupName}
-					readonly={!editGroupName}
-					class:group-name-as-label={!editGroupName}
-				/>
+				<div class="tooltip">
+					<input
+						id="group-name"
+						on:click={() => (editGroupName = true)}
+						on:blur={() => saveNewGroupName()}
+						on:keydown={(event) => {
+							if (event.which === 13) {
+								saveNewGroupName();
+								document.querySelector('#group-name').blur();
+							}
+						}}
+						bind:value={selectedGroupName}
+						readonly={!editGroupName}
+						class:group-name-as-label={!editGroupName}
+					/>
+					<span class="tooltiptext">&#9998</span>
+				</div>
 			</div>
 			<h2>Group Members</h2>
 			<table>
@@ -419,9 +468,10 @@
 							</td>
 							<button
 								class="button-delete"
+								style="width: 5.5rem;"
 								on:click={() =>
 									confirmUserMemberRemove(userMember.id, userMember.firstName, userMember.lastName)}
-								><span>Delete</span></button
+								><span>Remove</span></button
 							>
 						</tr>
 					{/each}
@@ -460,7 +510,10 @@
 			</table>
 			<br /><br />
 			<center>
-				<button class="button-delete" on:click={() => (deleteGroupVisible = true)}
+				<button
+					class="button-delete"
+					style="width: 7.5rem"
+					on:click={() => (confirmDeleteVisible = true)}
 					><span>Delete Group</span>
 				</button></center
 			>
@@ -512,133 +565,6 @@
 		color: grey;
 	}
 
-	.content {
-		width: 100%;
-		max-width: var(--column-width);
-		margin: var(--column-margin-top) auto 0 auto;
-	}
-
-	.button {
-		display: inline-block;
-		justify-content: center;
-		border-radius: 4px;
-		background-color: rgb(54, 70, 255);
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		padding-left: 5x;
-		height: 2rem;
-		transition: all 0.5s;
-		cursor: pointer;
-		left: 0%;
-		min-width: 7.5rem;
-	}
-
-	.button:hover {
-		background-color: rgb(44, 58, 209);
-	}
-
-	.button span {
-		cursor: pointer;
-		display: inline-block;
-		position: relative;
-		transition: 0.5s;
-	}
-
-	.button span:after {
-		content: '\00ab';
-		position: absolute;
-		opacity: 0;
-		top: 0;
-		right: -20px;
-		transition: 0.5s;
-	}
-
-	.button:hover span {
-		padding-right: 20px;
-	}
-
-	.button:hover span:after {
-		opacity: 1;
-		right: 0;
-	}
-
-	.button-delete {
-		display: inline-block;
-		border-radius: 4px;
-		background-color: red;
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		height: 2rem;
-		top: 90%;
-		transition: all 0.5s;
-		cursor: pointer;
-		min-width: 7.5rem;
-	}
-
-	.button-delete:hover {
-		background-color: rgb(223, 1, 1);
-	}
-
-	.button-delete span {
-		cursor: pointer;
-		display: inline-block;
-		position: relative;
-		transition: 0.5s;
-	}
-
-	.button-delete span:after {
-		content: '\00bb';
-		position: absolute;
-		opacity: 0;
-		top: 0;
-		left: -20px;
-		transition: 0.5s;
-	}
-
-	.button-delete:hover span {
-		padding-left: 20px;
-	}
-
-	.button-delete:hover span:after {
-		opacity: 1;
-		left: 0;
-	}
-
-	.button-cancel {
-		display: inline-block;
-		border-radius: 4px;
-		background-color: rgb(128, 128, 128);
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		height: 2rem;
-		top: 90%;
-		transition: all 0.5s;
-		cursor: pointer;
-	}
-
-	.button-cancel:hover {
-		background-color: rgb(110, 110, 110);
-	}
-
-	.button-pagination {
-		display: inline-block;
-		background-color: rgba(239, 239, 239, 0.3);
-		color: black;
-		width: 2.1rem;
-		height: 2rem;
-		border: solid;
-		border-width: 1px;
-		border-color: rgb(149, 149, 149);
-		border-radius: 3%;
-		cursor: pointer;
-	}
-
 	.button-pagination:disabled:hover {
 		background-color: rgba(239, 239, 239, 0.3);
 	}
@@ -655,50 +581,16 @@
 		background-color: rgb(217, 217, 217);
 	}
 
-	.confirm {
-		display: inline-block;
-	}
-
 	.input-add-new-group {
 		font-size: 18px;
 		padding-bottom: 0.3rem;
 	}
 
 	button {
-		display: inline-block;
-		justify-content: center;
-		border-radius: 4px;
-		background-color: rgb(123, 123, 124);
-		border: none;
-		color: #ffffff;
-		text-align: center;
-		font-size: 14px;
-		padding-left: 5x;
-		height: 2rem;
-		transition: all 0.5s;
-		cursor: pointer;
-		left: 0%;
-		width: 7rem;
 		margin-left: auto;
 	}
 
-	table {
-		margin-left: auto;
-		margin-right: auto;
-		border-collapse: collapse;
-		width: 70%;
-	}
-
-	th {
-		font-size: 13.5pt;
-		padding-left: 1rem;
-		padding-bottom: 0.3rem;
-		text-align: left;
-	}
-
-	td {
-		font-size: 13pt;
-		padding: 0.3rem 1rem 0.3rem 1rem;
+	.group-td {
 		cursor: pointer;
 	}
 
@@ -709,23 +601,13 @@
 	}
 
 	tr:nth-child(even) {
-		background-image: linear-gradient(
-			60deg,
-			rgba(255, 255, 255, 0),
-			rgba(255, 255, 255, 1),
-			rgba(255, 255, 255, 0.5),
-			rgba(255, 255, 255, 0),
-			rgba(255, 255, 255, 0)
-		);
 		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.15));
-	}
-
-	h2 {
-		text-align: center;
 	}
 
 	input {
 		font-size: 38px;
 		text-align: center;
+		width: 20rem;
+		z-index: 1;
 	}
 </style>
