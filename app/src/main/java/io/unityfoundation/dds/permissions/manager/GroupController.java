@@ -6,12 +6,12 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
 import org.hibernate.DuplicateMappingException;
 
-import javax.persistence.PersistenceException;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.Map;
@@ -44,6 +44,8 @@ public class GroupController {
             groupService.save(group);
         } catch (DuplicateMappingException duplicateMappingException) {
             return HttpResponse.badRequest(duplicateMappingException.getMessage());
+        } catch (AuthenticationException authenticationException) {
+            return HttpResponse.unauthorized();
         }
         return HttpResponse.seeOther(URI.create("/groups/"));
     }
@@ -51,7 +53,11 @@ public class GroupController {
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        groupService.deleteById(id);
+        try {
+            groupService.deleteById(id);
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
+        }
         return HttpResponse.seeOther(URI.create("/groups"));
     }
 

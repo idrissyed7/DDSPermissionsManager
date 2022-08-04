@@ -2,6 +2,8 @@
 	import { page } from '$app/stores';
 
 	export let isAuthenticated;
+
+	const URL_PREFIX = 'http://localhost:8080';
 </script>
 
 <header>
@@ -44,8 +46,8 @@
 				<li class:active={$page.url.pathname === '/login'}>
 					<a
 						href={isAuthenticated === true
-							? 'http://localhost:8080/logout'
-							: 'http://localhost:8080/oauth/login/google'}
+							? `${URL_PREFIX}/logout`
+							: `${URL_PREFIX}/oauth/login/google`}
 						>{isAuthenticated === true ? 'Logout' : 'Login'}</a
 					>
 				</li>
@@ -56,7 +58,7 @@
 
 <style>
 	.menu {
-		margin-left: 7.5rem;
+		margin-left: 7.4rem;
 	}
 
 	header {

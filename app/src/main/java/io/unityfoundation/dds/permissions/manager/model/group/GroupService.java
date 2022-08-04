@@ -4,6 +4,7 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -12,7 +13,6 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Singleton;
 import org.hibernate.DuplicateMappingException;
 
-import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
 import java.util.Map;
 import java.util.Optional;
@@ -34,10 +34,23 @@ public class GroupService {
     }
 
     public Page<Group> findAll(Pageable pageable) {
-        return groupRepository.findAll(pageable);
+        Authentication authentication = securityService.getAuthentication().get();
+
+        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
+        if (isAdmin) {
+            return groupRepository.findAll(pageable);
+        } else {
+            String userEmail = authentication.getName();
+            User user = userService.getUserByEmail(userEmail).get();
+            return groupRepository.findIfMemberOfGroup(user.getId(), pageable);
+        }
     }
 
-    public void save(Group group) throws DuplicateMappingException {
+    public void save(Group group) throws DuplicateMappingException, AuthenticationException {
+        if (!isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
         Optional<Group> searchGroupByName = groupRepository.findByName(group.getName());
 
         if (group.getId() == null) {
@@ -53,6 +66,10 @@ public class GroupService {
     }
 
     public void deleteById(Long id) {
+        if (!isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
         groupRepository.deleteById(id);
     }
 
@@ -111,9 +128,13 @@ public class GroupService {
         Authentication authentication = securityService.getAuthentication().get();
         String userEmail = authentication.getName();
 
-        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
         boolean isGroupAdmin = group.get().getAdmins().stream().anyMatch(groupAdmins -> groupAdmins.getEmail().equals(userEmail));
 
-        return isAdmin || isGroupAdmin;
+        return isCurrentUserAdmin() || isGroupAdmin;
+    }
+
+    public boolean isCurrentUserAdmin() {
+        Authentication authentication = securityService.getAuthentication().get();
+        return authentication.getRoles().contains(Role.ADMIN.toString());
     }
 }
