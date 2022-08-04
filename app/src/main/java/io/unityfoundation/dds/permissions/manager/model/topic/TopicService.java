@@ -17,11 +17,11 @@ public class TopicService {
         return topicRepository.findAll(pageable);
     }
 
-    public void save(Topic topic) {
+    public void save(Topic topic) throws Exception {
         if (topic.getId() == null) {
             topicRepository.save(topic);
         } else {
-            topicRepository.update(topic);
+            throw new Exception("Update of Topics are not allowed.");
         }
     }
 

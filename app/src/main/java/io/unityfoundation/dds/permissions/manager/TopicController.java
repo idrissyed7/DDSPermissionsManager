@@ -34,7 +34,11 @@ public class TopicController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Topic topic) {
-        topicService.save(topic);
+        try {
+            topicService.save(topic);
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
         return HttpResponse.seeOther(URI.create("/topics"));
     }
 
