@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
@@ -39,6 +40,16 @@ public class Group {
     )
     @LazyCollection(LazyCollectionOption.FALSE)
     private Set<User> admins;
+
+    @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
+    @JoinTable(name="permissions_group_topics",
+            joinColumns=
+            @JoinColumn(name="group_id", referencedColumnName="id"),
+            inverseJoinColumns=
+            @JoinColumn(name="topic_id", referencedColumnName="id")
+    )
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private Set<Topic> topics;
 
     public Group() {
     }
@@ -96,5 +107,22 @@ public class Group {
 
     public void addAdmin(User user) {
         admins.add(user);
+    }
+
+    public Set<Topic> getTopics() {
+        if (topics == null) return null;
+        return Collections.unmodifiableSet(topics);
+    }
+
+    public void setTopics(Set<Topic> topics) {
+        this.topics = topics;
+    }
+
+    public boolean removeTopic(Long topicId) {
+        return topics.removeIf(topic -> topicId != null && topicId.equals(topic.getId()));
+    }
+
+    public void addTopic(Topic topic) {
+        topics.add(topic);
     }
 }

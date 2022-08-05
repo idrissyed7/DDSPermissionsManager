@@ -97,4 +97,35 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
+    @Post("/remove_topic/{groupId}/{topicId}")
+    HttpResponse removeTopic(Long groupId, Long topicId) {
+
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
+            if (groupService.removeTopic(groupId, topicId)) {
+                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+            }
+        } else {
+            return HttpResponse.unauthorized();
+        }
+
+        return HttpResponse.notFound();
+    }
+
+    @Post("/add_topic/{groupId}/{topicId}")
+    HttpResponse addTopic(Long groupId, Long topicId) {
+
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
+            try {
+                if (groupService.addTopic(groupId, topicId)) {
+                    return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                }
+            } catch (Exception e) {
+                return HttpResponse.badRequest(e.getMessage());
+            }
+        } else {
+            return HttpResponse.unauthorized();
+        }
+        return HttpResponse.notFound();
+    }
+
 }
