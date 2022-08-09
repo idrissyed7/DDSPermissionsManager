@@ -6,7 +6,6 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.utils.SecurityService;
-import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
@@ -35,8 +34,7 @@ public class GroupService {
     public Page<Group> findAll(Pageable pageable) {
         Authentication authentication = securityService.getAuthentication().get();
 
-        boolean isAdmin = authentication.getRoles().contains(Role.ADMIN.toString());
-        if (isAdmin) {
+        if (isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {
             String userEmail = authentication.getName();
@@ -127,6 +125,6 @@ public class GroupService {
 
     public boolean isCurrentUserAdmin() {
         Authentication authentication = securityService.getAuthentication().get();
-        return authentication.getRoles().contains(Role.ADMIN.toString());
+        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
     }
 }

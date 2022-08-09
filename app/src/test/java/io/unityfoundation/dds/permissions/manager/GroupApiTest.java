@@ -7,21 +7,17 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
-import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.util.*;
 
 import static io.micronaut.http.HttpStatus.OK;
-import static io.micronaut.http.HttpStatus.UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
@@ -56,8 +52,8 @@ public class GroupApiTest {
 
         // save group with members
         Group phi = new Group("Phi");
-        User justin = new User("Justin", "Jones", "jjones@test.test", List.of(Role.ADMIN));
-        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", List.of(Role.ADMIN));
+        User justin = new User("Justin", "Jones", "jjones@test.test", true);
+        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", false);
         phi.setUsers(Set.of(justin, kevin));
 
         request = HttpRequest.POST("/groups/save", phi);

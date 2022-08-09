@@ -21,25 +21,22 @@ public class User {
     @NonNull
     private String email;
 
-    @ElementCollection(fetch = FetchType.EAGER, targetClass = Role.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(
-            name = "User_roles",
-            joinColumns = @JoinColumn(name = "User_id"),
-            foreignKey = @ForeignKey(
-                    name = "user_fk",
-                    foreignKeyDefinition = "FOREIGN KEY (User_id) REFERENCES PERMISSIONS_USER(id) ON DELETE CASCADE")
-    )
-    private List<Role> roles;
+    private boolean isAdmin = false;
 
     public User() {
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email, @NonNull List<Role> roles) {
+    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.roles = roles;
+    }
+
+    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email, @NonNull boolean isAdmin) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.isAdmin = isAdmin;
     }
 
     public Long getId() {
@@ -77,11 +74,11 @@ public class User {
         this.email = email;
     }
 
-    public List<Role> getRoles() {
-        return roles;
+    public boolean isAdmin() {
+        return isAdmin;
     }
 
-    public void setRoles(List<Role> roles) {
-        this.roles = roles;
+    public void setAdmin(boolean admin) {
+        isAdmin = admin;
     }
 }
