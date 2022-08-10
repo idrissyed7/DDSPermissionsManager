@@ -7,9 +7,11 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static io.micronaut.http.HttpStatus.OK;
+import static io.micronaut.http.HttpStatus.UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
@@ -33,6 +36,9 @@ public class GroupApiTest {
 
     @Inject
     GroupRepository groupRepository;
+
+    @Inject
+    GroupUserRepository groupUserRepository;
 
     @BeforeEach
     void setup() {
@@ -50,16 +56,6 @@ public class GroupApiTest {
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        // save group with members
-        Group phi = new Group("Phi");
-        User justin = new User("Justin", "Jones", "jjones@test.test", true);
-        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", false);
-        phi.setUsers(Set.of(justin, kevin));
-
-        request = HttpRequest.POST("/groups/save", phi);
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
         // update
         request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "Omega"));
         response = blockingClient.exchange(request);
@@ -69,7 +65,7 @@ public class GroupApiTest {
         request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        assertEquals(initialGroupCount + 2, groups.size());
+        assertEquals(initialGroupCount + 1, groups.size());
         assertEquals(OK, response.getStatus());
 
         // show + confirm update
@@ -87,23 +83,20 @@ public class GroupApiTest {
         request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap1 = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups1 = (List<Map>) responseMap1.get("content");
-        assertEquals(initialGroupCount + 1, groups1.size());
+        assertEquals(initialGroupCount, groups1.size());
         assertEquals(OK, response.getStatus());
 
-        long initialMemberCount = groupRepository.findById(1L).get().getUsers().size();
+        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroup(1l).size();
 
-        // adding an existing should not add to user group
+        // adding an existing member should not add to user group
         // To see mocked authentication see MockSecurityService
         request = HttpRequest.POST("/groups/add_member/1/3", Map.of());
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        request = HttpRequest.GET("/groups");
-        responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        groups1 = (List<Map>) responseMap1.get("content");
-        Map firstGroup = groups1.get(0);
-        List<Map> userList = (List<Map>) firstGroup.get("users");
-        assertEquals(initialMemberCount, userList.size());
+        request = HttpRequest.GET("/groups/1/members");
+        List<Map> responseList = blockingClient.retrieve(request, List.class);
+        assertEquals(initialAlphaGroupMemberCount, responseList.size());
 
         // add new member to group
         // To see mocked authentication see MockSecurityService
@@ -111,13 +104,10 @@ public class GroupApiTest {
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        request = HttpRequest.GET("/groups");
-        responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        groups1 = (List<Map>) responseMap1.get("content");
-        firstGroup = groups1.get(0);
-        userList = (List<Map>) firstGroup.get("users");
-        long postAddUserCount = userList.size();
-        assertEquals(initialMemberCount + 1, postAddUserCount);
+        request = HttpRequest.GET("/groups/1/members");
+        responseList = blockingClient.retrieve(request, List.class);
+        long postAddUserCount = responseList.size();
+        assertEquals(initialAlphaGroupMemberCount + 1, postAddUserCount);
 
         // remove new member from group
         // To see mocked authentication see MockSecurityService
@@ -125,12 +115,9 @@ public class GroupApiTest {
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        request = HttpRequest.GET("/groups");
-        responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        groups1 = (List<Map>) responseMap1.get("content");
-        firstGroup = groups1.get(0);
-        userList = (List<Map>) firstGroup.get("users");
-        assertEquals(postAddUserCount - 1, userList.size());
+        request = HttpRequest.GET("/groups/1/members");
+        responseList = blockingClient.retrieve(request, List.class);
+        assertEquals(postAddUserCount - 1, responseList.size());
     }
 
     @Test
@@ -144,7 +131,7 @@ public class GroupApiTest {
         assertEquals(initialGroupCount, groups.size());
     }
 
-    // Change 'ADMIN' to 'GROUP_ADMIN' in MockSecurityService in order for the below tests to pass.
+    // Change 'isAdmin' to false in MockSecurityService in order for the below tests to pass.
     // Why? I can't seem to dynamically change the role of the
     // authenticated user. Need to come up with a better way to mock authentication.
 //    @Test
