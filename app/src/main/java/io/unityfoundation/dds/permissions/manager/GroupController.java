@@ -1,7 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.data.model.Pageable;
-import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;

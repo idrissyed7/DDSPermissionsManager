@@ -2,10 +2,8 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 
 import io.micronaut.core.annotation.NonNull;
-import io.unityfoundation.dds.permissions.manager.model.user.Role;
 
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "permissions_topics")

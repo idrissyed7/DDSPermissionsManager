@@ -3,7 +3,6 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 import io.micronaut.core.annotation.NonNull;
 
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "permissions_user")
