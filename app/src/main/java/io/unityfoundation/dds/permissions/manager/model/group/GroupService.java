@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -134,11 +135,9 @@ public class GroupService {
         Topic topic = topicOptional.get();
 
         // if a topic in the group with the same name exists, throw an exception
-        List<Topic> groupTopicsWithSameName = group.getTopics().stream()
-                .filter(topic1 -> topic1.getName().equals(topic.getName()))
-                .collect(Collectors.toList());
+        boolean topicExistsInGroup = group.getTopics().stream().anyMatch(groupTopic -> groupTopic.getName().equals(topic.getName()));
 
-        if (!groupTopicsWithSameName.isEmpty()) {
+        if (topicExistsInGroup) {
             throw new Exception("Topic "+topic.getName()+" already exists in Group "+group.getName()+".");
         }
 
