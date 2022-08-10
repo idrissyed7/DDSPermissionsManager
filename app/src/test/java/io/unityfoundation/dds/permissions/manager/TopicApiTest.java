@@ -9,6 +9,7 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,8 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.micronaut.http.HttpStatus.BAD_REQUEST;
-import static io.micronaut.http.HttpStatus.OK;
+import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
@@ -42,15 +42,26 @@ public class TopicApiTest {
 
         // save
         HttpRequest<?> request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic1"));
-        HttpResponse<?> response = blockingClient.exchange(request);
+        HttpResponse<?> response = blockingClient.exchange(request, Topic.class);
         assertEquals(OK, response.getStatus());
+        Topic topic = response.getBody(Topic.class).get();
+        long topic1Id = topic.getId();
 
-        request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic2"));
-        response = blockingClient.exchange(request);
+        request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic2", "kind", 'C'));
+        response = blockingClient.exchange(request, Topic.class);
         assertEquals(OK, response.getStatus());
+        topic = response.getBody(Topic.class).get();
+        long topic2Id = topic.getId();
+
+        // saving a new topic with the same name as an existing topic should return the existing topic and return 303
+        request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic2"));
+        response = blockingClient.exchange(request, Topic.class);
+        assertEquals(SEE_OTHER, response.getStatus());
+        topic = response.getBody(Topic.class).get();
+        assertEquals(topic2Id, topic.getId());
 
         // update attempt should fail
-        request = HttpRequest.POST("/topics/save", Map.of("id", 2, "name", "UpdatedTestTopic2"));
+        request = HttpRequest.POST("/topics/save", Map.of("id", topic2Id, "name", "UpdatedTestTopic2"));
         HttpRequest<?> finalRequest = request;
         HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
             blockingClient.exchange(finalRequest);
@@ -59,8 +70,8 @@ public class TopicApiTest {
 
         // list
         request = HttpRequest.GET("/topics");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> topics = (List<Map>) responseMap.get("content");
+        response = blockingClient.exchange(request, HashMap.class);
+        List<Map> topics = (List<Map>) response.getBody(HashMap.class).get().get("content");
         assertEquals(2, topics.size());
         assertEquals(OK, response.getStatus());
 
@@ -75,8 +86,8 @@ public class TopicApiTest {
 
         // list to confirm deletion
         request = HttpRequest.GET("/topics");
-        HashMap<String, Object> responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        List<Map> topics1 = (List<Map>) responseMap1.get("content");
+        response = blockingClient.exchange(request, HashMap.class);
+        List<Map> topics1 = (List<Map>) response.getBody(HashMap.class).get().get("content");
         assertEquals(1, topics1.size());
         assertEquals(OK, response.getStatus());
     }
