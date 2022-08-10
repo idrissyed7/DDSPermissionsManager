@@ -260,7 +260,7 @@
 				<input
 					type="text"
 					placeholder="Application Name"
-					class:duplicate={duplicateAppName}
+					class:invalid={duplicateAppName}
 					bind:value={appName}
 					on:click={() => (duplicateAppName = false)}
 					on:keydown={(event) => {
@@ -314,7 +314,7 @@
 									bind:value={app.name}
 									bind:this={appElement}
 									class:app-name-as-label={!app.editable}
-									class:duplicate={duplicateAppName}
+									class:invalid={duplicateAppName}
 								/>
 								<span class="tooltiptext">&#9998</span>
 							</div>
@@ -395,10 +395,5 @@
 
 	.tooltip .tooltiptext {
 		transform: rotateY(0deg);
-	}
-
-	.duplicate {
-		border-width: 3px;
-		border-color: red;
 	}
 </style>

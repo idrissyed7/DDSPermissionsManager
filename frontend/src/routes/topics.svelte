@@ -1,17 +1,220 @@
-<script context="module">
-	import { browser, dev } from '$app/env';
+<script>
+	import { isAuthenticated } from '../stores/authentication';
+	import { onMount } from 'svelte';
+	import axios from 'axios';
+	import topics from '../stores/groups';
+	import topicDetails from '../stores/groupDetails';
+	import Modal from '../lib/Modal.svelte';
 
-	// we don't need any JS on this page, though we'll load
-	// it in dev so that we get hot module replacement...
-	export const hydrate = dev;
+	const URL_PREFIX = 'http://localhost:8080';
 
-	// ...but if the client-side router is already loaded
-	// (i.e. we came here from elsewhere in the app), use it
-	export const router = browser;
+	// Error Handling
+	let errorMessage, errorObject;
 
-	// since there's no dynamic data here, we can prerender
-	// it so that it gets served as a static asset in prod
-	export const prerender = true;
+	// Pagination
+	const topicsPerPage = 3;
+	let topicsPageIndex;
+	let topicsPages = [];
+	let currentPage = 0;
+
+	// Modals
+	let errorMessageVisible = false;
+	let topicsListVisible = true;
+	let topicDetailVisible = false;
+	let addTopicVisible = false;
+	let confirmDeleteVisible = false;
+	// let confirmRemoveUserVisible = false;
+	// let confirmAddUserVisible = false;
+
+	// Validation
+	let disabled = false;
+
+	// Group Name
+	let newTopicName;
+	let editTopicName;
+
+	// Selection
+	// let selectedUserFirstName;
+	// let selectedUserLastName;
+	// let selectedUserEmail;
+	// let selectedUserId;
+	let selectedTopicId;
+	let selectedTopicName;
+
+	onMount(async () => {
+		try {
+			const topicsData = await axios.get(`${URL_PREFIX}/topics`, { withCredentials: true });
+			topics.set(topicsData.data.content);
+			console.log(topicsData);
+
+			if ($topics) {
+				// Pagination
+				let totalTopicsCount = 0;
+				topicsPageIndex = Math.floor(topicsData.data.content.length / topicsPerPage);
+				if (topicsData.data.content.length % topicsPerPage > 0) topicsPageIndex++;
+
+				// Populate the usersPage Array
+				let pageArray = [];
+				for (let page = 0; page < topicsPageIndex; page++) {
+					for (
+						let i = 0;
+						i < topicsPerPage && totalTopicsCount < topicsData.data.content.length;
+						i++
+					) {
+						pageArray.push(topicsData.data.content[page * topicsPerPage + i]);
+						totalTopicsCount++;
+					}
+					topicsPages.push(pageArray);
+					pageArray = [];
+				}
+			}
+		} catch (err) {
+			ErrorMessage('Error Loading Topics', err.message);
+		}
+	});
+
+	const ErrorMessage = (errMsg, errObj) => {
+		errorMessage = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const ErrorMessageClear = () => {
+		errorMessage = '';
+		errorObject = '';
+		errorMessageVisible = false;
+	};
+
+	const calculatePagination = () => {
+		topicsPages = [];
+		let totalTopicsCount = 0;
+		topicsPageIndex = Math.floor($topics.length / topicsPerPage);
+		if ($topics.length % topicsPerPage > 0) topicsPageIndex++;
+
+		if (topicsPageIndex === currentPage) currentPage--;
+
+		// Populate the usersPage Array
+		let pageArray = [];
+		for (let page = 0; page < topicsPageIndex; page++) {
+			for (let i = 0; i < topicsPerPage && totalTopicsCount < $topics.length; i++) {
+				pageArray.push($topics[page * topicsPerPage + i]);
+				totalTopicsCount++;
+			}
+			topicsPages.push(pageArray);
+			pageArray = [];
+		}
+	};
+
+	const loadTopic = async (topicId) => {
+		topicsListVisible = false;
+		topicDetailVisible = true;
+		try {
+			const res = await axios.get(`${URL_PREFIX}/topics/${topicId}`, {
+				withCredentials: true
+			});
+
+			topicDetails.set(res.data);
+			selectedTopicId = $topicDetails.group.id;
+			selectedTopicName = $topicDetails.group.name;
+		} catch (err) {
+			ErrorMessage('Error Loading Topic Details', err.message);
+		}
+	};
+
+	const deleteTopic = async () => {
+		confirmDeleteVisible = false;
+
+		const res = await axios
+			.post(
+				`${URL_PREFIX}/topics/delete/${selectedTopicId}`,
+				{
+					id: selectedTopicId
+				},
+				{ withCredentials: true }
+			)
+			.catch((err) => {
+				ErrorMessage('Error Deleting Topic', err.message);
+			});
+
+		returnToTopicsList();
+		await reloadAllTopics().then(() => {
+			if (currentPage === topicsPages.length) currentPage--;
+		});
+	};
+
+	const addTopic = async () => {
+		if (!disabled) {
+			await axios
+				.post(
+					`${URL_PREFIX}/topics/save/`,
+					{
+						name: newTopicName
+					},
+					{ withCredentials: true }
+				)
+				.catch((err) => {
+					addTopicVisible = false;
+					ErrorMessage('Error Adding Topic', err.message);
+				});
+
+			addTopicVisible = false;
+
+			await reloadAllTopics().then(() => {
+				currentPage = topicsPages.length - 1;
+			});
+		}
+	};
+
+	const addTopicModal = () => {
+		newTopicName = '';
+		addTopicVisible = true;
+	};
+
+	const returnToTopicsList = () => {
+		topicDetailVisible = false;
+		topicsListVisible = true;
+	};
+
+	const saveNewTopicName = async () => {
+		editTopicName = false;
+		await axios
+			.post(
+				`${URL_PREFIX}/topics/save/`,
+				{
+					id: selectedTopicId,
+					name: selectedTopicName.trim()
+				},
+				{ withCredentials: true }
+			)
+			.catch((err) => {
+				ErrorMessage('Error Editing Topic Name', err.message);
+			});
+
+		reloadAllTopics();
+	};
+
+	const reloadAllTopics = async () => {
+		try {
+			const res = await axios.get(`${URL_PREFIX}/topics`, { withCredentials: true });
+			topics.set(res.data.content);
+
+			calculatePagination();
+		} catch (err) {
+			ErrorMessage('Error Loading Topics', err.message);
+		}
+	};
+
+	const reloadTopicDetails = async () => {
+		try {
+			const res = await axios.get(`${URL_PREFIX}/topics/${selectedTopicId}`, {
+				withCredentials: true
+			});
+
+			topicDetails.set(res.data);
+		} catch (err) {
+			ErrorMessage('Error Loading Topic Details', err.message);
+		}
+	};
 </script>
 
 <svelte:head>
@@ -19,14 +222,266 @@
 	<meta name="description" content="Permission Manager Topics" />
 </svelte:head>
 
-<div class="content">
-	<h1>Topics</h1>
-</div>
+{#if $isAuthenticated}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMessage}
+			description={errorObject}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				ErrorMessageClear();
+			}}
+			><br /><br />
+			<div class="confirm">
+				<button
+					class="button-delete"
+					on:click={() => {
+						errorMessageVisible = false;
+						ErrorMessageClear();
+					}}>Ok</button
+				>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if confirmDeleteVisible && !errorMessageVisible}
+		<Modal
+			title="Delete Topic {selectedTopicName}?"
+			on:cancel={() => (confirmDeleteVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
+				>
+				<button class="button-delete" on:click={() => deleteTopic()}><span>Delete</span></button>
+			</div>
+		</Modal>
+	{/if}
+
+	{#if addTopicVisible && !errorMessageVisible}
+		<Modal title="Add New Topic" on:cancel={() => (addTopicVisible = false)}>
+			<div class="confirm">
+				<input
+					type="text"
+					placeholder="Topic Name"
+					class="input-add-new"
+					bind:value={newTopicName}
+				/>
+				<button
+					class:button={!disabled}
+					style="margin-left: 1rem; width: 6.5rem"
+					{disabled}
+					on:click={() => addTopic()}><span>Add Topic</span></button
+				>
+			</div>
+			{#if disabled}
+				<br />
+				<center><span class="create-error">Please choose a unique name</span></center>
+			{/if}
+		</Modal>
+	{/if}
+
+	<!-- {#if confirmRemoveUserVisible && !errorMessageVisible}
+		<Modal
+			title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
+			on:cancel={() => (confirmRemoveUserVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmRemoveUserVisible = false)}
+					>Cancel</button
+				>
+				<button class="button-delete" style="width: 5.5rem;" on:click={() => userMemberRemove()}
+					><span>Remove</span></button
+				>
+			</div>
+		</Modal>
+	{/if} -->
+
+	<!-- {#if confirmAddUserVisible && !errorMessageVisible}
+		<Modal
+			title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
+			on:cancel={() => (confirmAddUserVisible = false)}
+		>
+			<div class="confirm">
+				<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
+					>Cancel</button
+				>
+				<button class="button" style="width: 4rem;" on:click={() => userCandidateAdd()}
+					><span>Add</span></button
+				>
+			</div>
+		</Modal>
+	{/if} -->
+
+	<div class="content">
+		{#if topicsPages && topicsListVisible && !topicDetailVisible}
+			<h1>Topics</h1>
+			<table>
+				<tr>
+					<th><strong>Topic</strong></th>
+				</tr>
+				{#if topicsPages.length > 0}
+					{#each topicsPages[currentPage] as topic}
+						<tr>
+							<td
+								class="topic-td"
+								on:click={() => {
+									loadTopic(topic.id);
+									selectedTopicId = topic.id;
+								}}>{topic.name}</td
+							>
+						</tr>
+					{/each}
+				{/if}
+			</table>
+			<br /> <br />
+			{#if $topics}
+				<center
+					><button
+						on:click={() => {
+							if (currentPage > 0) currentPage--;
+						}}
+						class="button-pagination"
+						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
+						disabled={currentPage === 0}>Previous</button
+					>
+					{#if topicsPageIndex > 2}
+						{#each topicsPages as page, i}
+							<button
+								on:click={() => {
+									currentPage = i;
+								}}
+								class="button-pagination"
+								class:button-pagination-selected={i === currentPage}>{i + 1}</button
+							>
+						{/each}
+					{/if}
+					<button
+						on:click={() => {
+							if (currentPage < topicsPages.length) currentPage++;
+						}}
+						class="button-pagination"
+						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
+						disabled={currentPage === topicsPages.length - 1 || topicsPages.length === 0}
+						>Next</button
+					></center
+				>
+			{/if}
+			<br /><br />
+			<center> <button class="button" on:click={() => addTopicModal()}>Add Topic </button></center>
+		{/if}
+		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
+			<div class="name">
+				<span on:click={() => returnToTopicsList()}>&laquo;</span>
+				<div class="tooltip">
+					<input
+						id="name"
+						on:click={() => (editTopicName = true)}
+						on:blur={() => saveNewTopicName()}
+						on:keydown={(event) => {
+							if (event.which === 13) {
+								saveNewTopicName();
+								document.querySelector('#name').blur();
+							}
+						}}
+						bind:value={selectedTopicName}
+						readonly={!editTopicName}
+						class:name-as-label={!editTopicName}
+					/>
+					<span class="tooltiptext">&#9998</span>
+				</div>
+			</div>
+			<!-- <h2>Group Members</h2>
+			<table>
+				<tr>
+					<th><strong>Member Name</strong></th>
+				</tr>
+				{#if $groupDetails.topic.users}
+					{#each $groupDetails.topic.users as userMember}
+						<tr>
+							<td
+								>{userMember.firstName}
+								{userMember.lastName}
+							</td>
+							<button
+								class="button-delete"
+								style="width: 5.5rem;"
+								on:click={() =>
+									confirmUserMemberRemove(userMember.id, userMember.firstName, userMember.lastName)}
+								><span>Remove</span></button
+							>
+						</tr>
+					{/each}
+				{:else}
+					<tr><td>No Members Found</td></tr>
+				{/if}
+			</table> -->
+			<br />
+			<!-- <h2>Candidate Members</h2>
+			<table>
+				<tr>
+					<th><strong>Member Name</strong></th>
+				</tr>
+				{#if $groupDetails.candidateUsers}
+					{#each $groupDetails.candidateUsers as userCandidate}
+						<tr>
+							<td
+								>{userCandidate.firstName}
+								{userCandidate.lastName}
+							</td>
+							<button
+								class="button"
+								on:click={() =>
+									confirmUserCandidateAdd(
+										userCandidate.id,
+										userCandidate.firstName,
+										userCandidate.lastName,
+										userCandidate.email
+									)}><span>Add User</span></button
+							>
+						</tr>
+					{/each}
+				{:else}
+					<tr><td>No Members Found</td></tr>
+				{/if}
+			</table> -->
+			<br /><br />
+			<center>
+				<button
+					class="button-delete"
+					style="width: 7.5rem"
+					on:click={() => (confirmDeleteVisible = true)}
+					><span>Delete Topic</span>
+				</button></center
+			>
+		{/if}
+	</div>
+{:else}
+	<center><h2>Please Log In to Continue...</h2></center>
+{/if}
 
 <style>
-	.content {
-		width: 100%;
-		max-width: var(--column-width);
-		margin: var(--column-margin-top) auto 0 auto;
+	button {
+		margin-left: auto;
+	}
+
+	.topic-td {
+		cursor: pointer;
+	}
+
+	tr {
+		line-height: 1.7rem;
+		display: flex;
+		align-items: center;
+	}
+
+	tr:nth-child(even) {
+		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.15));
+	}
+
+	input {
+		font-size: 38px;
+		text-align: center;
+		width: 20rem;
+		z-index: 1;
 	}
 </style>

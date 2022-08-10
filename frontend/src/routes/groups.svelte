@@ -55,24 +55,26 @@
 			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
 			groups.set(groupsData.data.content);
 
-			// Pagination
-			let totalGroupsCount = 0;
-			groupsPageIndex = Math.floor(groupsData.data.content.length / groupsPerPage);
-			if (groupsData.data.content.length % groupsPerPage > 0) groupsPageIndex++;
+			if ($groups) {
+				// Pagination
+				let totalGroupsCount = 0;
+				groupsPageIndex = Math.floor(groupsData.data.content.length / groupsPerPage);
+				if (groupsData.data.content.length % groupsPerPage > 0) groupsPageIndex++;
 
-			// Populate the usersPage Array
-			let pageArray = [];
-			for (let page = 0; page < groupsPageIndex; page++) {
-				for (
-					let i = 0;
-					i < groupsPerPage && totalGroupsCount < groupsData.data.content.length;
-					i++
-				) {
-					pageArray.push(groupsData.data.content[page * groupsPerPage + i]);
-					totalGroupsCount++;
+				// Populate the usersPage Array
+				let pageArray = [];
+				for (let page = 0; page < groupsPageIndex; page++) {
+					for (
+						let i = 0;
+						i < groupsPerPage && totalGroupsCount < groupsData.data.content.length;
+						i++
+					) {
+						pageArray.push(groupsData.data.content[page * groupsPerPage + i]);
+						totalGroupsCount++;
+					}
+					groupsPages.push(pageArray);
+					pageArray = [];
 				}
-				groupsPages.push(pageArray);
-				pageArray = [];
 			}
 		} catch (err) {
 			ErrorMessage('Error Loading Groups', err.message);
@@ -220,7 +222,7 @@
 
 	const addGroup = async () => {
 		if (!disabled) {
-			const res = await axios
+			await axios
 				.post(
 					`${URL_PREFIX}/groups/save/`,
 					{
@@ -327,7 +329,7 @@
 				<input
 					type="text"
 					placeholder="Group Name"
-					class="input-add-new-group"
+					class="input-add-new"
 					bind:value={newGroupName}
 				/>
 				<button
@@ -339,7 +341,7 @@
 			</div>
 			{#if disabled}
 				<br />
-				<center><span class="group-create-error">Please choose a unique name</span></center>
+				<center><span class="create-error">Please choose a unique name</span></center>
 			{/if}
 		</Modal>
 	{/if}
@@ -434,22 +436,22 @@
 			<center> <button class="button" on:click={() => addGroupModal()}>Add Group </button></center>
 		{/if}
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
-			<div class="group-name">
+			<div class="name">
 				<span on:click={() => returnToGroupsList()}>&laquo;</span>
 				<div class="tooltip">
 					<input
-						id="group-name"
+						id="name"
 						on:click={() => (editGroupName = true)}
 						on:blur={() => saveNewGroupName()}
 						on:keydown={(event) => {
 							if (event.which === 13) {
 								saveNewGroupName();
-								document.querySelector('#group-name').blur();
+								document.querySelector('#name').blur();
 							}
 						}}
 						bind:value={selectedGroupName}
 						readonly={!editGroupName}
-						class:group-name-as-label={!editGroupName}
+						class:name-as-label={!editGroupName}
 					/>
 					<span class="tooltiptext">&#9998</span>
 				</div>
@@ -524,68 +526,6 @@
 {/if}
 
 <style>
-	.group-name-as-label {
-		border: none;
-		font-size: 38px;
-		text-align: center;
-		background-color: rgba(0, 0, 0, 0);
-	}
-
-	.group-name-as-label:hover {
-		color: rgb(103, 103, 103);
-	}
-
-	.group-create-error {
-		color: red;
-		text-align: center;
-		position: absolute;
-		justify-content: center;
-		bottom: 5%;
-		left: 0;
-		right: 0;
-		margin-left: auto;
-		margin-right: auto;
-		width: 100%;
-	}
-
-	.group-name {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.group-name span {
-		position: relative;
-		left: -20px;
-		font-size: 15pt;
-		cursor: pointer;
-	}
-
-	.group-name span:hover {
-		color: grey;
-	}
-
-	.button-pagination:disabled:hover {
-		background-color: rgba(239, 239, 239, 0.3);
-	}
-
-	.button-pagination:disabled {
-		color: rgba(16, 16, 16, 0.3);
-	}
-
-	.button-pagination-selected {
-		background-color: rgb(217, 217, 217);
-	}
-
-	.button-pagination:hover {
-		background-color: rgb(217, 217, 217);
-	}
-
-	.input-add-new-group {
-		font-size: 18px;
-		padding-bottom: 0.3rem;
-	}
-
 	button {
 		margin-left: auto;
 	}

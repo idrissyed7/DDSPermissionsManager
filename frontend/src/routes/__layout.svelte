@@ -16,9 +16,9 @@
 			expirationTime = new Date(res.data.exp * 1000);
 			nowTime = new Date(Date.now());
 
-			console.log('exp:', expirationTime);
-			console.log('now', nowTime);
-			console.log('Remind in:', expirationTime - nowTime - remindTime);
+			// console.log('exp:', expirationTime);
+			// console.log('now', nowTime);
+			// console.log('Remind in:', expirationTime - nowTime - remindTime);
 			// console.log((expirationTime - nowTime));
 			// setTimeout(() => alert('refresh token'), 5000);
 			// console.log('is authenticated?', $isAuthenticated);

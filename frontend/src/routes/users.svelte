@@ -3,20 +3,28 @@
 	import { onMount } from 'svelte';
 	import axios from 'axios';
 	import users from '../stores/users';
+	import groups from '../stores/groups';
 	import Modal from '../lib/Modal.svelte';
 
 	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
+	let invalidEmail = false;
+	let validRegex =
+		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
 	// Modals
 	let errorMessageVisible = false;
 	let confirmDeleteVisible = false;
+	let addUserVisible = false;
 
 	// Users
 	let userFirstName;
 	let userLastName;
+
+	// Forms
+	let emailValue = '';
 
 	// Selection
 	let selectedUserFirstName;
@@ -34,20 +42,29 @@
 			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(usersData.data.content);
 
-			// Pagination
-			let totalUsersCount = 0;
-			usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
-			if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
+			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
+			groups.set(groupsData.data.content);
 
-			// Populate the usersPage Array
-			let pageArray = [];
-			for (let page = 0; page < usersPageIndex; page++) {
-				for (let i = 0; i < usersPerPage && totalUsersCount < usersData.data.content.length; i++) {
-					pageArray.push(usersData.data.content[page * usersPerPage + i]);
-					totalUsersCount++;
+			if ($users) {
+				// Pagination
+				let totalUsersCount = 0;
+				usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
+				if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
+
+				// Populate the usersPage Array
+				let pageArray = [];
+				for (let page = 0; page < usersPageIndex; page++) {
+					for (
+						let i = 0;
+						i < usersPerPage && totalUsersCount < usersData.data.content.length;
+						i++
+					) {
+						pageArray.push(usersData.data.content[page * usersPerPage + i]);
+						totalUsersCount++;
+					}
+					usersPages.push(pageArray);
+					pageArray = [];
 				}
-				usersPages.push(pageArray);
-				pageArray = [];
 			}
 		} catch (err) {
 			ErrorMessage('Error Loading Users', err.message);
@@ -125,6 +142,34 @@
 		selectedUserLastName = lastName;
 		selectedUserId = ID;
 	};
+
+	const addUserInput = () => {
+		addUserVisible = true;
+	};
+
+	const addUser = async () => {
+		const res = await axios
+			.post(
+				'http://localhost:8080/users/save',
+				{
+					group: userFirstName,
+					role: userLastName,
+					email: userEmail
+				},
+				{ withCredentials: true }
+			)
+			.catch((err) => {
+				ErrorMessage('Error Saving User', err.message);
+			});
+
+		addUserVisible = false;
+
+		reloadUsers();
+	};
+
+	const ValidateEmail = (input) => {
+		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
+	};
 </script>
 
 <svelte:head>
@@ -192,6 +237,53 @@
 				<p style="margin-left: 0.3rem">No Users Found</p>
 			{/if}
 		</table>
+		{#if addUserVisible}
+			<table>
+				<tr>
+					<td
+						><input
+							placeholder="Email Address"
+							class:invalid={invalidEmail}
+							bind:value={emailValue}
+							on:blur={() => ValidateEmail(emailValue)}
+							on:keydown={(event) => {
+								if (event.which === 13) {
+									ValidateEmail(emailValue);
+									document.querySelector('#name').blur();
+								}
+							}}
+						/></td
+					>
+					<div style="display:flex; justify-content: space-between;">
+						<td style="width: 100%">
+							<select
+								name="group"
+								style="color: white; background-color: rgb(54, 70, 255); margin-left: -0.2rem"
+							>
+								{#each $groups as group}
+									<option value={group.name}>{group.name}</option>
+								{/each}
+							</select>
+							<select name="role" style="background-color: yellow">
+								<option value="super-admin">Super Admin</option>
+								<option value="group-admin">Group Admin</option>
+								<option value="topic-admin">Topic Admin</option>
+								<option value="app-admin">Application Admin</option>
+							</select>
+							&nbsp;&nbsp;
+							<button class="button" on:click={() => addUser()}>Create User</button></td
+						>
+					</div>
+				</tr>
+			</table>
+		{/if}
+		<br />
+		<center
+			><button style="cursor:pointer" on:click={() => addUserInput()} class:hidden={addUserVisible}
+				>+</button
+			></center
+		>
+
 		<br /><br />
 
 		{#if $users}
@@ -230,3 +322,40 @@
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
+
+<style>
+	.hidden {
+		display: none;
+	}
+
+	input {
+		text-align: left;
+		font-size: medium;
+	}
+
+	.button {
+		height: 1.55rem;
+		cursor: pointer;
+		background-color: rgb(0, 190, 0);
+	}
+	.button:hover {
+		filter: brightness(90%);
+	}
+
+	table {
+		width: 100%;
+		margin-left: 3.5rem;
+	}
+
+	select {
+		font-size: small;
+		height: 1.55rem;
+		border-radius: 5px;
+		border-color: rgba(0, 0, 0, 0);
+		text-align: center;
+	}
+
+	select:hover {
+		filter: brightness(90%);
+	}
+</style>
