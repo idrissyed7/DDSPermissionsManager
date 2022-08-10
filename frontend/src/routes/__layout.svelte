@@ -6,11 +6,21 @@
 	import '../app.css';
 
 	const URL_PREFIX = 'http://localhost:8080';
+	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
 		try {
 			const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
 			onLoggedIn(res.data);
+			remindTime = 60 * 1000 * 5; // 5 minutes
+			expirationTime = new Date(res.data.exp * 1000);
+			nowTime = new Date(Date.now());
+
+			console.log('exp:', expirationTime);
+			console.log('now', nowTime);
+			console.log('Remind in:', expirationTime - nowTime - remindTime);
+			// console.log((expirationTime - nowTime));
+			// setTimeout(() => alert('refresh token'), 5000);
 			// console.log('is authenticated?', $isAuthenticated);
 		} catch (err) {
 			if (err.response.status === 401) {
