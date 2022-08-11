@@ -53,12 +53,12 @@ public class TopicApiTest {
         topic = response.getBody(Topic.class).get();
         long topic2Id = topic.getId();
 
-        // saving a new topic with the same name as an existing topic should return the existing topic and return 303
-        request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic2"));
+        // topics with same name can exist site-wide
+        request = HttpRequest.POST("/topics/save", Map.of("name", "testTopic2", "kind", 'B'));
         response = blockingClient.exchange(request, Topic.class);
-        assertEquals(SEE_OTHER, response.getStatus());
+        assertEquals(OK, response.getStatus());
         topic = response.getBody(Topic.class).get();
-        assertEquals(topic2Id, topic.getId());
+        assertNotEquals(topic2Id, topic.getId());
 
         // update attempt should fail
         request = HttpRequest.POST("/topics/save", Map.of("id", topic2Id, "name", "UpdatedTestTopic2"));
@@ -72,7 +72,7 @@ public class TopicApiTest {
         request = HttpRequest.GET("/topics");
         response = blockingClient.exchange(request, HashMap.class);
         List<Map> topics = (List<Map>) response.getBody(HashMap.class).get().get("content");
-        assertEquals(2, topics.size());
+        assertEquals(3, topics.size());
         assertEquals(OK, response.getStatus());
 
         // confirm update failed
@@ -88,7 +88,7 @@ public class TopicApiTest {
         request = HttpRequest.GET("/topics");
         response = blockingClient.exchange(request, HashMap.class);
         List<Map> topics1 = (List<Map>) response.getBody(HashMap.class).get().get("content");
-        assertEquals(1, topics1.size());
+        assertEquals(2, topics1.size());
         assertEquals(OK, response.getStatus());
     }
 }

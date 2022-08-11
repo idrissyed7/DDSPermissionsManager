@@ -25,12 +25,7 @@ public class TopicService {
 
     public MutableHttpResponse save(Topic topic) throws Exception {
         if (topic.getId() == null) {
-            Optional<Topic> topicOptional = topicRepository.findByName(topic.getName());
-            if (topicOptional.isPresent()) {
-                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, topicOptional.get());
-            } else {
-                return HttpResponse.ok(topicRepository.save(topic));
-            }
+            return HttpResponse.ok(topicRepository.save(topic));
         } else {
             throw new Exception("Update of Topics are not allowed.");
         }
