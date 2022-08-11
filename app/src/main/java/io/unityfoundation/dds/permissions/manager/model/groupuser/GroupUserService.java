@@ -2,7 +2,9 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
 import jakarta.inject.Singleton;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -47,5 +49,18 @@ public class GroupUserService {
 
     public List<GroupUser> getUsersOfGroup(Long groupId) {
         return groupUserRepository.findAllByPermissionsGroup(groupId);
+    }
+
+    public Map<Long, Map> getAllPermissionsPerGroupUserIsMemberOf(Long id) {
+        HashMap<Long, Map> result = new HashMap();
+        List<GroupUser> groupUserList = groupUserRepository.findAllByPermissionsUser(id);
+        groupUserList.forEach(groupUser -> {
+          result.put(groupUser.getPermissionsGroup(), Map.of(
+                  "isGroupAdmin", groupUser.isGroupAdmin(),
+                  "isTopicAdmin", groupUser.isTopicAdmin(),
+                  "isApplicationAdmin", groupUser.isApplicationAdmin()
+          ));
+        });
+        return result;
     }
 }
