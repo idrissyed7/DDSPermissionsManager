@@ -14,8 +14,6 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Replaces(DefaultOpenIdAuthenticationMapper.class)
 @Singleton
@@ -40,10 +38,12 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
             return AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND);
         }
 
-        List<String> userRoles = user.get().getRoles().stream().map(Enum::toString).collect(Collectors.toList());
+        HashMap<String, Object> attributes = new HashMap<>();
+        attributes.put("isAdmin", user.get().isAdmin());
+        attributes.put("name", openIdClaims.getName());
 
         return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
-                userRoles,
-                Collections.singletonMap("name", openIdClaims.getName()) );
+                Collections.emptyList(),
+                attributes);
     }
 }

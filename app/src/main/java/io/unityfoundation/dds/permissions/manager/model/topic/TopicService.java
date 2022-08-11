@@ -2,6 +2,8 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MutableHttpResponse;
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -17,11 +19,11 @@ public class TopicService {
         return topicRepository.findAll(pageable);
     }
 
-    public void save(Topic topic) {
+    public MutableHttpResponse save(Topic topic) throws Exception {
         if (topic.getId() == null) {
-            topicRepository.save(topic);
+            return HttpResponse.ok(topicRepository.save(topic));
         } else {
-            topicRepository.update(topic);
+            throw new Exception("Update of Topics are not allowed.");
         }
     }
 

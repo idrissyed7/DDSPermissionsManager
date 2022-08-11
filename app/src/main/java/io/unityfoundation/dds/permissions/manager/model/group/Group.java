@@ -2,7 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 
 import io.micronaut.core.annotation.NonNull;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
@@ -20,25 +20,15 @@ public class Group {
     @NonNull
     private String name;
 
-    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @JoinTable(name="permissions_group_members",
+    @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
+    @JoinTable(name="permissions_group_topics",
             joinColumns=
             @JoinColumn(name="group_id", referencedColumnName="id"),
             inverseJoinColumns=
-            @JoinColumn(name="user_id", referencedColumnName="id")
-    )
-    private Set<User> users;
-
-    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_admins",
-            joinColumns=
-            @JoinColumn(name="group_id", referencedColumnName="id"),
-            inverseJoinColumns=
-            @JoinColumn(name="user_id", referencedColumnName="id")
+            @JoinColumn(name="topic_id", referencedColumnName="id")
     )
     @LazyCollection(LazyCollectionOption.FALSE)
-    private Set<User> admins;
+    private Set<Topic> topics;
 
     public Group() {
     }
@@ -64,37 +54,20 @@ public class Group {
         this.name = name;
     }
 
-    public Set<User> getUsers() {
-        if (users == null) return null;
-        return Collections.unmodifiableSet(users);
+    public Set<Topic> getTopics() {
+        if (topics == null) return null;
+        return Collections.unmodifiableSet(topics);
     }
 
-    public void setUsers(Set<User> users) {
-        this.users = users;
+    public void setTopics(Set<Topic> topics) {
+        this.topics = topics;
     }
 
-    public boolean removeUser(Long userId) {
-        return users.removeIf(user -> userId != null && userId.equals(user.getId()));
+    public boolean removeTopic(Long topicId) {
+        return topics.removeIf(topic -> topicId != null && topicId.equals(topic.getId()));
     }
 
-    public void addUser(User user) {
-        users.add(user);
-    }
-
-    public Set<User> getAdmins() {
-        if (admins == null) return null;
-        return Collections.unmodifiableSet(admins);
-    }
-
-    public void setAdmins(Set<User> admins) {
-        this.admins = admins;
-    }
-
-    public boolean removeAdmin(Long userId) {
-        return admins.removeIf(user -> userId != null && userId.equals(user.getId()));
-    }
-
-    public void addAdmin(User user) {
-        admins.add(user);
+    public void addTopic(Topic topic) {
+        topics.add(topic);
     }
 }
