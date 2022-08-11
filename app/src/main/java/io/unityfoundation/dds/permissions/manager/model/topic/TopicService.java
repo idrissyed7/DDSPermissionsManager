@@ -3,12 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.HttpResponseFactory;
-import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import jakarta.inject.Singleton;
-
-import java.util.Optional;
 
 @Singleton
 public class TopicService {
