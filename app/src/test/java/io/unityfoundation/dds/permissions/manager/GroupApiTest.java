@@ -16,14 +16,11 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.util.*;
 
 import static io.micronaut.http.HttpStatus.BAD_REQUEST;
-import static io.micronaut.http.HttpStatus.BAD_REQUEST;
 import static io.micronaut.http.HttpStatus.OK;
-import static io.micronaut.http.HttpStatus.UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
