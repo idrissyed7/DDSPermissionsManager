@@ -25,6 +25,11 @@ public class GroupUserService {
         return groupUser.isPresent();
     }
 
+    public boolean isUserTopicAdminOfGroup(Long groupId, Long userId) {
+        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(groupId, userId);
+        return groupUser.isPresent();
+    }
+
     public void removeMemberFromGroup(Long groupId, Long memberId) {
         groupUserRepository.deleteAllByPermissionsGroupAndPermissionsUser(groupId, memberId);
     }

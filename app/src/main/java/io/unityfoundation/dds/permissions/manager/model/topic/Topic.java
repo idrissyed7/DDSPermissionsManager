@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
 
@@ -18,6 +19,8 @@ public class Topic {
 
     @NonNull
     private TopicKind kind;
+
+    private Long permissionsGroup;
 
     public Topic() {
     }
@@ -51,5 +54,13 @@ public class Topic {
 
     public void setKind(@NonNull TopicKind kind) {
         this.kind = kind;
+    }
+
+    public Long getPermissionsGroup() {
+        return permissionsGroup;
+    }
+
+    public void setPermissionsGroup(Long permissionsGroup) {
+        this.permissionsGroup = permissionsGroup;
     }
 }

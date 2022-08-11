@@ -6,8 +6,10 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface GroupRepository extends PageableRepository<Group, Long> {
     Page<Group> findAllByIdIn(List<Long> groupIds, Pageable pageable);
+    Optional<Group> findByName(String name);
 }
