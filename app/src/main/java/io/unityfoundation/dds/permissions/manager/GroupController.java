@@ -78,6 +78,15 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
+    @Get("/user/{id}/")
+    HttpResponse showGroupsUserIsAMemberOf(Long id) {
+        try {
+            return HttpResponse.ok(groupService.getGroupsUserIsAMemberOf(id));
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
+        }
+    }
+
     @Post("/remove_member/{groupId}/{memberId}")
     HttpResponse removeMember(Long groupId, Long memberId) {
 

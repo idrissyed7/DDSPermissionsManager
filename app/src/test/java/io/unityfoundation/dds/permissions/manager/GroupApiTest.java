@@ -137,6 +137,13 @@ public class GroupApiTest {
     }
 
     @Test
+    public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+        List responseList = blockingClient.retrieve(request, List.class);
+        assertEquals(1, responseList.size());
+    }
+
+    @Test
     public void testGroupTopicAddAndRemove() {
 
         long initialTopicCount = topicRepository.count();
@@ -222,6 +229,16 @@ public class GroupApiTest {
     // Change 'isAdmin' to false in MockSecurityService in order for the below tests to pass.
     // Why? I can't seem to dynamically change the role of the
     // authenticated user. Need to come up with a better way to mock authentication.
+//    @Test
+//    public void userWithNonAdminRoleCannotSeeGroupsAUserIsAMemberOf() {
+//        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+//        HttpRequest<?> finalRequest = request;
+//        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+//            blockingClient.exchange(finalRequest);
+//        });
+//        assertEquals(UNAUTHORIZED, exception1.getStatus());
+//    }
+//
 //    @Test
 //    public void userWithNonAdminRoleShouldNotSeeAllGroups() {
 //

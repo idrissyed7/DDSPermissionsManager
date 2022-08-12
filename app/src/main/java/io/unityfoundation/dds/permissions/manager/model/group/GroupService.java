@@ -187,4 +187,12 @@ public class GroupService {
         }
         return result;
     }
+
+    public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
+        if (!isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
+        return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
+    }
 }
