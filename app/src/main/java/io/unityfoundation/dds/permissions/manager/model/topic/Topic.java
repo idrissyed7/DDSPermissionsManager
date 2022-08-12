@@ -16,11 +16,15 @@ public class Topic {
     @NonNull
     private String name;
 
+    @NonNull
+    private TopicKind kind;
+
     public Topic() {
     }
 
-    public Topic(@NonNull String name) {
+    public Topic(@NonNull String name, @NonNull TopicKind kind) {
         this.name = name;
+        this.kind = kind;
     }
 
     public Long getId() {
@@ -38,5 +42,14 @@ public class Topic {
 
     public void setName(@NonNull String name) {
         this.name = name;
+    }
+
+    @NonNull
+    public TopicKind getKind() {
+        return kind;
+    }
+
+    public void setKind(@NonNull TopicKind kind) {
+        this.kind = kind;
     }
 }

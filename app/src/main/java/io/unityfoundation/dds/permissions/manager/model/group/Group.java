@@ -2,13 +2,13 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 
 import io.micronaut.core.annotation.NonNull;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissions_group")
@@ -20,15 +20,15 @@ public class Group {
     @NonNull
     private String name;
 
-    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
+    @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
+    @JoinTable(name="permissions_group_topics",
+            joinColumns=
+            @JoinColumn(name="group_id", referencedColumnName="id"),
+            inverseJoinColumns=
+            @JoinColumn(name="topic_id", referencedColumnName="id")
+    )
     @LazyCollection(LazyCollectionOption.FALSE)
-    @JoinTable(name="permissions_group_members")
-    private List<User> users;
-
-    @ManyToMany(targetEntity = User.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_admins")
-    @LazyCollection(LazyCollectionOption.FALSE)
-    private List<User> admins;
+    private Set<Topic> topics;
 
     public Group() {
     }
@@ -54,37 +54,20 @@ public class Group {
         this.name = name;
     }
 
-    public List<User> getUsers() {
-        if (users == null) return null;
-        return Collections.unmodifiableList(users);
+    public Set<Topic> getTopics() {
+        if (topics == null) return null;
+        return Collections.unmodifiableSet(topics);
     }
 
-    public void setUsers(List<User> users) {
-        this.users = users;
+    public void setTopics(Set<Topic> topics) {
+        this.topics = topics;
     }
 
-    public boolean removeUser(Long userId) {
-        return users.removeIf(user -> userId != null && userId.equals(user.getId()));
+    public boolean removeTopic(Long topicId) {
+        return topics.removeIf(topic -> topicId != null && topicId.equals(topic.getId()));
     }
 
-    public void addUser(User user) {
-        users.add(user);
-    }
-
-    public List<User> getAdmins() {
-        if (admins == null) return null;
-        return Collections.unmodifiableList(admins);
-    }
-
-    public void setAdmins(List<User> admins) {
-        this.admins = admins;
-    }
-
-    public boolean removeAdmin(Long userId) {
-        return admins.removeIf(user -> userId != null && userId.equals(user.getId()));
-    }
-
-    public void addAdmin(User user) {
-        admins.add(user);
+    public void addTopic(Topic topic) {
+        topics.add(topic);
     }
 }

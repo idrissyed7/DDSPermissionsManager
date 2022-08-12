@@ -7,6 +7,7 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 
 import javax.validation.Valid;
@@ -26,6 +27,11 @@ public class TopicController {
         return HttpResponse.ok(topicService.findAll(pageable));
     }
 
+    @Get("kinds")
+    public HttpResponse getKinds() {
+        return HttpResponse.ok(TopicKind.values());
+    }
+
     @Get("/create")
     public HttpResponse create() {
         return HttpResponse.ok();
@@ -34,8 +40,11 @@ public class TopicController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Topic topic) {
-        topicService.save(topic);
-        return HttpResponse.seeOther(URI.create("/topics"));
+        try {
+            return topicService.save(topic);
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
     }
 
     @Post("/delete/{id}")

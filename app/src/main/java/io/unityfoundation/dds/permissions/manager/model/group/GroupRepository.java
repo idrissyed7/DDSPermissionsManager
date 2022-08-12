@@ -1,15 +1,13 @@
 package io.unityfoundation.dds.permissions.manager.model.group;
 
-import io.micronaut.core.annotation.NonNull;
-import io.micronaut.data.annotation.Join;
 import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 
-import javax.validation.constraints.NotNull;
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface GroupRepository extends PageableRepository<Group, Long> {
-    @Join(value = "users", type = Join.Type.LEFT_FETCH)
-    Optional<Group> findById(@NotNull @NonNull Long id);
+    Page<Group> findAllByIdIn(List<Long> groupIds, Pageable pageable);
 }

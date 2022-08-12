@@ -2,23 +2,23 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Singleton
 public class UserService {
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
+    private final GroupUserService groupUserService;
 
-    public UserService(UserRepository userRepository, GroupRepository groupRepository) {
+    public UserService(UserRepository userRepository, GroupRepository groupRepository, GroupUserService groupUserService) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
+        this.groupUserService = groupUserService;
     }
 
     @Transactional
@@ -47,16 +47,6 @@ public class UserService {
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void removeUserFromGroups(Long userId) {
-        // TODO fix this...
-        groupRepository.findAll().forEach(group -> {
-            if (group.removeUser(userId)) {
-                groupRepository.update(group);
-            }
-        });
-    }
-
-    public Iterable<User> listUsersNotInGroup(Group group) {
-        List<Long> ids = group.getUsers().stream().map(User::getId).collect(Collectors.toList());
-        return userRepository.findAllByIdNotInList(ids);
+        groupUserService.removeUserFromAllGroups(userId);
     }
 }

@@ -1,17 +1,19 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.data.model.Pageable;
-import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,20 +40,28 @@ public class GroupController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Group group) {
-        groupService.save(group);
+        try {
+            groupService.save(group);
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
+        }
         return HttpResponse.seeOther(URI.create("/groups/"));
     }
 
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        groupService.deleteById(id);
+        try {
+            groupService.deleteById(id);
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
+        }
         return HttpResponse.seeOther(URI.create("/groups"));
     }
 
     @Get("/{id}")
     HttpResponse show(Long id) {
-        Optional<Map> groupOptional = groupService.getGroupAndCandidates(id);
+        Optional<Map> groupOptional = groupService.getGroupDetails(id);
         if (groupOptional.isPresent()) {
             Map payload = groupOptional.get();
             return HttpResponse.ok(payload);
@@ -59,12 +69,20 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
-    @Post(uris = {"/remove_member/{groupId}/{memberId}", "/remove_admin/{groupId}/{memberId}"})
-    HttpResponse removeMember(Long groupId, Long memberId, HttpRequest request) {
+    @Get("/{id}/members")
+    HttpResponse showMembers(Long id) {
+        List<Map> groupMembers = groupService.getGroupMembers(id);
+        if (!groupMembers.isEmpty()) {
+            return HttpResponse.ok(groupMembers);
+        }
+        return HttpResponse.notFound();
+    }
 
-        String path = request.getPath();
+    @Post("/remove_member/{groupId}/{memberId}")
+    HttpResponse removeMember(Long groupId, Long memberId) {
+
         if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.removeMember(groupId, memberId, path.contains("admin"))) {
+            if (groupService.removeMember(groupId, memberId)) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
             }
         } else {
@@ -74,13 +92,43 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
-    @Post(uris = {"/add_member/{groupId}/{candidateId}", "/add_admin/{groupId}/{candidateId}"})
-    HttpResponse addMember(Long groupId, Long candidateId, HttpRequest request) {
+    @Post("/add_member/{groupId}/{candidateId}")
+    HttpResponse addMember(Long groupId, Long candidateId, @Body HashMap userRolesMap) {
 
-        String path = request.getPath();
         if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.addMember(groupId, candidateId, path.contains("admin"))) {
+            if (groupService.addMember(groupId, candidateId, userRolesMap)) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+            }
+        } else {
+            return HttpResponse.unauthorized();
+        }
+        return HttpResponse.notFound();
+    }
+
+    @Post("/remove_topic/{groupId}/{topicId}")
+    HttpResponse removeTopic(Long groupId, Long topicId) {
+
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
+            if (groupService.removeTopic(groupId, topicId)) {
+                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+            }
+        } else {
+            return HttpResponse.unauthorized();
+        }
+
+        return HttpResponse.notFound();
+    }
+
+    @Post("/add_topic/{groupId}/{topicId}")
+    HttpResponse addTopic(Long groupId, Long topicId) {
+
+        if (groupService.isAdminOrGroupAdmin(groupId)) {
+            try {
+                if (groupService.addTopic(groupId, topicId)) {
+                    return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                }
+            } catch (Exception e) {
+                return HttpResponse.badRequest(e.getMessage());
             }
         } else {
             return HttpResponse.unauthorized();

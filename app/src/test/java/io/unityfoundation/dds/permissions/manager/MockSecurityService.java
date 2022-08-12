@@ -7,6 +7,7 @@ import io.micronaut.security.utils.SecurityService;
 import jakarta.inject.Singleton;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 @Replaces(SecurityService.class)
@@ -19,7 +20,7 @@ public class MockSecurityService implements SecurityService {
 
     @Override
     public Optional<Authentication> getAuthentication() {
-        return Optional.of(new ServerAuthentication("montesm@test.test", Collections.singletonList("ADMIN"), null));
+        return Optional.of(new ServerAuthentication("montesm@test.test", Collections.emptyList(), Map.of("isAdmin", true)));
     }
 
     @Override
