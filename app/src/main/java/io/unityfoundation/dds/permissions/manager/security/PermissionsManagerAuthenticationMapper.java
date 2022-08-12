@@ -8,13 +8,13 @@ import io.micronaut.security.oauth2.endpoint.token.response.DefaultOpenIdAuthent
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdAuthenticationMapper;
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdClaims;
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdTokenResponse;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Replaces(DefaultOpenIdAuthenticationMapper.class)
 @Singleton
@@ -22,9 +22,11 @@ import java.util.stream.Collectors;
 public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticationMapper {
 
     private final UserService userService;
+    private final GroupUserService groupUserService;
 
-    public PermissionsManagerAuthenticationMapper(UserService userService) {
+    public PermissionsManagerAuthenticationMapper(UserService userService, GroupUserService groupUserService) {
         this.userService = userService;
+        this.groupUserService = groupUserService;
     }
 
     @Override
@@ -39,10 +41,14 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
             return AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND);
         }
 
-        List<String> userRoles = user.get().getRoles().stream().map(Enum::toString).collect(Collectors.toList());
+        HashMap<String, Object> attributes = new HashMap<>();
+        Map<Long, Map> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
+        attributes.put("isAdmin", user.get().isAdmin());
+        attributes.put("name", openIdClaims.getName());
+        attributes.put("permissionsByGroup", permissions);
 
         return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
-                userRoles,
-                Collections.singletonMap("name", openIdClaims.getName()) );
+                Collections.emptyList(),
+                attributes);
     }
 }

@@ -8,7 +8,6 @@ import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.unityfoundation.dds.permissions.manager.model.user.Role;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Inject;
@@ -46,12 +45,12 @@ public class UserApiTest {
         long initialUserCount = userRepository.count();
 
         // save
-        User justin = new User("Justin", "Jones", "jjones@test.test", List.of(Role.ADMIN));
+        User justin = new User("Justin", "Jones", "jjones@test.test", true);
         HttpRequest<?> request = HttpRequest.POST("/users/save", justin);
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", List.of(Role.ADMIN));
+        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", false);
         request = HttpRequest.POST("/users/save", kevin);
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
