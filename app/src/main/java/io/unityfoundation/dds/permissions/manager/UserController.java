@@ -35,7 +35,11 @@ public class UserController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body User user) {
-        userService.save(user);
+        try {
+            userService.save(user);
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
         return HttpResponse.seeOther(URI.create("/users/"));
     }
 

@@ -31,8 +31,14 @@ public class UserService {
     }
 
     @Transactional
-    public void save(User user) {
+    public void save(User user) throws Exception {
+
         if (user.getId() == null) {
+            Optional<User> userSearchByEmail = userRepository.findByEmail(user.getEmail());
+            if (userSearchByEmail.isPresent()) {
+                throw new Exception("User with same email already exists");
+            }
+
             userRepository.save(user);
         } else {
             userRepository.update(user);

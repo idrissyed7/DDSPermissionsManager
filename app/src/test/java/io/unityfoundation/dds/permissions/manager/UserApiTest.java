@@ -7,6 +7,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
@@ -18,8 +19,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.micronaut.http.HttpStatus.BAD_REQUEST;
 import static io.micronaut.http.HttpStatus.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
@@ -82,5 +85,21 @@ public class UserApiTest {
         List<Map> users1 = (List<Map>) responseMap1.get("content");
         assertEquals(initialUserCount + 1, users1.size());
         assertEquals(OK, response.getStatus());
+    }
+
+    @Test
+    public void userWithDuplicateEntriesShouldNotExist() {
+        // save
+        User sally = new User("Sally", "Sheep", "ssheep@test.test", true);
+        HttpRequest<?> request = HttpRequest.POST("/users/save", sally);
+        HttpResponse<?> response = blockingClient.exchange(request);
+        assertEquals(OK, response.getStatus());
+
+        request = HttpRequest.POST("/users/save", sally);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, thrown.getStatus());
     }
 }
