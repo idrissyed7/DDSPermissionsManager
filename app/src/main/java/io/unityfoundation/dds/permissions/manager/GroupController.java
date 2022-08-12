@@ -42,13 +42,12 @@ public class GroupController {
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Group group) {
         try {
-            groupService.save(group);
-        } catch (DuplicateMappingException duplicateMappingException) {
-            return HttpResponse.badRequest(duplicateMappingException.getMessage());
+            return groupService.save(group);
         } catch (AuthenticationException authenticationException) {
             return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
         }
-        return HttpResponse.seeOther(URI.create("/groups/"));
     }
 
 
