@@ -2,6 +2,10 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpResponseFactory;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
@@ -55,15 +59,23 @@ public class GroupService {
         }
     }
 
-    public void save(Group group) {
+    public MutableHttpResponse<Group> save(Group group) throws Exception {
         if (!isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
+        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName());
+
         if (group.getId() == null) {
-            groupRepository.save(group);
+            if (searchGroupByName.isPresent()) {
+                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, searchGroupByName.get());
+            }
+            return HttpResponse.ok(groupRepository.save(group));
         } else {
-            groupRepository.update(group);
+            if (searchGroupByName.isPresent()) {
+                throw new Exception("Group with same name already exists");
+            }
+            return HttpResponse.ok(groupRepository.update(group));
         }
     }
 

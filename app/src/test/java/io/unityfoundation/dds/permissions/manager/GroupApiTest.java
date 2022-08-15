@@ -15,6 +15,7 @@ import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -123,6 +124,35 @@ public class GroupApiTest {
         request = HttpRequest.GET("/groups/1/members");
         responseList = blockingClient.retrieve(request, List.class);
         assertEquals(postAddUserCount - 1, responseList.size());
+    }
+
+    @Test
+    public void rejectGroupWithSameNameAsAnExistingGroup() {
+
+        // save new group should succeed
+        Group myGroup = new Group("MyGroup");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", myGroup);
+        HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+        assertEquals(OK, response.getStatus());
+        myGroup = response.getBody(Group.class).get();
+
+        // Attempt to add a new group with same name, should return the existing group and 303
+        Group myGroupDup = new Group("MyGroup");
+        request = HttpRequest.POST("/groups/save", myGroupDup);
+        response = blockingClient.exchange(request, Group.class);
+        assertEquals(SEE_OTHER, response.getStatus());
+        myGroupDup = response.getBody(Group.class).get();
+        assertEquals(myGroup.getId(), myGroupDup.getId());
+
+        // Attempt to update an existing group with name of another group should yield a bad request with a message
+        request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "MyGroup"));
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException thrown1 = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        // Note: Since the client throws an exception for a bad-request response, capturing the response's message is
+        // not straightforward.
+        assertEquals(BAD_REQUEST, thrown1.getStatus());
     }
 
     @Test
