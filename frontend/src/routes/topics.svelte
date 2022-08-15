@@ -464,10 +464,6 @@
 		margin-left: auto;
 	}
 
-	.topic-td {
-		cursor: pointer;
-	}
-
 	tr {
 		line-height: 1.7rem;
 		display: flex;
@@ -479,9 +475,12 @@
 	}
 
 	input {
-		font-size: 38px;
 		text-align: center;
 		width: 20rem;
 		z-index: 1;
+	}
+
+	.topic-td {
+		cursor: pointer;
 	}
 </style>

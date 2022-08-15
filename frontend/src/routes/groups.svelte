@@ -1,5 +1,5 @@
 <script>
-	import { isAuthenticated } from '../stores/authentication';
+	import { isAdmin, isAuthenticated } from '../stores/authentication';
 	import { onMount } from 'svelte';
 	import axios from 'axios';
 	import groups from '../stores/groups';
@@ -54,6 +54,7 @@
 		try {
 			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
 			groups.set(groupsData.data.content);
+			console.log($groups);
 
 			if ($groups) {
 				// Pagination
@@ -318,7 +319,9 @@
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
 				>
-				<button class="button-delete" on:click={() => deleteGroup()}><span>Delete</span></button>
+				<button class="button-delete" disabled={!$isAdmin} on:click={() => deleteGroup()}
+					><span>Delete</span></button
+				>
 			</div>
 		</Modal>
 	{/if}
@@ -397,6 +400,8 @@
 							>
 						</tr>
 					{/each}
+				{:else}
+					<tr><td>No Groups Found</td></tr>
 				{/if}
 			</table>
 			<br /> <br />
@@ -433,7 +438,11 @@
 				>
 			{/if}
 			<br /><br />
-			<center> <button class="button" on:click={() => addGroupModal()}>Add Group </button></center>
+			<center>
+				<button class:hidden={!$isAdmin} class="button" on:click={() => addGroupModal()}
+					>Add Group
+				</button></center
+			>
 		{/if}
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
 			<div class="name">
@@ -513,6 +522,7 @@
 			<br /><br />
 			<center>
 				<button
+					class:hidden={!$isAdmin}
 					class="button-delete"
 					style="width: 7.5rem"
 					on:click={() => (confirmDeleteVisible = true)}
@@ -526,12 +536,12 @@
 {/if}
 
 <style>
-	button {
-		margin-left: auto;
-	}
-
 	.group-td {
 		cursor: pointer;
+	}
+
+	button {
+		margin-left: auto;
 	}
 
 	tr {
@@ -545,7 +555,6 @@
 	}
 
 	input {
-		font-size: 38px;
 		text-align: center;
 		width: 20rem;
 		z-index: 1;

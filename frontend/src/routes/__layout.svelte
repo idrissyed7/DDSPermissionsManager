@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { onLoggedIn, isAuthenticated } from '../stores/authentication';
+	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import axios from 'axios';
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
@@ -22,6 +22,7 @@
 			// console.log((expirationTime - nowTime));
 			// setTimeout(() => alert('refresh token'), 5000);
 			// console.log('is authenticated?', $isAuthenticated);
+			console.log('is Admin? ', $isAdmin);
 		} catch (err) {
 			if (err.response.status === 401) {
 				// console.log('is authenticated?', $isAuthenticated);
@@ -29,9 +30,9 @@
 		}
 	});
 
-	const getToken = async () => {
-		const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
-	};
+	// const getToken = async () => {
+	// 	const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
+	// };
 </script>
 
 <Header isAuthenticated={$isAuthenticated} />

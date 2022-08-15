@@ -10,7 +10,7 @@
 
 	// Error Handling
 	let errorMessage, errorObject;
-	let invalidEmail = false;
+	let invalidEmail = true;
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
@@ -41,6 +41,7 @@
 		try {
 			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(usersData.data.content);
+			console.log($users);
 
 			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
 			groups.set(groupsData.data.content);
@@ -216,14 +217,16 @@
 		<h1>Users</h1>
 		<table>
 			<tr>
-				<th><strong>First Name</strong></th>
-				<th><strong>Last Name</strong></th>
+				<th><strong>Email</strong></th>
+				<th><strong>Group</strong></th>
+				<th><strong>Role</strong></th>
 			</tr>
 			{#if usersPages.length > 0}
 				{#each usersPages[currentPage] as user}
 					<tr>
-						<td>{user.firstName}</td>
-						<td>{user.lastName}</td>
+						<td>{user.email}</td>
+						<td>Group Name</td>
+						<td>Admin</td>
 						<td
 							><button
 								class="button-delete"
@@ -240,10 +243,11 @@
 		{#if addUserVisible}
 			<table>
 				<tr>
-					<td
+					<td style="width: 15rem"
 						><input
 							placeholder="Email Address"
-							class:invalid={invalidEmail}
+							class:invalid={invalidEmail && emailValue.length >= 1}
+							style="display: inline-flex"
 							bind:value={emailValue}
 							on:blur={() => ValidateEmail(emailValue)}
 							on:keydown={(event) => {
@@ -252,8 +256,16 @@
 									document.querySelector('#name').blur();
 								}
 							}}
-						/></td
+						/>
+						<button
+							class="remove-button"
+							on:click={() => {
+								emailValue = '';
+								addUserVisible = false;
+							}}>x</button
+						></td
 					>
+
 					<div style="display:flex; justify-content: space-between;">
 						<td style="width: 100%">
 							<select
@@ -268,10 +280,15 @@
 								<option value="super-admin">Super Admin</option>
 								<option value="group-admin">Group Admin</option>
 								<option value="topic-admin">Topic Admin</option>
-								<option value="app-admin">Application Admin</option>
+								<option value="app-admin">App Admin</option>
 							</select>
-							&nbsp;&nbsp;
-							<button class="button" on:click={() => addUser()}>Create User</button></td
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<button
+								class:button={!invalidEmail}
+								style="width: 6.4rem; height: 2rem; font-size:small;"
+								disabled={invalidEmail}
+								on:click={() => addUser()}><span>Create User</span></button
+							></td
 						>
 					</div>
 				</tr>
@@ -328,18 +345,20 @@
 		display: none;
 	}
 
-	input {
-		text-align: left;
-		font-size: medium;
-	}
-
 	.button {
-		height: 1.55rem;
+		height: 2rem;
 		cursor: pointer;
 		background-color: rgb(0, 190, 0);
 	}
 	.button:hover {
 		filter: brightness(90%);
+	}
+
+	input {
+		height: 1.7rem;
+		text-align: left;
+		font-size: small;
+		min-width: 12rem;
 	}
 
 	table {
@@ -349,7 +368,7 @@
 
 	select {
 		font-size: small;
-		height: 1.55rem;
+		height: 2rem;
 		border-radius: 5px;
 		border-color: rgba(0, 0, 0, 0);
 		text-align: center;
