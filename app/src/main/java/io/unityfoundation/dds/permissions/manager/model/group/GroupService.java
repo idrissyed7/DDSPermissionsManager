@@ -18,7 +18,6 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Singleton;
-import org.hibernate.DuplicateMappingException;
 
 import javax.transaction.Transactional;
 import java.util.ArrayList;

@@ -9,7 +9,6 @@ import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
-import org.hibernate.DuplicateMappingException;
 
 import javax.validation.Valid;
 import java.net.URI;
