@@ -102,4 +102,15 @@ public class UserApiTest {
         });
         assertEquals(BAD_REQUEST, thrown.getStatus());
     }
+
+    @Test
+    public void userWithInvalidEmailFormatShallNotPersist() {
+        User john = new User("Peter", "Parker", "pparker@.test.test", true);
+        HttpRequest<?> request = HttpRequest.POST("/users/save", john);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, thrown.getStatus());
+    }
 }
