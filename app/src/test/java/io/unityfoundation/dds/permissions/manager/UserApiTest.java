@@ -88,6 +88,22 @@ public class UserApiTest {
     }
 
     @Test
+    public void userWithDuplicateEntriesShouldNotExist() {
+        // save
+        User sally = new User("Sally", "Sheep", "ssheep@test.test", true);
+        HttpRequest<?> request = HttpRequest.POST("/users/save", sally);
+        HttpResponse<?> response = blockingClient.exchange(request);
+        assertEquals(OK, response.getStatus());
+
+        request = HttpRequest.POST("/users/save", sally);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, thrown.getStatus());
+    }
+
+    @Test
     public void userWithInvalidEmailFormatShallNotPersist() {
         User john = new User("Peter", "Parker", "pparker@.test.test", true);
         HttpRequest<?> request = HttpRequest.POST("/users/save", john);
