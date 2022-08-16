@@ -42,7 +42,7 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
         }
 
         HashMap<String, Object> attributes = new HashMap<>();
-        Map<Long, Map> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
+        List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
         attributes.put("isAdmin", user.get().isAdmin());
         attributes.put("name", openIdClaims.getName());
         attributes.put("permissionsByGroup", permissions);
