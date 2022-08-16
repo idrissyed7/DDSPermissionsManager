@@ -1,19 +1,22 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import jakarta.inject.Singleton;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Singleton
 public class GroupUserService {
 
     private final GroupUserRepository groupUserRepository;
+    private final GroupRepository groupRepository;
 
 
-    public GroupUserService(GroupUserRepository groupUserRepository) {
+    public GroupUserService(GroupUserRepository groupUserRepository, GroupRepository groupRepository) {
         this.groupUserRepository = groupUserRepository;
+        this.groupRepository = groupRepository;
     }
 
     public void removeUserFromAllGroups(Long userId) {
@@ -52,5 +55,25 @@ public class GroupUserService {
 
     public List<GroupUser> getUsersOfGroup(Long groupId) {
         return groupUserRepository.findAllByPermissionsGroup(groupId);
+    }
+
+    public List<Map<String, Object>> getAllPermissionsPerGroupUserIsMemberOf(Long id) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        List<GroupUser> groupUserList = groupUserRepository.findAllByPermissionsUser(id);
+        groupUserList.forEach(groupUser -> {
+            Optional<Group> optionalGroup = groupRepository.findById(groupUser.getPermissionsGroup());
+            optionalGroup.ifPresent(group -> result.add(
+                    Map.of(
+                            "groupId", group.getId(),
+                            "groupName", group.getName(),
+                            "isGroupAdmin", groupUser.isGroupAdmin(),
+                            "isTopicAdmin", groupUser.isTopicAdmin(),
+                            "isApplicationAdmin", groupUser.isApplicationAdmin()
+                    )
+            ));
+        });
+
+        return result;
     }
 }

@@ -3,6 +3,7 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 import io.micronaut.core.annotation.NonNull;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
 
 @Entity
 @Table(name = "permissions_user")
@@ -18,6 +19,7 @@ public class User {
     private String lastName;
 
     @NonNull
+    @Email
     private String email;
 
     private boolean isAdmin = false;

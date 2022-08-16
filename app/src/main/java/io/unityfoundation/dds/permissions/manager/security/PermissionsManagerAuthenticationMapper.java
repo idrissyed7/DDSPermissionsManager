@@ -8,6 +8,7 @@ import io.micronaut.security.oauth2.endpoint.token.response.DefaultOpenIdAuthent
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdAuthenticationMapper;
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdClaims;
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdTokenResponse;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Named;
@@ -21,9 +22,11 @@ import java.util.*;
 public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticationMapper {
 
     private final UserService userService;
+    private final GroupUserService groupUserService;
 
-    public PermissionsManagerAuthenticationMapper(UserService userService) {
+    public PermissionsManagerAuthenticationMapper(UserService userService, GroupUserService groupUserService) {
         this.userService = userService;
+        this.groupUserService = groupUserService;
     }
 
     @Override
@@ -39,8 +42,10 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
         }
 
         HashMap<String, Object> attributes = new HashMap<>();
+        List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
         attributes.put("isAdmin", user.get().isAdmin());
         attributes.put("name", openIdClaims.getName());
+        attributes.put("permissionsByGroup", permissions);
 
         return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
                 Collections.emptyList(),

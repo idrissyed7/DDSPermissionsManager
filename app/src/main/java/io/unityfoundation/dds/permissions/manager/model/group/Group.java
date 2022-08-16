@@ -19,6 +19,7 @@ public class Group {
     private Long id;
 
     @NonNull
+    @Column(unique = true)
     private String name;
 
     @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)

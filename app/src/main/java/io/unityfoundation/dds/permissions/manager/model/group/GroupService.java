@@ -2,6 +2,10 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpResponseFactory;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
@@ -45,7 +49,7 @@ public class GroupService {
     public Page<Group> findAll(Pageable pageable) {
         Authentication authentication = securityService.getAuthentication().get();
 
-        if (isCurrentUserAdmin()) {
+        if (userService.isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {
             String userEmail = authentication.getName();
@@ -55,20 +59,28 @@ public class GroupService {
         }
     }
 
-    public void save(Group group) {
-        if (!isCurrentUserAdmin()) {
+    public MutableHttpResponse<Group> save(Group group) throws Exception {
+        if (!userService.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
+        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName());
+
         if (group.getId() == null) {
-            groupRepository.save(group);
+            if (searchGroupByName.isPresent()) {
+                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, searchGroupByName.get());
+            }
+            return HttpResponse.ok(groupRepository.save(group));
         } else {
-            groupRepository.update(group);
+            if (searchGroupByName.isPresent()) {
+                throw new Exception("Group with same name already exists");
+            }
+            return HttpResponse.ok(groupRepository.update(group));
         }
     }
 
     public void deleteById(Long id) {
-        if (!isCurrentUserAdmin()) {
+        if (!userService.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -136,7 +148,7 @@ public class GroupService {
         boolean topicExistsInGroup = group.getTopics().stream().anyMatch(groupTopic -> groupTopic.getName().equals(topic.getName()));
 
         if (topicExistsInGroup) {
-            throw new Exception("Topic "+topic.getName()+" already exists in Group "+group.getName()+".");
+            throw new Exception("Topic " + topic.getName() + " already exists in Group " + group.getName() + ".");
         }
 
         topic.setPermissionsGroup(groupId);
@@ -172,12 +184,7 @@ public class GroupService {
 
         boolean isGroupAdmin = groupUserService.isUserGroupAdminOfGroup(group.get().getId(), userId);
 
-        return isCurrentUserAdmin() || isGroupAdmin;
-    }
-
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = securityService.getAuthentication().get();
-        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
+        return userService.isCurrentUserAdmin() || isGroupAdmin;
     }
 
     public List<Map> getGroupMembers(Long groupId) {
@@ -188,5 +195,13 @@ public class GroupService {
                     "permissions", groupUser));
         }
         return result;
+    }
+
+    public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new AuthenticationException("Not authorized");
+        }
+
+        return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
     }
 }
