@@ -46,13 +46,13 @@ public class UserService {
             Long currentUserId = getCurrentlyAuthenticatedUser().getId();
             List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
 
-            List<Long> theUserIds = currentUsersGroupIds.stream()
+            List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
                     .map(groupUserService::getUsersOfGroup)
                     .flatMap(List::stream)
                     .map(GroupUser::getPermissionsUser)
                     .collect(Collectors.toList());
 
-            return userRepository.findAllByIdIn(theUserIds, pageable);
+            return userRepository.findAllByIdIn(idsOfUsersWhoShareGroupsWithCurrentUser, pageable);
         }
     }
 
