@@ -5,6 +5,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
@@ -42,6 +43,8 @@ public class TopicController {
     HttpResponse<?> save(@Body Topic topic) {
         try {
             return topicService.save(topic);
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
         } catch (Exception e) {
             return HttpResponse.badRequest(e.getMessage());
         }
@@ -49,7 +52,13 @@ public class TopicController {
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        topicService.deleteById(id);
+        try {
+            topicService.deleteById(id);
+        } catch (AuthenticationException ae) {
+            return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            HttpResponse.badRequest(e.getMessage());
+        }
         return HttpResponse.seeOther(URI.create("/topics"));
     }
 }

@@ -18,6 +18,14 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
                     "where permissions_group = :groupId and permissions_user = :userId and is_group_admin = true",
             nativeQuery = true )
     Optional<GroupUser> findByPermissionsGroupAndPermissionsUserAndGroupAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+
+    @Query(value = "select * from permissions_group_user " +
+            "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+            countQuery = "select DISTINCT count(*) from permissions_group_user " +
+                    "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+            nativeQuery = true )
+    Optional<GroupUser> findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+
     void deleteAllByPermissionsUser(@NotNull @NonNull Long userId);
     void deleteAllByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 

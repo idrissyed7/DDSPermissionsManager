@@ -151,6 +151,8 @@ public class GroupService {
             throw new Exception("Topic " + topic.getName() + " already exists in Group " + group.getName() + ".");
         }
 
+        topic.setPermissionsGroup(groupId);
+        topicRepository.update(topic);
         group.addTopic(topic);
         groupRepository.update(group);
         return true;
