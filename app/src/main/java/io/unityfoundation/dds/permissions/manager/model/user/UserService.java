@@ -43,17 +43,23 @@ public class UserService {
         if (isCurrentUserAdmin()) {
             return userRepository.findAll(pageable);
         } else {
-            Long currentUserId = getCurrentlyAuthenticatedUser().getId();
-            List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
+            List<Long> userIds = getIdsOfUsersWhoShareGroupsWithCurrentUser();
 
-            List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
-                    .map(groupUserService::getUsersOfGroup)
-                    .flatMap(List::stream)
-                    .map(GroupUser::getPermissionsUser)
-                    .collect(Collectors.toList());
-
-            return userRepository.findAllByIdIn(idsOfUsersWhoShareGroupsWithCurrentUser, pageable);
+            return userRepository.findAllByIdIn(userIds, pageable);
         }
+    }
+
+    public List<Long> getIdsOfUsersWhoShareGroupsWithCurrentUser() {
+        Long currentUserId = getCurrentlyAuthenticatedUser().getId();
+        List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
+
+        List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
+                .map(groupUserService::getUsersOfGroup)
+                .flatMap(List::stream)
+                .map(GroupUser::getPermissionsUser)
+                .collect(Collectors.toList());
+
+        return idsOfUsersWhoShareGroupsWithCurrentUser;
     }
 
     @Transactional
