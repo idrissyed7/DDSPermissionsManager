@@ -49,7 +49,7 @@ public class GroupService {
     public Page<Group> findAll(Pageable pageable) {
         Authentication authentication = securityService.getAuthentication().get();
 
-        if (isCurrentUserAdmin()) {
+        if (userService.isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {
             String userEmail = authentication.getName();
@@ -60,7 +60,7 @@ public class GroupService {
     }
 
     public MutableHttpResponse<Group> save(Group group) throws Exception {
-        if (!isCurrentUserAdmin()) {
+        if (!userService.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -80,7 +80,7 @@ public class GroupService {
     }
 
     public void deleteById(Long id) {
-        if (!isCurrentUserAdmin()) {
+        if (!userService.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -148,7 +148,7 @@ public class GroupService {
         boolean topicExistsInGroup = group.getTopics().stream().anyMatch(groupTopic -> groupTopic.getName().equals(topic.getName()));
 
         if (topicExistsInGroup) {
-            throw new Exception("Topic "+topic.getName()+" already exists in Group "+group.getName()+".");
+            throw new Exception("Topic " + topic.getName() + " already exists in Group " + group.getName() + ".");
         }
 
         group.addTopic(topic);
@@ -182,12 +182,7 @@ public class GroupService {
 
         boolean isGroupAdmin = groupUserService.isUserGroupAdminOfGroup(group.get().getId(), userId);
 
-        return isCurrentUserAdmin() || isGroupAdmin;
-    }
-
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = securityService.getAuthentication().get();
-        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
+        return userService.isCurrentUserAdmin() || isGroupAdmin;
     }
 
     public List<Map> getGroupMembers(Long groupId) {
