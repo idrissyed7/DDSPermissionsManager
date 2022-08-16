@@ -4,7 +4,6 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.utils.SecurityService;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import jakarta.inject.Singleton;
 
@@ -16,13 +15,11 @@ import java.util.Optional;
 public class UserService {
     private final SecurityService securityService;
     private final UserRepository userRepository;
-    private final GroupRepository groupRepository;
     private final GroupUserService groupUserService;
 
-    public UserService(SecurityService securityService, UserRepository userRepository, GroupRepository groupRepository, GroupUserService groupUserService) {
+    public UserService(SecurityService securityService, UserRepository userRepository, GroupUserService groupUserService) {
         this.securityService = securityService;
         this.userRepository = userRepository;
-        this.groupRepository = groupRepository;
         this.groupUserService = groupUserService;
     }
 
