@@ -5,12 +5,14 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Singleton
 public class UserService {
@@ -44,9 +46,16 @@ public class UserService {
         if (isCurrentUserAdmin()) {
             return userRepository.findAll(pageable);
         } else {
-            Long userId = getCurrentlyAuthenticatedUser().getId();
-            List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(userId);
-            return userRepository.findAllByIdIn(groupsList, pageable);
+            Long currentUserId = getCurrentlyAuthenticatedUser().getId();
+            List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
+
+            List<Long> theUserIds = currentUsersGroupIds.stream()
+                    .map(groupUserService::getUsersOfGroup)
+                    .flatMap(List::stream)
+                    .map(GroupUser::getPermissionsUser)
+                    .collect(Collectors.toList());
+
+            return userRepository.findAllByIdIn(theUserIds, pageable);
         }
     }
 
