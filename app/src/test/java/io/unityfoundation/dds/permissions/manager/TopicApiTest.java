@@ -21,6 +21,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
+@Disabled
 public class TopicApiTest {
 
     private BlockingHttpClient blockingClient;
