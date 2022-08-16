@@ -196,7 +196,7 @@ public class GroupService {
     }
 
     public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
-        if (!isCurrentUserAdmin()) {
+        if (!userService.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
