@@ -8,6 +8,7 @@ import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -18,6 +19,7 @@ public class Group {
     private Long id;
 
     @NonNull
+    @Column(unique = true)
     private String name;
 
     @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
@@ -28,7 +30,7 @@ public class Group {
             @JoinColumn(name="topic_id", referencedColumnName="id")
     )
     @LazyCollection(LazyCollectionOption.FALSE)
-    private Set<Topic> topics;
+    private Set<Topic> topics = new HashSet<>();
 
     public Group() {
     }

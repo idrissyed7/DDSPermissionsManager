@@ -6,6 +6,7 @@ import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.security.utils.SecurityService;
 import jakarta.inject.Singleton;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -13,6 +14,14 @@ import java.util.Optional;
 @Replaces(SecurityService.class)
 @Singleton
 public class MockSecurityService implements SecurityService {
+
+    private ServerAuthentication serverAuthentication;
+
+    @PostConstruct
+    void postConstruct() {
+        serverAuthentication = new ServerAuthentication("montesm@test.test", Collections.emptyList(), Map.of("isAdmin", true));
+    }
+
     @Override
     public Optional<String> username() {
         return Optional.empty();
@@ -20,7 +29,7 @@ public class MockSecurityService implements SecurityService {
 
     @Override
     public Optional<Authentication> getAuthentication() {
-        return Optional.of(new ServerAuthentication("montesm@test.test", Collections.emptyList(), Map.of("isAdmin", true)));
+        return Optional.of(serverAuthentication);
     }
 
     @Override
@@ -31,5 +40,9 @@ public class MockSecurityService implements SecurityService {
     @Override
     public boolean hasRole(String role) {
         return false;
+    }
+
+    public void setServerAuthentication(ServerAuthentication serverAuthentication) {
+        this.serverAuthentication = serverAuthentication;
     }
 }

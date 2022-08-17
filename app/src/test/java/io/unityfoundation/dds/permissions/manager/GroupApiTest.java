@@ -126,6 +126,35 @@ public class GroupApiTest {
     }
 
     @Test
+    public void rejectGroupWithSameNameAsAnExistingGroup() {
+
+        // save new group should succeed
+        Group myGroup = new Group("MyGroup");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", myGroup);
+        HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+        assertEquals(OK, response.getStatus());
+        myGroup = response.getBody(Group.class).get();
+
+        // Attempt to add a new group with same name, should return the existing group and 303
+        Group myGroupDup = new Group("MyGroup");
+        request = HttpRequest.POST("/groups/save", myGroupDup);
+        response = blockingClient.exchange(request, Group.class);
+        assertEquals(SEE_OTHER, response.getStatus());
+        myGroupDup = response.getBody(Group.class).get();
+        assertEquals(myGroup.getId(), myGroupDup.getId());
+
+        // Attempt to update an existing group with name of another group should yield a bad request with a message
+        request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "MyGroup"));
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException thrown1 = assertThrows(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        // Note: Since the client throws an exception for a bad-request response, capturing the response's message is
+        // not straightforward.
+        assertEquals(BAD_REQUEST, thrown1.getStatus());
+    }
+
+    @Test
     public void userWithAdminRoleShouldSeeAllGroups() {
 
         long initialGroupCount = groupRepository.count();
@@ -134,6 +163,13 @@ public class GroupApiTest {
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
         assertEquals(initialGroupCount, groups.size());
+    }
+
+    @Test
+    public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+        List responseList = blockingClient.retrieve(request, List.class);
+        assertEquals(1, responseList.size());
     }
 
     @Test
@@ -222,6 +258,16 @@ public class GroupApiTest {
     // Change 'isAdmin' to false in MockSecurityService in order for the below tests to pass.
     // Why? I can't seem to dynamically change the role of the
     // authenticated user. Need to come up with a better way to mock authentication.
+//    @Test
+//    public void userWithNonAdminRoleCannotSeeGroupsAUserIsAMemberOf() {
+//        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+//        HttpRequest<?> finalRequest = request;
+//        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+//            blockingClient.exchange(finalRequest);
+//        });
+//        assertEquals(UNAUTHORIZED, exception1.getStatus());
+//    }
+//
 //    @Test
 //    public void userWithNonAdminRoleShouldNotSeeAllGroups() {
 //
