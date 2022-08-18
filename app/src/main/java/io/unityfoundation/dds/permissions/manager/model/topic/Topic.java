@@ -2,7 +2,6 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 
 import io.micronaut.core.annotation.NonNull;
-import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
 

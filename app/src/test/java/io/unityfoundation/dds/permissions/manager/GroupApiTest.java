@@ -15,7 +15,6 @@ import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
