@@ -392,12 +392,12 @@ public class ApplicationApiTest {
 
 
         @Test
-        @Disabled // out of scope for UFP-526; need requirements
+        @Disabled(value = "out of scope for UFP-526; need requirements")
         public void canViewApplicationsAsNonAdminOfGroup() {
         }
 
         @Test
-        @Disabled // out of scope for UFP-526; need requirements
+        @Disabled(value = "out of scope for UFP-526; need requirements")
         public void canViewApplicationsAsApplicationAdminOfGroup() {
         }
 
@@ -675,7 +675,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        @Disabled // out of scope for UFP-526; need requirements
+        @Disabled(value = "out of scope for UFP-526; need requirements")
         public void cannotViewAllApplications() {
 
             mockSecurityService.postConstruct();
