@@ -22,6 +22,7 @@
 
 	// Validation
 	let disabled = false;
+	let previousGroupName;
 
 	// Group Name
 	let newGroupName;
@@ -36,7 +37,7 @@
 	let selectedGroupName;
 
 	// Pagination
-	const groupsPerPage = 3;
+	const groupsPerPage = 5;
 	let groupsPageIndex;
 	let groupsPages = [];
 	let currentPage = 0;
@@ -184,13 +185,14 @@
 	};
 
 	const userCandidateAdd = async () => {
+		// work on this
 		const res = await axios
 			.post(
 				`${URL_PREFIX}/groups/add_member/${selectedGroupId}/${selectedUserId}`,
 				{
-					firstName: selectedUserFirstName,
-					lastName: selectedUserLastName,
-					email: selectedUserEmail
+					isGroupAdmin: true,
+					isApplicationAdmin: true,
+					isTopicAdmin: true
 				},
 				{ withCredentials: true }
 			)
@@ -251,7 +253,7 @@
 				`${URL_PREFIX}/groups/save/`,
 				{
 					id: selectedGroupId,
-					name: selectedGroupName.trim()
+					name: selectedGroupName
 				},
 				{ withCredentials: true }
 			)
@@ -318,7 +320,7 @@
 		>
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" disabled={!$isAdmin} on:click={() => deleteGroup()}
 					><span>Delete</span></button
 				>
@@ -384,8 +386,8 @@
 	<div class="content">
 		{#if groupsPages && groupsListVisible && !groupDetailVisible}
 			<h1>Groups</h1>
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
 				</tr>
 				{#if groupsPages.length > 0}
@@ -450,24 +452,39 @@
 				<div class="tooltip">
 					<input
 						id="name"
-						on:click={() => (editGroupName = true)}
-						on:blur={() => saveNewGroupName()}
+						on:click={() => {
+							if ($isAdmin) {
+								editGroupName = true;
+								previousGroupName = selectedGroupName.trim();
+							}
+						}}
+						on:blur={() => {
+							if ($isAdmin) {
+								selectedGroupName = selectedGroupName.trim();
+								if (previousGroupName !== selectedGroupName) saveNewGroupName();
+							}
+						}}
 						on:keydown={(event) => {
 							if (event.which === 13) {
-								saveNewGroupName();
-								document.querySelector('#name').blur();
+								if ($isAdmin) {
+									selectedGroupName = selectedGroupName.trim();
+									if (previousGroupName !== selectedGroupName) saveNewGroupName();
+									document.querySelector('#name').blur();
+								}
 							}
 						}}
 						bind:value={selectedGroupName}
 						readonly={!editGroupName}
 						class:name-as-label={!editGroupName}
 					/>
-					<span class="tooltiptext">&#9998</span>
+					{#if $isAdmin}
+						<span class="tooltiptext">&#9998</span>
+					{/if}
 				</div>
 			</div>
 			<h2>Group Members</h2>
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>Member Name</strong></th>
 				</tr>
 				{#if $groupDetails.group.users}
@@ -492,8 +509,8 @@
 			</table>
 			<br />
 			<h2>Candidate Members</h2>
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>Member Name</strong></th>
 				</tr>
 				{#if $groupDetails.candidateUsers}
@@ -524,7 +541,7 @@
 				<button
 					class:hidden={!$isAdmin}
 					class="button-delete"
-					style="width: 7.5rem"
+					style="width: 7.5rem; float: none"
 					on:click={() => (confirmDeleteVisible = true)}
 					><span>Delete Group</span>
 				</button></center
@@ -546,17 +563,17 @@
 
 	tr {
 		line-height: 1.7rem;
-		display: flex;
 		align-items: center;
-	}
-
-	tr:nth-child(even) {
-		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.15));
 	}
 
 	input {
 		text-align: center;
 		width: 20rem;
+		height: 2.1rem;
 		z-index: 1;
+		font-size: 30px;
+		border-style: hidden;
+		background-color: rgba(0, 0, 0, 0);
+		vertical-align: middle;
 	}
 </style>

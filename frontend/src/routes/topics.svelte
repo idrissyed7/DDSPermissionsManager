@@ -315,11 +315,11 @@
 	<div class="content">
 		{#if topicsPages && topicsListVisible && !topicDetailVisible}
 			<h1>Topics</h1>
-			<table>
-				<tr>
-					<th><strong>Topic</strong></th>
-				</tr>
+			<table align="center">
 				{#if topicsPages.length > 0}
+					<tr style="border-width: 0px">
+						<th><strong>Topic</strong></th>
+					</tr>
 					{#each topicsPages[currentPage] as topic}
 						<tr>
 							<td
@@ -365,6 +365,8 @@
 						>Next</button
 					></center
 				>
+			{:else}
+				<center><p>No Topics Found</p></center>
 			{/if}
 			<br /><br />
 			<center> <button class="button" on:click={() => addTopicModal()}>Add Topic </button></center>
@@ -390,61 +392,7 @@
 					<span class="tooltiptext">&#9998</span>
 				</div>
 			</div>
-			<!-- <h2>Group Members</h2>
-			<table>
-				<tr>
-					<th><strong>Member Name</strong></th>
-				</tr>
-				{#if $groupDetails.topic.users}
-					{#each $groupDetails.topic.users as userMember}
-						<tr>
-							<td
-								>{userMember.firstName}
-								{userMember.lastName}
-							</td>
-							<button
-								class="button-delete"
-								style="width: 5.5rem;"
-								on:click={() =>
-									confirmUserMemberRemove(userMember.id, userMember.firstName, userMember.lastName)}
-								><span>Remove</span></button
-							>
-						</tr>
-					{/each}
-				{:else}
-					<tr><td>No Members Found</td></tr>
-				{/if}
-			</table> -->
-			<br />
-			<!-- <h2>Candidate Members</h2>
-			<table>
-				<tr>
-					<th><strong>Member Name</strong></th>
-				</tr>
-				{#if $groupDetails.candidateUsers}
-					{#each $groupDetails.candidateUsers as userCandidate}
-						<tr>
-							<td
-								>{userCandidate.firstName}
-								{userCandidate.lastName}
-							</td>
-							<button
-								class="button"
-								on:click={() =>
-									confirmUserCandidateAdd(
-										userCandidate.id,
-										userCandidate.firstName,
-										userCandidate.lastName,
-										userCandidate.email
-									)}><span>Add User</span></button
-							>
-						</tr>
-					{/each}
-				{:else}
-					<tr><td>No Members Found</td></tr>
-				{/if}
-			</table> -->
-			<br /><br />
+			<br /><br /><br />
 			<center>
 				<button
 					class="button-delete"
@@ -466,12 +414,6 @@
 
 	tr {
 		line-height: 1.7rem;
-		display: flex;
-		align-items: center;
-	}
-
-	tr:nth-child(even) {
-		filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.15));
 	}
 
 	input {

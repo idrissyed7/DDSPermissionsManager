@@ -291,10 +291,10 @@
 	<div class="content">
 		<h1>Applications</h1>
 		{#if $applications}
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
-					<th><strong>&ensp; Application Name</strong></th>
+					<th><strong>Application Name</strong></th>
 				</tr>
 				{#if applicationsPages.length > 0}
 					{#each applicationsPages[currentPage] as app, index}
@@ -377,14 +377,21 @@
 {/if}
 
 <style>
+	input {
+		margin-top: 1.1%;
+		text-align: left;
+	}
+
 	.tooltip .tooltiptext {
-		top: 0px;
+		top: 8px;
+		left: -25px;
 	}
 
 	.app-name-as-label {
 		text-align: left;
 		border: none;
-		padding-left: 1.1rem;
+		padding-left: 0.2rem;
+		margin-top: 1.65%;
 		background-color: rgba(0, 0, 0, 0);
 	}
 

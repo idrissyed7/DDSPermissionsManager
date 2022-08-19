@@ -4,6 +4,7 @@
 	import axios from 'axios';
 	import users from '../stores/users';
 	import groups from '../stores/groups';
+	import permissionsByGroup from '../stores/permissionsByGroup';
 	import Modal from '../lib/Modal.svelte';
 
 	const URL_PREFIX = 'http://localhost:8080';
@@ -32,7 +33,7 @@
 	let selectedUserId;
 
 	// Pagination
-	const usersPerPage = 3;
+	const usersPerPage = 5;
 	let usersPageIndex;
 	let usersPages = [];
 	let currentPage = 0;
@@ -42,6 +43,7 @@
 			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(usersData.data.content);
 			console.log($users);
+			console.log($permissionsByGroup);
 
 			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
 			groups.set(groupsData.data.content);
@@ -52,7 +54,7 @@
 				usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
 				if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
 
-				// Populate the usersPage Array
+				// Populate the usersPages Array
 				let pageArray = [];
 				for (let page = 0; page < usersPageIndex; page++) {
 					for (
@@ -149,13 +151,16 @@
 	};
 
 	const addUser = async () => {
+		// if they isAdmin then add isAdmin property to the body with the boolean.
+		// if they are not admin add isAdmin property as false.
 		const res = await axios
 			.post(
 				'http://localhost:8080/users/save',
 				{
-					group: userFirstName,
-					role: userLastName,
-					email: userEmail
+					firstName: userFirstName,
+					lastName: userLastName,
+					email: userEmail,
+					isAdmin: false
 				},
 				{ withCredentials: true }
 			)
@@ -207,7 +212,7 @@
 		>
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" on:click={() => userDelete()}><span>Delete</span></button>
 			</div>
 		</Modal>
@@ -215,8 +220,8 @@
 
 	<div class="content">
 		<h1>Users</h1>
-		<table>
-			<tr>
+		<table align="center">
+			<tr style="border-width: 0px">
 				<th><strong>Email</strong></th>
 				<th><strong>Group</strong></th>
 				<th><strong>Role</strong></th>
@@ -224,7 +229,7 @@
 			{#if usersPages.length > 0}
 				{#each usersPages[currentPage] as user}
 					<tr>
-						<td>{user.email}</td>
+						<td style="width: 25rem;">{user.email}</td>
 						<td>Group Name</td>
 						<td>Admin</td>
 						<td
@@ -265,32 +270,6 @@
 							}}>x</button
 						></td
 					>
-
-					<div style="display:flex; justify-content: space-between;">
-						<td style="width: 100%">
-							<select
-								name="group"
-								style="color: white; background-color: rgb(54, 70, 255); margin-left: -0.2rem"
-							>
-								{#each $groups as group}
-									<option value={group.name}>{group.name}</option>
-								{/each}
-							</select>
-							<select name="role" style="background-color: yellow">
-								<option value="super-admin">Super Admin</option>
-								<option value="group-admin">Group Admin</option>
-								<option value="topic-admin">Topic Admin</option>
-								<option value="app-admin">App Admin</option>
-							</select>
-							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-							<button
-								class:button={!invalidEmail}
-								style="width: 6.4rem; height: 2rem; font-size:small;"
-								disabled={invalidEmail}
-								on:click={() => addUser()}><span>Create User</span></button
-							></td
-						>
-					</div>
 				</tr>
 			</table>
 		{/if}
@@ -363,7 +342,6 @@
 
 	table {
 		width: 100%;
-		margin-left: 3.5rem;
 	}
 
 	select {
