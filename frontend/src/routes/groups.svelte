@@ -64,8 +64,8 @@
 				if (groupsData.data.content.length % groupsPerPage > 0) groupsPageIndex++;
 
 				// Populate the usersPage Array
-				let pageArray = [];
 				for (let page = 0; page < groupsPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < groupsPerPage && totalGroupsCount < groupsData.data.content.length;
@@ -75,7 +75,6 @@
 						totalGroupsCount++;
 					}
 					groupsPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {

@@ -55,8 +55,8 @@
 				if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
 
 				// Populate the usersPages Array
-				let pageArray = [];
 				for (let page = 0; page < usersPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < usersPerPage && totalUsersCount < usersData.data.content.length;
@@ -66,7 +66,6 @@
 						totalUsersCount++;
 					}
 					usersPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {
@@ -324,15 +323,6 @@
 		display: none;
 	}
 
-	.button {
-		height: 2rem;
-		cursor: pointer;
-		background-color: rgb(0, 190, 0);
-	}
-	.button:hover {
-		filter: brightness(90%);
-	}
-
 	input {
 		height: 1.7rem;
 		text-align: left;
@@ -342,17 +332,5 @@
 
 	table {
 		width: 100%;
-	}
-
-	select {
-		font-size: small;
-		height: 2rem;
-		border-radius: 5px;
-		border-color: rgba(0, 0, 0, 0);
-		text-align: center;
-	}
-
-	select:hover {
-		filter: brightness(90%);
 	}
 </style>

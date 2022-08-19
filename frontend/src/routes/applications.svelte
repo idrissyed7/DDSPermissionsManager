@@ -51,8 +51,8 @@
 				if (applicationsData.data.content.length % applicationsPerPage > 0) applicationsPageIndex++;
 
 				// Populate the applicationsPage Array
-				let pageArray = [];
 				for (let page = 0; page < applicationsPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < applicationsPerPage &&
@@ -64,7 +64,6 @@
 						totalApplicationsCount++;
 					}
 					applicationsPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {

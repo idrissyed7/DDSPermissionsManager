@@ -23,8 +23,6 @@
 	let topicDetailVisible = false;
 	let addTopicVisible = false;
 	let confirmDeleteVisible = false;
-	// let confirmRemoveUserVisible = false;
-	// let confirmAddUserVisible = false;
 
 	// Validation
 	let disabled = false;
@@ -34,10 +32,7 @@
 	let editTopicName;
 
 	// Selection
-	// let selectedUserFirstName;
-	// let selectedUserLastName;
-	// let selectedUserEmail;
-	// let selectedUserId;
+
 	let selectedTopicId;
 	let selectedTopicName;
 
@@ -54,8 +49,8 @@
 				if (topicsData.data.content.length % topicsPerPage > 0) topicsPageIndex++;
 
 				// Populate the usersPage Array
-				let pageArray = [];
 				for (let page = 0; page < topicsPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < topicsPerPage && totalTopicsCount < topicsData.data.content.length;
@@ -65,7 +60,6 @@
 						totalTopicsCount++;
 					}
 					topicsPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {
@@ -279,38 +273,6 @@
 			{/if}
 		</Modal>
 	{/if}
-
-	<!-- {#if confirmRemoveUserVisible && !errorMessageVisible}
-		<Modal
-			title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
-			on:cancel={() => (confirmRemoveUserVisible = false)}
-		>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmRemoveUserVisible = false)}
-					>Cancel</button
-				>
-				<button class="button-delete" style="width: 5.5rem;" on:click={() => userMemberRemove()}
-					><span>Remove</span></button
-				>
-			</div>
-		</Modal>
-	{/if} -->
-
-	<!-- {#if confirmAddUserVisible && !errorMessageVisible}
-		<Modal
-			title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
-			on:cancel={() => (confirmAddUserVisible = false)}
-		>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
-					>Cancel</button
-				>
-				<button class="button" style="width: 4rem;" on:click={() => userCandidateAdd()}
-					><span>Add</span></button
-				>
-			</div>
-		</Modal>
-	{/if} -->
 
 	<div class="content">
 		{#if topicsPages && topicsListVisible && !topicDetailVisible}
