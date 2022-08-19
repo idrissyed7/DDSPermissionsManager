@@ -33,6 +33,8 @@ dependencies {
     implementation("io.micronaut.sql:micronaut-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-jdbc-tomcat")
 
+    annotationProcessor("io.micronaut.openapi:micronaut-openapi:4.4.3")
+    implementation("io.swagger.core.v3:swagger-annotations")
 }
 
 
