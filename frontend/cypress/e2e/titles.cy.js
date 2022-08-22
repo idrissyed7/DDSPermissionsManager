@@ -14,4 +14,5 @@ describe('title should say Permission Manager', () => {
         .invoke('text')
         .should('equal', 'Permissions Manager');
     })
+    
 });
