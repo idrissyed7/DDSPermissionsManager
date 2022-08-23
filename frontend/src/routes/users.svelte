@@ -3,20 +3,29 @@
 	import { onMount } from 'svelte';
 	import axios from 'axios';
 	import users from '../stores/users';
+	import groups from '../stores/groups';
+	import permissionsByGroup from '../stores/permissionsByGroup';
 	import Modal from '../lib/Modal.svelte';
 
 	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
+	let invalidEmail = true;
+	let validRegex =
+		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
 	// Modals
 	let errorMessageVisible = false;
 	let confirmDeleteVisible = false;
+	let addUserVisible = false;
 
 	// Users
 	let userFirstName;
 	let userLastName;
+
+	// Forms
+	let emailValue = '';
 
 	// Selection
 	let selectedUserFirstName;
@@ -24,7 +33,7 @@
 	let selectedUserId;
 
 	// Pagination
-	const usersPerPage = 3;
+	const usersPerPage = 5;
 	let usersPageIndex;
 	let usersPages = [];
 	let currentPage = 0;
@@ -33,21 +42,31 @@
 		try {
 			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
 			users.set(usersData.data.content);
+			console.log($users);
+			console.log($permissionsByGroup);
 
-			// Pagination
-			let totalUsersCount = 0;
-			usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
-			if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
+			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
+			groups.set(groupsData.data.content);
 
-			// Populate the usersPage Array
-			let pageArray = [];
-			for (let page = 0; page < usersPageIndex; page++) {
-				for (let i = 0; i < usersPerPage && totalUsersCount < usersData.data.content.length; i++) {
-					pageArray.push(usersData.data.content[page * usersPerPage + i]);
-					totalUsersCount++;
+			if ($users) {
+				// Pagination
+				let totalUsersCount = 0;
+				usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
+				if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
+
+				// Populate the usersPages Array
+				for (let page = 0; page < usersPageIndex; page++) {
+					let pageArray = [];
+					for (
+						let i = 0;
+						i < usersPerPage && totalUsersCount < usersData.data.content.length;
+						i++
+					) {
+						pageArray.push(usersData.data.content[page * usersPerPage + i]);
+						totalUsersCount++;
+					}
+					usersPages.push(pageArray);
 				}
-				usersPages.push(pageArray);
-				pageArray = [];
 			}
 		} catch (err) {
 			ErrorMessage('Error Loading Users', err.message);
@@ -125,6 +144,37 @@
 		selectedUserLastName = lastName;
 		selectedUserId = ID;
 	};
+
+	const addUserInput = () => {
+		addUserVisible = true;
+	};
+
+	const addUser = async () => {
+		// if they isAdmin then add isAdmin property to the body with the boolean.
+		// if they are not admin add isAdmin property as false.
+		const res = await axios
+			.post(
+				'http://localhost:8080/users/save',
+				{
+					firstName: userFirstName,
+					lastName: userLastName,
+					email: userEmail,
+					isAdmin: false
+				},
+				{ withCredentials: true }
+			)
+			.catch((err) => {
+				ErrorMessage('Error Saving User', err.message);
+			});
+
+		addUserVisible = false;
+
+		reloadUsers();
+	};
+
+	const ValidateEmail = (input) => {
+		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
+	};
 </script>
 
 <svelte:head>
@@ -161,7 +211,7 @@
 		>
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" on:click={() => userDelete()}><span>Delete</span></button>
 			</div>
 		</Modal>
@@ -169,16 +219,18 @@
 
 	<div class="content">
 		<h1>Users</h1>
-		<table>
-			<tr>
-				<th><strong>First Name</strong></th>
-				<th><strong>Last Name</strong></th>
+		<table align="center">
+			<tr style="border-width: 0px">
+				<th><strong>Email</strong></th>
+				<th><strong>Group</strong></th>
+				<th><strong>Role</strong></th>
 			</tr>
 			{#if usersPages.length > 0}
 				{#each usersPages[currentPage] as user}
 					<tr>
-						<td>{user.firstName}</td>
-						<td>{user.lastName}</td>
+						<td style="width: 25rem;">{user.email}</td>
+						<td>Group Name</td>
+						<td>Admin</td>
 						<td
 							><button
 								class="button-delete"
@@ -192,6 +244,41 @@
 				<p style="margin-left: 0.3rem">No Users Found</p>
 			{/if}
 		</table>
+		{#if addUserVisible}
+			<table>
+				<tr>
+					<td style="width: 15rem"
+						><input
+							placeholder="Email Address"
+							class:invalid={invalidEmail && emailValue.length >= 1}
+							style="display: inline-flex"
+							bind:value={emailValue}
+							on:blur={() => ValidateEmail(emailValue)}
+							on:keydown={(event) => {
+								if (event.which === 13) {
+									ValidateEmail(emailValue);
+									document.querySelector('#name').blur();
+								}
+							}}
+						/>
+						<button
+							class="remove-button"
+							on:click={() => {
+								emailValue = '';
+								addUserVisible = false;
+							}}>x</button
+						></td
+					>
+				</tr>
+			</table>
+		{/if}
+		<br />
+		<center
+			><button style="cursor:pointer" on:click={() => addUserInput()} class:hidden={addUserVisible}
+				>+</button
+			></center
+		>
+
 		<br /><br />
 
 		{#if $users}
@@ -230,3 +317,20 @@
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
+
+<style>
+	.hidden {
+		display: none;
+	}
+
+	input {
+		height: 1.7rem;
+		text-align: left;
+		font-size: small;
+		min-width: 12rem;
+	}
+
+	table {
+		width: 100%;
+	}
+</style>

@@ -6,12 +6,11 @@
 </script>
 
 <svelte:head>
-	<title>Permission Manager</title>
+	<title>Permissions Manager</title>
 	<meta name="description" content="Permission Manager" />
 </svelte:head>
 
 <section>
-	<!-- <a href="http://localhost:8080/oauth/login/google">Login</a> -->
 	<h1>Permissions Manager</h1>
 	<h2>Welcome</h2>
 	<p>

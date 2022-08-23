@@ -17,7 +17,8 @@ public class Bootstrap {
     private final GroupRepository groupRepository;
     private final GroupUserRepository groupUserRepository;
 
-    public Bootstrap(UserRepository userRepository, GroupRepository groupRepository, GroupUserRepository groupUserRepository) {
+    public Bootstrap(UserRepository userRepository, GroupRepository groupRepository,
+            GroupUserRepository groupUserRepository) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
         this.groupUserRepository = groupUserRepository;
@@ -30,7 +31,7 @@ public class Bootstrap {
         User max = userRepository.save(new User("Max", "Montes", "montesm@test.test"));
         userRepository.save(new User("Jeff", "Brown", "jeff@test.test"));
         userRepository.save(new User("Julian", "Gracia", "jgracia@test.test"));
-        userRepository.save(new User("Daniel", "Bellone", "dbellonen@test.test"));
+        userRepository.save(new User("Daniel", "Bellone", "belloned@test.test", true));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
 
@@ -38,11 +39,9 @@ public class Bootstrap {
         GroupUser alphaKevin = new GroupUser(alphaGroup, kevin);
         GroupUser alphaMax = new GroupUser(alphaGroup, max);
 
-
         groupUserRepository.save(alphaJustin);
         groupUserRepository.save(alphaKevin);
         groupUserRepository.save(alphaMax);
-
 
         groupRepository.save(new Group("Beta"));
         groupRepository.save(new Group("Gamma"));
