@@ -34,8 +34,8 @@ public class GroupUserService {
     }
 
     public boolean isUserApplicationAdminOfGroup(Long groupId, Long userId) {
-        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(groupId, userId);
-        return groupUser.isPresent();
+        int groupUserCount = groupUserRepository.countByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(groupId, userId);
+        return groupUserCount > 0;
     }
 
     public void removeMemberFromGroup(Long groupId, Long memberId) {
