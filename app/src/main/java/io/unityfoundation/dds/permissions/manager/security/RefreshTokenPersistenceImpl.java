@@ -7,6 +7,8 @@ import io.micronaut.security.token.event.RefreshTokenGeneratedEvent;
 import io.micronaut.security.token.refresh.RefreshTokenPersistence;
 import jakarta.inject.Singleton;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -14,6 +16,8 @@ import static io.micronaut.security.errors.IssuingAnAccessTokenErrorCode.INVALID
 
 @Singleton
 public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RefreshTokenPersistenceImpl.class);
 
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -29,7 +33,7 @@ public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
                 authentication.getName() != null) {
             refreshTokenRepository.save(authentication.getName(), refreshToken, false);
         } else {
-            System.out.println("DEBUG in persistToken");
+            LOG.debug("DEBUG in persistToken");
         }
     }
 
