@@ -20,7 +20,7 @@ public class GroupUserService {
     }
 
     public void removeUserFromAllGroups(Long userId) {
-        groupUserRepository.deleteAllByPermissionsUser(userId);
+        groupUserRepository.deleteAllByPermissionsUserId(userId);
     }
 
     public boolean isUserGroupAdminOfGroup(Long groupId, Long userId) {
@@ -29,12 +29,12 @@ public class GroupUserService {
     }
 
     public boolean isUserTopicAdminOfGroup(Long groupId, Long userId) {
-        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(groupId, userId);
+        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupIdAndPermissionsUserIdAndTopicAdminTrue(groupId, userId);
         return groupUser.isPresent();
     }
 
     public void removeMemberFromGroup(Long groupId, Long memberId) {
-        groupUserRepository.deleteAllByPermissionsGroupAndPermissionsUser(groupId, memberId);
+        groupUserRepository.deleteAllByPermissionsGroupIdAndPermissionsUserId(groupId, memberId);
     }
 
     public GroupUser save(GroupUser groupUser) {
@@ -46,23 +46,23 @@ public class GroupUserService {
     }
 
     public List<Long> getAllGroupsUserIsAMemberOf(Long userId) {
-        return groupUserRepository.findAllByPermissionsUser(userId).stream().map(GroupUser::getPermissionsGroup).collect(Collectors.toList());
+        return groupUserRepository.findAllByPermissionsUserId(userId).stream().map(GroupUser::getPermissionsGroup).map(Group::getId).collect(Collectors.toList());
     }
 
     public boolean isUserMemberOfGroup(Long groupId, Long userId) {
-        return groupUserRepository.findByPermissionsGroupAndPermissionsUser(groupId, userId).isPresent();
+        return groupUserRepository.findByPermissionsGroupIdAndPermissionsUserId(groupId, userId).isPresent();
     }
 
     public List<GroupUser> getUsersOfGroup(Long groupId) {
-        return groupUserRepository.findAllByPermissionsGroup(groupId);
+        return groupUserRepository.findAllByPermissionsGroupId(groupId);
     }
 
     public List<Map<String, Object>> getAllPermissionsPerGroupUserIsMemberOf(Long id) {
         List<Map<String, Object>> result = new ArrayList<>();
 
-        List<GroupUser> groupUserList = groupUserRepository.findAllByPermissionsUser(id);
+        List<GroupUser> groupUserList = groupUserRepository.findAllByPermissionsUserId(id);
         groupUserList.forEach(groupUser -> {
-            Optional<Group> optionalGroup = groupRepository.findById(groupUser.getPermissionsGroup());
+            Optional<Group> optionalGroup = groupRepository.findById(groupUser.getPermissionsGroup().getId());
             optionalGroup.ifPresent(group -> result.add(
                     Map.of(
                             "groupId", group.getId(),

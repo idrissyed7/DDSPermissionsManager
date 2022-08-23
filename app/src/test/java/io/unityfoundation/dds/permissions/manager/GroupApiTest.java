@@ -91,7 +91,7 @@ public class GroupApiTest {
         assertEquals(initialGroupCount, groups1.size());
         assertEquals(OK, response.getStatus());
 
-        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroup(1l).size();
+        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroupId(1l).size();
 
         // adding an existing member should not add to user group
         // To see mocked authentication see MockSecurityService

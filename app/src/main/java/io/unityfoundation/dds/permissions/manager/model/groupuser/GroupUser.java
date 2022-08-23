@@ -2,6 +2,8 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
 
 import javax.persistence.*;
 
@@ -12,11 +14,12 @@ public class GroupUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NonNull
-    private Long permissionsGroup;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    private Group permissionsGroup;
 
     @NonNull
-    private Long permissionsUser;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    private User permissionsUser;
 
     @NonNull
     private boolean isGroupAdmin = false;
@@ -31,7 +34,7 @@ public class GroupUser {
     public GroupUser() {
     }
 
-    public GroupUser(@NonNull Long groupId, @NonNull Long userId) {
+    public GroupUser(@NonNull Group groupId, @NonNull User userId) {
         this.permissionsGroup = groupId;
         this.permissionsUser = userId;
     }
@@ -45,21 +48,21 @@ public class GroupUser {
     }
 
     @NonNull
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(@NonNull Long groupId) {
-        this.permissionsGroup = groupId;
+    public void setPermissionsGroup(@NonNull Group group) {
+        this.permissionsGroup = group;
     }
 
     @NonNull
-    public Long getPermissionsUser() {
+    public User getPermissionsUser() {
         return permissionsUser;
     }
 
-    public void setPermissionsUser(@NonNull Long userId) {
-        this.permissionsUser = userId;
+    public void setPermissionsUser(@NonNull User user) {
+        this.permissionsUser = user;
     }
 
 

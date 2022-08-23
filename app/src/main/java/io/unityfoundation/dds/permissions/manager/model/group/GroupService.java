@@ -102,7 +102,7 @@ public class GroupService {
             return true;
         }
 
-        GroupUser groupUser = new GroupUser(group.getId(), user.getId());
+        GroupUser groupUser = new GroupUser(group, user);
         if (userRolesMap != null) {
             groupUser.setGroupAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isGroupAdmin")).orElse(false));
             groupUser.setTopicAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isTopicAdmin")).orElse(false));
@@ -191,7 +191,7 @@ public class GroupService {
         List<GroupUser> groupUsers = groupUserService.getUsersOfGroup(groupId);
         List<Map> result = new ArrayList<>();
         for (GroupUser groupUser : groupUsers) {
-            result.add(Map.of("member", userRepository.findById(groupUser.getPermissionsUser()),
+            result.add(Map.of("member", groupUser.getPermissionsUser(),
                     "permissions", groupUser));
         }
         return result;

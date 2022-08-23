@@ -47,7 +47,7 @@ public class UserService {
         List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
                 .map(groupUserService::getUsersOfGroup)
                 .flatMap(List::stream)
-                .map(GroupUser::getPermissionsUser)
+                .map(GroupUser::getPermissionsUser).map(User::getId)
                 .collect(Collectors.toList());
 
         return idsOfUsersWhoShareGroupsWithCurrentUser;

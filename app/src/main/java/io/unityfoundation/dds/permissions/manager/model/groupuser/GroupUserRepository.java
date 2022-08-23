@@ -13,25 +13,25 @@ import java.util.Optional;
 public interface GroupUserRepository extends PageableRepository<GroupUser, Long> {
 
     @Query(value = "select * from permissions_group_user " +
-            "where permissions_group = :groupId and permissions_user = :userId and is_group_admin = true",
+            "where permissions_group_id = :groupId and permissions_user_id = :userId and is_group_admin = true",
             countQuery = "select DISTINCT count(*) from permissions_group_user " +
-                    "where permissions_group = :groupId and permissions_user = :userId and is_group_admin = true",
+                    "where permissions_group_id = :groupId and permissions_user_id = :userId and is_group_admin = true",
             nativeQuery = true )
     Optional<GroupUser> findByPermissionsGroupAndPermissionsUserAndGroupAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     @Query(value = "select * from permissions_group_user " +
-            "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+            "where permissions_group_id = :groupId and permissions_user_id = :userId and is_topic_admin = true",
             countQuery = "select DISTINCT count(*) from permissions_group_user " +
-                    "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+                    "where permissions_group_id = :groupId and permissions_user_id = :userId and is_topic_admin = true",
             nativeQuery = true )
-    Optional<GroupUser> findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserIdAndTopicAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
-    void deleteAllByPermissionsUser(@NotNull @NonNull Long userId);
-    void deleteAllByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    void deleteAllByPermissionsUserId(@NotNull @NonNull Long userId);
+    void deleteAllByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
-    List<GroupUser> findAllByPermissionsUser(@NotNull @NonNull Long userId);
+    List<GroupUser> findAllByPermissionsUserId(@NotNull @NonNull Long userId);
 
-    Optional<GroupUser> findByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
-    List<GroupUser> findAllByPermissionsGroup(@NotNull @NonNull Long groupId);
+    List<GroupUser> findAllByPermissionsGroupId(@NotNull @NonNull Long groupId);
 }
