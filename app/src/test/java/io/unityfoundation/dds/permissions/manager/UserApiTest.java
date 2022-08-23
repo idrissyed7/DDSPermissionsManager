@@ -48,18 +48,18 @@ public class UserApiTest {
         long initialUserCount = userRepository.count();
 
         // save
-        User justin = new User("Justin", "Jones", "jjones@test.test", true);
+        User justin = new User("jjones@test.test", true);
         HttpRequest<?> request = HttpRequest.POST("/users/save", justin);
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
-        User kevin = new User("Kevin", "Kaminsky", "kkaminsky@test.test", false);
+        User kevin = new User("kkaminsky@test.test", false);
         request = HttpRequest.POST("/users/save", kevin);
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
         // update
-        request = HttpRequest.POST("/users/save", Map.of("id", 2, "firstName", "Michael"));
+        request = HttpRequest.POST("/users/save", Map.of("id", 2, "email", "foo.bar@baz.com"));
         response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
 
@@ -72,7 +72,7 @@ public class UserApiTest {
 
         // confirm update
         Map<String, Object> updatedApp = users.get(1);
-        assertEquals("Michael", updatedApp.get("firstName"));
+        assertEquals("foo.bar@baz.com", updatedApp.get("email"));
 
         // delete
         request = HttpRequest.POST("/users/delete/2", Map.of());
@@ -90,7 +90,7 @@ public class UserApiTest {
     @Test
     public void userWithDuplicateEntriesShouldNotExist() {
         // save
-        User sally = new User("Sally", "Sheep", "ssheep@test.test", true);
+        User sally = new User("ssheep@test.test", true);
         HttpRequest<?> request = HttpRequest.POST("/users/save", sally);
         HttpResponse<?> response = blockingClient.exchange(request);
         assertEquals(OK, response.getStatus());
@@ -105,7 +105,7 @@ public class UserApiTest {
 
     @Test
     public void userWithInvalidEmailFormatShallNotPersist() {
-        User john = new User("Peter", "Parker", "pparker@.test.test", true);
+        User john = new User("pparker@.test.test", true);
         HttpRequest<?> request = HttpRequest.POST("/users/save", john);
         HttpRequest<?> finalRequest = request;
         HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
