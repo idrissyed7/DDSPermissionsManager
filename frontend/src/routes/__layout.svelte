@@ -17,7 +17,7 @@
 
 			remindTime = 60 * 1000 * 5; // 5 minutes
 			expirationTime = new Date(res.data.exp * 1000);
-			nowTime = new Date(Date.now());
+			nowTime = new Date();
 
 			console.log('exp:', expirationTime);
 			console.log('now:', nowTime);
