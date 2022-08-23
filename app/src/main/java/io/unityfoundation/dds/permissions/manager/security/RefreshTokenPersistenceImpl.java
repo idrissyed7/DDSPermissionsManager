@@ -23,10 +23,11 @@ public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
 
     @Override
     public void persistToken(RefreshTokenGeneratedEvent event) {
-        if (event.getRefreshToken() != null && event.getAuthentication() != null &&
-                event.getAuthentication().getName() != null) {
-            String payload = event.getRefreshToken();
-            refreshTokenRepository.save(event.getAuthentication().getName(), payload, false);
+        String refreshToken = event.getRefreshToken();
+        Authentication authentication = event.getAuthentication();
+        if (refreshToken != null && authentication != null &&
+                authentication.getName() != null) {
+            refreshTokenRepository.save(authentication.getName(), refreshToken, false);
         } else {
             System.out.println("DEBUG in persistToken");
         }
