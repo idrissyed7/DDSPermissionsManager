@@ -7,16 +7,14 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
-import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
-import io.unityfoundation.dds.permissions.manager.model.user.UserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
@@ -30,37 +28,32 @@ public class GroupService {
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
-    private final UserService userService;
-    private final SecurityService securityService;
+    private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final TopicRepository topicRepository;
 
 
-    public GroupService(UserRepository userRepository, GroupRepository groupRepository, UserService userService,
-                        SecurityService securityService, GroupUserService groupUserService, TopicRepository topicRepository) {
+    public GroupService(UserRepository userRepository, GroupRepository groupRepository, SecurityUtil securityUtil,
+                        GroupUserService groupUserService, TopicRepository topicRepository) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
-        this.userService = userService;
-        this.securityService = securityService;
+        this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.topicRepository = topicRepository;
     }
 
     public Page<Group> findAll(Pageable pageable) {
-        Authentication authentication = securityService.getAuthentication().get();
-
-        if (userService.isCurrentUserAdmin()) {
+        if (securityUtil.isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
             return groupRepository.findAllByIdIn(groupsList, pageable);
         }
     }
 
     public MutableHttpResponse<Group> save(Group group) throws Exception {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -80,7 +73,7 @@ public class GroupService {
     }
 
     public void deleteById(Long id) {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -198,7 +191,7 @@ public class GroupService {
     }
 
     public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
