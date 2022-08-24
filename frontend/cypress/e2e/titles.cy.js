@@ -1,4 +1,4 @@
-describe('title should say Permission Manager', () => {
+describe('title should say Permissions Manager', () => {
     beforeEach(() => {
         cy.visit('http://localhost:3000');
     });
