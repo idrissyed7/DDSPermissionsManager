@@ -40,13 +40,18 @@ public class GroupUserService {
     }
 
     public boolean isUserGroupAdminOfGroup(Long groupId, Long userId) {
-        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndGroupAdminTrue(groupId, userId);
-        return groupUser.isPresent();
+        int groupUserCount = groupUserRepository.countByPermissionsGroupAndPermissionsUserAndGroupAdminTrue(groupId, userId);
+        return groupUserCount > 0;
     }
 
     public boolean isUserTopicAdminOfGroup(Long groupId, Long userId) {
-        Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(groupId, userId);
-        return groupUser.isPresent();
+        int groupUserCount =  groupUserRepository.countByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(groupId, userId);
+        return groupUserCount > 0;
+    }
+
+    public boolean isUserApplicationAdminOfGroup(Long groupId, Long userId) {
+        int groupUserCount = groupUserRepository.countByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(groupId, userId);
+        return groupUserCount > 0;
     }
 
     public GroupUser save(GroupUser groupUser) {

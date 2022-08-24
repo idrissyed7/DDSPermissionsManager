@@ -5,6 +5,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
@@ -35,13 +36,25 @@ public class ApplicationController {
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Application application) {
-        applicationService.save(application);
-        return HttpResponse.seeOther(URI.create("/applications/"));
+        try {
+            return applicationService.save(application);
+        } catch (AuthenticationException authenticationException) {
+            return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
     }
 
     @Post("/delete/{id}")
     HttpResponse<?> delete(Long id) {
-        applicationService.deleteById(id);
+        try {
+            applicationService.deleteById(id);
+        } catch (AuthenticationException authenticationException) {
+            return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
+
         return HttpResponse.seeOther(URI.create("/applications"));
     }
 }
