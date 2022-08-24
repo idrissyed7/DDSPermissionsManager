@@ -51,8 +51,8 @@
 				if (applicationsData.data.content.length % applicationsPerPage > 0) applicationsPageIndex++;
 
 				// Populate the applicationsPage Array
-				let pageArray = [];
 				for (let page = 0; page < applicationsPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < applicationsPerPage &&
@@ -64,7 +64,6 @@
 						totalApplicationsCount++;
 					}
 					applicationsPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {
@@ -260,7 +259,7 @@
 				<input
 					type="text"
 					placeholder="Application Name"
-					class:duplicate={duplicateAppName}
+					class:invalid={duplicateAppName}
 					bind:value={appName}
 					on:click={() => (duplicateAppName = false)}
 					on:keydown={(event) => {
@@ -291,10 +290,10 @@
 	<div class="content">
 		<h1>Applications</h1>
 		{#if $applications}
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
-					<th><strong>&ensp; Application Name</strong></th>
+					<th><strong>Application Name</strong></th>
 				</tr>
 				{#if applicationsPages.length > 0}
 					{#each applicationsPages[currentPage] as app, index}
@@ -314,7 +313,7 @@
 									bind:value={app.name}
 									bind:this={appElement}
 									class:app-name-as-label={!app.editable}
-									class:duplicate={duplicateAppName}
+									class:invalid={duplicateAppName}
 								/>
 								<span class="tooltiptext">&#9998</span>
 							</div>
@@ -377,14 +376,21 @@
 {/if}
 
 <style>
+	input {
+		margin-top: 1.1%;
+		text-align: left;
+	}
+
 	.tooltip .tooltiptext {
-		top: 0px;
+		top: 8px;
+		left: -25px;
 	}
 
 	.app-name-as-label {
 		text-align: left;
 		border: none;
-		padding-left: 1.1rem;
+		padding-left: 0.2rem;
+		margin-top: 1.65%;
 		background-color: rgba(0, 0, 0, 0);
 	}
 
@@ -395,10 +401,5 @@
 
 	.tooltip .tooltiptext {
 		transform: rotateY(0deg);
-	}
-
-	.duplicate {
-		border-width: 3px;
-		border-color: red;
 	}
 </style>
