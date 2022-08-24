@@ -1,9 +1,16 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MutableHttpResponse;
+import io.micronaut.http.annotation.Body;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,13 +19,22 @@ public class GroupUserService {
 
     private final GroupUserRepository groupUserRepository;
     private final GroupRepository groupRepository;
+    private final UserRepository userRepository;
+    private final SecurityUtil securityUtil;
 
 
-    public GroupUserService(GroupUserRepository groupUserRepository, GroupRepository groupRepository) {
+    public GroupUserService(GroupUserRepository groupUserRepository, GroupRepository groupRepository, UserRepository userRepository, SecurityUtil securityUtil) {
         this.groupUserRepository = groupUserRepository;
         this.groupRepository = groupRepository;
+        this.userRepository = userRepository;
+        this.securityUtil = securityUtil;
     }
 
+    public Optional<GroupUser> findById(Long id) {
+        return groupUserRepository.findById(id);
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void removeUserFromAllGroups(Long userId) {
         groupUserRepository.deleteAllByPermissionsUser(userId);
     }
@@ -31,10 +47,6 @@ public class GroupUserService {
     public boolean isUserTopicAdminOfGroup(Long groupId, Long userId) {
         Optional<GroupUser> groupUser = groupUserRepository.findByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(groupId, userId);
         return groupUser.isPresent();
-    }
-
-    public void removeMemberFromGroup(Long groupId, Long memberId) {
-        groupUserRepository.deleteAllByPermissionsGroupAndPermissionsUser(groupId, memberId);
     }
 
     public GroupUser save(GroupUser groupUser) {
@@ -55,6 +67,52 @@ public class GroupUserService {
 
     public List<GroupUser> getUsersOfGroup(Long groupId) {
         return groupUserRepository.findAllByPermissionsGroup(groupId);
+    }
+
+    public boolean isAdminOrGroupAdmin(Long groupId) {
+        Optional<Group> group = groupRepository.findById(groupId);
+        Optional<User> user = securityUtil.getCurrentlyAuthenticatedUser();
+
+        if (group.isEmpty() || user.isEmpty()) {
+            return false;
+        }
+
+        return user.get().isAdmin() || isUserGroupAdminOfGroup(group.get().getId(), user.get().getId());
+    }
+
+    @Transactional
+    public MutableHttpResponse<?> addMember(@Body GroupUserDTO groupUserDTO) {
+        Optional<Group> groupOptional = groupRepository.findById(groupUserDTO.getPermissionsGroup());
+        if (groupOptional.isEmpty()) {
+            return HttpResponse.notFound("Specified group not found");
+        }
+
+        Optional<User> userOptional = userRepository.findByEmail(groupUserDTO.getEmail());
+        if (userOptional.isPresent()) {
+            if (isUserMemberOfGroup(groupUserDTO.getPermissionsGroup(), userOptional.get().getId())) {
+                return HttpResponse.badRequest("Please use update endpoint");
+            } else {
+                return HttpResponse.ok(saveFromDTO(userOptional.get(), groupUserDTO));
+            }
+        } else {
+            User newUser = userRepository.save(new User(groupUserDTO.getEmail()));
+            return HttpResponse.ok(saveFromDTO(newUser, groupUserDTO));
+        }
+    }
+
+    private GroupUser saveFromDTO(User user, GroupUserDTO groupUserDTO) {
+        GroupUser groupUser = new GroupUser(groupUserDTO.getPermissionsGroup(), user.getId());
+        groupUser.setGroupAdmin(groupUserDTO.isGroupAdmin());
+        groupUser.setTopicAdmin(groupUserDTO.isTopicAdmin());
+        groupUser.setApplicationAdmin(groupUserDTO.isApplicationAdmin());
+
+        return save(groupUser);
+    }
+
+    public boolean removeMember(Long id) {
+        groupUserRepository.deleteById(id);
+
+        return true;
     }
 
     public List<Map<String, Object>> getAllPermissionsPerGroupUserIsMemberOf(Long id) {

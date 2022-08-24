@@ -80,32 +80,6 @@ public class GroupService {
         groupRepository.deleteById(id);
     }
 
-    @Transactional
-    public boolean addMember(@Body Long groupId, @Body Long candidateId, Map userRolesMap) {
-        Optional<Group> groupOptional = groupRepository.findById(groupId);
-        Optional<User> userOptional = userRepository.findById(candidateId);
-        if (groupOptional.isEmpty() || userOptional.isEmpty()) {
-            return false;
-        }
-        Group group = groupOptional.get();
-        User user = userOptional.get();
-
-        // ignore duplicate add attempt
-        if (groupUserService.isUserMemberOfGroup(group.getId(), user.getId())) {
-            return true;
-        }
-
-        GroupUser groupUser = new GroupUser(group.getId(), user.getId());
-        if (userRolesMap != null) {
-            groupUser.setGroupAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isGroupAdmin")).orElse(false));
-            groupUser.setTopicAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isTopicAdmin")).orElse(false));
-            groupUser.setApplicationAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isApplicationAdmin")).orElse(false));
-        }
-        groupUserService.save(groupUser);
-
-        return true;
-    }
-
     public Optional<Map> getGroupDetails(Long id) {
         Optional<Group> groupOptional = groupRepository.findById(id);
         if (groupOptional.isPresent()) {
@@ -113,17 +87,6 @@ public class GroupService {
             return Optional.of(Map.of("group", group));
         }
         return Optional.empty();
-    }
-
-    public boolean removeMember(Long groupId, Long memberId) {
-        Optional<Group> byId = groupRepository.findById(groupId);
-        if (byId.isEmpty()) {
-            return false;
-        }
-
-        groupUserService.removeMemberFromGroup(groupId, memberId);
-
-        return true;
     }
 
     @Transactional
@@ -161,23 +124,6 @@ public class GroupService {
         group.removeTopic(topicId);
         groupRepository.update(group);
         return true;
-    }
-
-    public boolean isAdminOrGroupAdmin(Long groupId) {
-
-        Optional<Group> group = groupRepository.findById(groupId);
-
-        if (group.isEmpty()) {
-            return false;
-        }
-
-        Authentication authentication = securityService.getAuthentication().get();
-        String userEmail = authentication.getName();
-        Long userId = userService.getUserByEmail(userEmail).get().getId();
-
-        boolean isGroupAdmin = groupUserService.isUserGroupAdminOfGroup(group.get().getId(), userId);
-
-        return userService.isCurrentUserAdmin() || isGroupAdmin;
     }
 
     public List<Map> getGroupMembers(Long groupId) {
