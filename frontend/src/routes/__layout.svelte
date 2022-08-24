@@ -15,20 +15,19 @@
 			onLoggedIn(res.data);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
-			remindTime = 60 * 1000 * 5; // 5 minutes
-			expirationTime = new Date(res.data.exp * 1000);
-			nowTime = new Date();
+			// remindTime = 60 * 1000 * 5; // 5 minutes
+			// expirationTime = new Date(res.data.exp * 1000);
+			// nowTime = new Date();
 
-			console.log('exp:', expirationTime);
-			console.log('now:', nowTime);
-			console.log('Remind in:', expirationTime - nowTime - remindTime);
-			console.log(expirationTime - nowTime);
-			// console.log('is authenticated?', $isAuthenticated);
+			// console.log('exp:', expirationTime);
+			// console.log('now:', nowTime);
+			// console.log('Remind in:', expirationTime - nowTime - remindTime);
+			// console.log(expirationTime - nowTime);
+			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
 		} catch (err) {
-			if (err.response.status === 401) {
-				// console.log('is authenticated?', $isAuthenticated);
-			}
+			// console.log('is authenticated?', $isAuthenticated);
+			console.error(err);
 		}
 	});
 </script>

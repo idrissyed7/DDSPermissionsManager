@@ -31,7 +31,7 @@ public class Bootstrap {
         User max = userRepository.save(new User("Max", "Montes", "montesm@test.test"));
         userRepository.save(new User("Jeff", "Brown", "jeff@test.test"));
         userRepository.save(new User("Julian", "Gracia", "jgracia@test.test"));
-        userRepository.save(new User("Daniel", "Bellone", "belloned@test.test", true));
+        userRepository.save(new User("Daniel", "Bellone", "belloned@test.test"));
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
 
