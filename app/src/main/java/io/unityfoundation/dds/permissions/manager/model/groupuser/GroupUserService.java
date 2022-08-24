@@ -33,6 +33,11 @@ public class GroupUserService {
         return groupUserCount > 0;
     }
 
+    public boolean isUserApplicationAdminOfGroup(Long groupId, Long userId) {
+        int groupUserCount = groupUserRepository.countByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(groupId, userId);
+        return groupUserCount > 0;
+    }
+
     public void removeMemberFromGroup(Long groupId, Long memberId) {
         groupUserRepository.deleteAllByPermissionsGroupAndPermissionsUser(groupId, memberId);
     }

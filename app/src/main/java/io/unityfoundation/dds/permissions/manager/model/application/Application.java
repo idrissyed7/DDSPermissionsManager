@@ -15,6 +15,9 @@ public class Application {
     @NonNull
     private String name;
 
+    @NonNull
+    private Long permissionsGroup;
+
     public Long getId() {
         return id;
     }
@@ -30,5 +33,13 @@ public class Application {
 
     public void setName(@NonNull String name) {
         this.name = name;
+    }
+
+    public Long getPermissionsGroup() {
+        return permissionsGroup;
+    }
+
+    public void setPermissionsGroup(Long permissionsGroup) {
+        this.permissionsGroup = permissionsGroup;
     }
 }
