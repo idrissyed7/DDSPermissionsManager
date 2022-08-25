@@ -33,6 +33,17 @@ public class ApplicationController {
         return HttpResponse.ok();
     }
 
+    @Get("/show/{id}")
+    public HttpResponse show(Long id) {
+        try {
+            return applicationService.show(id);
+        } catch (AuthenticationException authenticationException) {
+            return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
+    }
+
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     HttpResponse<?> save(@Body Application application) {

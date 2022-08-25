@@ -2,6 +2,8 @@ package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 
 import javax.persistence.*;
 
@@ -13,10 +15,12 @@ public class ApplicationPermission {
     private Long id;
 
     @NonNull
-    private Long permissionsApplication;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    private Application permissionsApplication;
 
     @NonNull
-    private Long permissionsTopic;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    private Topic permissionsTopic;
 
     @NonNull
     private AccessType accessType;
@@ -25,9 +29,10 @@ public class ApplicationPermission {
     public ApplicationPermission() {
     }
 
-    public ApplicationPermission(@NonNull Long groupId, @NonNull Long userId) {
-        this.permissionsApplication = groupId;
-        this.permissionsTopic = userId;
+    public ApplicationPermission(@NonNull Application application, @NonNull Topic topic, @NonNull AccessType accessType) {
+        this.permissionsApplication = application;
+        this.permissionsTopic = topic;
+        this.accessType = accessType;
     }
 
     public Long getId() {
@@ -39,21 +44,21 @@ public class ApplicationPermission {
     }
 
     @NonNull
-    public Long getPermissionsApplication() {
+    public Application getPermissionsApplication() {
         return permissionsApplication;
     }
 
-    public void setPermissionsApplication(@NonNull Long groupId) {
-        this.permissionsApplication = groupId;
+    public void setPermissionsApplication(@NonNull Application permissionsApplication) {
+        this.permissionsApplication = permissionsApplication;
     }
 
     @NonNull
-    public Long getPermissionsTopic() {
+    public Topic getPermissionsTopic() {
         return permissionsTopic;
     }
 
-    public void setPermissionsTopic(@NonNull Long userId) {
-        this.permissionsTopic = userId;
+    public void setPermissionsTopic(@NonNull Topic permissionsTopic) {
+        this.permissionsTopic = permissionsTopic;
     }
 
     public AccessType getAccessType() {

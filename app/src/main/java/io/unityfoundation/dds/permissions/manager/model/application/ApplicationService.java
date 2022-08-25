@@ -9,6 +9,7 @@ import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.utils.SecurityService;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -16,6 +17,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
+import java.util.Map;
 import java.util.Optional;
 
 @Singleton
@@ -86,5 +88,22 @@ public class ApplicationService {
         }
 
         applicationRepository.deleteById(id);
+    }
+
+    public HttpResponse show(Long id) {
+        Optional<Application> applicationOptional = applicationRepository.findById(id);
+        if (applicationOptional.isEmpty()) {
+            return HttpResponse.notFound();
+        }
+        Application application = applicationOptional.get();
+        Group group = groupRepository.findById(application.getPermissionsGroup()).get();
+
+        Map map = Map.of(
+                "application_id", application.getId(),
+                "application_name", application.getName(),
+                "group_name", group.getName()
+                );
+
+        return HttpResponse.ok(map);
     }
 }

@@ -703,6 +703,32 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void canViewApplicationDetails() {
+
+            mockSecurityService.postConstruct();
+
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            Application applicationOne = new Application();
+            applicationOne.setName("ApplicationOne");
+            applicationOne.setPermissionsGroup(primaryGroup.getId());
+            request = HttpRequest.POST("/applications/save", applicationOne);
+            response = blockingClient.exchange(request, Application.class);
+            assertEquals(OK, response.getStatus());
+            applicationOne = response.getBody(Application.class).get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications/show/"+applicationOne.getId());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+        }
+
+        @Test
         public void cannotUpdateApplicationName() {
 //            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
 
