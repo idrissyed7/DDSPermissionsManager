@@ -19,13 +19,6 @@
 body {
 	min-height: 100vh;
 	margin: 0;
-	background-color: var(--primary-color);
-	background: linear-gradient(
-		180deg,
-		var(--primary-color) 0%,
-		var(--secondary-color) 10.45%,
-		var(--tertiary-color) 41.35%
-	);
 }
 
 body::before {
@@ -93,10 +86,7 @@ button {
 
 input {
 	text-align: center;
-}
-
-button:focus:not(:focus-visible) {
-	outline: none;
+	height: 1.6rem;
 }
 
 input::placeholder {
@@ -105,39 +95,32 @@ input::placeholder {
 }
 
 table {
-	margin-left: auto;
-	margin-right: auto;
 	border-collapse: collapse;
 	width: 60%;
 	white-space: nowrap;
 }
 
 th {
-	font-size: 13.5pt;
-	padding: 0.2rem;
+	font-size: 15pt;
+	padding-bottom: 0.2rem;
 	text-align: left;
-	/* padding: 0.3rem 1rem 0.3rem 5rem; */
 }
 
 td {
-	font-size: 13pt;
 	padding-left: 0.3rem;
 	padding-top: 0.25rem;
 	padding-bottom: 0.25rem;
 	text-align: left;
-	vertical-align: baseline;
+	vertical-align: middle;
+}
+
+tr {
+	border-style: solid;
+	border-color: lightgray;
 }
 
 tr:nth-child(even) {
-	background-image: linear-gradient(
-		60deg,
-		rgba(255, 255, 255, 0),
-		rgba(255, 255, 255, 1),
-		rgba(255, 255, 255, 0.5),
-		rgba(255, 255, 255, 0),
-		rgba(255, 255, 255, 0)
-	);
-	filter: drop-shadow(-1px -1px 3px rgb(0 0 0 / 0.1));
+	background-color: rgb(234, 234, 234);
 }
 
 @media (min-width: 720px) {
@@ -148,8 +131,6 @@ tr:nth-child(even) {
 
 .content {
 	width: 100%;
-	max-width: var(--column-width);
-	margin: var(--column-margin-top) auto 0 auto;
 }
 
 .button {
@@ -198,8 +179,16 @@ tr:nth-child(even) {
 	right: 0;
 }
 
+.remove-button {
+    background-color: rgba(0, 0, 0, 0);
+    border-style: outset;
+    border-color: rgba(255,255,255,0.8);
+    border-width: 1px;
+    font-size: 8pt;
+    vertical-align: middle;
+  }
+
 .button-delete {
-	display: inline-block;
 	border-radius: 4px;
 	background-color: red;
 	border: none;
@@ -211,6 +200,7 @@ tr:nth-child(even) {
 	transition: all 0.5s;
 	cursor: pointer;
 	width: 4.6rem;
+	float: right;
 }
 
 .button-delete:hover {
@@ -273,6 +263,10 @@ tr:nth-child(even) {
 	cursor: pointer;
 }
 
+.button-pagination:disabled {
+	color: rgba(16, 16, 16, 0.3);
+}
+
 .button-pagination:disabled:hover {
 	background-color: rgba(239, 239, 239, 0.3);
 }
@@ -317,7 +311,8 @@ transition: all 300ms;
 
 /* Position the tooltip */
 position: absolute;
-top: -22px;
+top: 0px;
+left:306px;
 height: fit-content;
 width: fit-content;
 transform: rotateY(180deg);
@@ -329,6 +324,56 @@ visibility: visible;
 transition-delay: 1s;
 animation: fadeIn 0.2s ease-in-out;
 -webkit-animation: fadeIn 0.2s ease-in-out;
+}
+
+.name-as-label {
+	border: none;
+	font-size: 35px;
+	text-align: center;
+	background-color: rgba(0, 0, 0, 0);
+}
+
+.name-as-label:hover {
+	color: rgb(103, 103, 103);
+}
+
+.name {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.name span {
+	position: relative;
+	left: -20px;
+	font-size: 15pt;
+	cursor: pointer;
+}
+
+.name span:hover {
+	color: grey;
+}
+
+.invalid {
+	border-width: 3px;
+	border-color: red;
+}
+
+.create-error {
+	color: red;
+	text-align: center;
+	position: absolute;
+	justify-content: center;
+	bottom: 5%;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+}
+
+.hidden {
+	display: none;
 }
 
 @-webkit-keyframes fadeIn {
