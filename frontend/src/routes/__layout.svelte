@@ -1,17 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
+	import { httpAdapter } from '../appconfig';
 	import permissionsByGroup from '../stores/permissionsByGroup';
-	import axios from 'axios';
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
-	const URL_PREFIX = 'http://localhost:8080';
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/token_info`, { withCredentials: true });
+			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
@@ -26,9 +25,7 @@
 			// console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
 		} catch (err) {
-			if (err.response.status === 401) {
-				// console.log('is authenticated?', $isAuthenticated);
-			}
+			console.error(err);
 		}
 	});
 </script>
