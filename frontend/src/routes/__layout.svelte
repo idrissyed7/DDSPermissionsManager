@@ -26,7 +26,6 @@
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
 		} catch (err) {
-			// console.log('is authenticated?', $isAuthenticated);
 			console.error(err);
 		}
 	});
