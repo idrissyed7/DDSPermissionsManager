@@ -54,14 +54,6 @@ public class GroupUserService {
         return groupUserCount > 0;
     }
 
-    public GroupUser save(GroupUser groupUser) {
-        if (groupUser.getId() == null) {
-            return groupUserRepository.save(groupUser);
-        } else {
-            return groupUserRepository.update(groupUser);
-        }
-    }
-
     public List<Long> getAllGroupsUserIsAMemberOf(Long userId) {
         return groupUserRepository.findAllByPermissionsUser(userId).stream().map(GroupUser::getPermissionsGroup).collect(Collectors.toList());
     }
@@ -105,13 +97,21 @@ public class GroupUserService {
         }
     }
 
+    @Transactional
+    public MutableHttpResponse<?> updateMember(@Body GroupUser groupUser) {
+        if (groupUser.getId() == null) {
+            return HttpResponse.badRequest("Please use save endpoint instead");
+        }
+        return HttpResponse.ok(groupUserRepository.update(groupUser));
+    }
+
     private GroupUser saveFromDTO(User user, GroupUserDTO groupUserDTO) {
         GroupUser groupUser = new GroupUser(groupUserDTO.getPermissionsGroup(), user.getId());
         groupUser.setGroupAdmin(groupUserDTO.isGroupAdmin());
         groupUser.setTopicAdmin(groupUserDTO.isTopicAdmin());
         groupUser.setApplicationAdmin(groupUserDTO.isApplicationAdmin());
 
-        return save(groupUser);
+        return groupUserRepository.save(groupUser);
     }
 
     public boolean removeMember(Long id) {

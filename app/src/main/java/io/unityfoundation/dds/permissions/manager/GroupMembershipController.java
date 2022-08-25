@@ -1,10 +1,7 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.annotation.Body;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.Delete;
-import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
@@ -29,6 +26,16 @@ public class GroupMembershipController {
 
         if (groupUserService.isAdminOrGroupAdmin(dto.getPermissionsGroup())) {
             return groupUserService.addMember(dto);
+        } else {
+            return HttpResponse.unauthorized();
+        }
+    }
+
+    @Put
+    HttpResponse updateMember(@Body GroupUser groupUser) {
+
+        if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
+            return groupUserService.updateMember(groupUser);
         } else {
             return HttpResponse.unauthorized();
         }
