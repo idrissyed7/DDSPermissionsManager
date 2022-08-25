@@ -36,7 +36,7 @@ public class TopicService {
     public Page<Topic> findAll(Pageable pageable) {
         Authentication authentication = securityService.getAuthentication().get();
 
-        if (isCurrentUserAdmin()) {
+        if (userService.isCurrentUserAdmin()) {
             return topicRepository.findAll(pageable);
         } else {
             String userEmail = authentication.getName();
@@ -49,7 +49,7 @@ public class TopicService {
     public MutableHttpResponse save(Topic topic) throws Exception {
         if (topic.getId() != null) {
             throw new Exception("Update of Topics are not allowed.");
-        } else if (!isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
+        } else if (!userService.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -76,15 +76,10 @@ public class TopicService {
         if (topic.isEmpty()) {
             throw new Exception("Topic not found");
         }
-        if (!isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
+        if (!userService.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
             throw new AuthenticationException("Not authorized");
         }
 
         topicRepository.deleteById(id);
-    }
-
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = securityService.getAuthentication().get();
-        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
     }
 }

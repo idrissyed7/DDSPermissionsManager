@@ -4,10 +4,12 @@ import io.micronaut.context.annotation.Replaces;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.security.utils.SecurityService;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import jakarta.inject.Singleton;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -19,7 +21,9 @@ public class MockSecurityService implements SecurityService {
 
     @PostConstruct
     void postConstruct() {
-        serverAuthentication = new ServerAuthentication("montesm@test.test", Collections.emptyList(), Map.of("isAdmin", true));
+        serverAuthentication = new ServerAuthentication("montesm@test.test",
+                List.of(UserRole.ADMIN.toString()),
+                Map.of());
     }
 
     @Override
