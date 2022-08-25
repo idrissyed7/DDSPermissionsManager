@@ -9,10 +9,10 @@ import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,9 +22,11 @@ import java.util.Optional;
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupUserService groupUserService;
 
-    public GroupController(GroupService groupService) {
+    public GroupController(GroupService groupService, GroupUserService groupUserService) {
         this.groupService = groupService;
+        this.groupUserService = groupUserService;
     }
 
     @Get
@@ -88,37 +90,10 @@ public class GroupController {
         }
     }
 
-    @Post("/remove_member/{groupId}/{memberId}")
-    HttpResponse removeMember(Long groupId, Long memberId) {
-
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.removeMember(groupId, memberId)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-
-        return HttpResponse.notFound();
-    }
-
-    @Post("/add_member/{groupId}/{candidateId}")
-    HttpResponse addMember(Long groupId, Long candidateId, @Body HashMap userRolesMap) {
-
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.addMember(groupId, candidateId, userRolesMap)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-        return HttpResponse.notFound();
-    }
-
     @Post("/remove_topic/{groupId}/{topicId}")
     HttpResponse removeTopic(Long groupId, Long topicId) {
 
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
+        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeTopic(groupId, topicId)) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
             }
@@ -132,7 +107,7 @@ public class GroupController {
     @Post("/add_topic/{groupId}/{topicId}")
     HttpResponse addTopic(Long groupId, Long topicId) {
 
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
+        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             try {
                 if (groupService.addTopic(groupId, topicId)) {
                     return HttpResponse.seeOther(URI.create("/groups/" + groupId));

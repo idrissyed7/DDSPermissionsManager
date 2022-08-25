@@ -13,12 +13,6 @@ public class User {
     private Long id;
 
     @NonNull
-    private String firstName;
-
-    @NonNull
-    private String lastName;
-
-    @NonNull
     @Email
     private String email;
 
@@ -27,15 +21,11 @@ public class User {
     public User() {
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email) {
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public User(@NonNull String email) {
         this.email = email;
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email, @NonNull boolean isAdmin) {
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public User(@NonNull String email, @NonNull boolean isAdmin) {
         this.email = email;
         this.isAdmin = isAdmin;
     }
@@ -46,24 +36,6 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    @NonNull
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(@NonNull String firstName) {
-        this.firstName = firstName;
-    }
-
-    @NonNull
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(@NonNull String lastName) {
-        this.lastName = lastName;
     }
 
     @NonNull
