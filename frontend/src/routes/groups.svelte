@@ -1,12 +1,10 @@
 <script>
 	import { isAdmin, isAuthenticated } from '../stores/authentication';
 	import { onMount } from 'svelte';
-	import axios from 'axios';
+	import { httpAdapter } from '../appconfig';
 	import groups from '../stores/groups';
 	import groupDetails from '../stores/groupDetails';
 	import Modal from '../lib/Modal.svelte';
-
-	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -53,7 +51,7 @@
 
 	onMount(async () => {
 		try {
-			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
+			const groupsData = await httpAdapter.get(`/groups`);
 			groups.set(groupsData.data.content);
 			console.log($groups);
 
@@ -118,10 +116,7 @@
 		groupsListVisible = false;
 		groupDetailVisible = true;
 		try {
-			const res = await axios.get(`${URL_PREFIX}/groups/${groupId}`, {
-				withCredentials: true
-			});
-
+			const res = await httpAdapter.get(`/groups/${groupId}`);
 			groupDetails.set(res.data);
 			selectedGroupId = $groupDetails.group.id;
 			selectedGroupName = $groupDetails.group.name;
@@ -140,15 +135,11 @@
 
 	const userMemberRemove = async () => {
 		confirmRemoveUserVisible = false;
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/groups/remove_member/${selectedGroupId}/${selectedUserId}`,
-				{
-					firstName: selectedUserFirstName,
-					lastName: selectedUserLastName
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/groups/remove_member/${selectedGroupId}/${selectedUserId}`, {
+				firstName: selectedUserFirstName,
+				lastName: selectedUserLastName
+			})
 			.catch((err) => {
 				ErrorMessage('Error Removing Group Member', err.message);
 			});
@@ -162,10 +153,7 @@
 
 	const reloadGroupDetails = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/groups/${selectedGroupId}`, {
-				withCredentials: true
-			});
-
+			const res = await httpAdapter.get(`/groups/${selectedGroupId}`);
 			groupDetails.set(res.data);
 		} catch (err) {
 			ErrorMessage('Error Loading Group Details', err.message);
@@ -174,7 +162,7 @@
 
 	const reloadAllGroups = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
+			const res = await httpAdapter.get(`/groups`);
 			groups.set(res.data.content);
 
 			calculatePagination();
@@ -185,16 +173,12 @@
 
 	const userCandidateAdd = async () => {
 		// work on this
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/groups/add_member/${selectedGroupId}/${selectedUserId}`,
-				{
-					isGroupAdmin: true,
-					isApplicationAdmin: true,
-					isTopicAdmin: true
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/groups/add_member/${selectedGroupId}/${selectedUserId}`, {
+				isGroupAdmin: true,
+				isApplicationAdmin: true,
+				isTopicAdmin: true
+			})
 			.catch((err) => {
 				ErrorMessage('Error Adding Candidate Member', err.message);
 			});
@@ -224,14 +208,10 @@
 
 	const addGroup = async () => {
 		if (!disabled) {
-			await axios
-				.post(
-					`${URL_PREFIX}/groups/save/`,
-					{
-						name: newGroupName
-					},
-					{ withCredentials: true }
-				)
+			await httpAdapter
+				.post(`/groups/save/`, {
+					name: newGroupName
+				})
 				.catch((err) => {
 					addGroupVisible = false;
 					ErrorMessage('Error Adding Group', err.message);
@@ -247,15 +227,11 @@
 
 	const saveNewGroupName = async () => {
 		editGroupName = false;
-		await axios
-			.post(
-				`${URL_PREFIX}/groups/save/`,
-				{
-					id: selectedGroupId,
-					name: selectedGroupName
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/groups/save/`, {
+				id: selectedGroupId,
+				name: selectedGroupName
+			})
 			.catch((err) => {
 				ErrorMessage('Error Editing Group Name', err.message);
 			});
@@ -266,14 +242,10 @@
 	const deleteGroup = async () => {
 		confirmDeleteVisible = false;
 
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/groups/delete/${selectedGroupId}`,
-				{
-					id: selectedGroupId
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/groups/delete/${selectedGroupId}`, {
+				id: selectedGroupId
+			})
 			.catch((err) => {
 				ErrorMessage('Error Deleting Group', err.message);
 			});

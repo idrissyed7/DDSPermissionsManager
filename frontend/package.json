@@ -8,7 +8,8 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
-		"format": "prettier --write --plugin-search-dir=. ."
+		"format": "prettier --write --plugin-search-dir=. .",
+		"deploy:dev": "ENV=stage npm run build && gcloud app deploy --quiet --project dds-permissions-manager-359219 build/app.yaml"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "next",
