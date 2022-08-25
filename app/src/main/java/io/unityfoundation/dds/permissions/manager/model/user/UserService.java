@@ -81,7 +81,7 @@ public class UserService {
 
     public boolean isCurrentUserAdmin() {
         Authentication authentication = securityService.getAuthentication().get();
-        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
+        return authentication.getRoles().contains(UserRole.ADMIN.toString());
     }
 
     public User getCurrentlyAuthenticatedUser() {

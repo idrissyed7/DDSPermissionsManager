@@ -1,12 +1,10 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
 	import { onMount } from 'svelte';
-	import axios from 'axios';
+	import { httpAdapter } from '../appconfig';
 	import topics from '../stores/groups';
 	import topicDetails from '../stores/groupDetails';
 	import Modal from '../lib/Modal.svelte';
-
-	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -38,7 +36,7 @@
 
 	onMount(async () => {
 		try {
-			const topicsData = await axios.get(`${URL_PREFIX}/topics`, { withCredentials: true });
+			const topicsData = await httpAdapter.get(`/topics`);
 			topics.set(topicsData.data.content);
 			console.log(topicsData);
 
@@ -103,9 +101,7 @@
 		topicsListVisible = false;
 		topicDetailVisible = true;
 		try {
-			const res = await axios.get(`${URL_PREFIX}/topics/${topicId}`, {
-				withCredentials: true
-			});
+			const res = await httpAdapter.get(`/topics/${topicId}`);
 
 			topicDetails.set(res.data);
 			selectedTopicId = $topicDetails.group.id;
@@ -118,14 +114,10 @@
 	const deleteTopic = async () => {
 		confirmDeleteVisible = false;
 
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/topics/delete/${selectedTopicId}`,
-				{
-					id: selectedTopicId
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/topics/delete/${selectedTopicId}`, {
+				id: selectedTopicId
+			})
 			.catch((err) => {
 				ErrorMessage('Error Deleting Topic', err.message);
 			});
@@ -138,14 +130,10 @@
 
 	const addTopic = async () => {
 		if (!disabled) {
-			await axios
-				.post(
-					`${URL_PREFIX}/topics/save/`,
-					{
-						name: newTopicName
-					},
-					{ withCredentials: true }
-				)
+			await httpAdapter
+				.post(`/topics/save/`, {
+					name: newTopicName
+				})
 				.catch((err) => {
 					addTopicVisible = false;
 					ErrorMessage('Error Adding Topic', err.message);
@@ -171,15 +159,11 @@
 
 	const saveNewTopicName = async () => {
 		editTopicName = false;
-		await axios
-			.post(
-				`${URL_PREFIX}/topics/save/`,
-				{
-					id: selectedTopicId,
-					name: selectedTopicName.trim()
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/topics/save/`, {
+				id: selectedTopicId,
+				name: selectedTopicName.trim()
+			})
 			.catch((err) => {
 				ErrorMessage('Error Editing Topic Name', err.message);
 			});
@@ -189,7 +173,7 @@
 
 	const reloadAllTopics = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/topics`, { withCredentials: true });
+			const res = await httpAdapter.get(`/topics`);
 			topics.set(res.data.content);
 
 			calculatePagination();
@@ -200,9 +184,7 @@
 
 	const reloadTopicDetails = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/topics/${selectedTopicId}`, {
-				withCredentials: true
-			});
+			const res = await httpAdapter.get(`/topics/${selectedTopicId}`);
 
 			topicDetails.set(res.data);
 		} catch (err) {
