@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -30,6 +31,11 @@ public class GroupController {
     @Get
     public HttpResponse index(@Valid Pageable pageable) {
         return HttpResponse.ok(groupService.findAll(pageable));
+    }
+
+    @Get("/search/{searchText}")
+    public HttpResponse search(@NonNull String searchText) {
+        return HttpResponse.ok(groupService.searchByNameContains(searchText));
     }
 
     @Get("/create")

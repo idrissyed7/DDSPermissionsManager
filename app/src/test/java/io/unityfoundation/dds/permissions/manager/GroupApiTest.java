@@ -166,6 +166,13 @@ public class GroupApiTest {
     }
 
     @Test
+    public void canSearch() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/ta");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() <= 10);
+    }
+
+    @Test
     public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
         HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
         List responseList = blockingClient.retrieve(request, List.class);
