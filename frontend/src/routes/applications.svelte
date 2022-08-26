@@ -1,17 +1,9 @@
-<script context="module">
-	import { browser, dev } from '$app/env';
-	export const hydrate = dev;
-	export const router = browser;
-</script>
-
 <script>
 	import { onMount } from 'svelte';
 	import { isAuthenticated } from '../stores/authentication';
+	import { httpAdapter } from '../appconfig';
 	import Modal from '../lib/Modal.svelte';
-	import axios from 'axios';
 	import applications from '../stores/applications';
-
-	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -37,9 +29,7 @@
 
 	onMount(async () => {
 		try {
-			const applicationsData = await axios.get(`${URL_PREFIX}/applications`, {
-				withCredentials: true
-			});
+			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
 			if ($applications) {
@@ -51,8 +41,8 @@
 				if (applicationsData.data.content.length % applicationsPerPage > 0) applicationsPageIndex++;
 
 				// Populate the applicationsPage Array
-				let pageArray = [];
 				for (let page = 0; page < applicationsPageIndex; page++) {
+					let pageArray = [];
 					for (
 						let i = 0;
 						i < applicationsPerPage &&
@@ -64,7 +54,6 @@
 						totalApplicationsCount++;
 					}
 					applicationsPages.push(pageArray);
-					pageArray = [];
 				}
 			}
 		} catch (err) {
@@ -88,13 +77,9 @@
 
 	const addApplication = async () => {
 		try {
-			const res = await axios.post(
-				`${URL_PREFIX}/applications/save`,
-				{
-					name: appName
-				},
-				{ withCredentials: true }
-			);
+			const res = await httpAdapter.post(`/applications/save`, {
+				name: appName
+			});
 			addApplicationVisible = false;
 		} catch (err) {
 			ErrorMessage('Error Creating Application', err.message);
@@ -114,14 +99,10 @@
 
 	const appDelete = async () => {
 		confirmDeleteVisible = false;
-		await axios
-			.post(
-				`${URL_PREFIX}/applications/delete/${selectedAppId}`,
-				{
-					id: selectedAppId
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/applications/delete/${selectedAppId}`, {
+				id: selectedAppId
+			})
 			.catch((err) => {
 				ErrorMessage('Error Deleting Application', err.message);
 			});
@@ -134,7 +115,7 @@
 
 	const reloadApps = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/applications`, { withCredentials: true });
+			const res = await httpAdapter.get(`/applications`);
 			applications.set(res.data.content);
 			if ($applications) {
 				calculatePagination();
@@ -154,15 +135,11 @@
 		selectedAppName = name;
 		selectedAppId = id;
 
-		await axios
-			.post(
-				`${URL_PREFIX}/applications/save/`,
-				{
-					id: selectedAppId,
-					name: selectedAppName.trim()
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/applications/save/`, {
+				id: selectedAppId,
+				name: selectedAppName.trim()
+			})
 			.catch((err) => {
 				ErrorMessage('Error Saving New Application Name', err.message);
 			});
@@ -240,9 +217,9 @@
 
 	{#if confirmDeleteVisible && !errorMessageVisible}
 		<Modal title="Delete {selectedAppName}?" on:cancel={() => (confirmDeleteVisible = false)}>
-			<div class="confirm-delete">
+			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" on:click={() => appDelete()}><span>Delete</span></button>
 			</div>
 		</Modal>
@@ -260,7 +237,7 @@
 				<input
 					type="text"
 					placeholder="Application Name"
-					class:duplicate={duplicateAppName}
+					class:invalid={duplicateAppName}
 					bind:value={appName}
 					on:click={() => (duplicateAppName = false)}
 					on:keydown={(event) => {
@@ -291,10 +268,10 @@
 	<div class="content">
 		<h1>Applications</h1>
 		{#if $applications}
-			<table>
-				<tr>
+			<table align="center">
+				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
-					<th><strong>&ensp; Application Name</strong></th>
+					<th><strong>Application Name</strong></th>
 				</tr>
 				{#if applicationsPages.length > 0}
 					{#each applicationsPages[currentPage] as app, index}
@@ -314,7 +291,7 @@
 									bind:value={app.name}
 									bind:this={appElement}
 									class:app-name-as-label={!app.editable}
-									class:duplicate={duplicateAppName}
+									class:invalid={duplicateAppName}
 								/>
 								<span class="tooltiptext">&#9998</span>
 							</div>
@@ -377,14 +354,21 @@
 {/if}
 
 <style>
+	input {
+		margin-top: 1.1%;
+		text-align: left;
+	}
+
 	.tooltip .tooltiptext {
-		top: 0px;
+		top: 8px;
+		left: -25px;
 	}
 
 	.app-name-as-label {
 		text-align: left;
 		border: none;
-		padding-left: 1.1rem;
+		padding-left: 0.2rem;
+		margin-top: 1.65%;
 		background-color: rgba(0, 0, 0, 0);
 	}
 
@@ -395,10 +379,5 @@
 
 	.tooltip .tooltiptext {
 		transform: rotateY(0deg);
-	}
-
-	.duplicate {
-		border-width: 3px;
-		border-color: red;
 	}
 </style>
