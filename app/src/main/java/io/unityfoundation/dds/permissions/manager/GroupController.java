@@ -44,6 +44,7 @@ public class GroupController {
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Group.class))
     )
+    @ApiResponse(responseCode = "303", description = "Group already exists. Response body contains original.")
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse<?> save(@Body Group group) {
