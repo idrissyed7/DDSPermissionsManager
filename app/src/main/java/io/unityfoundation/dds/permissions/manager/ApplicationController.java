@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
-import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.validation.Valid;
 import java.net.URI;
