@@ -1,6 +1,7 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.core.annotation.Nullable;
+import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -10,6 +11,7 @@ import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
@@ -17,6 +19,7 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.List;
 
 @Controller("/application_permissions")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -29,7 +32,7 @@ public class ApplicationPermissionController {
     }
 
     @Get("{?application,topic")
-    public HttpResponse index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
+    public HttpResponse<Page<ApplicationPermission>> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
         return HttpResponse.ok(applicationPermissionService.findAll(application, topic, pageable));
     }
 
