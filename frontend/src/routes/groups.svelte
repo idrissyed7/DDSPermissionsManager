@@ -53,7 +53,6 @@
 		try {
 			const groupsData = await httpAdapter.get(`/groups`);
 			groups.set(groupsData.data.content);
-			console.log($groups);
 
 			if ($groups) {
 				// Pagination

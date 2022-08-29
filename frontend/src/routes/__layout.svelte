@@ -3,6 +3,7 @@
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
 	import permissionsByGroup from '../stores/permissionsByGroup';
+	import groups from '../stores/groups';
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
@@ -13,7 +14,11 @@
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
 			permissionsByGroup.set(res.data.permissionsByGroup);
+			console.log('permissionsByGroup', $permissionsByGroup);
 
+			const groupsData = await httpAdapter.get(`/groups`);
+			groups.set(groupsData.data.content);
+			console.log('$groups: ', $groups);
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);
 			// nowTime = new Date();

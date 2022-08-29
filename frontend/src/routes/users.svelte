@@ -40,8 +40,8 @@
 		try {
 			const usersData = await httpAdapter.get(`/users`);
 			users.set(usersData.data.content);
-			console.log($users);
-			console.log($permissionsByGroup);
+			console.log('$users', $users);
+			console.log('$permissionsByGroup', $permissionsByGroup);
 
 			const groupsData = await httpAdapter.get(`/groups`);
 			groups.set(groupsData.data.content);
