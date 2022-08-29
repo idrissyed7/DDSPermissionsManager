@@ -1,17 +1,9 @@
-<script context="module">
-	import { browser, dev } from '$app/env';
-	export const hydrate = dev;
-	export const router = browser;
-</script>
-
 <script>
 	import { onMount } from 'svelte';
 	import { isAuthenticated } from '../stores/authentication';
+	import { httpAdapter } from '../appconfig';
 	import Modal from '../lib/Modal.svelte';
-	import axios from 'axios';
 	import applications from '../stores/applications';
-
-	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -37,9 +29,7 @@
 
 	onMount(async () => {
 		try {
-			const applicationsData = await axios.get(`${URL_PREFIX}/applications`, {
-				withCredentials: true
-			});
+			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
 			if ($applications) {
@@ -87,13 +77,9 @@
 
 	const addApplication = async () => {
 		try {
-			const res = await axios.post(
-				`${URL_PREFIX}/applications/save`,
-				{
-					name: appName
-				},
-				{ withCredentials: true }
-			);
+			const res = await httpAdapter.post(`/applications/save`, {
+				name: appName
+			});
 			addApplicationVisible = false;
 		} catch (err) {
 			ErrorMessage('Error Creating Application', err.message);
@@ -113,14 +99,10 @@
 
 	const appDelete = async () => {
 		confirmDeleteVisible = false;
-		await axios
-			.post(
-				`${URL_PREFIX}/applications/delete/${selectedAppId}`,
-				{
-					id: selectedAppId
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/applications/delete/${selectedAppId}`, {
+				id: selectedAppId
+			})
 			.catch((err) => {
 				ErrorMessage('Error Deleting Application', err.message);
 			});
@@ -133,7 +115,7 @@
 
 	const reloadApps = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/applications`, { withCredentials: true });
+			const res = await httpAdapter.get(`/applications`);
 			applications.set(res.data.content);
 			if ($applications) {
 				calculatePagination();
@@ -153,15 +135,11 @@
 		selectedAppName = name;
 		selectedAppId = id;
 
-		await axios
-			.post(
-				`${URL_PREFIX}/applications/save/`,
-				{
-					id: selectedAppId,
-					name: selectedAppName.trim()
-				},
-				{ withCredentials: true }
-			)
+		await httpAdapter
+			.post(`/applications/save/`, {
+				id: selectedAppId,
+				name: selectedAppName.trim()
+			})
 			.catch((err) => {
 				ErrorMessage('Error Saving New Application Name', err.message);
 			});
@@ -239,9 +217,9 @@
 
 	{#if confirmDeleteVisible && !errorMessageVisible}
 		<Modal title="Delete {selectedAppName}?" on:cancel={() => (confirmDeleteVisible = false)}>
-			<div class="confirm-delete">
+			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" on:click={() => appDelete()}><span>Delete</span></button>
 			</div>
 		</Modal>

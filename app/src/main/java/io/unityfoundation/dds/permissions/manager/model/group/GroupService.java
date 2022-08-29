@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.micronaut.data.model.Sort;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
@@ -43,6 +44,10 @@ public class GroupService {
     }
 
     public Page<Group> findAll(Pageable pageable) {
+        if (!pageable.isSorted()) {
+            pageable = pageable.order(Sort.Order.asc("name"));
+        }
+
         if (securityUtil.isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {

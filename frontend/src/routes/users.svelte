@@ -1,13 +1,11 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
 	import { onMount } from 'svelte';
-	import axios from 'axios';
+	import { httpAdapter } from '../appconfig';
 	import users from '../stores/users';
 	import groups from '../stores/groups';
 	import permissionsByGroup from '../stores/permissionsByGroup';
 	import Modal from '../lib/Modal.svelte';
-
-	const URL_PREFIX = 'http://localhost:8080';
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -40,12 +38,12 @@
 
 	onMount(async () => {
 		try {
-			const usersData = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
+			const usersData = await httpAdapter.get(`/users`);
 			users.set(usersData.data.content);
 			console.log($users);
 			console.log($permissionsByGroup);
 
-			const groupsData = await axios.get(`${URL_PREFIX}/groups`, { withCredentials: true });
+			const groupsData = await httpAdapter.get(`/groups`);
 			groups.set(groupsData.data.content);
 
 			if ($users) {
@@ -107,7 +105,7 @@
 
 	const reloadUsers = async () => {
 		try {
-			const res = await axios.get(`${URL_PREFIX}/users`, { withCredentials: true });
+			const res = await httpAdapter.get(`/users`);
 			users.set(res.data.content);
 			calculatePagination();
 		} catch (err) {
@@ -117,15 +115,11 @@
 
 	const userDelete = async () => {
 		confirmDeleteVisible = false;
-		const res = await axios
-			.post(
-				`${URL_PREFIX}/users/delete/${selectedUserId}`,
-				{
-					firstName: userFirstName,
-					lastName: userLastName
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/users/delete/${selectedUserId}`, {
+				firstName: userFirstName,
+				lastName: userLastName
+			})
 			.catch((err) => {
 				ErrorMessage('Error Deleting User', err.message);
 			});
@@ -150,19 +144,13 @@
 	};
 
 	const addUser = async () => {
-		// if they isAdmin then add isAdmin property to the body with the boolean.
-		// if they are not admin add isAdmin property as false.
-		const res = await axios
-			.post(
-				'http://localhost:8080/users/save',
-				{
-					firstName: userFirstName,
-					lastName: userLastName,
-					email: userEmail,
-					isAdmin: false
-				},
-				{ withCredentials: true }
-			)
+		const res = await httpAdapter
+			.post(`/users/save`, {
+				firstName: userFirstName,
+				lastName: userLastName,
+				email: userEmail,
+				isAdmin: false
+			})
 			.catch((err) => {
 				ErrorMessage('Error Saving User', err.message);
 			});

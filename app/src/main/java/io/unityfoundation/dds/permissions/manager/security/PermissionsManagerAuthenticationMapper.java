@@ -10,6 +10,7 @@ import io.micronaut.security.oauth2.endpoint.token.response.OpenIdClaims;
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdTokenResponse;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -43,12 +44,11 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
 
         HashMap<String, Object> attributes = new HashMap<>();
         List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
-        attributes.put("isAdmin", user.get().isAdmin());
         attributes.put("name", openIdClaims.getName());
         attributes.put("permissionsByGroup", permissions);
 
         return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
-                Collections.emptyList(),
+                (user.get().isAdmin() ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList()),
                 attributes);
     }
 }
