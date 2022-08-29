@@ -4,6 +4,7 @@ import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import jakarta.inject.Singleton;
 
 import java.util.Optional;
@@ -21,7 +22,7 @@ public class SecurityUtil {
 
     public boolean isCurrentUserAdmin() {
         Authentication authentication = securityService.getAuthentication().get();
-        return Optional.of((Boolean) authentication.getAttributes().get("isAdmin")).orElse(false);
+        return authentication.getRoles().contains(UserRole.ADMIN.toString());
     }
 
     public Optional<User> getCurrentlyAuthenticatedUser() {
