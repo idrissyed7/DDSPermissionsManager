@@ -1,5 +1,7 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.NonNull;
+import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -7,6 +9,10 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -19,6 +25,7 @@ import java.util.Optional;
 
 @Controller("/groups")
 @Secured(SecurityRule.IS_AUTHENTICATED)
+@Tag(name = "group")
 public class GroupController {
 
     private final GroupService groupService;
@@ -30,8 +37,13 @@ public class GroupController {
     }
 
     @Get
-    public HttpResponse index(@Valid Pageable pageable) {
+    public HttpResponse<Page<Group>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(groupService.findAll(pageable));
+    }
+
+    @Get("/search/{searchText}")
+    public HttpResponse search(@NonNull String searchText) {
+        return HttpResponse.ok(groupService.searchByNameContains(searchText));
     }
 
     @Get("/create")
@@ -41,6 +53,13 @@ public class GroupController {
 
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Group.class))
+    )
+    @ApiResponse(responseCode = "303", description = "Group already exists. Response body contains original.")
+    @ApiResponse(responseCode = "400", description = "Bad Request")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse<?> save(@Body Group group) {
         try {
             return groupService.save(group);
@@ -53,6 +72,8 @@ public class GroupController {
 
 
     @Post("/delete/{id}")
+    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse<?> delete(Long id) {
         try {
             groupService.deleteById(id);
@@ -63,6 +84,8 @@ public class GroupController {
     }
 
     @Get("/{id}")
+    @ApiResponse(responseCode = "200")
+    @ApiResponse(responseCode = "404", description = "Not Found - Returned if the given group cannot be found.")
     HttpResponse show(Long id) {
         Optional<Map> groupOptional = groupService.getGroupDetails(id);
         if (groupOptional.isPresent()) {
@@ -73,7 +96,15 @@ public class GroupController {
     }
 
     @Get("/{id}/members")
-    HttpResponse showMembers(Long id) {
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json"),
+            description = "Returns a list of dictionaries where each dictionary is of the form: \n" +
+                    "\"member\", User(email, isAdmin),\n" +
+                    "\"permissions\", GroupUser(userId, groupId, isApplicationAdmin, isGroupAdmin, isTopicAdmin)"
+    )
+    @ApiResponse(responseCode = "404", description = "Not Found - Returned if the given group cannot be found.")
+    HttpResponse<?> showMembers(Long id) {
         List<Map> groupMembers = groupService.getGroupMembers(id);
         if (!groupMembers.isEmpty()) {
             return HttpResponse.ok(groupMembers);
@@ -82,7 +113,18 @@ public class GroupController {
     }
 
     @Get("/user/{id}/")
-    HttpResponse showGroupsUserIsAMemberOf(Long id) {
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json"),
+            description = "Returns a list of dictionaries where each dictionary is of the form: \n" +
+                    "\"groupId\", boolean,\n" +
+                    "\"groupName\", boolean,\n" +
+                    "\"isGroupAdmin\", boolean,\n" +
+                    "\"isTopicAdmin\", boolean,\n" +
+                    "\"isApplicationAdmin\", boolean"
+    )
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    HttpResponse<?> showGroupsUserIsAMemberOf(Long id) {
         try {
             return HttpResponse.ok(groupService.getGroupsUserIsAMemberOf(id));
         } catch (AuthenticationException ae) {
@@ -91,7 +133,10 @@ public class GroupController {
     }
 
     @Post("/remove_topic/{groupId}/{topicId}")
-    HttpResponse removeTopic(Long groupId, Long topicId) {
+    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
+    @ApiResponse(responseCode = "404", description = "Not Found - Topic or Group not found.")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    HttpResponse<?> removeTopic(Long groupId, Long topicId) {
 
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeTopic(groupId, topicId)) {
@@ -105,7 +150,11 @@ public class GroupController {
     }
 
     @Post("/add_topic/{groupId}/{topicId}")
-    HttpResponse addTopic(Long groupId, Long topicId) {
+    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
+    @ApiResponse(responseCode = "400", description = "Bad Request - Topic already exists.")
+    @ApiResponse(responseCode = "404", description = "Not Found - Topic or Group not found.")
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    HttpResponse<?> addTopic(Long groupId, Long topicId) {
 
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             try {

@@ -148,4 +148,8 @@ public class GroupService {
 
         return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
     }
+
+    public List<Group> searchByNameContains(String searchText) {
+        return groupRepository.findTop10ByNameContains(searchText);
+    }
 }
