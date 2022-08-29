@@ -1,11 +1,14 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
@@ -14,6 +17,7 @@ import java.net.URI;
 
 @Controller("/users")
 @Secured(SecurityRule.IS_AUTHENTICATED)
+@Tag(name = "user")
 public class UserController {
 
     private final UserService userService;
@@ -23,17 +27,14 @@ public class UserController {
     }
 
     @Get
-    public HttpResponse index(@Valid Pageable pageable) {
+    public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(userService.findAll(pageable));
-    }
-
-    @Get("/create")
-    public HttpResponse create() {
-        return HttpResponse.ok();
     }
 
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "303", description = "Returns result of /users")
+    @ApiResponse(responseCode = "400", description = "Bad Request")
     HttpResponse<?> save(@Body User user) {
         try {
             userService.save(user);
@@ -44,6 +45,7 @@ public class UserController {
     }
 
     @Post("/delete/{id}")
+    @ApiResponse(responseCode = "303", description = "Returns result of /topics")
     HttpResponse<?> delete(Long id) {
         userService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/users"));

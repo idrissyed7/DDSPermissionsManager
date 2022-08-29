@@ -18,6 +18,14 @@ public class Application {
     @NonNull
     private Long permissionsGroup;
 
+    public Application() {
+    }
+
+    public Application(@NonNull String name, @NonNull Long permissionsGroup) {
+        this.name = name;
+        this.permissionsGroup = permissionsGroup;
+    }
+
     public Long getId() {
         return id;
     }
