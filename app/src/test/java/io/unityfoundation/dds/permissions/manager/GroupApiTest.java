@@ -173,6 +173,20 @@ public class GroupApiTest {
     }
 
     @Test
+    public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 0);
+    }
+
+    @Test
+    public void searchReturnsGroupIfExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/Alpha");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 1);
+    }
+
+    @Test
     public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
         HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
         List responseList = blockingClient.retrieve(request, List.class);
