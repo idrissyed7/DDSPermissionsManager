@@ -11,6 +11,7 @@ import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -21,26 +22,23 @@ public class TopicService {
 
     private final TopicRepository topicRepository;
     private final SecurityService securityService;
-    private final UserService userService;
+    private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final GroupRepository groupRepository;
 
-    public TopicService(TopicRepository topicRepository, SecurityService securityService, UserService userService, GroupUserService groupUserService, GroupRepository groupRepository) {
+    public TopicService(TopicRepository topicRepository, SecurityService securityService, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository) {
         this.topicRepository = topicRepository;
         this.securityService = securityService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.groupRepository = groupRepository;
     }
 
     public Page<Topic> findAll(Pageable pageable) {
-        Authentication authentication = securityService.getAuthentication().get();
-
-        if (userService.isCurrentUserAdmin()) {
+        if (securityUtil.isCurrentUserAdmin()) {
             return topicRepository.findAll(pageable);
         } else {
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
             return topicRepository.findAllByPermissionsGroupIn(groups, pageable);
         }
@@ -49,7 +47,7 @@ public class TopicService {
     public MutableHttpResponse save(Topic topic) throws Exception {
         if (topic.getId() != null) {
             throw new Exception("Update of Topics are not allowed.");
-        } else if (!userService.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
+        } else if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -64,9 +62,7 @@ public class TopicService {
             if (groupRepository.findById(topicGroupId).isEmpty()) {
                 throw new Exception("Specified group does not exist.");
             }
-            Authentication authentication = securityService.getAuthentication().get();
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             return groupUserService.isUserTopicAdminOfGroup(topicGroupId, user.getId());
         }
     }
@@ -76,7 +72,7 @@ public class TopicService {
         if (topic.isEmpty()) {
             throw new Exception("Topic not found");
         }
-        if (!userService.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
             throw new AuthenticationException("Not authorized");
         }
 
