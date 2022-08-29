@@ -167,6 +167,27 @@ public class GroupApiTest {
     }
 
     @Test
+    public void canSearch() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/ta");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() <= 10);
+    }
+
+    @Test
+    public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 0);
+    }
+
+    @Test
+    public void searchReturnsGroupIfExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/Alpha");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 1);
+    }
+
+    @Test
     public void shouldSeeGroupsNamesInAscendingOrderByDefault() {
         HttpRequest<?> request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
@@ -184,6 +205,7 @@ public class GroupApiTest {
         List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
         assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
     }
+
     @Test
     public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
         HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
