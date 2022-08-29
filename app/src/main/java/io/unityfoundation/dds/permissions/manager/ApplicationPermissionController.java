@@ -8,6 +8,7 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
@@ -19,6 +20,7 @@ import java.net.URI;
 
 @Controller("/application_permissions")
 @Secured(SecurityRule.IS_AUTHENTICATED)
+@Tag(name = "permissions")
 public class ApplicationPermissionController {
     private final ApplicationPermissionService applicationPermissionService;
 
