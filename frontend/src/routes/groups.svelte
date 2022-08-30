@@ -35,10 +35,9 @@
 	let selectedGroupName;
 
 	// Pagination
-	const groupsPerPage = 5;
-	let groupsPageIndex;
-	let groupsPages = [];
-	let currentPage = 0;
+	const groupsPerPage = 3;
+	let groupsTotalPages;
+	let groupsCurrentPage = 0;
 
 	// Checks if the group already exists
 	$: if ($groups) {
@@ -51,30 +50,9 @@
 
 	onMount(async () => {
 		try {
-			const groupsData = await httpAdapter.get(`/groups`);
+			const groupsData = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}`);
 			groups.set(groupsData.data.content);
-			console.log($groups);
-
-			if ($groups) {
-				// Pagination
-				let totalGroupsCount = 0;
-				groupsPageIndex = Math.floor(groupsData.data.content.length / groupsPerPage);
-				if (groupsData.data.content.length % groupsPerPage > 0) groupsPageIndex++;
-
-				// Populate the usersPage Array
-				for (let page = 0; page < groupsPageIndex; page++) {
-					let pageArray = [];
-					for (
-						let i = 0;
-						i < groupsPerPage && totalGroupsCount < groupsData.data.content.length;
-						i++
-					) {
-						pageArray.push(groupsData.data.content[page * groupsPerPage + i]);
-						totalGroupsCount++;
-					}
-					groupsPages.push(pageArray);
-				}
-			}
+			groupsTotalPages = groupsData.data.totalPages;
 		} catch (err) {
 			ErrorMessage('Error Loading Groups', err.message);
 		}
@@ -90,26 +68,6 @@
 		errorMessage = '';
 		errorObject = '';
 		errorMessageVisible = false;
-	};
-
-	const calculatePagination = () => {
-		groupsPages = [];
-		let totalGroupsCount = 0;
-		groupsPageIndex = Math.floor($groups.length / groupsPerPage);
-		if ($groups.length % groupsPerPage > 0) groupsPageIndex++;
-
-		if (groupsPageIndex === currentPage) currentPage--;
-
-		// Populate the usersPage Array
-		let pageArray = [];
-		for (let page = 0; page < groupsPageIndex; page++) {
-			for (let i = 0; i < groupsPerPage && totalGroupsCount < $groups.length; i++) {
-				pageArray.push($groups[page * groupsPerPage + i]);
-				totalGroupsCount++;
-			}
-			groupsPages.push(pageArray);
-			pageArray = [];
-		}
 	};
 
 	const loadGroup = async (groupId) => {
@@ -160,19 +118,17 @@
 		}
 	};
 
-	const reloadAllGroups = async () => {
+	const reloadAllGroups = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/groups`);
+			const res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
 			groups.set(res.data.content);
-
-			calculatePagination();
+			groupsTotalPages = res.data.totalPages;
 		} catch (err) {
 			ErrorMessage('Error Loading Groups', err.message);
 		}
 	};
 
 	const userCandidateAdd = async () => {
-		// work on this
 		const res = await httpAdapter
 			.post(`/groups/add_member/${selectedGroupId}/${selectedUserId}`, {
 				isGroupAdmin: true,
@@ -219,9 +175,7 @@
 
 			addGroupVisible = false;
 
-			await reloadAllGroups().then(() => {
-				currentPage = groupsPages.length - 1;
-			});
+			await reloadAllGroups();
 		}
 	};
 
@@ -251,9 +205,7 @@
 			});
 
 		returnToGroupsList();
-		await reloadAllGroups().then(() => {
-			if (currentPage === groupsPages.length) currentPage--;
-		});
+		await reloadAllGroups();
 	};
 </script>
 
@@ -305,8 +257,8 @@
 				<input
 					type="text"
 					placeholder="Group Name"
-					class="input-add-new"
 					bind:value={newGroupName}
+					style="border-width: 1px; vertical-align: middle"
 				/>
 				<button
 					class:button={!disabled}
@@ -355,14 +307,14 @@
 	{/if}
 
 	<div class="content">
-		{#if groupsPages && groupsListVisible && !groupDetailVisible}
+		{#if $groups && groupsListVisible && !groupDetailVisible}
 			<h1>Groups</h1>
 			<table align="center">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
 				</tr>
-				{#if groupsPages.length > 0}
-					{#each groupsPages[currentPage] as group}
+				{#if $groups.length > 0}
+					{#each $groups as group}
 						<tr>
 							<td
 								class="group-td"
@@ -381,31 +333,40 @@
 			{#if $groups}
 				<center
 					><button
-						on:click={() => {
-							if (currentPage > 0) currentPage--;
+						on:click={async () => {
+							if (groupsCurrentPage > 0) groupsCurrentPage--;
+							const groupsData = await httpAdapter.get(
+								`/groups?page=${groupsCurrentPage}&size=${groupsPerPage}`
+							);
+							groups.set(groupsData.data.content);
 						}}
 						class="button-pagination"
 						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={currentPage === 0}>Previous</button
+						disabled={groupsCurrentPage === 0}>Previous</button
 					>
-					{#if groupsPageIndex > 2}
-						{#each groupsPages as page, i}
+					{#if groupsTotalPages > 2}
+						{#each Array.apply(null, { length: groupsTotalPages }).map(Number.call, Number) as page}
 							<button
 								on:click={() => {
-									currentPage = i;
+									groupsCurrentPage = page;
+									reloadAllGroups(page);
 								}}
 								class="button-pagination"
-								class:button-pagination-selected={i === currentPage}>{i + 1}</button
+								class:button-pagination-selected={page === groupsCurrentPage}>{page + 1}</button
 							>
 						{/each}
 					{/if}
 					<button
-						on:click={() => {
-							if (currentPage < groupsPages.length) currentPage++;
+						on:click={async () => {
+							if (groupsCurrentPage + 1 < groupsTotalPages) groupsCurrentPage++;
+							const groupsData = await httpAdapter.get(
+								`/groups?page=${groupsCurrentPage}&size=${groupsPerPage}`
+							);
+							groups.set(groupsData.data.content);
 						}}
 						class="button-pagination"
 						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={currentPage === groupsPages.length - 1 || groupsPages.length === 0}
+						disabled={groupsCurrentPage === groupsTotalPages - 1 || groupsTotalPages === 0}
 						>Next</button
 					></center
 				>
@@ -433,6 +394,7 @@
 							if ($isAdmin) {
 								selectedGroupName = selectedGroupName.trim();
 								if (previousGroupName !== selectedGroupName) saveNewGroupName();
+								editGroupName = false;
 							}
 						}}
 						on:keydown={(event) => {
@@ -447,6 +409,7 @@
 						bind:value={selectedGroupName}
 						readonly={!editGroupName}
 						class:name-as-label={!editGroupName}
+						class:name-edit={editGroupName}
 					/>
 					{#if $isAdmin}
 						<span class="tooltiptext">&#9998</span>
@@ -540,11 +503,7 @@
 	input {
 		text-align: center;
 		width: 20rem;
-		height: 2.1rem;
 		z-index: 1;
-		font-size: 30px;
-		border-style: hidden;
 		background-color: rgba(0, 0, 0, 0);
-		vertical-align: middle;
 	}
 </style>
