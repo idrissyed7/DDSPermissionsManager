@@ -3,7 +3,7 @@
 
 	export let isAuthenticated;
 
-	const URL_PREFIX = 'http://localhost:8080';
+	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 </script>
 
 <header>
