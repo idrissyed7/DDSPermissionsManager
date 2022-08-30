@@ -26,6 +26,12 @@ micronaut:
             generator:
               secret: pleaseChangeThisSecretForANewOne
               jws-algorithm: HS256
+        generator:
+          refresh-token:
+            secret: pleaseChangeThisSecretForANewOne
+#      refresh:
+#        cookie:
+#          cookie-path: /
     redirect:
       login-success: http://localhost:3000
       login-failure: http://localhost:3000
