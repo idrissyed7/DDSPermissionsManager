@@ -333,10 +333,7 @@
 					><button
 						on:click={async () => {
 							if (groupsCurrentPage > 0) groupsCurrentPage--;
-							const groupsData = await httpAdapter.get(
-								`/groups?page=${groupsCurrentPage}&size=${groupsPerPage}`
-							);
-							groups.set(groupsData.data.content);
+							reloadAllGroups(groupsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
@@ -357,10 +354,7 @@
 					<button
 						on:click={async () => {
 							if (groupsCurrentPage + 1 < groupsTotalPages) groupsCurrentPage++;
-							const groupsData = await httpAdapter.get(
-								`/groups?page=${groupsCurrentPage}&size=${groupsPerPage}`
-							);
-							groups.set(groupsData.data.content);
+							reloadAllGroups(groupsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
