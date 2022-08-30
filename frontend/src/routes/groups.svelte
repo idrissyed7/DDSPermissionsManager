@@ -50,9 +50,7 @@
 
 	onMount(async () => {
 		try {
-			const groupsData = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}`);
-			groups.set(groupsData.data.content);
-			groupsTotalPages = groupsData.data.totalPages;
+			reloadAllGroups();
 		} catch (err) {
 			ErrorMessage('Error Loading Groups', err.message);
 		}
