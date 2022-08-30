@@ -328,13 +328,20 @@ animation: fadeIn 0.2s ease-in-out;
 
 .name-as-label {
 	border: none;
-	font-size: 35px;
+	font-size: 33px;
+	height: 2.7rem;
 	text-align: center;
 	background-color: rgba(0, 0, 0, 0);
 }
 
 .name-as-label:hover {
 	color: rgb(103, 103, 103);
+}
+
+.name-edit {
+	font-size: 33px;
+	height: 2.7rem;
+	text-align: center;
 }
 
 .name {

@@ -236,12 +236,7 @@
 	{#if addTopicVisible && !errorMessageVisible}
 		<Modal title="Add New Topic" on:cancel={() => (addTopicVisible = false)}>
 			<div class="confirm">
-				<input
-					type="text"
-					placeholder="Topic Name"
-					class="input-add-new"
-					bind:value={newTopicName}
-				/>
+				<input type="text" placeholder="Topic Name" bind:value={newTopicName} />
 				<button
 					class:button={!disabled}
 					style="margin-left: 1rem; width: 6.5rem"
