@@ -9,6 +9,11 @@
 	// Error Handling
 	let errorMessage, errorObject;
 
+	// SearchBox
+	let searchString;
+	let searchResults;
+	let searchResultsVisible = false;
+
 	// Modals
 	let errorMessageVisible = false;
 	let groupsListVisible = true;
@@ -48,6 +53,19 @@
 		}
 	}
 
+	// Search Box
+	$: if (searchString?.trim().length >= 3) {
+		searchGroups(searchString.trim());
+	} else {
+		searchResultsVisible = false;
+	}
+
+	$: if (searchResults?.data?.length >= 1) {
+		searchResultsVisible = true;
+	} else {
+		searchResultsVisible = false;
+	}
+
 	onMount(async () => {
 		try {
 			reloadAllGroups();
@@ -55,6 +73,10 @@
 			ErrorMessage('Error Loading Groups', err.message);
 		}
 	});
+
+	const searchGroups = async (searchStr) => {
+		searchResults = await httpAdapter.get(`/groups/search/${searchStr}`);
+	};
 
 	const ErrorMessage = (errMsg, errObj) => {
 		errorMessage = errMsg;
@@ -170,7 +192,7 @@
 					addGroupVisible = false;
 					ErrorMessage('Error Adding Group', err.message);
 				});
-
+			searchString = '';
 			addGroupVisible = false;
 
 			await reloadAllGroups();
@@ -307,6 +329,31 @@
 	<div class="content">
 		{#if $groups && groupsListVisible && !groupDetailVisible}
 			<h1>Groups</h1>
+			<center
+				><input
+					style="border-width: 1px;"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
+						searchString = searchString?.trim();
+					}}
+					on:keydown={(event) => {
+						if (event.which === 13) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;</center
+			>
+			{#if searchResultsVisible}
+				<center
+					><ul class="search-results">
+						{#each searchResults.data as result}
+							<li style="padding-left: 0.3rem">{result.name}</li>
+						{/each}
+					</ul></center
+				>
+			{/if}
 			<table align="center">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
@@ -497,5 +544,21 @@
 		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
+	}
+
+	ul {
+		cursor: pointer;
+		list-style-type: none;
+		margin: 0;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		background-color: rgba(217, 221, 254, 0.4);
+		text-align: left;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	li {
+		margin-left: -2rem;
+		padding: 0.2rem 0 0 0;
 	}
 </style>
