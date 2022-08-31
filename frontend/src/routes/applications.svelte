@@ -1,7 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
-	import { isAuthenticated } from '../stores/authentication';
+	import { isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
+	import permissionsByGroup from '../stores/permissionsByGroup';
+	import applicationPermission from '../stores/applicationPermission';
+	import groups from '../stores/groups';
 	import Modal from '../lib/Modal.svelte';
 	import applications from '../stores/applications';
 
@@ -13,6 +16,7 @@
 	let errorMessageVisible = false;
 	let addApplicationVisible = false;
 	let confirmDeleteVisible = false;
+	let applicationDetailVisible = false;
 
 	// Pagination
 	const applicationsPerPage = 3;
@@ -21,11 +25,16 @@
 	let currentPage = 0;
 
 	// App
+	let applicationListVisible = true;
 	let appName;
-	let appElement;
+	let editAppName;
+	let selectedGroup;
 
 	// Selection
-	let selectedAppName, selectedAppId;
+	let selectedAppName, selectedAppId, selectedAppGroup, selectedAppGroupId, selectedAppGroupName;
+
+	// Validation
+	let previousAppName;
 
 	onMount(async () => {
 		try {
@@ -60,7 +69,6 @@
 			ErrorMessage('Error Loading Applications', err.message);
 		}
 	});
-
 	const ErrorMessage = (errMsg, errObj) => {
 		errorMessage = errMsg;
 		errorObject = errObj;
@@ -78,7 +86,8 @@
 	const addApplication = async () => {
 		try {
 			const res = await httpAdapter.post(`/applications/save`, {
-				name: appName
+				name: appName,
+				permissionsGroup: selectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
@@ -98,7 +107,6 @@
 	};
 
 	const appDelete = async () => {
-		confirmDeleteVisible = false;
 		await httpAdapter
 			.post(`/applications/delete/${selectedAppId}`, {
 				id: selectedAppId
@@ -107,10 +115,12 @@
 				ErrorMessage('Error Deleting Application', err.message);
 			});
 
+		confirmDeleteVisible = false;
 		selectedAppId = '';
 		selectedAppName = '';
 
-		reloadApps();
+		returnToAppsList();
+		await reloadApps();
 	};
 
 	const reloadApps = async () => {
@@ -127,18 +137,20 @@
 	};
 
 	const addAppModal = () => {
-		appName = '';
-		addApplicationVisible = true;
+		if ($groups) {
+			appName = '';
+			addApplicationVisible = true;
+		} else {
+			ErrorMessage('Error', 'There are no Groups available');
+		}
 	};
 
-	const saveNewAppName = async (name, id) => {
-		selectedAppName = name;
-		selectedAppId = id;
-
+	const saveNewAppName = async () => {
 		await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
-				name: selectedAppName.trim()
+				name: selectedAppName,
+				permissionsGroup: selectedAppGroupId
 			})
 			.catch((err) => {
 				ErrorMessage('Error Saving New Application Name', err.message);
@@ -183,8 +195,39 @@
 		}
 
 		if (!duplicateAppName && appID !== 0) {
-			saveNewAppName(appName, appID);
+			saveNewAppName();
 		}
+	};
+
+	const loadApplicationDetail = async (appId, groupId) => {
+		const appDetail = await httpAdapter.get(`/applications/show/${appId}`);
+		applicationListVisible = false;
+		applicationDetailVisible = true;
+
+		selectedAppId = appId;
+		selectedAppGroupId = groupId;
+		selectedAppName = appDetail.data.application_name;
+		selectedAppGroupName = appDetail.data.group_name;
+
+		await getAppPermissions(appId);
+	};
+
+	const getAppPermissions = async (appId) => {
+		const appPermissionData = await httpAdapter.get(
+			`/application_permissions?application=${appId}`
+		);
+
+		applicationPermission.set(appPermissionData.data.content);
+	};
+
+	const returnToApplicationsList = () => {
+		applicationDetailVisible = false;
+		applicationListVisible = true;
+	};
+
+	const returnToAppsList = () => {
+		applicationDetailVisible = false;
+		applicationListVisible = true;
 	};
 </script>
 
@@ -247,6 +290,19 @@
 						}
 					}}
 				/>
+				&nbsp;
+				<label for="groups">Group:</label>
+				<select name="groups" bind:value={selectedGroup}>
+					{#if $isAdmin}
+						{#each $groups as group}
+							<option value={group.id}>{group.name}</option>
+						{/each}
+					{:else}
+						{#each $permissionsByGroup as group, i}
+							<option value={group.groupId}>{group.groupName}</option>
+						{/each}
+					{/if}
+				</select>
 				<button
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
@@ -266,8 +322,10 @@
 	{/if}
 
 	<div class="content">
-		<h1>Applications</h1>
-		{#if $applications}
+		{#if !applicationDetailVisible}
+			<h1>Applications</h1>
+		{/if}
+		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table align="center">
 				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
@@ -277,107 +335,168 @@
 					{#each applicationsPages[currentPage] as app, index}
 						<tr>
 							<td>{app.id}</td>
-							<div class="tooltip">
-								<input
-									id="app-name"
-									on:click={() => (app.editable = true)}
-									on:blur={() => checkAppDuplicates(app.name, app.id)}
-									on:keydown={(event) => {
-										if (event.which === 13) {
-											document.activeElement.blur();
-											checkAppDuplicates(app.name, app.id);
-										}
-									}}
-									bind:value={app.name}
-									bind:this={appElement}
-									class:app-name-as-label={!app.editable}
-									class:invalid={duplicateAppName}
-								/>
-								<span class="tooltiptext">&#9998</span>
-							</div>
 							<td
-								><button class="button-delete" on:click={() => confirmAppDelete(app.id, app.name)}
-									><span>Delete</span></button
-								></td
+								style="cursor: pointer"
+								on:click={() => {
+									loadApplicationDetail(app.id, app.permissionsGroup);
+								}}>{app.name}</td
 							>
 						</tr>
 					{/each}
 				{/if}
 			</table>
-			{#if duplicateAppName && !addApplicationVisible}
-				<br />
-				<center><div style="color: red">Application name must be unique</div></center>
+			<br /> <br />
+
+			{#if $applications}
+				<center
+					><button
+						on:click={() => {
+							if (currentPage > 0) currentPage--;
+						}}
+						class="button-pagination"
+						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
+						disabled={currentPage === 0}>Previous</button
+					>
+					{#if applicationsPageIndex > 2}
+						{#each applicationsPages as page, i}
+							<button
+								on:click={() => {
+									currentPage = i;
+								}}
+								class="button-pagination"
+								class:button-pagination-selected={i === currentPage}>{i + 1}</button
+							>
+						{/each}
+					{/if}
+					<button
+						on:click={() => {
+							if (currentPage < applicationsPages.length) currentPage++;
+						}}
+						class="button-pagination"
+						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
+						disabled={currentPage === applicationsPages.length - 1 ||
+							applicationsPages.length === 0}>Next</button
+					></center
+				>
 			{/if}
-		{:else}
+			<br /><br />
+		{:else if !$applications && !applicationDetailVisible && applicationListVisible}
 			<center><p>No Applications Found</p></center>
 		{/if}
-		<br /> <br />
-		{#if $applications}
-			<center
-				><button
-					on:click={() => {
-						if (currentPage > 0) currentPage--;
-					}}
-					class="button-pagination"
-					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-					disabled={currentPage === 0}>Previous</button
-				>
-				{#if applicationsPageIndex > 2}
-					{#each applicationsPages as page, i}
-						<button
-							on:click={() => {
-								currentPage = i;
-							}}
-							class="button-pagination"
-							class:button-pagination-selected={i === currentPage}>{i + 1}</button
+
+		{#if $applications && applicationDetailVisible && !applicationListVisible}
+			<div class="name">
+				<span on:click={() => returnToApplicationsList()}>&laquo;</span>
+				<div class="tooltip">
+					<input
+						id="name"
+						class:editable={$isAdmin}
+						on:click={() => {
+							if ($isAdmin) {
+								editAppName = true;
+								previousAppName = selectedAppName.trim();
+							}
+						}}
+						on:blur={() => {
+							if ($isAdmin) {
+								selectedAppName = selectedAppName.trim();
+								if (previousAppName !== selectedAppName) saveNewAppName();
+								editAppName = false;
+							}
+						}}
+						on:keydown={(event) => {
+							if (event.which === 13) {
+								if ($isAdmin) {
+									selectedAppName = selectedAppName.trim();
+									if (previousAppName !== selectedAppName) saveNewAppName();
+									document.querySelector('#name').blur();
+								}
+							}
+						}}
+						bind:value={selectedAppName}
+						readonly={!editAppName}
+						class:name-as-label={!editAppName}
+						class:name-edit={editAppName}
+					/>
+					{#if $isAdmin}
+						<span class="tooltiptext">&#9998</span>
+					{/if}
+				</div>
+			</div>
+			<br /><br />
+			<table align="center">
+				<tr style="border-width: 0px">
+					<th><strong>ID</strong></th>
+					<th><strong>Application Name</strong></th>
+					<th><strong>Group</strong></th>
+					<th><strong>Topic</strong></th>
+					<th><strong>Access</strong></th>
+				</tr>
+				<tr>
+					<td>{selectedAppId}</td>
+					<td>{selectedAppName}</td>
+					<td>{selectedAppGroupName}</td>
+					<td>
+						{#if $applicationPermission}
+							<ul>
+								{#each $applicationPermission as appPermission}
+									<li>
+										{appPermission.permissionsTopic.name}
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</td>
+					<td>
+						{#if $applicationPermission}
+							<ul style="list-style-type: none;">
+								{#each $applicationPermission as appPermission}
+									<li>
+										{appPermission.accessType}
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</td>
+					{#if $isAdmin}
+						<td
+							><button
+								class="button-delete"
+								on:click={() => confirmAppDelete(selectedAppId, selectedAppName)}
+								><span>Delete</span></button
+							></td
 						>
-					{/each}
-				{/if}
-				<button
-					on:click={() => {
-						if (currentPage < applicationsPages.length) currentPage++;
-					}}
-					class="button-pagination"
-					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-					disabled={currentPage === applicationsPages.length - 1 || applicationsPages.length === 0}
-					>Next</button
+					{/if}
+				</tr>
+			</table>
+		{/if}
+		<br /><br />
+		{#if $isAdmin && !applicationDetailVisible}
+			<center
+				><button class="button" style="width: 9rem" on:click={() => addAppModal()}
+					>Create Application</button
 				></center
 			>
 		{/if}
-		<br /><br />
-		<center
-			><button class="button" style="width: 9rem" on:click={() => addAppModal()}
-				>Create Application</button
-			></center
-		>
 	</div>
 {/if}
 
 <style>
+	ul {
+		margin: 0;
+		padding: 0.25rem 0 0.25rem 0.85rem;
+	}
 	input {
-		margin-top: 1.1%;
+		margin-top: 1.1rem;
 		text-align: left;
-	}
-
-	.tooltip .tooltiptext {
-		top: 8px;
-		left: -25px;
-	}
-
-	.app-name-as-label {
-		text-align: left;
-		border: none;
-		padding-left: 0.2rem;
-		margin-top: 1.65%;
+		text-align: center;
+		width: 20rem;
+		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
 	}
 
-	.app-name-as-label:hover {
-		color: rgb(103, 103, 103);
-		cursor: pointer;
-	}
-
 	.tooltip .tooltiptext {
-		transform: rotateY(0deg);
+		top: -6px;
+		left: 303px;
 	}
 </style>
