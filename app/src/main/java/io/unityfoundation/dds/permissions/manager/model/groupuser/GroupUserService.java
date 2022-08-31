@@ -1,5 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -28,6 +30,16 @@ public class GroupUserService {
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
         this.securityUtil = securityUtil;
+    }
+
+    public Page<GroupUser> findAll(Pageable pageable) {
+        if (securityUtil.isCurrentUserAdmin()) {
+            return groupUserRepository.findAll(pageable);
+        } else {
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+            List<Long> groupsList = getAllGroupsUserIsAMemberOf(user.getId());
+            return groupUserRepository.findAllByPermissionsGroupIn(groupsList, pageable);
+        }
     }
 
     public Optional<GroupUser> findById(Long id) {

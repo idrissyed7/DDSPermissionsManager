@@ -1,22 +1,20 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.annotation.Body;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.Delete;
-import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
+import javax.validation.Valid;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,6 +27,11 @@ public class GroupMembershipController {
 
     public GroupMembershipController(GroupUserService groupUserService) {
         this.groupUserService = groupUserService;
+    }
+
+    @Get
+    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable) {
+        return HttpResponse.ok(groupUserService.findAll(pageable));
     }
 
     @Post
