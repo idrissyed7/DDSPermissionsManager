@@ -115,7 +115,19 @@ public class GroupUserService {
     }
 
     public boolean removeMember(Long id) {
+        Optional<GroupUser> groupUserOptional = groupUserRepository.findById(id);
+
+        if (groupUserOptional.isEmpty()) {
+            return true;
+        }
+
+        User user = userRepository.findById(groupUserOptional.get().getPermissionsUser()).get();
         groupUserRepository.deleteById(id);
+
+        int countByPermissionsUser = groupUserRepository.countByPermissionsUser(user.getId());
+        if (!user.isAdmin() && countByPermissionsUser == 0) {
+            userRepository.delete(user);
+        }
 
         return true;
     }

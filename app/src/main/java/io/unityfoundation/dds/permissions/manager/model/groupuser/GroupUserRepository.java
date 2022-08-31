@@ -38,6 +38,8 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
 
     List<GroupUser> findAllByPermissionsUser(@NotNull @NonNull Long userId);
 
+    int countByPermissionsUser(@NotNull @NonNull Long userId);
+
     Optional<GroupUser> findByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     List<GroupUser> findAllByPermissionsGroup(@NotNull @NonNull Long groupId);

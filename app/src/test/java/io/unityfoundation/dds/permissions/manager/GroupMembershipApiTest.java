@@ -345,6 +345,49 @@ public class GroupMembershipApiTest {
         }
 
         @Test
+        public void deleteUserIfNonAdminAndNoGroupMemberships() {
+            mockSecurityService.postConstruct();
+            // create group
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group as a group admin
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create member with above group
+            GroupUserDTO dtoNewUser = new GroupUserDTO();
+            dtoNewUser.setPermissionsGroup(primaryGroup.getId());
+            dtoNewUser.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dtoNewUser);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            assertTrue(response.getBody(GroupUser.class).isPresent());
+            GroupUser groupUser = response.getBody(GroupUser.class).get();
+
+            assertTrue(userRepository.findByEmail("bob.builder@test.test").isPresent());
+
+            loginAsNonAdmin();
+
+            // delete
+            request = HttpRequest.DELETE("/group_membership", Map.of("id", groupUser.getId()));
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            assertTrue(userRepository.findByEmail("bob.builder@test.test").isEmpty());
+        }
+
+        @Test
         public void cannotDeleteIfNotMemberOfGroup() {
             mockSecurityService.postConstruct();
 
