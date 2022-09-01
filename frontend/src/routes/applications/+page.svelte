@@ -1,12 +1,12 @@
 <script>
 	import { onMount } from 'svelte';
-	import { isAuthenticated, isAdmin } from '../stores/authentication';
-	import { httpAdapter } from '../appconfig';
-	import permissionsByGroup from '../stores/permissionsByGroup';
-	import applicationPermission from '../stores/applicationPermission';
-	import groups from '../stores/groups';
-	import Modal from '../lib/Modal.svelte';
-	import applications from '../stores/applications';
+	import { isAuthenticated, isAdmin } from '../../stores/authentication';
+	import { httpAdapter } from '../../appconfig';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
+	import applicationPermission from '../../stores/applicationPermission';
+	import groups from '../../stores/groups';
+	import Modal from '../../lib/Modal.svelte';
+	import applications from '../../stores/applications';
 
 	// Error Handling
 	let errorMessage, errorObject;
