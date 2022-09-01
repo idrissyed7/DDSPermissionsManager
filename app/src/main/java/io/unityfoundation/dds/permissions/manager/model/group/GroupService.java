@@ -9,7 +9,6 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.AuthenticationException;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
@@ -19,7 +18,6 @@ import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,16 +127,6 @@ public class GroupService {
         group.removeTopic(topicId);
         groupRepository.update(group);
         return true;
-    }
-
-    public List<Map> getGroupMembers(Long groupId) {
-        List<GroupUser> groupUsers = groupUserService.getUsersOfGroup(groupId);
-        List<Map> result = new ArrayList<>();
-        for (GroupUser groupUser : groupUsers) {
-            result.add(Map.of("member", userRepository.findById(groupUser.getPermissionsUser()),
-                    "permissions", groupUser));
-        }
-        return result;
     }
 
     public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {

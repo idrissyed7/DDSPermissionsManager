@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -29,9 +30,9 @@ public class GroupMembershipController {
         this.groupUserService = groupUserService;
     }
 
-    @Get
-    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(groupUserService.findAll(pageable));
+    @Get("{?email,group}")
+    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable, @Nullable String group, @Nullable String email) {
+        return HttpResponse.ok(groupUserService.findAll(pageable, group, email));
     }
 
     @Post
@@ -58,7 +59,7 @@ public class GroupMembershipController {
         Optional<GroupUser> groupUser = groupUserService.findById(id);
 
         if (groupUser.isPresent()) {
-            Long groupId = groupUser.get().getPermissionsGroup();
+            Long groupId = groupUser.get().getPermissionsGroup().getId();
             if (groupUserService.isAdminOrGroupAdmin(groupId)) {
                 if (groupUserService.removeMember(id)) {
                     return HttpResponse.ok();

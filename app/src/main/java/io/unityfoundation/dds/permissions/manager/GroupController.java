@@ -95,23 +95,6 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
-    @Get("/{id}/members")
-    @ApiResponse(
-            responseCode = "200",
-            content = @Content(mediaType = "application/json"),
-            description = "Returns a list of dictionaries where each dictionary is of the form: \n" +
-                    "\"member\", User(email, isAdmin),\n" +
-                    "\"permissions\", GroupUser(userId, groupId, isApplicationAdmin, isGroupAdmin, isTopicAdmin)"
-    )
-    @ApiResponse(responseCode = "404", description = "Not Found - Returned if the given group cannot be found.")
-    HttpResponse<?> showMembers(Long id) {
-        List<Map> groupMembers = groupService.getGroupMembers(id);
-        if (!groupMembers.isEmpty()) {
-            return HttpResponse.ok(groupMembers);
-        }
-        return HttpResponse.notFound();
-    }
-
     @Get("/user/{id}/")
     @ApiResponse(
             responseCode = "200",
