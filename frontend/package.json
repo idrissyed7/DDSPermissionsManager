@@ -13,6 +13,7 @@
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "next",
+		"@sveltejs/adapter-node": "^1.0.0-next.88",
 		"@sveltejs/kit": "^1.0.0-next.406",
 		"cypress": "^10.4.0",
 		"eslint": "^8.16.0",
