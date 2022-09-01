@@ -198,7 +198,7 @@ public class GroupMembershipApiTest {
             request = HttpRequest.GET("/group_membership");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
-            assertFalse(page.getContent().isEmpty());
+            assertEquals(2, page.getContent().size());
         }
 
         // update
@@ -609,7 +609,7 @@ public class GroupMembershipApiTest {
             request = HttpRequest.GET("/group_membership");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
-            assertNotEquals(3, page.getContent().size());
+            assertEquals(2, page.getContent().size());
         }
 
     }
