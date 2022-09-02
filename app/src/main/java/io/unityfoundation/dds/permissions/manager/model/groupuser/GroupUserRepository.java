@@ -3,6 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 
 import javax.validation.constraints.NotNull;
@@ -34,9 +36,12 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
     int countByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     void deleteAllByPermissionsUser(@NotNull @NonNull Long userId);
-    void deleteAllByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     List<GroupUser> findAllByPermissionsUser(@NotNull @NonNull Long userId);
+
+    Page<GroupUser> findAllByPermissionsGroupIn(@NotNull @NonNull List<Long> groupIds, Pageable pageable);
+
+    int countByPermissionsUser(@NotNull @NonNull Long userId);
 
     Optional<GroupUser> findByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 

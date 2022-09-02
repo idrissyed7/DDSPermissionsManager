@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
+	import groups from '../stores/groups';
 	import permissionsByGroup from '../stores/permissionsByGroup';
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
@@ -13,6 +14,12 @@
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
 			permissionsByGroup.set(res.data.permissionsByGroup);
+
+			if ($isAdmin) {
+				const groupsData = await httpAdapter.get(`/groups`);
+				groups.set(groupsData.data.content);
+				console.log('$groups:', $groups);
+			}
 
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);

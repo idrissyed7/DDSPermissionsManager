@@ -40,7 +40,7 @@ public class TopicService {
         }
     }
 
-    public MutableHttpResponse save(Topic topic) throws Exception {
+    public MutableHttpResponse<Topic> save(Topic topic) throws Exception {
         if (topic.getId() != null) {
             throw new Exception("Update of Topics are not allowed.");
         } else if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
