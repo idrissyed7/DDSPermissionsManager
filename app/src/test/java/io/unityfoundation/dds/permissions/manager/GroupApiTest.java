@@ -174,6 +174,13 @@ public class GroupApiTest {
     }
 
     @Test
+    public void canSearchCaseInsensitive() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/alpha");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertEquals(1,  response.size());
+    }
+
+    @Test
     public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
         HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
         List<String> response = blockingClient.retrieve(request, List.class);

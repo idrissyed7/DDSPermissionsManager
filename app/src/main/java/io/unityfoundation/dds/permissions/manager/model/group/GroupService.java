@@ -211,6 +211,6 @@ public class GroupService {
     }
 
     public List<Group> searchByNameContains(String searchText) {
-        return groupRepository.findTop10ByNameContains(searchText);
+        return groupRepository.findTop10ByNameContainsIgnoreCase(searchText);
     }
 }
