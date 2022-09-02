@@ -8,6 +8,7 @@ import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ public class Group {
     private Long id;
 
     @NonNull
+    @NotBlank
     @Column(unique = true)
     private String name;
 
@@ -99,5 +101,10 @@ public class Group {
 
     public void addApplication(Application application) {
         applications.add(application);
+    }
+
+    @PrePersist
+    void encodePassword() {
+        this.name = this.name.trim();
     }
 }

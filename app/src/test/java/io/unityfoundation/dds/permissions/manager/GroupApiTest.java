@@ -156,6 +156,36 @@ public class GroupApiTest {
     }
 
     @Test
+    public void cannotCreateGroupWithNullNorWhitespace() {
+        // save group without members
+        Group nullGroup = new Group();
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", nullGroup);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, exception.getStatus());
+
+        Group whitespaceGroup = new Group("   ");
+        request = HttpRequest.POST("/groups/save", whitespaceGroup);
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        assertEquals(BAD_REQUEST, exception1.getStatus());
+    }
+
+    @Test
+    public void createShouldTrimWhitespace() {
+        // save group without members
+        Group gloopGroup = new Group("  GloopGroup ");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", gloopGroup);
+        HttpResponse<Group> response = blockingClient.exchange(request, Group.class);
+        gloopGroup = response.getBody(Group.class).get();
+        assertEquals("GloopGroup", gloopGroup.getName());
+    }
+
+    @Test
     public void userWithAdminRoleShouldSeeAllGroups() {
 
         long initialGroupCount = groupRepository.count();
