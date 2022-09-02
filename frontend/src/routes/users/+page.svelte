@@ -1,11 +1,11 @@
 <script>
-	import { isAuthenticated } from '../stores/authentication';
+	import { isAuthenticated } from '../../stores/authentication';
 	import { onMount } from 'svelte';
-	import { httpAdapter } from '../appconfig';
-	import users from '../stores/users';
-	import groups from '../stores/groups';
-	import permissionsByGroup from '../stores/permissionsByGroup';
-	import Modal from '../lib/Modal.svelte';
+	import { httpAdapter } from '../../appconfig';
+	import users from '../../stores/users';
+	import groups from '../../stores/groups';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
+	import Modal from '../../lib/Modal.svelte';
 
 	// Error Handling
 	let errorMessage, errorObject;
