@@ -104,7 +104,7 @@ public class Group {
     }
 
     @PrePersist
-    void encodePassword() {
+    void trimName() {
         this.name = this.name.trim();
     }
 }
