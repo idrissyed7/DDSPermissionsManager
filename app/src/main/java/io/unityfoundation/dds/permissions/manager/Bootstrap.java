@@ -35,9 +35,9 @@ public class Bootstrap {
 
         Group alphaGroup = groupRepository.save(new Group("Alpha"));
 
-        GroupUser alphaJustin = new GroupUser(alphaGroup.getId(), justin.getId());
-        GroupUser alphaKevin = new GroupUser(alphaGroup.getId(), kevin.getId());
-        GroupUser alphaMax = new GroupUser(alphaGroup.getId(), max.getId());
+        GroupUser alphaJustin = new GroupUser(alphaGroup, justin);
+        GroupUser alphaKevin = new GroupUser(alphaGroup, kevin);
+        GroupUser alphaMax = new GroupUser(alphaGroup, max);
 
         groupUserRepository.save(alphaJustin);
         groupUserRepository.save(alphaKevin);
