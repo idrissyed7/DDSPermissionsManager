@@ -166,7 +166,7 @@
 </script>
 
 <svelte:head>
-	<title>Users | Permission Manager</title>
+	<title>Users | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Users" />
 </svelte:head>
 

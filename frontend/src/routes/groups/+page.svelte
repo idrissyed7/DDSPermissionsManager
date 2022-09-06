@@ -229,7 +229,7 @@
 </script>
 
 <svelte:head>
-	<title>Groups | Permission Manager</title>
+	<title>Groups | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Groups" />
 </svelte:head>
 

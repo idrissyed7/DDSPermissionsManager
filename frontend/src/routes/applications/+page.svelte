@@ -232,7 +232,7 @@
 </script>
 
 <svelte:head>
-	<title>Applications | Permission Manager</title>
+	<title>Applications | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Applications" />
 </svelte:head>
 
