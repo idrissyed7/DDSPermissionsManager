@@ -4,13 +4,10 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
-import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
-import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
@@ -21,20 +18,19 @@ import java.util.Optional;
 public class TopicService {
 
     private final TopicRepository topicRepository;
-    private final SecurityService securityService;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final GroupRepository groupRepository;
 
-    public TopicService(TopicRepository topicRepository, SecurityService securityService, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository) {
+    public TopicService(TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository) {
         this.topicRepository = topicRepository;
-        this.securityService = securityService;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.groupRepository = groupRepository;
     }
 
     public Page<Topic> findAll(Pageable pageable) {
+
         if (securityUtil.isCurrentUserAdmin()) {
             return topicRepository.findAll(pageable);
         } else {
@@ -62,6 +58,7 @@ public class TopicService {
             if (groupRepository.findById(topicGroupId).isEmpty()) {
                 throw new Exception("Specified group does not exist.");
             }
+
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             return groupUserService.isUserTopicAdminOfGroup(topicGroupId, user.getId());
         }

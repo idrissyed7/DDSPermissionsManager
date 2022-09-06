@@ -51,6 +51,16 @@ public class GroupMembershipController {
         }
     }
 
+    @Put
+    HttpResponse updateMember(@Body GroupUser groupUser) {
+
+        if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
+            return groupUserService.updateMember(groupUser);
+        } else {
+            return HttpResponse.unauthorized();
+        }
+    }
+
     @Delete
     @ApiResponse(responseCode = "200", description = "Ok")
     @ApiResponse(responseCode = "401", description = "Unauthorized")

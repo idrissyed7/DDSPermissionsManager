@@ -55,7 +55,6 @@ public class GroupMembershipApiTest {
         blockingClient = client.toBlocking();
     }
 
-    //    We should take the user email, GroupID, and flags indicating group admin, application admin, and topic admins.
     @Nested
     class WhenAsAdmin {
 
@@ -63,6 +62,7 @@ public class GroupMembershipApiTest {
         void setup() {
             dbCleanup.cleanup();
             userRepository.save(new User( "montesm@test.test", true));
+            userRepository.save(new User("jjones@test.test"));
             mockSecurityService.postConstruct();
         }
 
@@ -274,6 +274,51 @@ public class GroupMembershipApiTest {
         }
 
         // update
+        @Test
+        public void canUpdate() {
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            GroupUser groupUser = response.getBody(GroupUser.class).get();
+
+            groupUser.setGroupAdmin(true);
+            groupUser.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", groupUser);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(groupUser.isGroupAdmin());
+            assertTrue(groupUser.isTopicAdmin());
+        }
+
+        @Test
+        public void cannotAttemptToSaveNewWithUpdateEndpoint() {
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            GroupUser groupUser = new GroupUser(primaryGroup.getId(), justin.getId());
+
+            request = HttpRequest.PUT("/group_membership", groupUser);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+        }
 
         // delete
         @Test
@@ -405,6 +450,74 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+
+        @Test
+        public void canUpdate() {
+            mockSecurityService.postConstruct();
+
+            // create group
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            GroupUser groupUser = response.getBody(GroupUser.class).get();
+
+            loginAsNonAdmin();
+
+            groupUser.setGroupAdmin(true);
+            groupUser.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", groupUser);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(groupUser.isGroupAdmin());
+            assertTrue(groupUser.isTopicAdmin());
+        }
+
+        @Test
+        public void cannotUpdateIfNonGroupAdminMemberOfGroup() {
+            mockSecurityService.postConstruct();
+
+            // create group
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            GroupUser groupUser = response.getBody(GroupUser.class).get();
+
+            loginAsNonAdmin();
+
+            groupUser.setGroupAdmin(true);
+            groupUser.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", groupUser);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -906,6 +1019,37 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+
+        @Test
+        public void cannotUpdate() {
+            mockSecurityService.postConstruct();
+
+            // save group without members
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request, GroupUser.class);
+            assertEquals(OK, response.getStatus());
+            GroupUser groupUser = response.getBody(GroupUser.class).get();
+
+            loginAsNonAdmin();
+
+            groupUser.setGroupAdmin(true);
+            groupUser.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", groupUser);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
