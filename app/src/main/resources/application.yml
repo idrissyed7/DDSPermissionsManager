@@ -1,9 +1,6 @@
 micronaut:
   application:
     name: "Permissions Manager"
-  server:
-    cors:
-      enabled: true
 ---
 netty:
   default:
