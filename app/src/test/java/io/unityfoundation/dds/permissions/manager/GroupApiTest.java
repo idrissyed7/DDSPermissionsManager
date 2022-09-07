@@ -17,6 +17,7 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -91,39 +92,6 @@ public class GroupApiTest {
         List<Map> groups1 = (List<Map>) responseMap1.get("content");
         assertEquals(initialGroupCount, groups1.size());
         assertEquals(OK, response.getStatus());
-
-        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroup(1l).size();
-
-        // adding an existing member should not add to user group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/3", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        List<Map> responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(initialAlphaGroupMemberCount, responseList.size());
-
-        // add new member to group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        long postAddUserCount = responseList.size();
-        assertEquals(initialAlphaGroupMemberCount + 1, postAddUserCount);
-
-        // remove new member from group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/remove_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(postAddUserCount - 1, responseList.size());
     }
 
     @Test
@@ -244,6 +212,7 @@ public class GroupApiTest {
     }
 
     @Test
+    @Disabled("Topic add and remove cases are covered in TopicApiTest.userWithNonAdminRoleButTopicAdminOfGroupShouldBeAbleCreateUpdateAndDeleteTopics")
     public void testGroupTopicAddAndRemove() {
 
         long initialTopicCount = topicRepository.count();

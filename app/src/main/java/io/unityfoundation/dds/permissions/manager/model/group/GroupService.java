@@ -8,20 +8,16 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
-import io.micronaut.security.utils.SecurityService;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
-import io.unityfoundation.dds.permissions.manager.model.user.UserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,41 +27,36 @@ public class GroupService {
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
-    private final UserService userService;
-    private final SecurityService securityService;
+    private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final TopicRepository topicRepository;
 
 
-    public GroupService(UserRepository userRepository, GroupRepository groupRepository, UserService userService,
-                        SecurityService securityService, GroupUserService groupUserService, TopicRepository topicRepository) {
+    public GroupService(UserRepository userRepository, GroupRepository groupRepository, SecurityUtil securityUtil,
+                        GroupUserService groupUserService, TopicRepository topicRepository) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
-        this.userService = userService;
-        this.securityService = securityService;
+        this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.topicRepository = topicRepository;
     }
 
     public Page<Group> findAll(Pageable pageable) {
-        Authentication authentication = securityService.getAuthentication().get();
-
         if (!pageable.isSorted()) {
             pageable = pageable.order(Sort.Order.asc("name"));
         }
 
-        if (userService.isCurrentUserAdmin()) {
+        if (securityUtil.isCurrentUserAdmin()) {
             return groupRepository.findAll(pageable);
         } else {
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
             return groupRepository.findAllByIdIn(groupsList, pageable);
         }
     }
 
     public MutableHttpResponse<Group> save(Group group) throws Exception {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -85,37 +76,11 @@ public class GroupService {
     }
 
     public void deleteById(Long id) {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 
         groupRepository.deleteById(id);
-    }
-
-    @Transactional
-    public boolean addMember(@Body Long groupId, @Body Long candidateId, Map userRolesMap) {
-        Optional<Group> groupOptional = groupRepository.findById(groupId);
-        Optional<User> userOptional = userRepository.findById(candidateId);
-        if (groupOptional.isEmpty() || userOptional.isEmpty()) {
-            return false;
-        }
-        Group group = groupOptional.get();
-        User user = userOptional.get();
-
-        // ignore duplicate add attempt
-        if (groupUserService.isUserMemberOfGroup(group.getId(), user.getId())) {
-            return true;
-        }
-
-        GroupUser groupUser = new GroupUser(group.getId(), user.getId());
-        if (userRolesMap != null) {
-            groupUser.setGroupAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isGroupAdmin")).orElse(false));
-            groupUser.setTopicAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isTopicAdmin")).orElse(false));
-            groupUser.setApplicationAdmin(Optional.ofNullable((Boolean) userRolesMap.get("isApplicationAdmin")).orElse(false));
-        }
-        groupUserService.save(groupUser);
-
-        return true;
     }
 
     public Optional<Map> getGroupDetails(Long id) {
@@ -125,17 +90,6 @@ public class GroupService {
             return Optional.of(Map.of("group", group));
         }
         return Optional.empty();
-    }
-
-    public boolean removeMember(Long groupId, Long memberId) {
-        Optional<Group> byId = groupRepository.findById(groupId);
-        if (byId.isEmpty()) {
-            return false;
-        }
-
-        groupUserService.removeMemberFromGroup(groupId, memberId);
-
-        return true;
     }
 
     @Transactional
@@ -175,35 +129,8 @@ public class GroupService {
         return true;
     }
 
-    public boolean isAdminOrGroupAdmin(Long groupId) {
-
-        Optional<Group> group = groupRepository.findById(groupId);
-
-        if (group.isEmpty()) {
-            return false;
-        }
-
-        Authentication authentication = securityService.getAuthentication().get();
-        String userEmail = authentication.getName();
-        Long userId = userService.getUserByEmail(userEmail).get().getId();
-
-        boolean isGroupAdmin = groupUserService.isUserGroupAdminOfGroup(group.get().getId(), userId);
-
-        return userService.isCurrentUserAdmin() || isGroupAdmin;
-    }
-
-    public List<Map> getGroupMembers(Long groupId) {
-        List<GroupUser> groupUsers = groupUserService.getUsersOfGroup(groupId);
-        List<Map> result = new ArrayList<>();
-        for (GroupUser groupUser : groupUsers) {
-            result.add(Map.of("member", userRepository.findById(groupUser.getPermissionsUser()),
-                    "permissions", groupUser));
-        }
-        return result;
-    }
-
     public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
-        if (!userService.isCurrentUserAdmin()) {
+        if (!securityUtil.isCurrentUserAdmin()) {
             throw new AuthenticationException("Not authorized");
         }
 

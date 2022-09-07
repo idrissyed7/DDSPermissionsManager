@@ -36,8 +36,7 @@
 	let usersCurrentPage = 0;
 
 	onMount(async () => {
-		reloadUsers();
-
+		await reloadUsers();
 		console.log($users);
 		console.log($permissionsByGroup);
 
