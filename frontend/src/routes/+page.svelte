@@ -1,18 +1,13 @@
-<script context="module">
-	export const prerender = true;
-</script>
-
 <script>
 </script>
 
 <svelte:head>
-	<title>Permission Manager</title>
+	<title>DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager" />
 </svelte:head>
 
 <section>
-	<!-- <a href="http://localhost:8080/oauth/login/google">Login</a> -->
-	<h1>Permissions Manager</h1>
+	<h1>DDS Permissions Manager</h1>
 	<h2>Welcome</h2>
 	<p>
 		DDS Permissions Manager is here lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do

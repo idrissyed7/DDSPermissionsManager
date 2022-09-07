@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -155,6 +156,36 @@ public class GroupApiTest {
     }
 
     @Test
+    public void cannotCreateGroupWithNullNorWhitespace() {
+        // save group without members
+        Group nullGroup = new Group();
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", nullGroup);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, exception.getStatus());
+
+        Group whitespaceGroup = new Group("   ");
+        request = HttpRequest.POST("/groups/save", whitespaceGroup);
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        assertEquals(BAD_REQUEST, exception1.getStatus());
+    }
+
+    @Test
+    public void createShouldTrimWhitespace() {
+        // save group without members
+        Group gloopGroup = new Group("  GloopGroup ");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", gloopGroup);
+        HttpResponse<Group> response = blockingClient.exchange(request, Group.class);
+        gloopGroup = response.getBody(Group.class).get();
+        assertEquals("GloopGroup", gloopGroup.getName());
+    }
+
+    @Test
     public void userWithAdminRoleShouldSeeAllGroups() {
 
         long initialGroupCount = groupRepository.count();
@@ -163,6 +194,46 @@ public class GroupApiTest {
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
         assertEquals(initialGroupCount, groups.size());
+    }
+
+    @Test
+    public void canSearch() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/ta");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() <= 10);
+    }
+
+    @Test
+    public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 0);
+    }
+
+    @Test
+    public void searchReturnsGroupIfExist() {
+        HttpRequest<?> request = HttpRequest.GET("/groups/search/Alpha");
+        List<String> response = blockingClient.retrieve(request, List.class);
+        assertTrue(response.size() == 1);
+    }
+
+    @Test
+    public void shouldSeeGroupsNamesInAscendingOrderByDefault() {
+        HttpRequest<?> request = HttpRequest.GET("/groups");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> groups = (List<Map>) responseMap.get("content");
+        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
+        assertTrue(groupNames.stream().sorted().collect(Collectors.toList()).equals(groupNames));
+    }
+
+
+    @Test
+    public void shouldRespectGroupsNamesInDescendingOrder() {
+        HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> groups = (List<Map>) responseMap.get("content");
+        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
+        assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
     }
 
     @Test

@@ -3,7 +3,7 @@
 
 	export let isAuthenticated;
 
-	const URL_PREFIX = 'http://localhost:8080';
+	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 </script>
 
 <header>
@@ -58,7 +58,7 @@
 
 <style>
 	.menu {
-		margin-left: 7.4rem;
+		margin-left: 7.9rem;
 	}
 
 	header {
@@ -69,7 +69,7 @@
 	nav {
 		display: flex;
 		justify-content: center;
-		--background: rgba(255, 255, 255, 0.7);
+		--background: rgba(217, 221, 254, 0.7);
 	}
 
 	svg {

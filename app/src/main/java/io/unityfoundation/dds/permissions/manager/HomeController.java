@@ -11,7 +11,7 @@ public class HomeController {
 
     @Get
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse home() {
+    public HttpResponse<?> home() {
         return HttpResponse.ok();
     }
 }

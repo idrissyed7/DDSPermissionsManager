@@ -1,9 +1,6 @@
 micronaut:
   application:
     name: "Permissions Manager"
-  server:
-    cors:
-      enabled: true
 ---
 netty:
   default:
@@ -28,7 +25,7 @@ micronaut:
               jws-algorithm: HS256
     redirect:
       login-success: http://localhost:3000
-      login-failure: http://localhost:3000
+      login-failure: http://localhost:3000/failed-auth
       logout: http://localhost:3000
     authentication: cookie
     oauth2:

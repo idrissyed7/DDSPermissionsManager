@@ -29,6 +29,12 @@ public class Topic {
         this.kind = kind;
     }
 
+    public Topic(@NonNull String name, @NonNull TopicKind kind, Long permissionsGroup) {
+        this.name = name;
+        this.kind = kind;
+        this.permissionsGroup = permissionsGroup;
+    }
+
     public Long getId() {
         return id;
     }
