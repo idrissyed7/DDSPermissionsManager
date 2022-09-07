@@ -66,16 +66,15 @@ public class ApplicationService {
         Long applicationGroupId = application.getPermissionsGroup();
         if (applicationGroupId == null) {
             throw new Exception("Cannot save Application without specifying a Group.");
-        } else {
-            if (groupRepository.findById(applicationGroupId).isEmpty()) {
-                throw new Exception("Specified group does not exist.");
-            }
-
-            Authentication authentication = securityService.getAuthentication().get();
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
-            return groupUserService.isUserApplicationAdminOfGroup(applicationGroupId, user.getId());
         }
+        if (groupRepository.findById(applicationGroupId).isEmpty()) {
+            throw new Exception("Specified group does not exist.");
+        }
+        return securityService.getAuthentication()
+                .map(Authentication::getName)
+                .flatMap(userService::getUserByEmail)
+                .map(user -> groupUserService.isUserApplicationAdminOfGroup(applicationGroupId, user.getId()))
+                .orElse(false);
     }
 
     public void deleteById(Long id) throws Exception {
