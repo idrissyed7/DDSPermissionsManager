@@ -22,11 +22,11 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     implementation("io.micronaut:micronaut-validation")
 
-    annotationProcessor("io.micronaut.security:micronaut-security-annotations:3.3.0")
-    implementation("io.micronaut.security:micronaut-security-jwt:3.3.0")
-    implementation("io.micronaut.security:micronaut-security-oauth2:3.3.0")
-    annotationProcessor("io.micronaut.serde:micronaut-serde-processor:1.0.0-M5")
-    implementation("io.micronaut.problem:micronaut-problem-json:2.2.0")
+    annotationProcessor("io.micronaut.security:micronaut-security-annotations")
+    implementation("io.micronaut.security:micronaut-security-jwt")
+    implementation("io.micronaut.security:micronaut-security-oauth2")
+    annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
+    implementation("io.micronaut.problem:micronaut-problem-json")
 
     annotationProcessor("io.micronaut.data:micronaut-data-processor")
     runtimeOnly("com.h2database:h2")
