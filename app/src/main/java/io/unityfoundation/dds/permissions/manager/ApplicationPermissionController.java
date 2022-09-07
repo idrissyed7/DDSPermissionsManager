@@ -25,12 +25,12 @@ public class ApplicationPermissionController {
     }
 
     @Get("{?application,topic")
-    public HttpResponse<Page<ApplicationPermission>> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
-        return HttpResponse.ok(applicationPermissionService.findAll(application, topic, pageable));
+    public Page<ApplicationPermission> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
+        return applicationPermissionService.findAll(application, topic, pageable);
     }
 
     @Get("access_types")
-    public HttpResponse getAccessTypes() {
-        return HttpResponse.ok(AccessType.values());
+    public AccessType[] getAccessTypes() {
+        return AccessType.values();
     }
 }
