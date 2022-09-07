@@ -4,8 +4,6 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import jakarta.inject.Singleton;
 
-import java.util.List;
-
 @Singleton
 public class ApplicationPermissionService {
 

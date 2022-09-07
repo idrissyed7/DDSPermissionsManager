@@ -9,5 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends PageableRepository<Application, Long> {
-    Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name, @NotNull @NonNull Long group);
+    @NonNull
+    Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
+                                                        @NotNull @NonNull Long group);
 }

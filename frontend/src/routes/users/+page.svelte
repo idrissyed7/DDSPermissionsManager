@@ -8,7 +8,7 @@
 	import Modal from '../../lib/Modal.svelte';
 
 	// Error Handling
-	let errorMessage, errorObject;
+	let errorMsg, errorObject;
 	let invalidEmail = true;
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
@@ -32,84 +32,37 @@
 
 	// Pagination
 	const usersPerPage = 5;
-	let usersPageIndex;
-	let usersPages = [];
-	let currentPage = 0;
+	let usersTotalPages;
+	let usersCurrentPage = 0;
 
 	onMount(async () => {
-		try {
-			const usersData = await httpAdapter.get(`/users`);
-			users.set(usersData.data.content);
-			console.log('$users', $users);
-			console.log('$permissionsByGroup', $permissionsByGroup);
+		await reloadUsers();
+		console.log($users);
+		console.log($permissionsByGroup);
 
-			const groupsData = await httpAdapter.get(`/groups`);
-			groups.set(groupsData.data.content);
-
-			if ($users) {
-				// Pagination
-				let totalUsersCount = 0;
-				usersPageIndex = Math.floor(usersData.data.content.length / usersPerPage);
-				if (usersData.data.content.length % usersPerPage > 0) usersPageIndex++;
-
-				// Populate the usersPages Array
-				for (let page = 0; page < usersPageIndex; page++) {
-					let pageArray = [];
-					for (
-						let i = 0;
-						i < usersPerPage && totalUsersCount < usersData.data.content.length;
-						i++
-					) {
-						pageArray.push(usersData.data.content[page * usersPerPage + i]);
-						totalUsersCount++;
-					}
-					usersPages.push(pageArray);
-				}
-			}
-		} catch (err) {
-			ErrorMessage('Error Loading Users', err.message);
-		}
+		const groupsData = await httpAdapter.get(`/groups`);
+		groups.set(groupsData.data.content);
 	});
 
-	const ErrorMessage = (errMsg, errObj) => {
-		errorMessage = errMsg;
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
 		errorObject = errObj;
 		errorMessageVisible = true;
 	};
 
-	const ErrorMessageClear = () => {
-		errorMessage = '';
+	const errorMessageClear = () => {
+		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
 	};
 
-	const calculatePagination = () => {
-		usersPages = [];
-		let totalUsersCount = 0;
-		usersPageIndex = Math.floor($users.length / usersPerPage);
-		if ($users.length % usersPerPage > 0) usersPageIndex++;
-
-		if (usersPageIndex === currentPage) currentPage--;
-
-		// Populate the usersPage Array
-		let pageArray = [];
-		for (let page = 0; page < usersPageIndex; page++) {
-			for (let i = 0; i < usersPerPage && totalUsersCount < $users.length; i++) {
-				pageArray.push($users[page * usersPerPage + i]);
-				totalUsersCount++;
-			}
-			usersPages.push(pageArray);
-			pageArray = [];
-		}
-	};
-
-	const reloadUsers = async () => {
+	const reloadUsers = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/users`);
+			const res = await httpAdapter.get(`/users?page=${page}&size=${usersPerPage}`);
 			users.set(res.data.content);
-			calculatePagination();
+			usersTotalPages = res.data.totalPages;
 		} catch (err) {
-			ErrorMessage('Error Loading Users', err.message);
+			errorMessage('Error Loading Users', err.message);
 		}
 	};
 
@@ -121,7 +74,7 @@
 				lastName: userLastName
 			})
 			.catch((err) => {
-				ErrorMessage('Error Deleting User', err.message);
+				errorMessage('Error Deleting User', err.message);
 			});
 
 		selectedUserId = '';
@@ -152,7 +105,7 @@
 				isAdmin: false
 			})
 			.catch((err) => {
-				ErrorMessage('Error Saving User', err.message);
+				errorMessage('Error Saving User', err.message);
 			});
 
 		addUserVisible = false;
@@ -166,18 +119,18 @@
 </script>
 
 <svelte:head>
-	<title>Users | Permission Manager</title>
+	<title>Users | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Users" />
 </svelte:head>
 
 {#if $isAuthenticated}
 	{#if errorMessageVisible}
 		<Modal
-			title={errorMessage}
+			title={errorMsg}
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
-				ErrorMessageClear();
+				errorMessageClear();
 			}}
 			><br /><br />
 			<div class="confirm">
@@ -185,7 +138,7 @@
 					class="button-delete"
 					on:click={() => {
 						errorMessageVisible = false;
-						ErrorMessageClear();
+						errorMessageClear();
 					}}>Ok</button
 				>
 			</div>
@@ -213,8 +166,8 @@
 				<th><strong>Group</strong></th>
 				<th><strong>Role</strong></th>
 			</tr>
-			{#if usersPages.length > 0}
-				{#each usersPages[currentPage] as user}
+			{#if $users.length > 0}
+				{#each $users as user}
 					<tr>
 						<td style="width: 25rem;">{user.email}</td>
 						<td>Group Name</td>
@@ -273,31 +226,34 @@
 			<center
 				><button
 					on:click={() => {
-						if (currentPage > 0) currentPage--;
+						if (usersCurrentPage > 0) usersCurrentPage--;
+						reloadUsers(usersCurrentPage);
 					}}
 					class="button-pagination"
 					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-					disabled={currentPage === 0}>Previous</button
+					disabled={usersCurrentPage === 0}>Previous</button
 				>
-				{#if usersPageIndex > 2}
-					{#each usersPages as page, i}
+				{#if usersTotalPages > 2}
+					{#each Array.apply(null, { length: usersTotalPages }).map(Number.call, Number) as page}
 						<button
 							on:click={() => {
-								currentPage = i;
+								usersCurrentPage = page;
+								reloadUsers(page);
 							}}
 							class="button-pagination"
-							class:button-pagination-selected={i === currentPage}>{i + 1}</button
+							class:button-pagination-selected={page === usersCurrentPage}>{page + 1}</button
 						>
 					{/each}
 				{/if}
 
 				<button
 					on:click={() => {
-						if (currentPage < usersPages.length) currentPage++;
+						if (usersCurrentPage + 1 < usersTotalPages) usersCurrentPage++;
+						reloadUsers(usersCurrentPage);
 					}}
 					class="button-pagination"
 					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-					disabled={currentPage === usersPages.length - 1}>Next</button
+					disabled={usersCurrentPage === usersTotalPages - 1 || usersTotalPages === 0}>Next</button
 				></center
 			>
 		{/if}

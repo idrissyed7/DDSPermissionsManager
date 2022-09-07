@@ -213,6 +213,25 @@ button:disabled {
 	right: 0;
 }
 
+.button-disabled {
+	display: inline-block;
+	justify-content: center;
+	border-radius: 4px;
+	background-color: lightgrey;
+	border: none;
+	color: grey;
+	text-align: center;
+	font-size: 14px;
+	padding-left: 5x;
+	height: 2rem;
+	transition: all 0.5s;
+	cursor: pointer;
+	left: 0%;
+	width: 6rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	cursor: default;
+}
+
 .remove-button {
     background-color: rgba(0, 0, 0, 0);
     border-style: outset;
@@ -221,6 +240,7 @@ button:disabled {
     font-size: 8pt;
     vertical-align: middle;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+	cursor: pointer;
   }
 
 .button-delete {

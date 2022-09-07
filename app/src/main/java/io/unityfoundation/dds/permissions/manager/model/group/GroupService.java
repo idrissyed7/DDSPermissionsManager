@@ -60,7 +60,7 @@ public class GroupService {
             throw new AuthenticationException("Not authorized");
         }
 
-        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName());
+        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName().trim());
 
         if (group.getId() == null) {
             if (searchGroupByName.isPresent()) {

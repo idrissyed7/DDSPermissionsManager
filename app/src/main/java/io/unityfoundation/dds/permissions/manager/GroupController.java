@@ -37,18 +37,13 @@ public class GroupController {
     }
 
     @Get
-    public HttpResponse<Page<Group>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(groupService.findAll(pageable));
+    public Page<Group> index(@Valid Pageable pageable) {
+        return groupService.findAll(pageable);
     }
 
     @Get("/search/{searchText}")
-    public HttpResponse search(@NonNull String searchText) {
-        return HttpResponse.ok(groupService.searchByNameContains(searchText));
-    }
-
-    @Get("/create")
-    public HttpResponse create() {
-        return HttpResponse.ok();
+    public List<Group> search(@NonNull String searchText) {
+        return groupService.searchByNameContains(searchText);
     }
 
     @Post("/save")

@@ -194,7 +194,7 @@
 </script>
 
 <svelte:head>
-	<title>Topics | Permission Manager</title>
+	<title>Topics | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Topics" />
 </svelte:head>
 
