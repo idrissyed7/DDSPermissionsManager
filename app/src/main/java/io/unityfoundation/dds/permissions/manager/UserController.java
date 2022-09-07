@@ -5,6 +5,8 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,11 +28,13 @@ public class UserController {
         this.userService = userService;
     }
 
+    @ExecuteOn(TaskExecutors.IO)
     @Get
     public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(userService.findAll(pageable));
     }
 
+    @ExecuteOn(TaskExecutors.IO)
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "303", description = "Returns result of /users")
@@ -44,6 +48,7 @@ public class UserController {
         return HttpResponse.seeOther(URI.create("/users/"));
     }
 
+    @ExecuteOn(TaskExecutors.IO)
     @Post("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /topics")
     HttpResponse<?> delete(Long id) {
