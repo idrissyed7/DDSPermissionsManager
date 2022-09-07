@@ -34,11 +34,6 @@ public class ApplicationController {
         return HttpResponse.ok(applicationService.findAll(pageable));
     }
 
-    @Get("/create")
-    public HttpResponse create() {
-        return HttpResponse.ok();
-    }
-
     @Get("/show/{id}")
     public HttpResponse show(Long id) {
         try {

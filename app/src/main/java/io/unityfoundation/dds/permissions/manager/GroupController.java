@@ -44,11 +44,6 @@ public class GroupController {
         return groupService.searchByNameContains(searchText);
     }
 
-    @Get("/create")
-    public HttpResponse create() {
-        return HttpResponse.ok();
-    }
-
     @Post("/save")
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(
