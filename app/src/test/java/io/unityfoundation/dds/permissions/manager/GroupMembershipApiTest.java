@@ -310,7 +310,7 @@ public class GroupMembershipApiTest {
 
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
-            GroupUser groupUser = new GroupUser(primaryGroup.getId(), justin.getId());
+            GroupUser groupUser = new GroupUser(primaryGroup, justin);
 
             request = HttpRequest.PUT("/group_membership", groupUser);
             HttpRequest<?> finalRequest = request;

@@ -54,7 +54,7 @@ public class GroupMembershipController {
     @Put
     HttpResponse updateMember(@Body GroupUser groupUser) {
 
-        if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
+        if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup().getId())) {
             return groupUserService.updateMember(groupUser);
         } else {
             return HttpResponse.unauthorized();
