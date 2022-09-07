@@ -10,7 +10,6 @@ import io.micronaut.security.authentication.AuthenticationException;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
