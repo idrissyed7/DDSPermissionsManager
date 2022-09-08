@@ -260,8 +260,8 @@ public class GroupMembershipApiTest {
             List content = page.getContent();
             assertEquals(4, content.size());
 
-            assertExpectedEmail(content, 0, "another.generalcontractor@test.test");
-            assertExpectedEmail(content, 1, "bob.builder@test.test");
+            assertExpectedEmail(content, 0, "bob.builder@test.test");
+            assertExpectedEmail(content, 1, "robert.the.generalcontractor@test.test");
             assertExpectedEmail(content, 2, "robert.the.generalcontractor@test.test");
             assertExpectedEmail(content, 3, "yet.another.generalcontractor@test.test");
         }
