@@ -190,4 +190,8 @@ public class GroupUserService {
 
         return result;
     }
+
+    public int getMembershipCountByGroup(Group group) {
+        return groupUserRepository.countByPermissionsGroup(group);
+    }
 }

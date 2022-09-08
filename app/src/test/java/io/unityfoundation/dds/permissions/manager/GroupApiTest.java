@@ -190,18 +190,38 @@ public class GroupApiTest {
         HttpRequest<?> request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted().collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((Map) map.get("group")))
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
     }
-
 
     @Test
     public void shouldRespectGroupsNamesInDescendingOrder() {
         HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((Map) map.get("group")))
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
+    }
+
+    @Test
+    public void shouldSeeGroupWithCounts() {
+        HttpRequest<?> request = HttpRequest.GET("/groups");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> content = (List<Map>) responseMap.get("content");
+
+        // get alpha
+        Map contentItem = content.get(0);
+        Map alphaGroup = (Map) contentItem.get("group");
+        assertEquals("Alpha", alphaGroup.get("name"));
+        assertEquals(3, contentItem.get("membershipCount"));
+        assertEquals(1, contentItem.get("topicCount"));
+        assertEquals(1, contentItem.get("applicationCount"));
     }
 
     @Test
