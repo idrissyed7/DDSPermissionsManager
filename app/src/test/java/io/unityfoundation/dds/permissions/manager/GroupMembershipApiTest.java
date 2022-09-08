@@ -220,9 +220,9 @@ public class GroupMembershipApiTest {
             String bob = "bob@test.test";
             String zack = "zack@test.test";
 
-            createMembership(firstGroup, bob, angie, zack);
-            createMembership(secondGroup, bob, jill, angie);
-            createMembership(thirdGroup, jack, angie);
+            createMemberships(firstGroup, bob, angie, zack);
+            createMemberships(secondGroup, bob, jill, angie);
+            createMemberships(thirdGroup, jack, angie);
 
             HttpRequest<?> request = HttpRequest.GET("/group_membership");
             HttpResponse<?> response = blockingClient.exchange(request, Page.class);
@@ -244,7 +244,7 @@ public class GroupMembershipApiTest {
             assertExpectedEmailAndGroupName(content, 7, zack, firstGroupCreatedName);
         }
 
-        private void createMembership(Group group, String... emails) {
+        private void createMemberships(Group group, String... emails) {
             for(String email: emails) {
                 GroupUserDTO dto = new GroupUserDTO();
                 dto.setPermissionsGroup(group.getId());
