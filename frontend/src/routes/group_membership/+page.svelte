@@ -58,20 +58,24 @@
 			const res = await httpAdapter.get(
 				`/group_membership?page=${page}&size=${groupMembershipsPerPage}`
 			);
-			groupMembershipsTotalPages = res.data.totalPages;
+			if (res.data) {
+				groupMembershipsTotalPages = res.data.totalPages;
+			}
 
-			res.data.content.forEach((groupMembership) => {
-				let newGroupMembership = {
-					applicationAdmin: groupMembership.applicationAdmin,
-					groupAdmin: groupMembership.groupAdmin,
-					topicAdmin: groupMembership.topicAdmin,
-					groupName: groupMembership.permissionsGroup.name,
-					userEmail: groupMembership.permissionsUser.email
-				};
-				groupMembershipListArray.push(newGroupMembership);
-			});
-			groupMembershipList.set(groupMembershipListArray);
-			groupMembershipListArray = [];
+			if (res.data.content) {
+				res.data.content.forEach((groupMembership) => {
+					let newGroupMembership = {
+						applicationAdmin: groupMembership.applicationAdmin,
+						groupAdmin: groupMembership.groupAdmin,
+						topicAdmin: groupMembership.topicAdmin,
+						groupName: groupMembership.permissionsGroup.name,
+						userEmail: groupMembership.permissionsUser.email
+					};
+					groupMembershipListArray.push(newGroupMembership);
+				});
+				groupMembershipList.set(groupMembershipListArray);
+				groupMembershipListArray = [];
+			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
