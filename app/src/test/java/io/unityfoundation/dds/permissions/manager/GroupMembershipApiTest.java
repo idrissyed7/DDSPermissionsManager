@@ -204,73 +204,75 @@ public class GroupMembershipApiTest {
 
         @Test
         public void membershipsOrderedByEmail() {
-            // first group and member
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            // Groups intentionally created in an order that
+            // is not consistent with their sort order
+            String firstGroupCreatedName = "ZZZ Group"; // bob and angie and zack
+            String secondGroupCreatedName = "MMM Group"; // bob and angie and jill
+            String thirdGroupCreatedName = "AAA Group"; // jack and angie
 
-            GroupUserDTO dto = new GroupUserDTO();
-            dto.setPermissionsGroup(primaryGroup.getId());
-            dto.setEmail("yet.another.generalcontractor@test.test");
-            request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            Group firstGroup = createGroup(firstGroupCreatedName);
+            Group secondGroup = createGroup(secondGroupCreatedName);
+            Group thirdGroup = createGroup(thirdGroupCreatedName);
 
-            // other group and member
-            Group secondaryGroup = new Group("SecondaryGroup");
-            request = HttpRequest.POST("/groups/save", secondaryGroup);
-            response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            secondaryGroup = response.getBody(Group.class).get();
+            String jill = "jill@test.test";
+            String jack = "jack@test.test";
+            String angie = "angie@test.test";
+            String bob = "bob@test.test";
+            String zack = "zack@test.test";
 
-            GroupUserDTO dto1 = new GroupUserDTO();
-            dto1.setPermissionsGroup(secondaryGroup.getId());
-            dto1.setEmail("robert.the.generalcontractor@test.test");
-            request = HttpRequest.POST("/group_membership", dto1);
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            createMembership(firstGroup, bob, angie, zack);
+            createMembership(secondGroup, bob, jill, angie);
+            createMembership(thirdGroup, jack, angie);
 
-            // another group and members
-            Group thirdGroup = new Group("AThirdGroup");
-            request = HttpRequest.POST("/groups/save", thirdGroup);
-            response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            thirdGroup = response.getBody(Group.class).get();
-
-            dto1 = new GroupUserDTO();
-            dto1.setPermissionsGroup(thirdGroup.getId());
-            dto1.setEmail("robert.the.generalcontractor@test.test");
-            request = HttpRequest.POST("/group_membership", dto1);
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
-
-
-            dto1 = new GroupUserDTO();
-            dto1.setPermissionsGroup(thirdGroup.getId());
-            dto1.setEmail("bob.builder@test.test");
-            request = HttpRequest.POST("/group_membership", dto1);
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
-
-            request = HttpRequest.GET("/group_membership");
-            response = blockingClient.exchange(request, Page.class);
+            HttpRequest<?> request = HttpRequest.GET("/group_membership");
+            HttpResponse<?> response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             List content = page.getContent();
-            assertEquals(4, content.size());
+            assertEquals(8, content.size());
 
-            assertExpectedEmail(content, 0, "bob.builder@test.test");
-            assertExpectedEmail(content, 1, "robert.the.generalcontractor@test.test");
-            assertExpectedEmail(content, 2, "robert.the.generalcontractor@test.test");
-            assertExpectedEmail(content, 3, "yet.another.generalcontractor@test.test");
+            assertExpectedEmailAndGroupName(content, 0, angie, thirdGroupCreatedName);
+            assertExpectedEmailAndGroupName(content, 1, angie, secondGroupCreatedName);
+            assertExpectedEmailAndGroupName(content, 2, angie, firstGroupCreatedName);
+
+            assertExpectedEmailAndGroupName(content, 3, bob, secondGroupCreatedName);
+            assertExpectedEmailAndGroupName(content, 4, bob, firstGroupCreatedName);
+
+            assertExpectedEmailAndGroupName(content, 5, jack, thirdGroupCreatedName);
+
+            assertExpectedEmailAndGroupName(content, 6, jill, secondGroupCreatedName);
+
+            assertExpectedEmailAndGroupName(content, 7, zack, firstGroupCreatedName);
         }
 
-        void assertExpectedEmail(List content, int index, String expectedEmail) {
+        private void createMembership(Group group, String... emails) {
+            for(String email: emails) {
+                GroupUserDTO dto = new GroupUserDTO();
+                dto.setPermissionsGroup(group.getId());
+                dto.setEmail(email);
+                HttpRequest<?> request = HttpRequest.POST("/group_membership", dto);
+                HttpResponse<?> response = blockingClient.exchange(request);
+                assertEquals(OK, response.getStatus());
+            }
+        }
+
+        private Group createGroup(String groupName) {
+            Group group = new Group(groupName);
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            return response.getBody(Group.class).get();
+        }
+
+        void assertExpectedEmailAndGroupName(List content, int index, String expectedEmail, String expectedGroup) {
             Map membership = (Map) content.get(index);
+
             Map permissionsUser = (Map) membership.get("permissionsUser");
             String email = (String) permissionsUser.get("email");
             assertEquals(expectedEmail, email);
+
+            Map permissionsGroup = (Map) membership.get("permissionsGroup");
+            String groupName = (String) permissionsGroup.get("name");
+            assertEquals(expectedGroup, groupName);
         }
 
         @Test
