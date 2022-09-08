@@ -1,7 +1,16 @@
 package io.unityfoundation.dds.permissions.manager.model.group;
 
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+
+import java.util.Set;
+
 public class GroupResponseDTO {
-    private Group group;
+
+    private Long id;
+    private String name;
+    private Set<Topic> topics;
+    private Set<Application> applications;
     private int membershipCount;
     private int topicCount;
     private int applicationCount;
@@ -9,12 +18,27 @@ public class GroupResponseDTO {
     public GroupResponseDTO() {
     }
 
-    public Group getGroup() {
-        return group;
+    public void setGroupFields(Group group) {
+        this.id = group.getId();
+        this.name = group.getName();
+        this.topics = group.getTopics();
+        this.applications = group.getApplications();
     }
 
-    public void setGroup(Group group) {
-        this.group = group;
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Set<Topic> getTopics() {
+        return topics;
+    }
+
+    public Set<Application> getApplications() {
+        return applications;
     }
 
     public long getMembershipCount() {

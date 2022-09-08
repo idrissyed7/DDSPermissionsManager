@@ -191,7 +191,6 @@ public class GroupApiTest {
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
         List<String> groupNames = groups.stream()
-                .flatMap(map -> Stream.of((Map) map.get("group")))
                 .flatMap(map -> Stream.of((String) map.get("name")))
                 .collect(Collectors.toList());
         assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
@@ -203,7 +202,6 @@ public class GroupApiTest {
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
         List<String> groupNames = groups.stream()
-                .flatMap(map -> Stream.of((Map) map.get("group")))
                 .flatMap(map -> Stream.of((String) map.get("name")))
                 .collect(Collectors.toList());
         assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
@@ -215,13 +213,11 @@ public class GroupApiTest {
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> content = (List<Map>) responseMap.get("content");
 
-        // get alpha
-        Map contentItem = content.get(0);
-        Map alphaGroup = (Map) contentItem.get("group");
+        Map alphaGroup = content.get(0);
         assertEquals("Alpha", alphaGroup.get("name"));
-        assertEquals(3, contentItem.get("membershipCount"));
-        assertEquals(1, contentItem.get("topicCount"));
-        assertEquals(1, contentItem.get("applicationCount"));
+        assertEquals(3, alphaGroup.get("membershipCount"));
+        assertEquals(1, alphaGroup.get("topicCount"));
+        assertEquals(1, alphaGroup.get("applicationCount"));
     }
 
     @Test

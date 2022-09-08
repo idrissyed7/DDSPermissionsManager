@@ -44,7 +44,7 @@ public class GroupService {
     public Page<GroupResponseDTO> findAll(Pageable pageable) {
         return getGroupPage(pageable).map(group -> {
             GroupResponseDTO groupsResponseDTO = new GroupResponseDTO();
-            groupsResponseDTO.setGroup(group);
+            groupsResponseDTO.setGroupFields(group);
             groupsResponseDTO.setTopicCount(group.getTopics().size());
             groupsResponseDTO.setApplicationCount(group.getApplications().size());
             groupsResponseDTO.setMembershipCount(groupUserService.getMembershipCountByGroup(group));
