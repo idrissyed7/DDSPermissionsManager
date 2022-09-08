@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static io.micronaut.http.HttpStatus.*;
@@ -202,6 +203,77 @@ public class GroupMembershipApiTest {
         }
 
         @Test
+        public void membershipsOrderedByEmail() {
+            // first group and member
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // other group and member
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // another group and members
+            Group thirdGroup = new Group("AThirdGroup");
+            request = HttpRequest.POST("/groups/save", thirdGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            thirdGroup = response.getBody(Group.class).get();
+
+            dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(thirdGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+
+            dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(thirdGroup.getId());
+            dto1.setEmail("yet.another.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/group_membership");
+            response = blockingClient.exchange(request, Page.class);
+            Page page = response.getBody(Page.class).get();
+            List content = page.getContent();
+            assertEquals(4, content.size());
+
+            assertExpectedEmail(content, 0, "another.generalcontractor@test.test");
+            assertExpectedEmail(content, 1, "bob.builder@test.test");
+            assertExpectedEmail(content, 2, "robert.the.generalcontractor@test.test");
+            assertExpectedEmail(content, 3, "yet.another.generalcontractor@test.test");
+        }
+
+        void assertExpectedEmail(List content, int index, String expectedEmail) {
+            Map membership = (Map) content.get(index);
+            Map permissionsUser = (Map) membership.get("permissionsUser");
+            String email = (String) permissionsUser.get("email");
+            assertEquals(expectedEmail, email);
+        }
+
+        @Test
         public void canSeeAllMembershipsFilteredByGroupName() {
             // first group and member
             Group primaryGroup = new Group("PrimaryGroup");
@@ -351,7 +423,7 @@ public class GroupMembershipApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User( "montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -692,7 +764,7 @@ public class GroupMembershipApiTest {
         void setup() {
             dbCleanup.cleanup();
             userRepository.save(new User("montesm@test.test", true));
-            userRepository.save(new User( "jjones@test.test"));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {
@@ -991,7 +1063,7 @@ public class GroupMembershipApiTest {
         void setup() {
             dbCleanup.cleanup();
             userRepository.save(new User("montesm@test.test", true));
-            userRepository.save(new User( "jjones@test.test"));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {

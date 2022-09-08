@@ -34,6 +34,9 @@ public class GroupUserService {
 
     public Page<GroupUser> findAll(Pageable pageable, String groupName, String userEmail) {
 
+        if(!pageable.isSorted()) {
+            pageable = pageable.order("permissionsUser.email");
+        }
         if (securityUtil.isCurrentUserAdmin()) {
             if (groupName == null && userEmail == null) {
                 return groupUserRepository.findAll(pageable);
