@@ -1,4 +1,5 @@
 <script>
+	export let data, errors;
 </script>
 
 <svelte:head>

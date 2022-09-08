@@ -7,6 +7,8 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
+	export let data, errors;
+
 	// Error Handling
 	let errorMsg, errorObject;
 	let invalidEmail = true;
@@ -166,7 +168,7 @@
 				<th><strong>Group</strong></th>
 				<th><strong>Role</strong></th>
 			</tr>
-			{#if $users.length > 0}
+			{#if $users && $users.length > 0}
 				{#each $users as user}
 					<tr>
 						<td style="width: 25rem;">{user.email}</td>

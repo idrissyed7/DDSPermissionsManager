@@ -31,8 +31,8 @@ micronaut:
     oauth2:
       clients:
         google:
-          client-id: "887538804956-u62ckldg4a6e4elon7diken6pna3m2v5.apps.googleusercontent.com"
-          client-secret: "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"
+          client-id: ***REMOVED***
+          client-secret: ***REMOVED***
           openid:
             authorization:
               prompt: select_account
