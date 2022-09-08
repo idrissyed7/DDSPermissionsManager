@@ -7,6 +7,7 @@
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
+	export let data;
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {

@@ -1,10 +1,12 @@
 <script>
-	import { isAuthenticated, isAdmin } from '../stores/authentication';
+	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount } from 'svelte';
-	import { httpAdapter } from '../appconfig';
-	import permissionsByGroup from '../stores/permissionsByGroup';
-	import groups from '../stores/groups';
-	import Modal from '../lib/Modal.svelte';
+	import { httpAdapter } from '../../appconfig';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
+	import groups from '../../stores/groups';
+	import Modal from '../../lib/Modal.svelte';
+
+	export let data, errors;
 
 	// Modals
 	let addGroupMembershipVisible = false;

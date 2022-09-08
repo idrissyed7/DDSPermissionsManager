@@ -8,6 +8,8 @@
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
+	export let data, errors;
+
 	// Error Handling
 	let errorMessage, errorObject;
 	let duplicateAppName = false;
