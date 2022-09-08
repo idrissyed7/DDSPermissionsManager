@@ -213,7 +213,7 @@ public class GroupMembershipApiTest {
 
             GroupUserDTO dto = new GroupUserDTO();
             dto.setPermissionsGroup(primaryGroup.getId());
-            dto.setEmail("bob.builder@test.test");
+            dto.setEmail("yet.another.generalcontractor@test.test");
             request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
@@ -249,7 +249,7 @@ public class GroupMembershipApiTest {
 
             dto1 = new GroupUserDTO();
             dto1.setPermissionsGroup(thirdGroup.getId());
-            dto1.setEmail("yet.another.generalcontractor@test.test");
+            dto1.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dto1);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
