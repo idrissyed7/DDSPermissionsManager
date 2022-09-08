@@ -13,6 +13,12 @@
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
 
+	// SearchBox
+	let searchString;
+	let searchResults;
+	let searchResultsVisible = false;
+	let isEmail = false;
+
 	// Forms
 	let emailValue = '';
 	let selectedGroup;
@@ -25,7 +31,7 @@
 	let groupAdminGroups = [];
 
 	// Pagination
-	const groupMembershipsPerPage = 2;
+	const groupMembershipsPerPage = 3;
 	let groupMembershipsTotalPages;
 	let groupMembershipsCurrentPage = 0;
 
@@ -37,6 +43,22 @@
 
 	// Group Membership List
 	let groupMembershipListArray = [];
+
+	// Search Box
+	$: if (searchString?.trim().length >= 3) {
+		isEmail = extractEmails(searchString.trim());
+		searchGroupMemberships(searchString.trim(), Boolean(isEmail?.length > 0));
+	} else {
+		searchResultsVisible = false;
+	}
+
+	$: if (searchResults?.data?.content?.length >= 1) {
+		searchResultsVisible = true;
+	} else {
+		searchResultsVisible = false;
+	}
+
+	$: console.log('searchResults', searchResults?.data?.content);
 
 	onMount(async () => {
 		if ($permissionsByGroup) {
@@ -58,23 +80,43 @@
 			const res = await httpAdapter.get(
 				`/group_membership?page=${page}&size=${groupMembershipsPerPage}`
 			);
-			groupMembershipsTotalPages = res.data.totalPages;
+			if (res.data) {
+				groupMembershipsTotalPages = res.data.totalPages;
+			}
 
-			res.data.content.forEach((groupMembership) => {
-				let newGroupMembership = {
-					applicationAdmin: groupMembership.applicationAdmin,
-					groupAdmin: groupMembership.groupAdmin,
-					topicAdmin: groupMembership.topicAdmin,
-					groupName: groupMembership.permissionsGroup.name,
-					userEmail: groupMembership.permissionsUser.email
-				};
-				groupMembershipListArray.push(newGroupMembership);
-			});
-			groupMembershipList.set(groupMembershipListArray);
-			groupMembershipListArray = [];
+			if (res.data.content) {
+				res.data.content.forEach((groupMembership) => {
+					let newGroupMembership = {
+						applicationAdmin: groupMembership.applicationAdmin,
+						groupAdmin: groupMembership.groupAdmin,
+						topicAdmin: groupMembership.topicAdmin,
+						groupName: groupMembership.permissionsGroup.name,
+						userEmail: groupMembership.permissionsUser.email
+					};
+					groupMembershipListArray.push(newGroupMembership);
+				});
+				groupMembershipList.set(groupMembershipListArray);
+				groupMembershipListArray = [];
+			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
+	};
+
+	const searchGroupMemberships = async (searchStr, isEmail) => {
+		setTimeout(async () => {
+			if (isEmail) {
+				searchResults = await httpAdapter.get(`/group_membership?email=${searchStr}`);
+			} else {
+				searchResults = await httpAdapter.get(`/group_membership?group=${searchStr}`);
+			}
+		}, 1000);
+	};
+
+	const extractEmails = (text) => {
+		return text.match(
+			/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm
+		);
 	};
 
 	const addGroupMembershipInput = async () => {
@@ -151,10 +193,60 @@
 			</div>
 		</Modal>
 	{/if}
+
 	<div class="content">
 		<h1>Group Membership</h1>
+		<center
+			><input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === 13) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;</center
+		>
+		{#if searchResultsVisible}
+			<center
+				><table class="searchGroupMembership">
+					<th>E-mail</th>
+					<th>Group</th>
+					<th><center>Group Admin</center></th>
+					<th><center>Topic Admin</center></th>
+					<th><center>Application Admin</center></th>
+					{#each searchResults.data.content as result}
+						<tr style="padding-left: 0.3rem"
+							><td style="font-size: 0.9rem"> {result.permissionsUser.email}</td>
+							<td style="font-size: 0.8rem">{result.permissionsGroup.name}</td>
+							{#if result.groupAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+							{#if result.applicationAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+							{#if result.topicAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+						</tr>
+					{/each}
+				</table></center
+			>
+		{/if}
 		{#if $isAdmin || isGroupAdmin}
 			{#if $groupMembershipList}
+				<br /><br />
 				<table align="center">
 					<tr style="border-width: 0px">
 						<th>E-mail</th>
@@ -327,12 +419,37 @@
 		background-color: lightgray;
 	}
 
+	.searchGroupMembership {
+		max-width: 40rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin: 0;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		background-color: rgba(217, 221, 254, 0.4);
+		text-align: left;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchGroupMembership tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
+	}
+
+	.searchGroupMembership th {
+		font-size: 0.8rem;
+	}
+
 	label {
 		font-size: small;
 	}
 
 	input {
 		vertical-align: middle;
+
+		text-align: center;
+		width: 20rem;
+		z-index: 1;
+		background-color: rgba(0, 0, 0, 0);
 	}
 
 	table {
