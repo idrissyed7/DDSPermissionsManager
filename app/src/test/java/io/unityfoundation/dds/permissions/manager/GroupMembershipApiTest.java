@@ -210,19 +210,15 @@ public class GroupMembershipApiTest {
             String secondGroupCreatedName = "MMM Group"; // bob and angie and jill
             String thirdGroupCreatedName = "AAA Group"; // jack and angie
 
-            Group firstGroup = createGroup(firstGroupCreatedName);
-            Group secondGroup = createGroup(secondGroupCreatedName);
-            Group thirdGroup = createGroup(thirdGroupCreatedName);
-
             String jill = "jill@test.test";
             String jack = "jack@test.test";
             String angie = "angie@test.test";
             String bob = "bob@test.test";
             String zack = "zack@test.test";
 
-            createMemberships(firstGroup, bob, angie, zack);
-            createMemberships(secondGroup, bob, jill, angie);
-            createMemberships(thirdGroup, jack, angie);
+            createGroupAndMemberships(firstGroupCreatedName, bob, angie, zack);
+            createGroupAndMemberships(secondGroupCreatedName, bob, jill, angie);
+            createGroupAndMemberships(thirdGroupCreatedName, jack, angie);
 
             HttpRequest<?> request = HttpRequest.GET("/group_membership");
             HttpResponse<?> response = blockingClient.exchange(request, Page.class);
@@ -261,6 +257,11 @@ public class GroupMembershipApiTest {
             HttpResponse<?> response = blockingClient.exchange(request, Group.class);
             assertEquals(OK, response.getStatus());
             return response.getBody(Group.class).get();
+        }
+
+        private void createGroupAndMemberships(String groupName, String... emails) {
+            Group group = createGroup(groupName);
+            createMemberships(group, emails);
         }
 
         void assertExpectedEmailAndGroupName(List content, int index, String expectedEmail, String expectedGroup) {
