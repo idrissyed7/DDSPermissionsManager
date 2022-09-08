@@ -177,7 +177,7 @@ button:disabled {
 	padding-left: 5x;
 	height: 2rem;
 	transition: all 0.5s;
-	cursor: pointer;
+	cursor: default;
 	left: 0%;
 	width: 6rem;
 	background-color: lightgray;
@@ -324,16 +324,12 @@ button:disabled {
 	color: rgba(16, 16, 16, 0.3);
 }
 
-.button-pagination:disabled:hover {
-	background-color: rgba(239, 239, 239, 0.3);
-}
-
 .button-pagination-selected {
 	background-color: rgb(217, 217, 217);
 }
 
 .button-pagination:hover {
-	background-color: rgb(217, 217, 217);
+	background-color: lightgrey;
 }
 
 .add input {
