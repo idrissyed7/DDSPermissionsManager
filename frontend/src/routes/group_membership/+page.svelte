@@ -207,7 +207,85 @@
 					class:hidden={addGroupMembershipVisible}>+</button
 				></center
 			>
-			<br /><br />
+			<br />
+			{#if addGroupMembershipVisible}
+				<table>
+					<tr>
+						<td style="width: 15rem"
+							><input
+								placeholder="Email Address"
+								class:invalid={invalidEmail && emailValue.length >= 1}
+								style="
+						display: inline-flex;		
+						height: 1.7rem;
+						text-align: left;
+						font-size: small;
+						min-width: 12rem;"
+								bind:value={emailValue}
+								on:blur={() => ValidateEmail(emailValue)}
+								on:keydown={(event) => {
+									if (event.which === 13) {
+										ValidateEmail(emailValue);
+										document.querySelector('#name').blur();
+									}
+								}}
+							/>
+							<div class="add-item">
+								<label for="groups">Group:</label>
+								<select name="groups" bind:value={selectedGroup}>
+									{#if $isAdmin}
+										{#if $groups}
+											{#each $groups as group}
+												<option value={group.id}>{group.name}</option>
+											{/each}
+										{/if}
+									{:else if groupAdminGroups}
+										{#if $groups}
+											{#each groupAdminGroups as group}
+												<option value={group.groupId}>{group.groupName}</option>
+											{/each}
+										{/if}
+									{/if}
+								</select>
+								<div class="add-item">
+									<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
+									<label for="groupAdmin">Group Admin</label>
+								</div>
+								<div class="add-item">
+									<input
+										type="checkbox"
+										name="applicationAdmin"
+										bind:checked={selectedIsApplicationAdmin}
+									/>
+									<label for="applicationAdmin">Application Admin</label>
+								</div>
+								<div class="add-item">
+									<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+
+									<label for="topicAdmin">Topic Admin</label>
+								</div>
+								<div class="add-item">
+									<button
+										class:button={!invalidEmail}
+										style="margin-left: 1rem; width: 6.5rem"
+										disabled={invalidEmail}
+										on:click={() => addGroupMembership()}><span>Add</span></button
+									>
+									<button
+										class="remove-button"
+										style="margin-left: 0.5rem"
+										on:click={() => {
+											emailValue = '';
+											addGroupMembershipVisible = false;
+										}}>x</button
+									>
+								</div>
+							</div></td
+						>
+					</tr>
+				</table>
+				<br /><br />
+			{/if}
 
 			{#if $groupMembershipList}
 				<center
@@ -250,78 +328,17 @@
 		{:else}
 			<h2>No group memberships</h2>
 		{/if}
-
-		{#if addGroupMembershipVisible}
-			<table>
-				<tr>
-					<td style="width: 15rem"
-						><input
-							placeholder="Email Address"
-							class:invalid={invalidEmail && emailValue.length >= 1}
-							style="
-						display: inline-flex;		
-						height: 1.7rem;
-						text-align: left;
-						font-size: small;
-						min-width: 12rem;"
-							bind:value={emailValue}
-							on:blur={() => ValidateEmail(emailValue)}
-							on:keydown={(event) => {
-								if (event.which === 13) {
-									ValidateEmail(emailValue);
-									document.querySelector('#name').blur();
-								}
-							}}
-						/>
-						<label for="groups">Group:</label>
-						<select name="groups" bind:value={selectedGroup}>
-							{#if $isAdmin}
-								{#if $groups}
-									{#each $groups as group}
-										<option value={group.id}>{group.name}</option>
-									{/each}
-								{/if}
-							{:else if groupAdminGroups}
-								{#if $groups}
-									{#each groupAdminGroups as group}
-										<option value={group.groupId}>{group.groupName}</option>
-									{/each}
-								{/if}
-							{/if}
-						</select>
-						<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
-						<label for="groupAdmin">Group Admin</label>
-						<input
-							type="checkbox"
-							name="applicationAdmin"
-							bind:checked={selectedIsApplicationAdmin}
-						/>
-						<label for="applicationAdmin">Application Admin</label>
-						<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
-						<label for="topicAdmin">Topic Admin</label>
-						<button
-							class:button={!invalidEmail}
-							style="margin-left: 1rem; width: 6.5rem"
-							disabled={invalidEmail}
-							on:click={() => addGroupMembership()}><span>Add</span></button
-						>
-						<button
-							class="remove-button"
-							on:click={() => {
-								emailValue = '';
-								addGroupMembershipVisible = false;
-							}}>x</button
-						></td
-					>
-				</tr>
-			</table>
-		{/if}
 	</div>
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
 
 <style>
+	.add-item {
+		display: inline;
+		padding-left: 1.6rem;
+	}
+
 	.hidden {
 		display: none;
 	}
