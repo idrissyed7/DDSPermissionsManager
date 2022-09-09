@@ -31,7 +31,7 @@
 	let groupAdminGroups = [];
 
 	// Pagination
-	const groupMembershipsPerPage = 3;
+	const groupMembershipsPerPage = 10;
 	let groupMembershipsTotalPages;
 	let groupMembershipsCurrentPage = 0;
 
