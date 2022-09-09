@@ -39,6 +39,9 @@
 	let groupMembershipListArray = [];
 
 	onMount(async () => {
+		const res = await httpAdapter.get(`/token_info`);
+		permissionsByGroup.set(res.data.permissionsByGroup);
+
 		if ($permissionsByGroup) {
 			$permissionsByGroup.forEach((group) => {
 				if (group.isGroupAdmin) {
@@ -49,7 +52,6 @@
 				isGroupAdmin = true;
 			}
 		}
-
 		reloadGroupMemberships();
 	});
 
