@@ -12,6 +12,7 @@
 	// Modals
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
+	let updateGroupMembershipVisible = false;
 
 	// Forms
 	let emailValue = '';
@@ -25,7 +26,7 @@
 	let groupAdminGroups = [];
 
 	// Pagination
-	const groupMembershipsPerPage = 2;
+	const groupMembershipsPerPage = 10;
 	let groupMembershipsTotalPages;
 	let groupMembershipsCurrentPage = 0;
 
@@ -37,6 +38,21 @@
 
 	// Group Membership List
 	let groupMembershipListArray = [];
+
+	// Selection
+	let selectedGroupMembership = {
+		userEmail: '',
+		groupName: '',
+		groupId: '',
+		groupAdmin: '',
+		applicationAdmin: '',
+		topicAdmin: '',
+		groupMembershipId: '',
+		userId: ''
+	};
+
+	// Data
+	let dataUpdated = false;
 
 	onMount(async () => {
 		const res = await httpAdapter.get(`/token_info`);
@@ -52,6 +68,7 @@
 				isGroupAdmin = true;
 			}
 		}
+		console.log('groupAdminGroups', groupAdminGroups);
 		reloadGroupMemberships();
 	});
 
@@ -63,7 +80,6 @@
 			if (res.data) {
 				groupMembershipsTotalPages = res.data.totalPages;
 			}
-
 			if (res.data.content) {
 				res.data.content.forEach((groupMembership) => {
 					let newGroupMembership = {
@@ -71,12 +87,17 @@
 						groupAdmin: groupMembership.groupAdmin,
 						topicAdmin: groupMembership.topicAdmin,
 						groupName: groupMembership.permissionsGroup.name,
+						groupId: groupMembership.permissionsGroup.id,
+						groupMembershipId: groupMembership.id,
+						userId: groupMembership.permissionsUser.id,
 						userEmail: groupMembership.permissionsUser.email
 					};
 					groupMembershipListArray.push(newGroupMembership);
 				});
 				groupMembershipList.set(groupMembershipListArray);
 				groupMembershipListArray = [];
+
+				console.log('groupMembershipList', $groupMembershipList);
 			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
@@ -88,12 +109,6 @@
 	};
 
 	const addGroupMembership = async () => {
-		console.log('Request:');
-		console.log('email: ', emailValue);
-		console.log('permissionsGroup: ', selectedGroup);
-		console.log('isGroupAdmin: ', selectedIsGroupAdmin);
-		console.log('isTopicAdmin: ', selectedIsTopicAdmin);
-		console.log('isApplicationAdmin: ', selectedIsApplicationAdmin);
 		const res = await httpAdapter
 			.post(`/group_membership`, {
 				email: emailValue,
@@ -129,6 +144,37 @@
 		errorObject = '';
 		errorMessageVisible = false;
 	};
+
+	const updateGroupMembershipModal = (selectedGM) => {
+		updateGroupMembershipVisible = true;
+		selectedGroupMembership.userEmail = selectedGM.userEmail;
+		selectedGroupMembership.groupName = selectedGM.groupName;
+		selectedGroupMembership.groupAdmin = selectedGM.groupAdmin;
+		selectedGroupMembership.applicationAdmin = selectedGM.applicationAdmin;
+		selectedGroupMembership.topicAdmin = selectedGM.topicAdmin;
+		selectedGroupMembership.groupMembershipId = selectedGM.groupMembershipId;
+		selectedGroupMembership.groupId = selectedGM.groupId;
+		selectedGroupMembership.userId = selectedGM.userId;
+	};
+
+	const updateGroupMembership = async () => {
+		if (dataUpdated) {
+			const data = {
+				id: selectedGroupMembership.groupMembershipId,
+				groupAdmin: selectedGroupMembership.groupAdmin,
+				topicAdmin: selectedGroupMembership.topicAdmin,
+				applicationAdmin: selectedGroupMembership.applicationAdmin,
+				permissionsGroup: { id: selectedGroupMembership.groupId },
+				permissionsUser: { id: selectedGroupMembership.userId }
+			};
+			try {
+				await httpAdapter.put(`/group_membership`, data);
+				reloadGroupMemberships(groupMembershipsCurrentPage);
+			} catch (err) {
+				errorMessage('Error Updating Group Membership', err.message);
+			}
+		}
+	};
 </script>
 
 <svelte:head>
@@ -155,6 +201,64 @@
 					}}>Ok</button
 				>
 			</div>
+		</Modal>
+	{/if}
+
+	{#if updateGroupMembershipVisible}
+		<Modal
+			title="Update Group Membership"
+			on:cancel={() => {
+				updateGroupMembershipVisible = false;
+				updateGroupMembership();
+			}}
+		>
+			<table align="center" style="margin-left: 0.6rem; width:97.5%">
+				<tr style="border-width: 0px">
+					<th style="font-size: 0.9rem">E-mail</th>
+					<th style="font-size: 0.9rem">Group</th>
+					<th style="font-size: 0.9rem"><center>Group Admin</center></th>
+					<th style="font-size: 0.9rem"><center>Topic Admin</center></th>
+					<th style="font-size: 0.9rem"><center>Application Admin</center></th>
+				</tr>
+				<tr>
+					<td style="font-size: 0.9rem">
+						{selectedGroupMembership.userEmail}
+					</td>
+					<td style="font-size: 0.9rem">
+						{selectedGroupMembership.groupName}
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedGroupAdmin"
+								bind:checked={selectedGroupMembership.groupAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedTopicAdmin"
+								bind:checked={selectedGroupMembership.topicAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedApplicationAdmin"
+								bind:checked={selectedGroupMembership.applicationAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+				</tr>
+			</table>
 		</Modal>
 	{/if}
 	<div class="content">
@@ -197,6 +301,16 @@
 									{/if}</center
 								></td
 							>
+
+							{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
+								<td
+									><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
+										&#9998
+									</div></td
+								>
+							{:else}
+								<td />
+							{/if}
 						</tr>
 					{/each}
 				</table>
@@ -336,6 +450,13 @@
 {/if}
 
 <style>
+	.pencil {
+		transform: scaleX(-1);
+		margin-right: 0.5rem;
+		margin-top: 0.2rem;
+		cursor: pointer;
+	}
+
 	.add-item {
 		display: inline;
 		padding-left: 1.6rem;
