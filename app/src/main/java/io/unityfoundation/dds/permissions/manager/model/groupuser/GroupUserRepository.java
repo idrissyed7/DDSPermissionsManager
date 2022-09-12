@@ -59,4 +59,6 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
     List<Group> findPermissionsGroupByPermissionsGroupNameContains(String groupName);
 
     Page<GroupUser> findAllByPermissionsUserEmailContainsAndPermissionsGroupIdIn(String userEmail, List<Long> groupsList, Pageable pageable);
+
+    int countByPermissionsGroup(Group group);
 }

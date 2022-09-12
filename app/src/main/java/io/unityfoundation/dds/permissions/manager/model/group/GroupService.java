@@ -41,7 +41,19 @@ public class GroupService {
         this.topicRepository = topicRepository;
     }
 
-    public Page<Group> findAll(Pageable pageable) {
+    public Page<GroupResponseDTO> findAll(Pageable pageable) {
+        return getGroupPage(pageable).map(group -> {
+            GroupResponseDTO groupsResponseDTO = new GroupResponseDTO();
+            groupsResponseDTO.setGroupFields(group);
+            groupsResponseDTO.setTopicCount(group.getTopics().size());
+            groupsResponseDTO.setApplicationCount(group.getApplications().size());
+            groupsResponseDTO.setMembershipCount(groupUserService.getMembershipCountByGroup(group));
+
+            return groupsResponseDTO;
+        });
+    }
+
+    private Page<Group> getGroupPage(Pageable pageable) {
         if (!pageable.isSorted()) {
             pageable = pageable.order(Sort.Order.asc("name"));
         }

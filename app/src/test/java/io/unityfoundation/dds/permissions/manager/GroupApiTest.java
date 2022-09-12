@@ -190,18 +190,34 @@ public class GroupApiTest {
         HttpRequest<?> request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted().collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
     }
-
 
     @Test
     public void shouldRespectGroupsNamesInDescendingOrder() {
         HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
+    }
+
+    @Test
+    public void shouldSeeGroupWithCounts() {
+        HttpRequest<?> request = HttpRequest.GET("/groups");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> content = (List<Map>) responseMap.get("content");
+
+        Map alphaGroup = content.get(0);
+        assertEquals("Alpha", alphaGroup.get("name"));
+        assertEquals(3, alphaGroup.get("membershipCount"));
+        assertEquals(1, alphaGroup.get("topicCount"));
+        assertEquals(1, alphaGroup.get("applicationCount"));
     }
 
     @Test
