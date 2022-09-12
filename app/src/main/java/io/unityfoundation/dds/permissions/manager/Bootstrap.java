@@ -26,7 +26,7 @@ public class Bootstrap {
 
     @EventListener
     public void devData(ServerStartupEvent event) {
-        User justin = userRepository.save(new User("jwilson@test.test", true));
+        User justin = userRepository.save(new User("wilsonj@test.test", true));
         User kevin = userRepository.save(new User("kstanley@test.test"));
         User max = userRepository.save(new User("montesm@test.test"));
         userRepository.save(new User("jeff@test.test"));
