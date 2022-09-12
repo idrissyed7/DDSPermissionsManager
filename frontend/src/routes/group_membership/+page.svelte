@@ -263,186 +263,184 @@
 	{/if}
 	<div class="content">
 		<h1>Group Membership</h1>
-		{#if $isAdmin || isGroupAdmin}
-			{#if $groupMembershipList}
-				<table align="center">
-					<tr style="border-width: 0px">
-						<th>E-mail</th>
-						<th>Group</th>
-						<th><center>Group Admin</center></th>
-						<th><center>Topic Admin</center></th>
-						<th><center>Application Admin</center></th>
-					</tr>
-					{#each $groupMembershipList as groupMembership}
-						<tr>
-							<td>{groupMembership.userEmail}</td>
-							<td>{groupMembership.groupName}</td>
-							<td
-								><center
-									>{#if groupMembership.groupAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-							<td
-								><center
-									>{#if groupMembership.topicAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-							<td
-								><center
-									>{#if groupMembership.applicationAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-
-							{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
-								<td
-									><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
-										&#9998
-									</div></td
-								>
-							{:else}
-								<td />
-							{/if}
-						</tr>
-					{/each}
-				</table>
-			{/if}
-			<br />
-			<center
-				><button
-					style="cursor:pointer"
-					on:click={() => addGroupMembershipInput()}
-					class:hidden={addGroupMembershipVisible}>+</button
-				></center
-			>
-			<br />
-			{#if addGroupMembershipVisible}
-				<table>
+		{#if $groupMembershipList}
+			<table align="center">
+				<tr style="border-width: 0px">
+					<th>E-mail</th>
+					<th>Group</th>
+					<th><center>Group Admin</center></th>
+					<th><center>Topic Admin</center></th>
+					<th><center>Application Admin</center></th>
+				</tr>
+				{#each $groupMembershipList as groupMembership}
 					<tr>
-						<td style="width: 15rem"
-							><input
-								placeholder="Email Address"
-								class:invalid={invalidEmail && emailValue.length >= 1}
-								style="
+						<td>{groupMembership.userEmail}</td>
+						<td>{groupMembership.groupName}</td>
+						<td
+							><center
+								>{#if groupMembership.groupAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+						<td
+							><center
+								>{#if groupMembership.topicAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+						<td
+							><center
+								>{#if groupMembership.applicationAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+
+						{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
+							<td
+								><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
+									&#9998
+								</div></td
+							>
+						{:else}
+							<td />
+						{/if}
+					</tr>
+				{/each}
+			</table>
+		{:else}
+			<h2>No group memberships</h2>
+		{/if}
+		<br />
+		<center
+			><button
+				style="cursor:pointer"
+				on:click={() => addGroupMembershipInput()}
+				class:hidden={addGroupMembershipVisible}>+</button
+			></center
+		>
+		<br />
+		{#if addGroupMembershipVisible}
+			<table>
+				<tr>
+					<td style="width: 15rem"
+						><input
+							placeholder="Email Address"
+							class:invalid={invalidEmail && emailValue.length >= 1}
+							style="
 						display: inline-flex;		
 						height: 1.7rem;
 						text-align: left;
 						font-size: small;
 						min-width: 12rem;"
-								bind:value={emailValue}
-								on:blur={() => ValidateEmail(emailValue)}
-								on:keydown={(event) => {
-									if (event.which === 13) {
-										ValidateEmail(emailValue);
-										document.querySelector('#name').blur();
-									}
-								}}
-							/>
-							<div class="add-item">
-								<label for="groups">Group:</label>
-								<select name="groups" bind:value={selectedGroup}>
-									{#if $isAdmin}
-										{#if $groups}
-											{#each $groups as group}
-												<option value={group.id}>{group.name}</option>
-											{/each}
-										{/if}
-									{:else if groupAdminGroups}
-										{#if $groups}
-											{#each groupAdminGroups as group}
-												<option value={group.groupId}>{group.groupName}</option>
-											{/each}
-										{/if}
+							bind:value={emailValue}
+							on:blur={() => ValidateEmail(emailValue)}
+							on:keydown={(event) => {
+								if (event.which === 13) {
+									ValidateEmail(emailValue);
+									document.querySelector('#name').blur();
+								}
+							}}
+						/>
+						<div class="add-item">
+							<label for="groups">Group:</label>
+							<select name="groups" bind:value={selectedGroup}>
+								{#if $isAdmin}
+									{#if $groups}
+										{#each $groups as group}
+											<option value={group.id}>{group.name}</option>
+										{/each}
 									{/if}
-								</select>
-								<div class="add-item">
-									<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
-									<label for="groupAdmin">Group Admin</label>
-								</div>
-								<div class="add-item">
-									<input
-										type="checkbox"
-										name="applicationAdmin"
-										bind:checked={selectedIsApplicationAdmin}
-									/>
-									<label for="applicationAdmin">Application Admin</label>
-								</div>
-								<div class="add-item">
-									<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+								{:else if groupAdminGroups}
+									{#if $groups}
+										{#each groupAdminGroups as group}
+											<option value={group.groupId}>{group.groupName}</option>
+										{/each}
+									{/if}
+								{/if}
+							</select>
+							<div class="add-item">
+								<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
+								<label for="groupAdmin">Group Admin</label>
+							</div>
+							<div class="add-item">
+								<input
+									type="checkbox"
+									name="applicationAdmin"
+									bind:checked={selectedIsApplicationAdmin}
+								/>
+								<label for="applicationAdmin">Application Admin</label>
+							</div>
+							<div class="add-item">
+								<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
 
-									<label for="topicAdmin">Topic Admin</label>
-								</div>
-								<div class="add-item">
-									<button
-										class:button={!invalidEmail}
-										style="margin-left: 1rem; width: 6.5rem"
-										disabled={invalidEmail}
-										on:click={() => addGroupMembership()}><span>Add</span></button
-									>
-									<button
-										class="remove-button"
-										style="margin-left: 0.5rem"
-										on:click={() => {
-											emailValue = '';
-											addGroupMembershipVisible = false;
-										}}>x</button
-									>
-								</div>
-							</div></td
-						>
-					</tr>
-				</table>
-				<br /><br />
-			{/if}
-
-			{#if $groupMembershipList}
-				<center
-					><button
-						on:click={() => {
-							if (groupMembershipsCurrentPage > 0) groupMembershipsCurrentPage--;
-							reloadGroupMemberships(groupMembershipsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={groupMembershipsCurrentPage === 0}>Previous</button
+								<label for="topicAdmin">Topic Admin</label>
+							</div>
+							<div class="add-item">
+								<button
+									class:button={!invalidEmail}
+									style="margin-left: 1rem; width: 6.5rem"
+									disabled={invalidEmail}
+									on:click={() => addGroupMembership()}><span>Add</span></button
+								>
+								<button
+									class="remove-button"
+									style="margin-left: 0.5rem"
+									on:click={() => {
+										emailValue = '';
+										addGroupMembershipVisible = false;
+									}}>x</button
+								>
+							</div>
+						</div></td
 					>
-					{#if groupMembershipsTotalPages > 2}
-						{#each Array.apply( null, { length: groupMembershipsTotalPages } ).map(Number.call, Number) as page}
-							<button
-								on:click={() => {
-									groupMembershipsCurrentPage = page;
-									reloadGroupMemberships(page);
-								}}
-								class="button-pagination"
-								class:button-pagination-selected={page === groupMembershipsCurrentPage}
-								>{page + 1}</button
-							>
-						{/each}
-					{/if}
+				</tr>
+			</table>
+			<br /><br />
+		{/if}
 
-					<button
-						on:click={() => {
-							if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages)
-								groupMembershipsCurrentPage++;
-							reloadGroupMemberships(groupMembershipsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={groupMembershipsCurrentPage === groupMembershipsTotalPages - 1 ||
-							groupMembershipsTotalPages === 0}>Next</button
-					></center
+		{#if $groupMembershipList}
+			<center
+				><button
+					on:click={() => {
+						if (groupMembershipsCurrentPage > 0) groupMembershipsCurrentPage--;
+						reloadGroupMemberships(groupMembershipsCurrentPage);
+					}}
+					class="button-pagination"
+					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
+					disabled={groupMembershipsCurrentPage === 0}>Previous</button
 				>
-			{/if}
-		{:else}
-			<h2>No group memberships</h2>
+				{#if groupMembershipsTotalPages > 2}
+					{#each Array.apply( null, { length: groupMembershipsTotalPages } ).map(Number.call, Number) as page}
+						<button
+							on:click={() => {
+								groupMembershipsCurrentPage = page;
+								reloadGroupMemberships(page);
+							}}
+							class="button-pagination"
+							class:button-pagination-selected={page === groupMembershipsCurrentPage}
+							>{page + 1}</button
+						>
+					{/each}
+				{/if}
+
+				<button
+					on:click={() => {
+						if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages)
+							groupMembershipsCurrentPage++;
+						reloadGroupMemberships(groupMembershipsCurrentPage);
+					}}
+					class="button-pagination"
+					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
+					disabled={groupMembershipsCurrentPage === groupMembershipsTotalPages - 1 ||
+						groupMembershipsTotalPages === 0}>Next</button
+				></center
+			>
 		{/if}
 	</div>
 {:else}
