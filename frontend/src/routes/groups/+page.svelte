@@ -354,9 +354,12 @@
 					</ul></center
 				>
 			{/if}
-			<table align="center">
+			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
+					<th><strong><center>Memberships:</center></strong></th>
+					<th><strong><center>Topics:</center></strong></th>
+					<th><strong><center>Applications:</center></strong></th>
 				</tr>
 				{#if $groups.length > 0}
 					{#each $groups as group}
@@ -366,15 +369,19 @@
 								on:click={() => {
 									loadGroup(group.id);
 									selectedGroupId = group.id;
-								}}>{group.name}</td
-							>
+								}}
+								>{group.name}
+							</td>
+							<td><center><a href="/group_membership">{group.membershipCount}</a></center></td>
+							<td><center><a href="/topics">{group.topicCount}</a></center></td>
+							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
 						</tr>
 					{/each}
 				{:else}
 					<tr><td>No Groups Found</td></tr>
 				{/if}
 			</table>
-			<br /> <br />
+			<br /> <br /><br />
 			{#if $groups}
 				<center
 					><button
