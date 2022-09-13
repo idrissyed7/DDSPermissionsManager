@@ -1,6 +1,5 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
-
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -14,10 +13,10 @@ public class GroupUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
     private Group permissionsGroup;
 
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
     private User permissionsUser;
 
     @NonNull
@@ -28,7 +27,6 @@ public class GroupUser {
 
     @NonNull
     private boolean isApplicationAdmin = false;
-
 
     public GroupUser() {
     }

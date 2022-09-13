@@ -13,6 +13,7 @@
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
 	let updateGroupMembershipVisible = false;
+	let deleteGroupMembershipVisible = false;
 
 	// Forms
 	let emailValue = '';
@@ -68,7 +69,6 @@
 				isGroupAdmin = true;
 			}
 		}
-		console.log('groupAdminGroups', groupAdminGroups);
 		reloadGroupMemberships();
 	});
 
@@ -96,8 +96,6 @@
 				});
 				groupMembershipList.set(groupMembershipListArray);
 				groupMembershipListArray = [];
-
-				console.log('groupMembershipList', $groupMembershipList);
 			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
@@ -125,11 +123,11 @@
 					errorMessage('Error: Group Membership it already exists.', err.message);
 				}
 			});
+		reloadGroupMemberships(groupMembershipsCurrentPage);
 		addGroupMembershipVisible = false;
-		console.log('result:', res);
 	};
 
-	const ValidateEmail = (input) => {
+	const validateEmail = (input) => {
 		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
 	};
 
@@ -174,6 +172,24 @@
 				errorMessage('Error Updating Group Membership', err.message);
 			}
 		}
+	};
+
+	const deleteGroupMembershipModal = (selectedGM) => {
+		deleteGroupMembershipVisible = true;
+		selectedGroupMembership.groupMembershipId = selectedGM.groupMembershipId;
+	};
+
+	const deleteGroupMembership = async () => {
+		try {
+			await httpAdapter.delete(`/group_membership`, {
+				data: { id: selectedGroupMembership.groupMembershipId }
+			});
+
+			reloadGroupMemberships(groupMembershipsCurrentPage);
+		} catch (err) {
+			errorMessage('Error Deleting Group Membership', err.message);
+		}
+		deleteGroupMembershipVisible = false;
 	};
 </script>
 
@@ -261,6 +277,27 @@
 			</table>
 		</Modal>
 	{/if}
+
+	{#if deleteGroupMembershipVisible}
+		<Modal
+			title="Delete Group Membership?"
+			on:cancel={() => {
+				deleteGroupMembershipVisible = false;
+				deleteGroupMembership();
+			}}
+			><div class="confirm">
+				<button class="button-cancel" on:click={() => (deleteGroupMembershipVisible = false)}
+					>Cancel</button
+				>&nbsp;
+				<button
+					class="button-delete"
+					disabled={!$isAdmin && !isGroupAdmin}
+					on:click={() => deleteGroupMembership()}><span>Delete</span></button
+				>
+			</div></Modal
+		>
+	{/if}
+
 	<div class="content">
 		<h1>Group Membership</h1>
 		{#if $groupMembershipList}
@@ -307,8 +344,15 @@
 									&#9998
 								</div></td
 							>
+							<td
+								><button
+									class="button-delete"
+									on:click={() => deleteGroupMembershipModal(groupMembership)}
+									><span>Delete</span></button
+								></td
+							>
 						{:else}
-							<td />
+							<td /><td />
 						{/if}
 					</tr>
 				{/each}
@@ -317,14 +361,18 @@
 			<h2>No group memberships</h2>
 		{/if}
 		<br />
-		<center
-			><button
-				style="cursor:pointer"
-				on:click={() => addGroupMembershipInput()}
-				class:hidden={addGroupMembershipVisible}>+</button
-			></center
-		>
-		<br />
+
+		{#if $isAdmin || isGroupAdmin}
+			<center
+				><button
+					style="cursor:pointer"
+					on:click={() => addGroupMembershipInput()}
+					class:hidden={addGroupMembershipVisible}>+</button
+				></center
+			>
+			<br />
+		{/if}
+
 		{#if addGroupMembershipVisible}
 			<table>
 				<tr>
@@ -339,10 +387,10 @@
 						font-size: small;
 						min-width: 12rem;"
 							bind:value={emailValue}
-							on:blur={() => ValidateEmail(emailValue)}
+							on:blur={() => validateEmail(emailValue)}
 							on:keydown={(event) => {
 								if (event.which === 13) {
-									ValidateEmail(emailValue);
+									validateEmail(emailValue);
 									document.querySelector('#name').blur();
 								}
 							}}
@@ -451,7 +499,6 @@
 	.pencil {
 		transform: scaleX(-1);
 		margin-right: 0.5rem;
-		margin-top: 0.2rem;
 		cursor: pointer;
 	}
 
@@ -479,5 +526,9 @@
 
 	table {
 		width: 100%;
+	}
+
+	tr {
+		height: 2.5rem;
 	}
 </style>
