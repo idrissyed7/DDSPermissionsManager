@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import applicationPermission from '../../stores/applicationPermission';
 	import groups from '../../stores/groups';
@@ -9,6 +10,9 @@
 	import applications from '../../stores/applications';
 
 	export let data, errors;
+
+	// Authentication
+	let isApplicationAdmin = false;
 
 	// Error Handling
 	let errorMessage, errorObject;
@@ -43,6 +47,10 @@
 			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
+			isApplicationAdmin = $permissionsByGroup.some(
+				(groupPermission) => groupPermission.isApplicationAdmin === true
+			);
+
 			if ($applications) {
 				// Pagination
 				let totalApplicationsCount = 0;
@@ -69,6 +77,18 @@
 			}
 		} catch (err) {
 			ErrorMessage('Error Loading Applications', err.message);
+		}
+
+		if ($urlparameters === 'create') {
+			if ($isAdmin || isApplicationAdmin) {
+				addApplicationVisible = true;
+			} else {
+				ErrorMessage(
+					'Only Application Admins can create applications.',
+					'Contact your Group Admin.'
+				);
+			}
+			urlparameters.set([]);
 		}
 	});
 	const ErrorMessage = (errMsg, errObj) => {

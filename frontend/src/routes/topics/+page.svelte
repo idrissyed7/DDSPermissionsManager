@@ -1,15 +1,20 @@
 <script>
-	import { isAuthenticated } from '../../stores/authentication';
+	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import topics from '../../stores/groups';
 	import topicDetails from '../../stores/groupDetails';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
 	export let data, errors;
 
+	// Authentication
+	let isTopicAdmin = false;
+
 	// Error Handling
-	let errorMessage, errorObject;
+	let errorMsg, errorObject;
 
 	// Pagination
 	const topicsPerPage = 3;
@@ -32,7 +37,6 @@
 	let editTopicName;
 
 	// Selection
-
 	let selectedTopicId;
 	let selectedTopicName;
 
@@ -40,7 +44,10 @@
 		try {
 			const topicsData = await httpAdapter.get(`/topics`);
 			topics.set(topicsData.data.content);
-			console.log(topicsData);
+
+			isTopicAdmin = $permissionsByGroup.some(
+				(groupPermission) => groupPermission.isTopicAdmin === true
+			);
 
 			if ($topics) {
 				// Pagination
@@ -63,18 +70,26 @@
 				}
 			}
 		} catch (err) {
-			ErrorMessage('Error Loading Topics', err.message);
+			errorMessage('Error Loading Topics', err.message);
+		}
+		if ($urlparameters === 'create') {
+			if ($isAdmin || isTopicAdmin) {
+				addTopicVisible = true;
+			} else {
+				errorMessage('Only Topic Admins can create topics.', 'Contact your Group Admin.');
+			}
+			urlparameters.set([]);
 		}
 	});
 
-	const ErrorMessage = (errMsg, errObj) => {
-		errorMessage = errMsg;
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
 		errorObject = errObj;
 		errorMessageVisible = true;
 	};
 
 	const ErrorMessageClear = () => {
-		errorMessage = '';
+		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
 	};
@@ -109,7 +124,7 @@
 			selectedTopicId = $topicDetails.group.id;
 			selectedTopicName = $topicDetails.group.name;
 		} catch (err) {
-			ErrorMessage('Error Loading Topic Details', err.message);
+			errorMessage('Error Loading Topic Details', err.message);
 		}
 	};
 
@@ -121,7 +136,7 @@
 				id: selectedTopicId
 			})
 			.catch((err) => {
-				ErrorMessage('Error Deleting Topic', err.message);
+				errorMessage('Error Deleting Topic', err.message);
 			});
 
 		returnToTopicsList();
@@ -138,7 +153,7 @@
 				})
 				.catch((err) => {
 					addTopicVisible = false;
-					ErrorMessage('Error Adding Topic', err.message);
+					errorMessage('Error Adding Topic', err.message);
 				});
 
 			addTopicVisible = false;
@@ -167,7 +182,7 @@
 				name: selectedTopicName.trim()
 			})
 			.catch((err) => {
-				ErrorMessage('Error Editing Topic Name', err.message);
+				errorMessage('Error Editing Topic Name', err.message);
 			});
 
 		reloadAllTopics();
@@ -180,7 +195,7 @@
 
 			calculatePagination();
 		} catch (err) {
-			ErrorMessage('Error Loading Topics', err.message);
+			errorMessage('Error Loading Topics', err.message);
 		}
 	};
 
@@ -190,7 +205,7 @@
 
 			topicDetails.set(res.data);
 		} catch (err) {
-			ErrorMessage('Error Loading Topic Details', err.message);
+			errorMessage('Error Loading Topic Details', err.message);
 		}
 	};
 </script>
@@ -203,7 +218,7 @@
 {#if $isAuthenticated}
 	{#if errorMessageVisible}
 		<Modal
-			title={errorMessage}
+			title={errorMsg}
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
