@@ -42,23 +42,19 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
 
     Page<GroupUser> findAllByPermissionsGroupIdIn(@NotNull @NonNull List<Long> groupIds, Pageable pageable);
 
-    Page<GroupUser> findAllByPermissionsGroupNameContainsAndPermissionsUserEmailContains(@NotNull @NonNull String name, @NotNull @NonNull String email, Pageable pageable);
+    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(@NotNull @NonNull String name, @NotNull @NonNull String email, Pageable pageable);
 
-    List<Group> findPermissionsGroupByPermissionsGroupNameContainsOrPermissionsUserEmailContains(@NotNull @NonNull String name, @NotNull @NonNull String email);
+    List<Long> findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(String filter, String filter1);
+
+    Page<GroupUser> findAllByIdInAndPermissionsGroupIdIn(List<Long> groupUsersList, List<Long> groupsList, Pageable pageable);
+
+    // todo: fix to have desired effect
+//    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(@NotNull @NonNull String name, @NotNull @NonNull String email, List<Long> groupsList, Pageable pageable);
 
     int countByPermissionsUserId(@NotNull @NonNull Long userId);
 
     Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     List<GroupUser> findAllByPermissionsGroupId(@NotNull @NonNull Long groupId);
-
-    Page<GroupUser> findAllByPermissionsGroupNameContains(String groupName, Pageable pageable);
-
-    Page<GroupUser> findAllByPermissionsUserEmailContains(String userEmail, Pageable pageable);
-
-    List<Group> findPermissionsGroupByPermissionsGroupNameContains(String groupName);
-
-    Page<GroupUser> findAllByPermissionsUserEmailContainsAndPermissionsGroupIdIn(String userEmail, List<Long> groupsList, Pageable pageable);
-
     int countByPermissionsGroup(Group group);
 }
