@@ -32,37 +32,30 @@ public class GroupUserService {
         this.securityUtil = securityUtil;
     }
 
-    public Page<GroupUser> findAll(Pageable pageable, String groupName, String userEmail) {
+    public Page<GroupUser> findAll(Pageable pageable, String filter) {
 
         if(!pageable.isSorted()) {
             pageable = pageable.order("permissionsUser.email").order("permissionsGroup.name");
         }
         if (securityUtil.isCurrentUserAdmin()) {
-            if (groupName == null && userEmail == null) {
+            if (filter == null) {
                 return groupUserRepository.findAll(pageable);
-            } else if (groupName != null && userEmail == null) {
-                return groupUserRepository.findAllByPermissionsGroupNameContains(groupName, pageable);
-            } else if (groupName == null) {
-                return groupUserRepository.findAllByPermissionsUserEmailContains(userEmail, pageable);
             } else {
-                return groupUserRepository.findAllByPermissionsGroupNameContainsAndPermissionsUserEmailContains(groupName, userEmail, pageable);
+                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter, pageable);
             }
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = getAllGroupsUserIsAMemberOf(user.getId());
 
-            if (groupName == null && userEmail == null) {
+            if (filter == null) {
                 return groupUserRepository.findAllByPermissionsGroupIdIn(groupsList, pageable);
-            } else if (groupName == null && userEmail != null) {
-                return groupUserRepository.findAllByPermissionsUserEmailContainsAndPermissionsGroupIdIn(userEmail, groupsList, pageable);
             } else {
-                List<Long> allGroupsByName = groupUserRepository.findPermissionsGroupByPermissionsGroupNameContains(groupName)
-                        .stream().map(Group::getId).collect(Collectors.toList());
+                List<Long> all = groupUserRepository.findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter);
 
-                // get groups in common
-                groupsList = groupsList.stream().distinct().filter(allGroupsByName::contains).collect(Collectors.toList());
+                return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, groupsList, pageable);
 
-                return groupUserRepository.findAllByPermissionsGroupIdIn(groupsList, pageable);
+                // more efficient if Or-And query worked
+//                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(filter, filter, groupsList, pageable);
             }
         }
     }
