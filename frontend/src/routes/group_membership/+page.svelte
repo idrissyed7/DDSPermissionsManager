@@ -14,6 +14,11 @@
 	let errorMessageVisible = false;
 	let updateGroupMembershipVisible = false;
 
+	// SearchBox
+	let searchString;
+	let searchResults;
+	let searchResultsVisible = false;
+
 	// Forms
 	let emailValue = '';
 	let selectedGroup;
@@ -41,8 +46,7 @@
 
 	// Search Box
 	$: if (searchString?.trim().length >= 3) {
-		isEmail = extractEmails(searchString.trim());
-		searchGroupMemberships(searchString.trim(), Boolean(isEmail?.length > 0));
+		searchGroupMemberships(searchString.trim());
 	} else {
 		searchResultsVisible = false;
 	}
@@ -52,8 +56,6 @@
 	} else {
 		searchResultsVisible = false;
 	}
-
-	$: console.log('searchResults', searchResults?.data?.content);
 
 	// Selection
 	let selectedGroupMembership = {
@@ -120,20 +122,10 @@
 		}
 	};
 
-	const searchGroupMemberships = async (searchStr, isEmail) => {
+	const searchGroupMemberships = async (searchStr) => {
 		setTimeout(async () => {
-			if (isEmail) {
-				searchResults = await httpAdapter.get(`/group_membership?email=${searchStr}`);
-			} else {
-				searchResults = await httpAdapter.get(`/group_membership?group=${searchStr}`);
-			}
+			searchResults = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
 		}, 1000);
-	};
-
-	const extractEmails = (text) => {
-		return text.match(
-			/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm
-		);
 	};
 
 	const addGroupMembershipInput = async () => {
