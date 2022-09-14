@@ -271,8 +271,8 @@
 	{/if}
 
 	<div class="content">
+		<h1>Topics</h1>
 		{#if topicsPages && topicsListVisible && !topicDetailVisible}
-			<h1>Topics</h1>
 			<table align="center">
 				{#if topicsPages.length > 0}
 					<tr style="border-width: 0px">

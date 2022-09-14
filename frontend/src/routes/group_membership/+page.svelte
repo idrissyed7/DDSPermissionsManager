@@ -359,7 +359,7 @@
 				{/each}
 			</table>
 		{:else}
-			<h2>No group memberships</h2>
+			<p><center>No group memberships</center></p>
 		{/if}
 		<br />
 
