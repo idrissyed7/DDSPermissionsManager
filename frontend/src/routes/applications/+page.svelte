@@ -47,9 +47,11 @@
 			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
-			isApplicationAdmin = $permissionsByGroup.some(
-				(groupPermission) => groupPermission.isApplicationAdmin === true
-			);
+			if ($permissionsByGroup) {
+				isApplicationAdmin = $permissionsByGroup.some(
+					(groupPermission) => groupPermission.isApplicationAdmin === true
+				);
+			}
 
 			if ($applications) {
 				// Pagination
