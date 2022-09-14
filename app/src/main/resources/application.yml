@@ -53,6 +53,10 @@ micronaut:
         http-method: GET
         access:
           - isAnonymous()
+      - pattern: /info
+        http-method: GET
+        access:
+          - isAnonymous()
       - pattern: /assets/**
         http-method: GET
         access:
@@ -92,3 +96,9 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+---
+micronaut:
+  endpoints:
+    info:
+      enabled: true
+      sensitive: false

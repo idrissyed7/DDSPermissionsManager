@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
 import javax.validation.Valid;
@@ -37,7 +38,7 @@ public class GroupController {
     }
 
     @Get
-    public Page<Group> index(@Valid Pageable pageable) {
+    public Page<GroupResponseDTO> index(@Valid Pageable pageable) {
         return groupService.findAll(pageable);
     }
 

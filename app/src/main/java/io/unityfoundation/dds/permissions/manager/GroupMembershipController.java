@@ -30,9 +30,9 @@ public class GroupMembershipController {
         this.groupUserService = groupUserService;
     }
 
-    @Get("{?email,group}")
-    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable, @Nullable String group, @Nullable String email) {
-        return HttpResponse.ok(groupUserService.findAll(pageable, group, email));
+    @Get("{?filter}")
+    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable, @Nullable String filter) {
+        return HttpResponse.ok(groupUserService.findAll(pageable, filter));
     }
 
     @Post
