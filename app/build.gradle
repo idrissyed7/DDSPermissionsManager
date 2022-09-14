@@ -1,6 +1,8 @@
 plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("io.micronaut.application") version "3.3.2"
+    id("io.micronaut.application") version "3.5.3"
+    id 'jacoco'
+    id "com.gorylenko.gradle-git-properties" version "2.3.1"
 }
 
 version = "0.1"
@@ -20,11 +22,11 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     implementation("io.micronaut:micronaut-validation")
 
-    annotationProcessor("io.micronaut.security:micronaut-security-annotations:3.3.0")
-    implementation("io.micronaut.security:micronaut-security-jwt:3.3.0")
-    implementation("io.micronaut.security:micronaut-security-oauth2:3.3.0")
-    annotationProcessor("io.micronaut.serde:micronaut-serde-processor:1.0.0-M5")
-    implementation("io.micronaut.problem:micronaut-problem-json:2.2.0")
+    annotationProcessor("io.micronaut.security:micronaut-security-annotations")
+    implementation("io.micronaut.security:micronaut-security-jwt")
+    implementation("io.micronaut.security:micronaut-security-oauth2")
+    annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
+    implementation("io.micronaut.problem:micronaut-problem-json")
 
     annotationProcessor("io.micronaut.data:micronaut-data-processor:3.5.0")
     runtimeOnly("com.h2database:h2")
@@ -35,6 +37,8 @@ dependencies {
 
     annotationProcessor("io.micronaut.openapi:micronaut-openapi")
     implementation("io.swagger.core.v3:swagger-annotations")
+
+    implementation("io.micronaut:micronaut-management")
 }
 
 
@@ -56,5 +60,9 @@ micronaut {
     }
 }
 
+tasks.withType(JavaCompile) {
+    options.fork = true
+    options.forkOptions.jvmArgs << '-Dmicronaut.openapi.views.spec=rapidoc.enabled=true,swagger-ui.enabled=true,swagger-ui.theme=flattop'
+}
 
 

@@ -6,8 +6,10 @@
 	import groupDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 
+	export let data, errors;
+
 	// Error Handling
-	let errorMessage, errorObject;
+	let errorMsg, errorObject;
 
 	// SearchBox
 	let searchString;
@@ -44,14 +46,8 @@
 	let groupsTotalPages;
 	let groupsCurrentPage = 0;
 
-	// Checks if the group already exists
-	$: if ($groups) {
-		if ($groups.some((group) => group.name === newGroupName)) {
-			disabled = true;
-		} else {
-			disabled = false;
-		}
-	}
+	// Check the Add Group has more than 0 non-whitespace characters
+	$: newGroupName?.length === 0 ? (disabled = true) : (disabled = false);
 
 	// Search Box
 	$: if (searchString?.trim().length >= 3) {
@@ -70,7 +66,7 @@
 		try {
 			reloadAllGroups();
 		} catch (err) {
-			ErrorMessage('Error Loading Groups', err.message);
+			errorMessage('Error Loading Groups', err.message);
 		}
 	});
 
@@ -78,14 +74,14 @@
 		searchResults = await httpAdapter.get(`/groups/search/${searchStr}`);
 	};
 
-	const ErrorMessage = (errMsg, errObj) => {
-		errorMessage = errMsg;
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
 		errorObject = errObj;
 		errorMessageVisible = true;
 	};
 
-	const ErrorMessageClear = () => {
-		errorMessage = '';
+	const errorMessageClear = () => {
+		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
 	};
@@ -99,7 +95,7 @@
 			selectedGroupId = $groupDetails.group.id;
 			selectedGroupName = $groupDetails.group.name;
 		} catch (err) {
-			ErrorMessage('Error Loading Group Details', err.message);
+			errorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -119,7 +115,7 @@
 				lastName: selectedUserLastName
 			})
 			.catch((err) => {
-				ErrorMessage('Error Removing Group Member', err.message);
+				errorMessage('Error Removing Group Member', err.message);
 			});
 
 		selectedUserId = '';
@@ -134,7 +130,7 @@
 			const res = await httpAdapter.get(`/groups/${selectedGroupId}`);
 			groupDetails.set(res.data);
 		} catch (err) {
-			ErrorMessage('Error Loading Group Details', err.message);
+			errorMessage('Error Loading Group Details', err.message);
 		}
 	};
 
@@ -144,7 +140,7 @@
 			groups.set(res.data.content);
 			groupsTotalPages = res.data.totalPages;
 		} catch (err) {
-			ErrorMessage('Error Loading Groups', err.message);
+			errorMessage('Error Loading Groups', err.message);
 		}
 	};
 
@@ -156,7 +152,7 @@
 				isTopicAdmin: true
 			})
 			.catch((err) => {
-				ErrorMessage('Error Adding Candidate Member', err.message);
+				errorMessage('Error Adding Candidate Member', err.message);
 			});
 		confirmAddUserVisible = false;
 
@@ -183,20 +179,21 @@
 	};
 
 	const addGroup = async () => {
-		if (!disabled) {
-			await httpAdapter
-				.post(`/groups/save/`, {
-					name: newGroupName
-				})
-				.catch((err) => {
-					addGroupVisible = false;
-					ErrorMessage('Error Adding Group', err.message);
-				});
-			searchString = '';
-			addGroupVisible = false;
+		const res = await httpAdapter
+			.post(`/groups/save/`, {
+				name: newGroupName
+			})
+			.catch((err) => {
+				if (err.response.status === 303) {
+					err.message = 'Group already exists. Please choose a unique group name.';
+				}
+				addGroupVisible = false;
+				errorMessage('Error Adding Group', err.message);
+			});
+		searchString = '';
+		addGroupVisible = false;
 
-			await reloadAllGroups();
-		}
+		await reloadAllGroups();
 	};
 
 	const saveNewGroupName = async () => {
@@ -207,7 +204,7 @@
 				name: selectedGroupName
 			})
 			.catch((err) => {
-				ErrorMessage('Error Editing Group Name', err.message);
+				errorMessage('Error Editing Group Name', err.message);
 			});
 
 		reloadAllGroups();
@@ -221,27 +218,31 @@
 				id: selectedGroupId
 			})
 			.catch((err) => {
-				ErrorMessage('Error Deleting Group', err.message);
+				errorMessage('Error Deleting Group', err.message);
 			});
 
 		returnToGroupsList();
 		await reloadAllGroups();
 	};
+
+	const callFocus = (input) => {
+		input.focus();
+	};
 </script>
 
 <svelte:head>
-	<title>Groups | Permission Manager</title>
+	<title>Groups | DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager Groups" />
 </svelte:head>
 
 {#if $isAuthenticated}
 	{#if errorMessageVisible}
 		<Modal
-			title={errorMessage}
+			title={errorMsg}
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
-				ErrorMessageClear();
+				errorMessageClear();
 			}}
 			><br /><br />
 			<div class="confirm">
@@ -249,7 +250,7 @@
 					class="button-delete"
 					on:click={() => {
 						errorMessageVisible = false;
-						ErrorMessageClear();
+						errorMessageClear();
 					}}>Ok</button
 				>
 			</div>
@@ -278,19 +279,18 @@
 					type="text"
 					placeholder="Group Name"
 					bind:value={newGroupName}
+					on:blur={() => (newGroupName = newGroupName.trim())}
+					use:callFocus
 					style="border-width: 1px; vertical-align: middle"
 				/>
 				<button
 					class:button={!disabled}
-					style="margin-left: 1rem; width: 6.5rem"
+					class:button-disabled={disabled}
+					style="margin-left: 1rem; width: 6.5rem; height: 2rem;"
 					{disabled}
 					on:click={() => addGroup()}><span>Add Group</span></button
 				>
 			</div>
-			{#if disabled}
-				<br />
-				<center><span class="create-error">Please choose a unique name</span></center>
-			{/if}
 		</Modal>
 	{/if}
 
@@ -354,9 +354,12 @@
 					</ul></center
 				>
 			{/if}
-			<table align="center">
+			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
+					<th><strong><center>Memberships:</center></strong></th>
+					<th><strong><center>Topics:</center></strong></th>
+					<th><strong><center>Applications:</center></strong></th>
 				</tr>
 				{#if $groups.length > 0}
 					{#each $groups as group}
@@ -366,15 +369,19 @@
 								on:click={() => {
 									loadGroup(group.id);
 									selectedGroupId = group.id;
-								}}>{group.name}</td
-							>
+								}}
+								>{group.name}
+							</td>
+							<td><center><a href="/group_membership">{group.membershipCount}</a></center></td>
+							<td><center><a href="/topics">{group.topicCount}</a></center></td>
+							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
 						</tr>
 					{/each}
 				{:else}
 					<tr><td>No Groups Found</td></tr>
 				{/if}
 			</table>
-			<br /> <br />
+			<br /> <br /><br />
 			{#if $groups}
 				<center
 					><button

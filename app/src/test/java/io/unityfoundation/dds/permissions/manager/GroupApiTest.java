@@ -17,6 +17,7 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -91,39 +92,6 @@ public class GroupApiTest {
         List<Map> groups1 = (List<Map>) responseMap1.get("content");
         assertEquals(initialGroupCount, groups1.size());
         assertEquals(OK, response.getStatus());
-
-        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroup(1l).size();
-
-        // adding an existing member should not add to user group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/3", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        List<Map> responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(initialAlphaGroupMemberCount, responseList.size());
-
-        // add new member to group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        long postAddUserCount = responseList.size();
-        assertEquals(initialAlphaGroupMemberCount + 1, postAddUserCount);
-
-        // remove new member from group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/remove_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(postAddUserCount - 1, responseList.size());
     }
 
     @Test
@@ -153,6 +121,36 @@ public class GroupApiTest {
         // Note: Since the client throws an exception for a bad-request response, capturing the response's message is
         // not straightforward.
         assertEquals(BAD_REQUEST, thrown1.getStatus());
+    }
+
+    @Test
+    public void cannotCreateGroupWithNullNorWhitespace() {
+        // save group without members
+        Group nullGroup = new Group();
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", nullGroup);
+        HttpRequest<?> finalRequest = request;
+        HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest);
+        });
+        assertEquals(BAD_REQUEST, exception.getStatus());
+
+        Group whitespaceGroup = new Group("   ");
+        request = HttpRequest.POST("/groups/save", whitespaceGroup);
+        HttpRequest<?> finalRequest1 = request;
+        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+            blockingClient.exchange(finalRequest1);
+        });
+        assertEquals(BAD_REQUEST, exception1.getStatus());
+    }
+
+    @Test
+    public void createShouldTrimWhitespace() {
+        // save group without members
+        Group gloopGroup = new Group("  GloopGroup ");
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", gloopGroup);
+        HttpResponse<Group> response = blockingClient.exchange(request, Group.class);
+        gloopGroup = response.getBody(Group.class).get();
+        assertEquals("GloopGroup", gloopGroup.getName());
     }
 
     @Test
@@ -199,18 +197,34 @@ public class GroupApiTest {
         HttpRequest<?> request = HttpRequest.GET("/groups");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted().collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
     }
-
 
     @Test
     public void shouldRespectGroupsNamesInDescendingOrder() {
         HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
         HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
         List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
+        List<String> groupNames = groups.stream()
+                .flatMap(map -> Stream.of((String) map.get("name")))
+                .collect(Collectors.toList());
+        assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
+    }
+
+    @Test
+    public void shouldSeeGroupWithCounts() {
+        HttpRequest<?> request = HttpRequest.GET("/groups");
+        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+        List<Map> content = (List<Map>) responseMap.get("content");
+
+        Map alphaGroup = content.get(0);
+        assertEquals("Alpha", alphaGroup.get("name"));
+        assertEquals(3, alphaGroup.get("membershipCount"));
+        assertEquals(1, alphaGroup.get("topicCount"));
+        assertEquals(1, alphaGroup.get("applicationCount"));
     }
 
     @Test
@@ -221,6 +235,7 @@ public class GroupApiTest {
     }
 
     @Test
+    @Disabled("Topic add and remove cases are covered in TopicApiTest.userWithNonAdminRoleButTopicAdminOfGroupShouldBeAbleCreateUpdateAndDeleteTopics")
     public void testGroupTopicAddAndRemove() {
 
         long initialTopicCount = topicRepository.count();

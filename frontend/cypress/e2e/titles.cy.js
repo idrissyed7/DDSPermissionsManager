@@ -1,4 +1,4 @@
-describe('title should say Permissions Manager', () => {
+describe('title should say DDS Permissions Manager', () => {
     beforeEach(() => {
         cy.visit('http://localhost:3000');
     });
@@ -6,13 +6,13 @@ describe('title should say Permissions Manager', () => {
     it('should have correct title', () => {
         cy.get('title')
         .invoke('text')
-        .should('equal', 'Permissions Manager');
+        .should('equal', 'DDS Permissions Manager');
     });
 
     it('should have correct header', () => {
         cy.get('h1')
         .invoke('text')
-        .should('equal', 'Permissions Manager');
+        .should('equal', 'DDS Permissions Manager');
     })
     
 });

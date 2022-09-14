@@ -3,7 +3,10 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -13,32 +16,45 @@ import java.util.Optional;
 public interface GroupUserRepository extends PageableRepository<GroupUser, Long> {
 
     @Query(value = "select count(*) from permissions_group_user " +
-            "where permissions_group = :groupId and permissions_user = :userId and is_group_admin = true",
+            "where permissions_group_id = :groupId and permissions_user_id = :userId and is_group_admin = true",
             countQuery = "select DISTINCT count(*) from permissions_group_user " +
-                    "where permissions_group = :groupId and permissions_user = :userId and is_group_admin = true",
+                    "where permissions_group_id = :groupId and permissions_user_id = :userId and is_group_admin = true",
             nativeQuery = true )
-    int countByPermissionsGroupAndPermissionsUserAndGroupAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    int countByPermissionsGroupIdAndPermissionsUserIdAndGroupAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     @Query(value = "select count(*) from permissions_group_user " +
-            "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+            "where permissions_group_id = :groupId and permissions_user_id = :userId and is_topic_admin = true",
             countQuery = "select DISTINCT count(*) from permissions_group_user " +
-                    "where permissions_group = :groupId and permissions_user = :userId and is_topic_admin = true",
+                    "where permissions_group_id = :groupId and permissions_user_id = :userId and is_topic_admin = true",
             nativeQuery = true )
-    int countByPermissionsGroupAndPermissionsUserAndTopicAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    int countByPermissionsGroupIdAndPermissionsUserIdAndTopicAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     @Query(value = "select COUNT(*) from permissions_group_user " +
-            "where permissions_group = :groupId and permissions_user = :userId and is_application_admin = true",
+            "where permissions_group_id = :groupId and permissions_user_id = :userId and is_application_admin = true",
             countQuery = "select DISTINCT count(*) from permissions_group_user " +
-                    "where permissions_group = :groupId and permissions_user = :userId and is_application_admin = true",
+                    "where permissions_group_id = :groupId and permissions_user_id = :userId and is_application_admin = true",
             nativeQuery = true )
-    int countByPermissionsGroupAndPermissionsUserAndApplicationAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    int countByPermissionsGroupIdAndPermissionsUserIdAndApplicationAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
-    void deleteAllByPermissionsUser(@NotNull @NonNull Long userId);
-    void deleteAllByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    void deleteAllByPermissionsUserId(@NotNull @NonNull Long userId);
 
-    List<GroupUser> findAllByPermissionsUser(@NotNull @NonNull Long userId);
+    List<GroupUser> findAllByPermissionsUserId(@NotNull @NonNull Long userId);
 
-    Optional<GroupUser> findByPermissionsGroupAndPermissionsUser(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    Page<GroupUser> findAllByPermissionsGroupIdIn(@NotNull @NonNull List<Long> groupIds, Pageable pageable);
 
-    List<GroupUser> findAllByPermissionsGroup(@NotNull @NonNull Long groupId);
+    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(@NotNull @NonNull String name, @NotNull @NonNull String email, Pageable pageable);
+
+    List<Long> findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(String filter, String filter1);
+
+    Page<GroupUser> findAllByIdInAndPermissionsGroupIdIn(List<Long> groupUsersList, List<Long> groupsList, Pageable pageable);
+
+    // todo: fix to have desired effect
+//    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(@NotNull @NonNull String name, @NotNull @NonNull String email, List<Long> groupsList, Pageable pageable);
+
+    int countByPermissionsUserId(@NotNull @NonNull Long userId);
+
+    Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+
+    List<GroupUser> findAllByPermissionsGroupId(@NotNull @NonNull Long groupId);
+    int countByPermissionsGroup(Group group);
 }

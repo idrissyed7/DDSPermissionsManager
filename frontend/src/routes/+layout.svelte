@@ -7,6 +7,7 @@
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
+	export let data;
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
@@ -15,11 +16,8 @@
 			onLoggedIn(res.data);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
-			if ($isAdmin) {
-				const groupsData = await httpAdapter.get(`/groups`);
-				groups.set(groupsData.data.content);
-				console.log('$groups:', $groups);
-			}
+			const groupsData = await httpAdapter.get(`/groups`);
+			groups.set(groupsData.data.content);
 
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);

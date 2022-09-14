@@ -86,8 +86,8 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {
@@ -105,8 +105,8 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("jjones@test.test"));
 
             Group group = groupRepository.save(new Group("TestGroup"));
             Topic topic = topicRepository.save(new Topic("TestTopic", TopicKind.B, group.getId()));

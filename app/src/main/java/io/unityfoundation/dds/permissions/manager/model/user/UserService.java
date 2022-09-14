@@ -2,10 +2,9 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.micronaut.security.authentication.Authentication;
-import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
@@ -15,12 +14,12 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class UserService {
-    private final SecurityService securityService;
+    private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
     private final GroupUserService groupUserService;
 
-    public UserService(SecurityService securityService, UserRepository userRepository, GroupUserService groupUserService) {
-        this.securityService = securityService;
+    public UserService(SecurityUtil securityUtil, UserRepository userRepository, GroupUserService groupUserService) {
+        this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.groupUserService = groupUserService;
     }
@@ -31,7 +30,7 @@ public class UserService {
     }
 
     public Page<User> findAll(Pageable pageable) {
-        if (isCurrentUserAdmin()) {
+        if (securityUtil.isCurrentUserAdmin()) {
             return userRepository.findAll(pageable);
         } else {
             List<Long> userIds = getIdsOfUsersWhoShareGroupsWithCurrentUser();
@@ -41,13 +40,14 @@ public class UserService {
     }
 
     public List<Long> getIdsOfUsersWhoShareGroupsWithCurrentUser() {
-        Long currentUserId = getCurrentlyAuthenticatedUser().getId();
+        Long currentUserId = securityUtil.getCurrentlyAuthenticatedUser().get().getId();
         List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
 
         List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
                 .map(groupUserService::getUsersOfGroup)
                 .flatMap(List::stream)
                 .map(GroupUser::getPermissionsUser)
+                .map(User::getId)
                 .collect(Collectors.toList());
 
         return idsOfUsersWhoShareGroupsWithCurrentUser;
@@ -77,16 +77,5 @@ public class UserService {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void removeUserFromGroups(Long userId) {
         groupUserService.removeUserFromAllGroups(userId);
-    }
-
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = securityService.getAuthentication().get();
-        return authentication.getRoles().contains(UserRole.ADMIN.toString());
-    }
-
-    public User getCurrentlyAuthenticatedUser() {
-        Authentication authentication = securityService.getAuthentication().get();
-        String userEmail = authentication.getName();
-        return getUserByEmail(userEmail).get();
     }
 }

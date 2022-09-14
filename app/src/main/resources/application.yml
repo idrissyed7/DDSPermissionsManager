@@ -1,9 +1,6 @@
 micronaut:
   application:
     name: "Permissions Manager"
-  server:
-    cors:
-      enabled: true
 ---
 netty:
   default:
@@ -28,14 +25,14 @@ micronaut:
               jws-algorithm: HS256
     redirect:
       login-success: http://localhost:3000
-      login-failure: http://localhost:3000
+      login-failure: http://localhost:3000/failed-auth
       logout: http://localhost:3000
     authentication: cookie
     oauth2:
       clients:
         google:
-          client-id: "887538804956-u62ckldg4a6e4elon7diken6pna3m2v5.apps.googleusercontent.com"
-          client-secret: "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"
+          client-id: ***REMOVED***
+          client-secret: ***REMOVED***
           openid:
             authorization:
               prompt: select_account
@@ -56,7 +53,19 @@ micronaut:
         http-method: GET
         access:
           - isAnonymous()
+      - pattern: /info
+        http-method: GET
+        access:
+          - isAnonymous()
       - pattern: /assets/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /swagger-ui/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /swagger/**
         http-method: GET
         access:
           - isAnonymous()
@@ -77,3 +86,19 @@ jpa:
       hibernate:
         hbm2ddl:
           auto: update
+---
+micronaut:
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+      swagger-ui:
+        paths: classpath:META-INF/swagger/views/swagger-ui
+        mapping: /swagger-ui/**
+---
+micronaut:
+  endpoints:
+    info:
+      enabled: true
+      sensitive: false

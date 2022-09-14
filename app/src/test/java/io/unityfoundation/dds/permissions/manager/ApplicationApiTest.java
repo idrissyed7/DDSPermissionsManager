@@ -13,6 +13,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
@@ -274,8 +275,8 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {
@@ -339,8 +340,11 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -371,8 +375,11 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isTopicAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -416,8 +423,11 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -463,13 +473,16 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to groups as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.POST("/groups/add_member/"+secondaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            dto.setPermissionsGroup(secondaryGroup.getId());
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -516,13 +529,18 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to groups as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.POST("/groups/add_member/"+secondaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isTopicAdmin", true));
+            dto.setPermissionsGroup(secondaryGroup.getId());
+            dto.setApplicationAdmin(false);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -563,8 +581,11 @@ public class ApplicationApiTest {
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -592,8 +613,8 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {

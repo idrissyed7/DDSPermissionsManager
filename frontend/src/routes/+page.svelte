@@ -1,27 +1,43 @@
 <script>
+	import { isAuthenticated } from '../stores/authentication';
+	import urlparameters from '../stores/urlparameters';
+	export let data, errors;
 </script>
 
 <svelte:head>
-	<title>Permissions Manager</title>
+	<title>DDS Permissions Manager</title>
 	<meta name="description" content="Permission Manager" />
 </svelte:head>
 
-<section>
-	<h1>Permissions Manager</h1>
-	<h2>Welcome</h2>
-	<p>
-		DDS Permissions Manager is here lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-		eiusmod tempor incididunt ut labore et dolore magna aliqua. Neque ornare aenean euismod
-		elementum nisi quis eleifend. Lacinia at quis risus sed vulputate. Urna neque viverra justo nec
-		ultrices dui sapien eget. Porta nibh venenatis cras sed felis eget velit aliquet sagittis.
-		Tellus orci ac auctor augue mauris. Vitae turpis massa sed elementum tempus egestas sed sed.
-		Fusce ut placerat orci nulla pellentesque dignissim. Vulputate ut pharetra sit amet. Morbi
-		tincidunt ornare massa eget egestas purus viverra. Sapien eget mi proin sed libero enim. Quam
-		pellentesque nec nam aliquam. Convallis aenean et tortor at risus viverra adipiscing. Tempor
-		orci eu lobortis elementum. Urna neque viverra justo nec ultrices dui sapien. Felis donec et
-		odio pellentesque diam. Tincidunt dui ut ornare lectus sit amet est placerat in.
-	</p>
-</section>
+{#if $isAuthenticated}
+	<section>
+		<h1>Welcome to the DDS Permissions Manager!</h1>
+		<h2>To get started</h2>
+		<ul>
+			<li>
+				<a href="/group_membership">Add topic, application, and group admins</a> to one of your groups
+			</li>
+			<li>
+				Create a <a href="/topics" on:click={() => urlparameters.set('create')}>topic</a>
+			</li>
+			<li>
+				Create an <a href="/applications" on:click={() => urlparameters.set('create')}
+					>application</a
+				>
+				and generate credentials
+			</li>
+			<li>Find a <a href="/topics">topic</a> and grant access to an application</li>
+		</ul>
+		<p>
+			Applications can use credentials to authenticate and download documents for DDS Security. See
+			the README for more details.
+		</p>
+	</section>
+{:else}
+	<h1>DDS Permissions Manager</h1>
+	<br />
+	<h2 style="font-size: 1.4rem">Please Login to get started</h2>
+{/if}
 
 <style>
 	section {
@@ -33,6 +49,22 @@
 	}
 
 	h1 {
+		font-size: 2rem;
 		width: 100%;
+	}
+
+	h2 {
+		font-size: 1.7rem;
+		margin-bottom: 2rem;
+	}
+
+	li {
+		font-size: 1.1rem;
+		margin-bottom: 1rem;
+	}
+
+	p {
+		text-align: center;
+		font-size: 0.9rem;
 	}
 </style>

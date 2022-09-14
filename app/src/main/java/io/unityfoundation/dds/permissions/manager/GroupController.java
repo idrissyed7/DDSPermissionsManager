@@ -15,10 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupResponseDTO;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,24 +30,21 @@ import java.util.Optional;
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupUserService groupUserService;
 
-    public GroupController(GroupService groupService) {
+    public GroupController(GroupService groupService, GroupUserService groupUserService) {
         this.groupService = groupService;
+        this.groupUserService = groupUserService;
     }
 
     @Get
-    public HttpResponse<Page<Group>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(groupService.findAll(pageable));
+    public Page<GroupResponseDTO> index(@Valid Pageable pageable) {
+        return groupService.findAll(pageable);
     }
 
     @Get("/search/{searchText}")
-    public HttpResponse search(@NonNull String searchText) {
-        return HttpResponse.ok(groupService.searchByNameContains(searchText));
-    }
-
-    @Get("/create")
-    public HttpResponse create() {
-        return HttpResponse.ok();
+    public List<Group> search(@NonNull String searchText) {
+        return groupService.searchByNameContains(searchText);
     }
 
     @Post("/save")
@@ -93,23 +91,6 @@ public class GroupController {
         return HttpResponse.notFound();
     }
 
-    @Get("/{id}/members")
-    @ApiResponse(
-            responseCode = "200",
-            content = @Content(mediaType = "application/json"),
-            description = "Returns a list of dictionaries where each dictionary is of the form: \n" +
-                    "\"member\", User(email, isAdmin),\n" +
-                    "\"permissions\", GroupUser(userId, groupId, isApplicationAdmin, isGroupAdmin, isTopicAdmin)"
-    )
-    @ApiResponse(responseCode = "404", description = "Not Found - Returned if the given group cannot be found.")
-    HttpResponse<?> showMembers(Long id) {
-        List<Map> groupMembers = groupService.getGroupMembers(id);
-        if (!groupMembers.isEmpty()) {
-            return HttpResponse.ok(groupMembers);
-        }
-        return HttpResponse.notFound();
-    }
-
     @Get("/user/{id}/")
     @ApiResponse(
             responseCode = "200",
@@ -130,46 +111,13 @@ public class GroupController {
         }
     }
 
-    @Post("/remove_member/{groupId}/{memberId}")
-    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
-    @ApiResponse(responseCode = "404", description = "Not Found - Member or Group not found.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-    HttpResponse removeMember(Long groupId, Long memberId) {
-
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.removeMember(groupId, memberId)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-
-        return HttpResponse.notFound();
-    }
-
-    @Post("/add_member/{groupId}/{candidateId}")
-    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
-    @ApiResponse(responseCode = "404", description = "Not Found - Member or Group not found.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-    HttpResponse addMember(Long groupId, Long candidateId, @Body HashMap userRolesMap) {
-
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.addMember(groupId, candidateId, userRolesMap)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-        return HttpResponse.notFound();
-    }
-
     @Post("/remove_topic/{groupId}/{topicId}")
     @ApiResponse(responseCode = "303", description = "Returns result of /groups")
     @ApiResponse(responseCode = "404", description = "Not Found - Topic or Group not found.")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse<?> removeTopic(Long groupId, Long topicId) {
 
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
+        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeTopic(groupId, topicId)) {
                 return HttpResponse.seeOther(URI.create("/groups/" + groupId));
             }
@@ -187,7 +135,7 @@ public class GroupController {
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse<?> addTopic(Long groupId, Long topicId) {
 
-        if (groupService.isAdminOrGroupAdmin(groupId)) {
+        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             try {
                 if (groupService.addTopic(groupId, topicId)) {
                     return HttpResponse.seeOther(URI.create("/groups/" + groupId));

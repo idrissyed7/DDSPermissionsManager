@@ -17,6 +17,7 @@ interface RefreshTokenRepository extends CrudRepository<RefreshToken, Long> {
                       @NonNull @NotBlank String refreshToken,
                       @NonNull @NotNull Boolean revoked);
 
+    @NonNull
     Optional<RefreshToken> findByRefreshToken(@NonNull @NotBlank String refreshToken);
 
     long updateByUsername(@NonNull @NotBlank String username,

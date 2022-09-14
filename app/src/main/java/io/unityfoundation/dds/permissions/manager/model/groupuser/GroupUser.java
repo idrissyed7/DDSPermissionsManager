@@ -1,7 +1,8 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
-
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
 
 import javax.persistence.*;
 
@@ -12,11 +13,11 @@ public class GroupUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NonNull
-    private Long permissionsGroup;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
+    private Group permissionsGroup;
 
-    @NonNull
-    private Long permissionsUser;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
+    private User permissionsUser;
 
     @NonNull
     private boolean isGroupAdmin = false;
@@ -27,13 +28,12 @@ public class GroupUser {
     @NonNull
     private boolean isApplicationAdmin = false;
 
-
     public GroupUser() {
     }
 
-    public GroupUser(@NonNull Long groupId, @NonNull Long userId) {
-        this.permissionsGroup = groupId;
-        this.permissionsUser = userId;
+    public GroupUser(@NonNull Group group, @NonNull User user) {
+        this.permissionsGroup = group;
+        this.permissionsUser = user;
     }
 
     public Long getId() {
@@ -44,24 +44,21 @@ public class GroupUser {
         this.id = id;
     }
 
-    @NonNull
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(@NonNull Long groupId) {
-        this.permissionsGroup = groupId;
+    public void setPermissionsGroup(Group permissionsGroup) {
+        this.permissionsGroup = permissionsGroup;
     }
 
-    @NonNull
-    public Long getPermissionsUser() {
+    public User getPermissionsUser() {
         return permissionsUser;
     }
 
-    public void setPermissionsUser(@NonNull Long userId) {
-        this.permissionsUser = userId;
+    public void setPermissionsUser(User permissionsUser) {
+        this.permissionsUser = permissionsUser;
     }
-
 
     public boolean isGroupAdmin() {
         return isGroupAdmin;

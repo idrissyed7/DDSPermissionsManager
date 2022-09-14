@@ -6,14 +6,11 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationException;
-import io.micronaut.security.utils.SecurityService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
-import io.unityfoundation.dds.permissions.manager.model.user.UserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
@@ -25,16 +22,14 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
-    private final UserService userService;
+    private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
-    private final SecurityService securityService;
 
-    public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository, UserService userService, GroupUserService groupUserService, SecurityService securityService) {
+    public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository, SecurityUtil securityUtil, GroupUserService groupUserService) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
-        this.securityService = securityService;
     }
 
     public Page<Application> findAll(Pageable pageable) {
@@ -44,7 +39,7 @@ public class ApplicationService {
     @Transactional
     public MutableHttpResponse<Application> save(Application application) throws Exception {
 
-        if (!userService.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application)) {
             throw new AuthenticationException("Not authorized");
         }
 
@@ -66,16 +61,14 @@ public class ApplicationService {
         Long applicationGroupId = application.getPermissionsGroup();
         if (applicationGroupId == null) {
             throw new Exception("Cannot save Application without specifying a Group.");
-        } else {
-            if (groupRepository.findById(applicationGroupId).isEmpty()) {
-                throw new Exception("Specified group does not exist.");
-            }
-
-            Authentication authentication = securityService.getAuthentication().get();
-            String userEmail = authentication.getName();
-            User user = userService.getUserByEmail(userEmail).get();
-            return groupUserService.isUserApplicationAdminOfGroup(applicationGroupId, user.getId());
         }
+        if (groupRepository.findById(applicationGroupId).isEmpty()) {
+            throw new Exception("Specified group does not exist.");
+        }
+
+        return securityUtil.getCurrentlyAuthenticatedUser()
+                .map(user -> groupUserService.isUserApplicationAdminOfGroup(applicationGroupId, user.getId()))
+                .orElse(false);
     }
 
     public void deleteById(Long id) throws Exception {
@@ -83,7 +76,7 @@ public class ApplicationService {
         if (application.isEmpty()) {
             throw new Exception("Application not found");
         }
-        if (!userService.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.get())) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.get())) {
             throw new AuthenticationException("Not authorized");
         }
 
