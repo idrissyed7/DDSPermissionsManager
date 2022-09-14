@@ -7,8 +7,7 @@
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 
-	export const data = {};
-	export const errors = {};
+	export let data, errors;
 
 	// Modals
 	let addGroupMembershipVisible = false;
@@ -19,7 +18,7 @@
 	// SearchBox
 	let searchString;
 	let searchResults;
-	let searchResultsVisible = false;
+	// let searchResultsVisible = false;
 
 	// Forms
 	let emailValue = '';
@@ -46,17 +45,11 @@
 	// Group Membership List
 	let groupMembershipListArray = [];
 
-	// Search Box
+	// Search Feature
 	$: if (searchString?.trim().length >= 3) {
 		searchGroupMemberships(searchString.trim());
 	} else {
-		searchResultsVisible = false;
-	}
-
-	$: if (searchResults?.data?.content?.length >= 1) {
-		searchResultsVisible = true;
-	} else {
-		searchResultsVisible = false;
+		reloadGroupMemberships();
 	}
 
 	// Selection
@@ -100,30 +93,35 @@
 				groupMembershipsTotalPages = res.data.totalPages;
 			}
 			if (res.data.content) {
-				res.data.content.forEach((groupMembership) => {
-					let newGroupMembership = {
-						applicationAdmin: groupMembership.applicationAdmin,
-						groupAdmin: groupMembership.groupAdmin,
-						topicAdmin: groupMembership.topicAdmin,
-						groupName: groupMembership.permissionsGroup.name,
-						groupId: groupMembership.permissionsGroup.id,
-						groupMembershipId: groupMembership.id,
-						userId: groupMembership.permissionsUser.id,
-						userEmail: groupMembership.permissionsUser.email
-					};
-					groupMembershipListArray.push(newGroupMembership);
-				});
-				groupMembershipList.set(groupMembershipListArray);
-				groupMembershipListArray = [];
+				createGroupMembershipList(res.data.content);
 			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
 	};
 
+	const createGroupMembershipList = async (data) => {
+		data.forEach((groupMembership) => {
+			let newGroupMembership = {
+				applicationAdmin: groupMembership.applicationAdmin,
+				groupAdmin: groupMembership.groupAdmin,
+				topicAdmin: groupMembership.topicAdmin,
+				groupName: groupMembership.permissionsGroup.name,
+				groupId: groupMembership.permissionsGroup.id,
+				groupMembershipId: groupMembership.id,
+				userId: groupMembership.permissionsUser.id,
+				userEmail: groupMembership.permissionsUser.email
+			};
+			groupMembershipListArray.push(newGroupMembership);
+		});
+		groupMembershipList.set(groupMembershipListArray);
+		groupMembershipListArray = [];
+	};
+
 	const searchGroupMemberships = async (searchStr) => {
 		setTimeout(async () => {
-			searchResults = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
+			const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
+			if (res.data.content) createGroupMembershipList(res.data.content);
 		}, 1000);
 	};
 
@@ -343,38 +341,7 @@
 				}}
 			/>&nbsp; &#x1F50E;</center
 		>
-		{#if searchResultsVisible}
-			<center
-				><table class="searchGroupMembership">
-					<th>E-mail</th>
-					<th>Group</th>
-					<th><center>Group Admin</center></th>
-					<th><center>Topic Admin</center></th>
-					<th><center>Application Admin</center></th>
-					{#each searchResults.data.content as result}
-						<tr style="padding-left: 0.3rem"
-							><td style="font-size: 0.9rem"> {result.permissionsUser.email}</td>
-							<td style="font-size: 0.8rem">{result.permissionsGroup.name}</td>
-							{#if result.groupAdmin}
-								<td><center>&check;</center></td>
-							{:else}
-								<td />
-							{/if}
-							{#if result.applicationAdmin}
-								<td><center>&check;</center></td>
-							{:else}
-								<td />
-							{/if}
-							{#if result.topicAdmin}
-								<td><center>&check;</center></td>
-							{:else}
-								<td />
-							{/if}
-						</tr>
-					{/each}
-				</table></center
-			>
-		{/if}
+
 		{#if $groupMembershipList}
 			<br /><br />
 			<table align="center">
@@ -591,26 +558,6 @@
 	.remove-button:hover {
 		cursor: pointer;
 		background-color: lightgray;
-	}
-
-	.searchGroupMembership {
-		max-width: 40rem;
-		cursor: pointer;
-		list-style-type: none;
-		margin: 0;
-		padding-top: 0.1rem;
-		padding-bottom: 0.2rem;
-		background-color: rgba(217, 221, 254, 0.4);
-		text-align: left;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-	}
-
-	.searchGroupMembership tr:nth-child(even) {
-		background-color: rgba(192, 196, 240, 0.4);
-	}
-
-	.searchGroupMembership th {
-		font-size: 0.8rem;
 	}
 
 	label {
