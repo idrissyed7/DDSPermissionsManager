@@ -297,7 +297,8 @@
 					searchString = searchString?.trim();
 				}}
 				on:keydown={(event) => {
-					if (event.which === 13) {
+					const returnKey = 13;
+					if (event.which === returnKey) {
 						document.activeElement.blur();
 						searchString = searchString?.trim();
 					}
