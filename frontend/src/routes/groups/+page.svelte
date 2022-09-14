@@ -6,7 +6,8 @@
 	import groupDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Error Handling
 	let errorMsg, errorObject;

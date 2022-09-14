@@ -8,7 +8,8 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Authentication
 	let isTopicAdmin = false;

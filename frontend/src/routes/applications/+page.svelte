@@ -9,7 +9,8 @@
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Authentication
 	let isApplicationAdmin = false;
