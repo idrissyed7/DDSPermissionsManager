@@ -28,10 +28,10 @@ dependencies {
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     implementation("io.micronaut.problem:micronaut-problem-json")
 
-    annotationProcessor("io.micronaut.data:micronaut-data-processor:3.5.0")
+    annotationProcessor("io.micronaut.data:micronaut-data-processor")
     runtimeOnly("com.h2database:h2")
 
-    implementation("io.micronaut.data:micronaut-data-hibernate-jpa:3.5.0")
+    implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-hibernate-jpa")
     implementation("io.micronaut.sql:micronaut-jdbc-tomcat")
 
