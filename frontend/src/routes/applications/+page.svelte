@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import applicationPermission from '../../stores/applicationPermission';
 	import groups from '../../stores/groups';
@@ -10,8 +11,11 @@
 
 	export let data, errors;
 
+	// Authentication
+	let isApplicationAdmin = false;
+
 	// Error Handling
-	let errorMessage, errorObject;
+	let errorMsg, errorObject;
 	let duplicateAppName = false;
 
 	// Modals
@@ -43,6 +47,10 @@
 			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
+			isApplicationAdmin = $permissionsByGroup.some(
+				(groupPermission) => groupPermission.isApplicationAdmin === true
+			);
+
 			if ($applications) {
 				// Pagination
 				let totalApplicationsCount = 0;
@@ -68,11 +76,23 @@
 				}
 			}
 		} catch (err) {
-			ErrorMessage('Error Loading Applications', err.message);
+			errorMessage('Error Loading Applications', err.message);
+		}
+
+		if ($urlparameters === 'create') {
+			if ($isAdmin || isApplicationAdmin) {
+				addApplicationVisible = true;
+			} else {
+				errorMessage(
+					'Only Application Admins can create applications.',
+					'Contact your Group Admin.'
+				);
+			}
+			urlparameters.set([]);
 		}
 	});
-	const ErrorMessage = (errMsg, errObj) => {
-		errorMessage = errMsg;
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
 		errorObject = errObj;
 		addApplicationVisible = false;
 		confirmDeleteVisible = false;
@@ -80,7 +100,7 @@
 	};
 
 	const ErrorMessageClear = () => {
-		errorMessage = '';
+		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
 	};
@@ -93,7 +113,7 @@
 			});
 			addApplicationVisible = false;
 		} catch (err) {
-			ErrorMessage('Error Creating Application', err.message);
+			errorMessage('Error Creating Application', err.message);
 		}
 
 		await reloadApps().then(() => {
@@ -114,7 +134,7 @@
 				id: selectedAppId
 			})
 			.catch((err) => {
-				ErrorMessage('Error Deleting Application', err.message);
+				errorMessage('Error Deleting Application', err.message);
 			});
 
 		confirmDeleteVisible = false;
@@ -134,7 +154,7 @@
 			}
 		} catch (err) {
 			applications.set();
-			ErrorMessage('Error Loading Applications', err.message);
+			errorMessage('Error Loading Applications', err.message);
 		}
 	};
 
@@ -143,7 +163,7 @@
 			appName = '';
 			addApplicationVisible = true;
 		} else {
-			ErrorMessage('Error', 'There are no Groups available');
+			errorMessage('Error', 'There are no Groups available');
 		}
 	};
 
@@ -155,7 +175,7 @@
 				permissionsGroup: selectedAppGroupId
 			})
 			.catch((err) => {
-				ErrorMessage('Error Saving New Application Name', err.message);
+				errorMessage('Error Saving New Application Name', err.message);
 			});
 		reloadApps();
 	};
@@ -241,7 +261,7 @@
 {#if $isAuthenticated}
 	{#if errorMessageVisible}
 		<Modal
-			title={errorMessage}
+			title={errorMsg}
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
