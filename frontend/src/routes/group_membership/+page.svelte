@@ -7,7 +7,8 @@
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Modals
 	let addGroupMembershipVisible = false;

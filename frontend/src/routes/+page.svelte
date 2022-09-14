@@ -1,7 +1,8 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
 	import urlparameters from '../stores/urlparameters';
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 </script>
 
 <svelte:head>
