@@ -8,13 +8,18 @@
 	import Modal from '../../lib/Modal.svelte';
 
 	export const data = {};
-        export const errors = {};
+	export const errors = {};
 
 	// Modals
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
 	let updateGroupMembershipVisible = false;
 	let deleteGroupMembershipVisible = false;
+
+	// SearchBox
+	let searchString;
+	let searchResults;
+	let searchResultsVisible = false;
 
 	// Forms
 	let emailValue = '';
@@ -40,6 +45,19 @@
 
 	// Group Membership List
 	let groupMembershipListArray = [];
+
+	// Search Box
+	$: if (searchString?.trim().length >= 3) {
+		searchGroupMemberships(searchString.trim());
+	} else {
+		searchResultsVisible = false;
+	}
+
+	$: if (searchResults?.data?.content?.length >= 1) {
+		searchResultsVisible = true;
+	} else {
+		searchResultsVisible = false;
+	}
 
 	// Selection
 	let selectedGroupMembership = {
@@ -101,6 +119,12 @@
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
+	};
+
+	const searchGroupMemberships = async (searchStr) => {
+		setTimeout(async () => {
+			searchResults = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
+		}, 1000);
 	};
 
 	const addGroupMembershipInput = async () => {
@@ -302,7 +326,57 @@
 
 	<div class="content">
 		<h1>Group Membership</h1>
+		<center
+			><input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					const returnKey = 13;
+					if (event.which === returnKey) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;</center
+		>
+		{#if searchResultsVisible}
+			<center
+				><table class="searchGroupMembership">
+					<th>E-mail</th>
+					<th>Group</th>
+					<th><center>Group Admin</center></th>
+					<th><center>Topic Admin</center></th>
+					<th><center>Application Admin</center></th>
+					{#each searchResults.data.content as result}
+						<tr style="padding-left: 0.3rem"
+							><td style="font-size: 0.9rem"> {result.permissionsUser.email}</td>
+							<td style="font-size: 0.8rem">{result.permissionsGroup.name}</td>
+							{#if result.groupAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+							{#if result.applicationAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+							{#if result.topicAdmin}
+								<td><center>&check;</center></td>
+							{:else}
+								<td />
+							{/if}
+						</tr>
+					{/each}
+				</table></center
+			>
+		{/if}
 		{#if $groupMembershipList}
+			<br /><br />
 			<table align="center">
 				<tr style="border-width: 0px">
 					<th>E-mail</th>
@@ -501,6 +575,7 @@
 	.pencil {
 		transform: scaleX(-1);
 		margin-right: 0.5rem;
+		margin-top: 0.2rem;
 		cursor: pointer;
 	}
 
@@ -516,6 +591,26 @@
 	.remove-button:hover {
 		cursor: pointer;
 		background-color: lightgray;
+	}
+
+	.searchGroupMembership {
+		max-width: 40rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin: 0;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		background-color: rgba(217, 221, 254, 0.4);
+		text-align: left;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchGroupMembership tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
+	}
+
+	.searchGroupMembership th {
+		font-size: 0.8rem;
 	}
 
 	label {
