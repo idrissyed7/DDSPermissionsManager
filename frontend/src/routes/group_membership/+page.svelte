@@ -575,6 +575,7 @@
 	.pencil {
 		transform: scaleX(-1);
 		margin-right: 0.5rem;
+		margin-top: 0.2rem;
 		cursor: pointer;
 	}
 
@@ -618,11 +619,6 @@
 
 	input {
 		vertical-align: middle;
-
-		text-align: center;
-		width: 20rem;
-		z-index: 1;
-		background-color: rgba(0, 0, 0, 0);
 	}
 
 	table {
