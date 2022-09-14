@@ -171,7 +171,7 @@
 			} catch (err) {
 				errorMessage('Error Updating Group Membership', err.message);
 			}
-				dataUpdated = false;
+			dataUpdated = false;
 		}
 	};
 
