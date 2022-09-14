@@ -217,24 +217,6 @@
 		}
 		deleteGroupMembershipVisible = false;
 	};
-
-	const deleteGroupMembershipModal = (selectedGM) => {
-		deleteGroupMembershipVisible = true;
-		selectedGroupMembership.groupMembershipId = selectedGM.groupMembershipId;
-	};
-
-	const deleteGroupMembership = async () => {
-		try {
-			await httpAdapter.delete(`/group_membership`, {
-				data: { id: selectedGroupMembership.groupMembershipId }
-			});
-
-			reloadGroupMemberships(groupMembershipsCurrentPage);
-		} catch (err) {
-			errorMessage('Error Deleting Group Membership', err.message);
-		}
-		deleteGroupMembershipVisible = false;
-	};
 </script>
 
 <svelte:head>
