@@ -6,7 +6,8 @@
 	import groupDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -327,8 +328,8 @@
 	{/if}
 
 	<div class="content">
+		<h1>Groups</h1>
 		{#if $groups && groupsListVisible && !groupDetailVisible}
-			<h1>Groups</h1>
 			<center
 				><input
 					style="border-width: 1px;"
@@ -377,8 +378,6 @@
 							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
 						</tr>
 					{/each}
-				{:else}
-					<tr><td>No Groups Found</td></tr>
 				{/if}
 			</table>
 			<br /> <br /><br />
@@ -423,6 +422,8 @@
 					>Add Group
 				</button></center
 			>
+		{:else}
+			<p><center>No Groups Found</center></p>
 		{/if}
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
 			<div class="name">

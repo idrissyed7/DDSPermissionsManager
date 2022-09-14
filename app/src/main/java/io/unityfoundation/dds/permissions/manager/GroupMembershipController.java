@@ -5,6 +5,8 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,11 +33,13 @@ public class GroupMembershipController {
     }
 
     @Get("{?filter}")
+    @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable, @Nullable String filter) {
         return HttpResponse.ok(groupUserService.findAll(pageable, filter));
     }
 
     @Post
+    @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupUser.class))
@@ -52,6 +56,7 @@ public class GroupMembershipController {
     }
 
     @Put
+    @ExecuteOn(TaskExecutors.IO)
     HttpResponse updateMember(@Body GroupUser groupUser) {
 
         if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup().getId())) {
@@ -62,6 +67,7 @@ public class GroupMembershipController {
     }
 
     @Delete
+    @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "200", description = "Ok")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse removeMember(@Body Map payload) {

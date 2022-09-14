@@ -9,7 +9,8 @@
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Authentication
 	let isApplicationAdmin = false;
@@ -47,9 +48,11 @@
 			const applicationsData = await httpAdapter.get(`/applications`);
 			applications.set(applicationsData.data.content);
 
-			isApplicationAdmin = $permissionsByGroup.some(
-				(groupPermission) => groupPermission.isApplicationAdmin === true
-			);
+			if ($permissionsByGroup) {
+				isApplicationAdmin = $permissionsByGroup.some(
+					(groupPermission) => groupPermission.isApplicationAdmin === true
+				);
+			}
 
 			if ($applications) {
 				// Pagination

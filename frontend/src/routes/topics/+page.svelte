@@ -8,7 +8,8 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
-	export let data, errors;
+	export const data = {};
+        export const errors = {};
 
 	// Authentication
 	let isTopicAdmin = false;
@@ -45,9 +46,11 @@
 			const topicsData = await httpAdapter.get(`/topics`);
 			topics.set(topicsData.data.content);
 
-			isTopicAdmin = $permissionsByGroup.some(
-				(groupPermission) => groupPermission.isTopicAdmin === true
-			);
+			if ($permissionsByGroup) {
+				isTopicAdmin = $permissionsByGroup.some(
+					(groupPermission) => groupPermission.isTopicAdmin === true
+				);
+			}
 
 			if ($topics) {
 				// Pagination
@@ -269,8 +272,8 @@
 	{/if}
 
 	<div class="content">
+		<h1>Topics</h1>
 		{#if topicsPages && topicsListVisible && !topicDetailVisible}
-			<h1>Topics</h1>
 			<table align="center">
 				{#if topicsPages.length > 0}
 					<tr style="border-width: 0px">
