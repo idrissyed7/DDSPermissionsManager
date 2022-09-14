@@ -5,6 +5,8 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,7 @@ public class ApplicationPermissionController {
     }
 
     @Get("{?application,topic")
+    @ExecuteOn(TaskExecutors.IO)
     public Page<ApplicationPermission> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
         return applicationPermissionService.findAll(application, topic, pageable);
     }

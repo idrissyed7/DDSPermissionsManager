@@ -5,6 +5,8 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
@@ -35,6 +37,7 @@ public class ApplicationController {
     }
 
     @Get("/show/{id}")
+    @ExecuteOn(TaskExecutors.IO)
     public HttpResponse show(Long id) {
         try {
             return applicationService.show(id);
@@ -54,6 +57,7 @@ public class ApplicationController {
     @ApiResponse(responseCode = "303", description = "Applications already exists. Response body contains original.")
     @ApiResponse(responseCode = "400", description = "Bad Request.")
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
+    @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> save(@Body Application application) {
         try {
             return applicationService.save(application);
@@ -68,6 +72,7 @@ public class ApplicationController {
     @ApiResponse(responseCode = "303", description = "Returns result of /applications")
     @ApiResponse(responseCode = "400", description = "Bad Request.")
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
+    @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
         try {
             applicationService.deleteById(id);
