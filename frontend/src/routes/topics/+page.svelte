@@ -45,9 +45,11 @@
 			const topicsData = await httpAdapter.get(`/topics`);
 			topics.set(topicsData.data.content);
 
-			isTopicAdmin = $permissionsByGroup.some(
-				(groupPermission) => groupPermission.isTopicAdmin === true
-			);
+			if ($permissionsByGroup) {
+				isTopicAdmin = $permissionsByGroup.some(
+					(groupPermission) => groupPermission.isTopicAdmin === true
+				);
+			}
 
 			if ($topics) {
 				// Pagination
