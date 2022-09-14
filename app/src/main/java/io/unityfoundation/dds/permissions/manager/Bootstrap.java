@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
@@ -13,6 +14,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import jakarta.inject.Singleton;
 
+@Requires(condition = DevOrTestCondition.class)
 @Singleton
 public class Bootstrap {
 
