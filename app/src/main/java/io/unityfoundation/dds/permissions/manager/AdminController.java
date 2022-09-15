@@ -5,6 +5,8 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,14 +30,14 @@ public class AdminController {
         this.userService = userService;
     }
 
-    // todo pending update with upcoming story
     @Get
+    @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(userService.findAll(pageable));
     }
 
-    // todo (UPDATE) pending update with upcoming story
     @Post("/save")
+    @ExecuteOn(TaskExecutors.IO)
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(
             responseCode = "200",
@@ -50,8 +52,8 @@ public class AdminController {
         }
     }
 
-    // todo pending update with upcoming story
     @Post("/delete/{id}")
+    @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "303", description = "Returns result of /users")
     HttpResponse<?> delete(Long id) {
         userService.deleteById(id);

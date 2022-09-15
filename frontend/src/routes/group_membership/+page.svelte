@@ -12,6 +12,15 @@
 	// Modals
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
+	let updateGroupMembershipVisible = false;
+	let deleteGroupMembershipVisible = false;
+
+	// SearchBox
+	let searchString;
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchActive = true;
 
 	// Forms
 	let emailValue = '';
@@ -25,7 +34,7 @@
 	let groupAdminGroups = [];
 
 	// Pagination
-	const groupMembershipsPerPage = 2;
+	const groupMembershipsPerPage = 10;
 	let groupMembershipsTotalPages;
 	let groupMembershipsCurrentPage = 0;
 
@@ -37,6 +46,51 @@
 
 	// Group Membership List
 	let groupMembershipListArray = [];
+
+	// Search Group Membership Feature
+	$: if (searchString?.trim().length >= 3) {
+		searchGroupMemberships(searchString.trim());
+	} else {
+		reloadGroupMemberships();
+	}
+
+	// Search Groups Feature
+	$: if (searchGroups?.trim().length >= 3 && searchActive) {
+		searchGroup(searchGroups.trim());
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.data?.length >= 1 && searchActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addGroupMembershipVisible === false) {
+		searchGroups = '';
+		emailValue = '';
+		selectedIsGroupAdmin = false;
+		selectedIsApplicationAdmin = false;
+		selectedIsTopicAdmin = false;
+	}
+
+	// Selection
+	let selectedGroupMembership = {
+		userEmail: '',
+		groupName: '',
+		groupId: '',
+		groupAdmin: '',
+		applicationAdmin: '',
+		topicAdmin: '',
+		groupMembershipId: '',
+		userId: ''
+	};
+
+	// Data
+	let dataUpdated = false;
 
 	onMount(async () => {
 		const res = await httpAdapter.get(`/token_info`);
@@ -63,24 +117,43 @@
 			if (res.data) {
 				groupMembershipsTotalPages = res.data.totalPages;
 			}
-
 			if (res.data.content) {
-				res.data.content.forEach((groupMembership) => {
-					let newGroupMembership = {
-						applicationAdmin: groupMembership.applicationAdmin,
-						groupAdmin: groupMembership.groupAdmin,
-						topicAdmin: groupMembership.topicAdmin,
-						groupName: groupMembership.permissionsGroup.name,
-						userEmail: groupMembership.permissionsUser.email
-					};
-					groupMembershipListArray.push(newGroupMembership);
-				});
-				groupMembershipList.set(groupMembershipListArray);
-				groupMembershipListArray = [];
+				createGroupMembershipList(res.data.content);
 			}
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
+	};
+
+	const createGroupMembershipList = async (data) => {
+		data.forEach((groupMembership) => {
+			let newGroupMembership = {
+				applicationAdmin: groupMembership.applicationAdmin,
+				groupAdmin: groupMembership.groupAdmin,
+				topicAdmin: groupMembership.topicAdmin,
+				groupName: groupMembership.permissionsGroup.name,
+				groupId: groupMembership.permissionsGroup.id,
+				groupMembershipId: groupMembership.id,
+				userId: groupMembership.permissionsUser.id,
+				userEmail: groupMembership.permissionsUser.email
+			};
+			groupMembershipListArray.push(newGroupMembership);
+		});
+		groupMembershipList.set(groupMembershipListArray);
+		groupMembershipListArray = [];
+	};
+
+	const searchGroupMemberships = async (searchStr) => {
+		setTimeout(async () => {
+			const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
+			if (res.data.content) createGroupMembershipList(res.data.content);
+		}, 1000);
+	};
+
+	const searchGroup = async (searchString) => {
+		setTimeout(async () => {
+			searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
+		}, 1000);
 	};
 
 	const addGroupMembershipInput = async () => {
@@ -88,12 +161,6 @@
 	};
 
 	const addGroupMembership = async () => {
-		console.log('Request:');
-		console.log('email: ', emailValue);
-		console.log('permissionsGroup: ', selectedGroup);
-		console.log('isGroupAdmin: ', selectedIsGroupAdmin);
-		console.log('isTopicAdmin: ', selectedIsTopicAdmin);
-		console.log('isApplicationAdmin: ', selectedIsApplicationAdmin);
 		const res = await httpAdapter
 			.post(`/group_membership`, {
 				email: emailValue,
@@ -106,15 +173,15 @@
 				console.log('err', err);
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
-				} else if (err.response.status === 400) {
-					errorMessage('Error: Group Membership it already exists.', err.message);
+				} else if (err.response.status === 400 || 401) {
+					errorMessage('Error Adding Group Membership', err.message);
 				}
 			});
+		reloadGroupMemberships(groupMembershipsCurrentPage);
 		addGroupMembershipVisible = false;
-		console.log('result:', res);
 	};
 
-	const ValidateEmail = (input) => {
+	const validateEmail = (input) => {
 		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
 	};
 
@@ -128,6 +195,63 @@
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
+	};
+
+	const updateGroupMembershipModal = (selectedGM) => {
+		updateGroupMembershipVisible = true;
+		selectedGroupMembership.userEmail = selectedGM.userEmail;
+		selectedGroupMembership.groupName = selectedGM.groupName;
+		selectedGroupMembership.groupAdmin = selectedGM.groupAdmin;
+		selectedGroupMembership.applicationAdmin = selectedGM.applicationAdmin;
+		selectedGroupMembership.topicAdmin = selectedGM.topicAdmin;
+		selectedGroupMembership.groupMembershipId = selectedGM.groupMembershipId;
+		selectedGroupMembership.groupId = selectedGM.groupId;
+		selectedGroupMembership.userId = selectedGM.userId;
+	};
+
+	const updateGroupMembership = async () => {
+		if (dataUpdated) {
+			const data = {
+				id: selectedGroupMembership.groupMembershipId,
+				groupAdmin: selectedGroupMembership.groupAdmin,
+				topicAdmin: selectedGroupMembership.topicAdmin,
+				applicationAdmin: selectedGroupMembership.applicationAdmin,
+				permissionsGroup: { id: selectedGroupMembership.groupId },
+				permissionsUser: { id: selectedGroupMembership.userId }
+			};
+			try {
+				await httpAdapter.put(`/group_membership`, data);
+				reloadGroupMemberships(groupMembershipsCurrentPage);
+			} catch (err) {
+				errorMessage('Error Updating Group Membership', err.message);
+			}
+			dataUpdated = false;
+		}
+	};
+
+	const deleteGroupMembershipModal = (selectedGM) => {
+		deleteGroupMembershipVisible = true;
+		selectedGroupMembership.groupMembershipId = selectedGM.groupMembershipId;
+	};
+
+	const deleteGroupMembership = async () => {
+		try {
+			await httpAdapter.delete(`/group_membership`, {
+				data: { id: selectedGroupMembership.groupMembershipId }
+			});
+
+			reloadGroupMemberships(groupMembershipsCurrentPage);
+		} catch (err) {
+			errorMessage('Error Deleting Group Membership', err.message);
+		}
+		deleteGroupMembershipVisible = false;
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchActive = false;
 	};
 </script>
 
@@ -157,51 +281,169 @@
 			</div>
 		</Modal>
 	{/if}
+
+	{#if updateGroupMembershipVisible}
+		<Modal
+			title="Update Group Membership"
+			on:cancel={() => {
+				updateGroupMembershipVisible = false;
+				updateGroupMembership();
+			}}
+		>
+			<table align="center" style="margin-left: 0.6rem; width:97.5%">
+				<tr style="border-width: 0px">
+					<th style="font-size: 0.9rem">E-mail</th>
+					<th style="font-size: 0.9rem">Group</th>
+					<th style="font-size: 0.9rem"><center>Group Admin</center></th>
+					<th style="font-size: 0.9rem"><center>Topic Admin</center></th>
+					<th style="font-size: 0.9rem"><center>Application Admin</center></th>
+				</tr>
+				<tr>
+					<td style="font-size: 0.9rem">
+						{selectedGroupMembership.userEmail}
+					</td>
+					<td style="font-size: 0.9rem">
+						{selectedGroupMembership.groupName}
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedGroupAdmin"
+								bind:checked={selectedGroupMembership.groupAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedTopicAdmin"
+								bind:checked={selectedGroupMembership.topicAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+					<td>
+						<center
+							><input
+								type="checkbox"
+								id="updatedApplicationAdmin"
+								bind:checked={selectedGroupMembership.applicationAdmin}
+								on:click={() => (dataUpdated = true)}
+							/></center
+						>
+					</td>
+				</tr>
+			</table>
+		</Modal>
+	{/if}
+
+	{#if deleteGroupMembershipVisible}
+		<Modal
+			title="Delete Group Membership?"
+			on:cancel={() => {
+				deleteGroupMembershipVisible = false;
+				deleteGroupMembership();
+			}}
+			><div class="confirm">
+				<button class="button-cancel" on:click={() => (deleteGroupMembershipVisible = false)}
+					>Cancel</button
+				>&nbsp;
+				<button
+					class="button-delete"
+					disabled={!$isAdmin && !isGroupAdmin}
+					on:click={() => deleteGroupMembership()}><span>Delete</span></button
+				>
+			</div></Modal
+		>
+	{/if}
+
 	<div class="content">
 		<h1>Group Membership</h1>
-		{#if $isAdmin || isGroupAdmin}
-			{#if $groupMembershipList}
-				<table align="center">
-					<tr style="border-width: 0px">
-						<th>E-mail</th>
-						<th>Group</th>
-						<th><center>Group Admin</center></th>
-						<th><center>Topic Admin</center></th>
-						<th><center>Application Admin</center></th>
+		<center
+			><input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					const returnKey = 13;
+					if (event.which === returnKey) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;</center
+		>
+
+		{#if $groupMembershipList}
+			<br /><br />
+			<table align="center">
+				<tr style="border-width: 0px">
+					<th>E-mail</th>
+					<th>Group</th>
+					<th><center>Group Admin</center></th>
+					<th><center>Topic Admin</center></th>
+					<th><center>Application Admin</center></th>
+				</tr>
+				{#each $groupMembershipList as groupMembership}
+					<tr>
+						<td>{groupMembership.userEmail}</td>
+						<td>{groupMembership.groupName}</td>
+						<td
+							><center
+								>{#if groupMembership.groupAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+						<td
+							><center
+								>{#if groupMembership.topicAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+						<td
+							><center
+								>{#if groupMembership.applicationAdmin}&check;
+								{:else}
+									-
+								{/if}</center
+							></td
+						>
+
+						{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
+							<td
+								><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
+									&#9998
+								</div></td
+							>
+							<td
+								><button
+									class="button-delete"
+									on:click={() => deleteGroupMembershipModal(groupMembership)}
+									><span>Delete</span></button
+								></td
+							>
+						{:else}
+							<td /><td />
+						{/if}
 					</tr>
-					{#each $groupMembershipList as groupMembership}
-						<tr>
-							<td>{groupMembership.userEmail}</td>
-							<td>{groupMembership.groupName}</td>
-							<td
-								><center
-									>{#if groupMembership.groupAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-							<td
-								><center
-									>{#if groupMembership.topicAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-							<td
-								><center
-									>{#if groupMembership.applicationAdmin}&check;
-									{:else}
-										-
-									{/if}</center
-								></td
-							>
-						</tr>
-					{/each}
-				</table>
-			{/if}
-			<br />
+				{/each}
+			</table>
+		{:else}
+			<p><center>No group memberships</center></p>
+		{/if}
+		<br />
+
+		{#if $isAdmin || isGroupAdmin}
 			<center
 				><button
 					style="cursor:pointer"
@@ -210,125 +452,144 @@
 				></center
 			>
 			<br />
-			{#if addGroupMembershipVisible}
-				<table>
-					<tr>
-						<td style="width: 15rem"
-							><input
-								placeholder="Email Address"
-								class:invalid={invalidEmail && emailValue.length >= 1}
-								style="
+		{/if}
+
+		{#if addGroupMembershipVisible}
+			<table>
+				<tr style="border-width: 0px">
+					<td style="width: 15rem"
+						><input
+							placeholder="Email Address"
+							class:invalid={invalidEmail && emailValue.length >= 1}
+							style="
 						display: inline-flex;		
 						height: 1.7rem;
 						text-align: left;
 						font-size: small;
-						min-width: 12rem;"
-								bind:value={emailValue}
-								on:blur={() => ValidateEmail(emailValue)}
-								on:keydown={(event) => {
-									if (event.which === 13) {
-										ValidateEmail(emailValue);
-										document.querySelector('#name').blur();
-									}
+						min-width: 13rem;"
+							bind:value={emailValue}
+							on:blur={() => validateEmail(emailValue)}
+							on:keydown={(event) => {
+								if (event.which === 13) {
+									validateEmail(emailValue);
+									document.querySelector('#name').blur();
+								}
+							}}
+						/>
+						<div class="add-item">
+							<label for="groups">Group:</label>
+							<input
+								placeholder="Group Name"
+								style="
+									display: inline-flex;       
+									height: 1.7rem;
+									text-align: left;
+									font-size: small;
+									min-width: 9rem;"
+								bind:value={searchGroups}
+								on:blur={() => {
+									setTimeout(() => {
+										searchGroupsResultsVisible = false;
+									}, 500);
+								}}
+								on:click={async () => {
+									searchGroupResults = [];
+									searchActive = true;
+									searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
 								}}
 							/>
-							<div class="add-item">
-								<label for="groups">Group:</label>
-								<select name="groups" bind:value={selectedGroup}>
-									{#if $isAdmin}
-										{#if $groups}
-											{#each $groups as group}
-												<option value={group.id}>{group.name}</option>
-											{/each}
-										{/if}
-									{:else if groupAdminGroups}
-										{#if $groups}
-											{#each groupAdminGroups as group}
-												<option value={group.groupId}>{group.groupName}</option>
-											{/each}
-										{/if}
-									{/if}
-								</select>
-								<div class="add-item">
-									<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
-									<label for="groupAdmin">Group Admin</label>
-								</div>
-								<div class="add-item">
-									<input
-										type="checkbox"
-										name="applicationAdmin"
-										bind:checked={selectedIsApplicationAdmin}
-									/>
-									<label for="applicationAdmin">Application Admin</label>
-								</div>
-								<div class="add-item">
-									<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
 
-									<label for="topicAdmin">Topic Admin</label>
-								</div>
-								<div class="add-item">
-									<button
-										class:button={!invalidEmail}
-										style="margin-left: 1rem; width: 6.5rem"
-										disabled={invalidEmail}
-										on:click={() => addGroupMembership()}><span>Add</span></button
-									>
-									<button
-										class="remove-button"
-										style="margin-left: 0.5rem"
-										on:click={() => {
-											emailValue = '';
-											addGroupMembershipVisible = false;
-										}}>x</button
-									>
-								</div>
-							</div></td
-						>
-					</tr>
-				</table>
-				<br /><br />
-			{/if}
+							{#if searchGroupsResultsVisible}
+								<table class="searchGroup">
+									{#each searchGroupResults.data as result}
+										<tr
+											><td
+												on:click={() => {
+													selectedSearchGroup(result.name, result.id);
+												}}>{result.name}</td
+											></tr
+										>
+									{/each}
+								</table>
+							{/if}
+						</div>
 
-			{#if $groupMembershipList}
-				<center
-					><button
-						on:click={() => {
-							if (groupMembershipsCurrentPage > 0) groupMembershipsCurrentPage--;
-							reloadGroupMemberships(groupMembershipsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={groupMembershipsCurrentPage === 0}>Previous</button
-					>
-					{#if groupMembershipsTotalPages > 2}
-						{#each Array.apply( null, { length: groupMembershipsTotalPages } ).map(Number.call, Number) as page}
+						<div class="add-item">
+							<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
+							<label for="groupAdmin">Group Admin</label>
+						</div>
+						<div class="add-item">
+							<input
+								type="checkbox"
+								name="applicationAdmin"
+								bind:checked={selectedIsApplicationAdmin}
+							/>
+							<label for="applicationAdmin">Application Admin</label>
+						</div>
+						<div class="add-item">
+							<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+
+							<label for="topicAdmin">Topic Admin</label>
+						</div>
+						<div class="add-item">
 							<button
-								on:click={() => {
-									groupMembershipsCurrentPage = page;
-									reloadGroupMemberships(page);
-								}}
-								class="button-pagination"
-								class:button-pagination-selected={page === groupMembershipsCurrentPage}
-								>{page + 1}</button
+								class:button={!invalidEmail}
+								style="margin-left: 1rem; width: 3.5rem"
+								disabled={invalidEmail || searchGroups === ''}
+								on:click={() => addGroupMembership()}><span>Add</span></button
 							>
-						{/each}
-					{/if}
+							<button
+								class="remove-button"
+								style="margin-left: 0.5rem"
+								on:click={() => {
+									emailValue = '';
+									addGroupMembershipVisible = false;
+								}}>x</button
+							>
+						</div>
+					</td>
+				</tr>
+			</table>
+			<br /><br />
+		{/if}
 
-					<button
-						on:click={() => {
-							if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages)
-								groupMembershipsCurrentPage++;
-							reloadGroupMemberships(groupMembershipsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={groupMembershipsCurrentPage === groupMembershipsTotalPages - 1 ||
-							groupMembershipsTotalPages === 0}>Next</button
-					></center
+		{#if $groupMembershipList}
+			<center
+				><button
+					on:click={() => {
+						if (groupMembershipsCurrentPage > 0) groupMembershipsCurrentPage--;
+						reloadGroupMemberships(groupMembershipsCurrentPage);
+					}}
+					class="button-pagination"
+					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
+					disabled={groupMembershipsCurrentPage === 0}>Previous</button
 				>
-			{/if}
-		{:else}
-			<h2>No group memberships</h2>
+				{#if groupMembershipsTotalPages > 2}
+					{#each Array.apply( null, { length: groupMembershipsTotalPages } ).map(Number.call, Number) as page}
+						<button
+							on:click={() => {
+								groupMembershipsCurrentPage = page;
+								reloadGroupMemberships(page);
+							}}
+							class="button-pagination"
+							class:button-pagination-selected={page === groupMembershipsCurrentPage}
+							>{page + 1}</button
+						>
+					{/each}
+				{/if}
+
+				<button
+					on:click={() => {
+						if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages)
+							groupMembershipsCurrentPage++;
+						reloadGroupMemberships(groupMembershipsCurrentPage);
+					}}
+					class="button-pagination"
+					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
+					disabled={groupMembershipsCurrentPage === groupMembershipsTotalPages - 1 ||
+						groupMembershipsTotalPages === 0}>Next</button
+				></center
+			>
 		{/if}
 	</div>
 {:else}
@@ -336,8 +597,15 @@
 {/if}
 
 <style>
+	.pencil {
+		transform: scaleX(-1);
+		margin-right: 0.5rem;
+		margin-top: 0.2rem;
+		cursor: pointer;
+	}
+
 	.add-item {
-		display: inline;
+		display: inline-block;
 		padding-left: 1.6rem;
 	}
 
@@ -350,6 +618,28 @@
 		background-color: lightgray;
 	}
 
+	.searchGroup {
+		font-size: 0.75rem;
+		width: 10rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin-left: 2.8rem;
+		margin-top: -0.1rem;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		text-align: left;
+		background-color: rgba(217, 221, 254, 0.4);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchGroup tr {
+		height: 1.9rem;
+	}
+
+	.searchGroup tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
+	}
+
 	label {
 		font-size: small;
 	}
@@ -360,5 +650,9 @@
 
 	table {
 		width: 100%;
+	}
+
+	tr {
+		height: 2.5rem;
 	}
 </style>

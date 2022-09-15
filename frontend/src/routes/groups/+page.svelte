@@ -11,10 +11,8 @@
 	// Error Handling
 	let errorMsg, errorObject;
 
-	// SearchBox
+	// Search
 	let searchString;
-	let searchResults;
-	let searchResultsVisible = false;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -49,17 +47,13 @@
 	// Check the Add Group has more than 0 non-whitespace characters
 	$: newGroupName?.length === 0 ? (disabled = true) : (disabled = false);
 
-	// Search Box
+	// Search Feature
 	$: if (searchString?.trim().length >= 3) {
+		console.log('searching');
 		searchGroups(searchString.trim());
 	} else {
-		searchResultsVisible = false;
-	}
-
-	$: if (searchResults?.data?.length >= 1) {
-		searchResultsVisible = true;
-	} else {
-		searchResultsVisible = false;
+		console.log('reloading all groups');
+		reloadAllGroups();
 	}
 
 	onMount(async () => {
@@ -71,7 +65,12 @@
 	});
 
 	const searchGroups = async (searchStr) => {
-		searchResults = await httpAdapter.get(`/groups/search/${searchStr}`);
+		console.log('$groups', $groups);
+		setTimeout(async () => {
+			const res = await httpAdapter.get(`/groups/search/${searchStr}`);
+			console.log('res.data', res.data);
+			if (res.data) groups.set(res.data);
+		}, 1000);
 	};
 
 	const errorMessage = (errMsg, errObj) => {
@@ -327,8 +326,8 @@
 	{/if}
 
 	<div class="content">
+		<h1>Groups</h1>
 		{#if $groups && groupsListVisible && !groupDetailVisible}
-			<h1>Groups</h1>
 			<center
 				><input
 					style="border-width: 1px;"
@@ -345,18 +344,13 @@
 					}}
 				/>&nbsp; &#x1F50E;</center
 			>
-			{#if searchResultsVisible}
-				<center
-					><ul class="search-results">
-						{#each searchResults.data as result}
-							<li style="padding-left: 0.3rem">{result.name}</li>
-						{/each}
-					</ul></center
-				>
-			{/if}
-			<table align="center">
+
+			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>
+					<th><strong><center>Memberships:</center></strong></th>
+					<th><strong><center>Topics:</center></strong></th>
+					<th><strong><center>Applications:</center></strong></th>
 				</tr>
 				{#if $groups.length > 0}
 					{#each $groups as group}
@@ -366,15 +360,17 @@
 								on:click={() => {
 									loadGroup(group.id);
 									selectedGroupId = group.id;
-								}}>{group.name}</td
-							>
+								}}
+								>{group.name}
+							</td>
+							<td><center><a href="/group_membership">{group.membershipCount}</a></center></td>
+							<td><center><a href="/topics">{group.topicCount}</a></center></td>
+							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
 						</tr>
 					{/each}
-				{:else}
-					<tr><td>No Groups Found</td></tr>
 				{/if}
 			</table>
-			<br /> <br />
+			<br /> <br /><br />
 			{#if $groups}
 				<center
 					><button
@@ -416,6 +412,8 @@
 					>Add Group
 				</button></center
 			>
+		{:else}
+			<p><center>No Groups Found</center></p>
 		{/if}
 		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
 			<div class="name">
@@ -544,21 +542,5 @@
 		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
-	}
-
-	ul {
-		cursor: pointer;
-		list-style-type: none;
-		margin: 0;
-		padding-top: 0.1rem;
-		padding-bottom: 0.2rem;
-		background-color: rgba(217, 221, 254, 0.4);
-		text-align: left;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-	}
-
-	li {
-		margin-left: -2rem;
-		padding: 0.2rem 0 0 0;
 	}
 </style>

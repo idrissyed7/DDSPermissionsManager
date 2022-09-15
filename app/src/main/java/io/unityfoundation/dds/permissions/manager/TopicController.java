@@ -5,6 +5,8 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
@@ -29,6 +31,7 @@ public class TopicController {
         this.topicService = topicService;
     }
 
+    @ExecuteOn(TaskExecutors.IO)
     @Get
     public HttpResponse<Page<Topic>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(topicService.findAll(pageable));
@@ -47,6 +50,7 @@ public class TopicController {
     )
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> save(@Body Topic topic) {
         try {
             return topicService.save(topic);
@@ -61,6 +65,7 @@ public class TopicController {
     @ApiResponse(responseCode = "303", description = "Returns result of /topics")
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
         try {
             topicService.deleteById(id);

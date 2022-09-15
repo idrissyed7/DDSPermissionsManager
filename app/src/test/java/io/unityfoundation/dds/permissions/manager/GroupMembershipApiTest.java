@@ -306,7 +306,7 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?group=Secondary");
+            request = HttpRequest.GET("/group_membership?filter=Secondary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -342,7 +342,7 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?email=bob.builder@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=bob.builder@unityfoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -958,7 +958,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?email=the.generalcontractor@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=the.generalcontractor@unityfoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -1005,7 +1005,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?group=Primary");
+            request = HttpRequest.GET("/group_membership?filter=Primary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(0, page.getContent().size());
@@ -1051,7 +1051,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?email=builder@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=builder@unityfoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(0, page.getContent().size());
