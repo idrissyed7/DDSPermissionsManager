@@ -17,8 +17,10 @@
 
 	// SearchBox
 	let searchString;
-	let searchResults;
-	// let searchResultsVisible = false;
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchActive = true;
 
 	// Forms
 	let emailValue = '';
@@ -45,11 +47,34 @@
 	// Group Membership List
 	let groupMembershipListArray = [];
 
-	// Search Feature
+	// Search Group Membership Feature
 	$: if (searchString?.trim().length >= 3) {
 		searchGroupMemberships(searchString.trim());
 	} else {
 		reloadGroupMemberships();
+	}
+
+	// Search Groups Feature
+	$: if (searchGroups?.trim().length >= 3 && searchActive) {
+		searchGroup(searchGroups.trim());
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.data?.length >= 1 && searchActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addGroupMembershipVisible === false) {
+		searchGroups = '';
+		emailValue = '';
+		selectedIsGroupAdmin = false;
+		selectedIsApplicationAdmin = false;
+		selectedIsTopicAdmin = false;
 	}
 
 	// Selection
@@ -125,6 +150,12 @@
 		}, 1000);
 	};
 
+	const searchGroup = async (searchString) => {
+		setTimeout(async () => {
+			searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
+		}, 1000);
+	};
+
 	const addGroupMembershipInput = async () => {
 		addGroupMembershipVisible = true;
 	};
@@ -142,8 +173,8 @@
 				console.log('err', err);
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
-				} else if (err.response.status === 400) {
-					errorMessage('Error: Group Membership it already exists.', err.message);
+				} else if (err.response.status === 400 || 401) {
+					errorMessage('Error Adding Group Membership', err.message);
 				}
 			});
 		reloadGroupMemberships(groupMembershipsCurrentPage);
@@ -214,6 +245,13 @@
 			errorMessage('Error Deleting Group Membership', err.message);
 		}
 		deleteGroupMembershipVisible = false;
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchActive = false;
 	};
 </script>
 
@@ -418,7 +456,7 @@
 
 		{#if addGroupMembershipVisible}
 			<table>
-				<tr>
+				<tr style="border-width: 0px">
 					<td style="width: 15rem"
 						><input
 							placeholder="Email Address"
@@ -428,7 +466,7 @@
 						height: 1.7rem;
 						text-align: left;
 						font-size: small;
-						min-width: 12rem;"
+						min-width: 13rem;"
 							bind:value={emailValue}
 							on:blur={() => validateEmail(emailValue)}
 							on:keydown={(event) => {
@@ -440,56 +478,76 @@
 						/>
 						<div class="add-item">
 							<label for="groups">Group:</label>
-							<select name="groups" bind:value={selectedGroup}>
-								{#if $isAdmin}
-									{#if $groups}
-										{#each $groups as group}
-											<option value={group.id}>{group.name}</option>
-										{/each}
-									{/if}
-								{:else if groupAdminGroups}
-									{#if $groups}
-										{#each groupAdminGroups as group}
-											<option value={group.groupId}>{group.groupName}</option>
-										{/each}
-									{/if}
-								{/if}
-							</select>
-							<div class="add-item">
-								<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
-								<label for="groupAdmin">Group Admin</label>
-							</div>
-							<div class="add-item">
-								<input
-									type="checkbox"
-									name="applicationAdmin"
-									bind:checked={selectedIsApplicationAdmin}
-								/>
-								<label for="applicationAdmin">Application Admin</label>
-							</div>
-							<div class="add-item">
-								<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+							<input
+								placeholder="Group Name"
+								style="
+									display: inline-flex;       
+									height: 1.7rem;
+									text-align: left;
+									font-size: small;
+									min-width: 9rem;"
+								bind:value={searchGroups}
+								on:blur={() => {
+									setTimeout(() => {
+										searchGroupsResultsVisible = false;
+									}, 500);
+								}}
+								on:click={async () => {
+									searchGroupResults = [];
+									searchActive = true;
+									searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
+								}}
+							/>
 
-								<label for="topicAdmin">Topic Admin</label>
-							</div>
-							<div class="add-item">
-								<button
-									class:button={!invalidEmail}
-									style="margin-left: 1rem; width: 6.5rem"
-									disabled={invalidEmail}
-									on:click={() => addGroupMembership()}><span>Add</span></button
-								>
-								<button
-									class="remove-button"
-									style="margin-left: 0.5rem"
-									on:click={() => {
-										emailValue = '';
-										addGroupMembershipVisible = false;
-									}}>x</button
-								>
-							</div>
-						</div></td
-					>
+							{#if searchGroupsResultsVisible}
+								<table class="searchGroup">
+									{#each searchGroupResults.data as result}
+										<tr
+											><td
+												on:click={() => {
+													selectedSearchGroup(result.name, result.id);
+												}}>{result.name}</td
+											></tr
+										>
+									{/each}
+								</table>
+							{/if}
+						</div>
+
+						<div class="add-item">
+							<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
+							<label for="groupAdmin">Group Admin</label>
+						</div>
+						<div class="add-item">
+							<input
+								type="checkbox"
+								name="applicationAdmin"
+								bind:checked={selectedIsApplicationAdmin}
+							/>
+							<label for="applicationAdmin">Application Admin</label>
+						</div>
+						<div class="add-item">
+							<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+
+							<label for="topicAdmin">Topic Admin</label>
+						</div>
+						<div class="add-item">
+							<button
+								class:button={!invalidEmail}
+								style="margin-left: 1rem; width: 3.5rem"
+								disabled={invalidEmail || searchGroups === ''}
+								on:click={() => addGroupMembership()}><span>Add</span></button
+							>
+							<button
+								class="remove-button"
+								style="margin-left: 0.5rem"
+								on:click={() => {
+									emailValue = '';
+									addGroupMembershipVisible = false;
+								}}>x</button
+							>
+						</div>
+					</td>
 				</tr>
 			</table>
 			<br /><br />
@@ -547,7 +605,7 @@
 	}
 
 	.add-item {
-		display: inline;
+		display: inline-block;
 		padding-left: 1.6rem;
 	}
 
@@ -558,6 +616,28 @@
 	.remove-button:hover {
 		cursor: pointer;
 		background-color: lightgray;
+	}
+
+	.searchGroup {
+		font-size: 0.75rem;
+		width: 10rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin-left: 2.8rem;
+		margin-top: -0.1rem;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		text-align: left;
+		background-color: rgba(217, 221, 254, 0.4);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchGroup tr {
+		height: 1.9rem;
+	}
+
+	.searchGroup tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
 	}
 
 	label {
