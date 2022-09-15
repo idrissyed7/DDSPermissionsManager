@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
-@Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 public class AdminApiTest {
 
     private BlockingHttpClient blockingClient;
@@ -45,6 +44,9 @@ public class AdminApiTest {
 
     @Inject
     MockSecurityService mockSecurityService;
+
+    @Inject
+    MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
     DbCleanup dbCleanup;
@@ -61,6 +63,7 @@ public class AdminApiTest {
         void setup() {
             dbCleanup.cleanup();
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         // create
@@ -119,10 +122,10 @@ public class AdminApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
-        @Disabled
         void cannotAddAdmin(){
             loginAsNonAdmin();
             AdminDTO justin = new AdminDTO("jjones@foobar.com");
@@ -130,7 +133,7 @@ public class AdminApiTest {
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(UNAUTHORIZED, thrown.getStatus());
+            assertEquals(FORBIDDEN, thrown.getStatus());
         }
 
         // create
