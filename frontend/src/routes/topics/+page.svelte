@@ -8,8 +8,7 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
-	export const data = {};
-        export const errors = {};
+	export let data, errors;
 
 	// Authentication
 	let isTopicAdmin = false;
@@ -17,11 +16,10 @@
 	// Error Handling
 	let errorMsg, errorObject;
 
-	// Pagination
-	const topicsPerPage = 3;
-	let topicsPageIndex;
-	let topicsPages = [];
-	let currentPage = 0;
+	//Pagination
+	const topicsPerPage = 10;
+	let topicsTotalPages;
+	let topicsCurrentPage = 0;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -43,38 +41,17 @@
 
 	onMount(async () => {
 		try {
-			const topicsData = await httpAdapter.get(`/topics`);
-			topics.set(topicsData.data.content);
+			reloadAllTopics();
 
 			if ($permissionsByGroup) {
 				isTopicAdmin = $permissionsByGroup.some(
 					(groupPermission) => groupPermission.isTopicAdmin === true
 				);
 			}
-
-			if ($topics) {
-				// Pagination
-				let totalTopicsCount = 0;
-				topicsPageIndex = Math.floor(topicsData.data.content.length / topicsPerPage);
-				if (topicsData.data.content.length % topicsPerPage > 0) topicsPageIndex++;
-
-				// Populate the usersPage Array
-				for (let page = 0; page < topicsPageIndex; page++) {
-					let pageArray = [];
-					for (
-						let i = 0;
-						i < topicsPerPage && totalTopicsCount < topicsData.data.content.length;
-						i++
-					) {
-						pageArray.push(topicsData.data.content[page * topicsPerPage + i]);
-						totalTopicsCount++;
-					}
-					topicsPages.push(pageArray);
-				}
-			}
 		} catch (err) {
 			errorMessage('Error Loading Topics', err.message);
 		}
+
 		if ($urlparameters === 'create') {
 			if ($isAdmin || isTopicAdmin) {
 				addTopicVisible = true;
@@ -95,26 +72,6 @@
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
-	};
-
-	const calculatePagination = () => {
-		topicsPages = [];
-		let totalTopicsCount = 0;
-		topicsPageIndex = Math.floor($topics.length / topicsPerPage);
-		if ($topics.length % topicsPerPage > 0) topicsPageIndex++;
-
-		if (topicsPageIndex === currentPage) currentPage--;
-
-		// Populate the usersPage Array
-		let pageArray = [];
-		for (let page = 0; page < topicsPageIndex; page++) {
-			for (let i = 0; i < topicsPerPage && totalTopicsCount < $topics.length; i++) {
-				pageArray.push($topics[page * topicsPerPage + i]);
-				totalTopicsCount++;
-			}
-			topicsPages.push(pageArray);
-			pageArray = [];
-		}
 	};
 
 	const loadTopic = async (topicId) => {
@@ -144,7 +101,7 @@
 
 		returnToTopicsList();
 		await reloadAllTopics().then(() => {
-			if (currentPage === topicsPages.length) currentPage--;
+			if (currentPage === topicsTotalPages) currentPage--;
 		});
 	};
 
@@ -162,7 +119,7 @@
 			addTopicVisible = false;
 
 			await reloadAllTopics().then(() => {
-				currentPage = topicsPages.length - 1;
+				currentPage = topicsTotalPages - 1;
 			});
 		}
 	};
@@ -191,12 +148,11 @@
 		reloadAllTopics();
 	};
 
-	const reloadAllTopics = async () => {
+	const reloadAllTopics = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/topics`);
+			const res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
 			topics.set(res.data.content);
-
-			calculatePagination();
+			topicsTotalPages = res.data.totalPages;
 		} catch (err) {
 			errorMessage('Error Loading Topics', err.message);
 		}
@@ -273,13 +229,13 @@
 
 	<div class="content">
 		<h1>Topics</h1>
-		{#if topicsPages && topicsListVisible && !topicDetailVisible}
+		{#if $topics && topicsListVisible && !topicDetailVisible}
 			<table align="center">
-				{#if topicsPages.length > 0}
+				{#if $topics.length > 0}
 					<tr style="border-width: 0px">
 						<th><strong>Topic</strong></th>
 					</tr>
-					{#each topicsPages[currentPage] as topic}
+					{#each $topics as topic}
 						<tr>
 							<td
 								class="topic-td"
@@ -293,43 +249,51 @@
 				{/if}
 			</table>
 			<br /> <br />
+
 			{#if $topics}
 				<center
 					><button
-						on:click={() => {
-							if (currentPage > 0) currentPage--;
+						on:click={async () => {
+							if (topicsCurrentPage > 0) topicsCurrentPage--;
+							reloadAllTopics(topicsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={currentPage === 0}>Previous</button
+						disabled={topicsCurrentPage === 0}>Previous</button
 					>
-					{#if topicsPageIndex > 2}
-						{#each topicsPages as page, i}
+					{#if topicsTotalPages > 2}
+						{#each Array.apply(null, { length: topicsTotalPages }).map(Number.call, Number) as page}
 							<button
 								on:click={() => {
-									currentPage = i;
+									topicsCurrentPage = page;
+									reloadAllTopics(page);
 								}}
 								class="button-pagination"
-								class:button-pagination-selected={i === currentPage}>{i + 1}</button
+								class:button-pagination-selected={page === topicsCurrentPage}>{page + 1}</button
 							>
 						{/each}
 					{/if}
+
 					<button
-						on:click={() => {
-							if (currentPage < topicsPages.length) currentPage++;
+						on:click={async () => {
+							if (topicsCurrentPage + 1 < topicsTotalPages) topicsCurrentPage++;
+							reloadAllTopics(topicsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={currentPage === topicsPages.length - 1 || topicsPages.length === 0}
+						disabled={topicsCurrentPage === topicsTotalPages - 1 || topicsTotalPages === 0}
 						>Next</button
 					></center
 				>
 			{:else}
 				<center><p>No Topics Found</p></center>
 			{/if}
+
 			<br /><br />
+
 			<center> <button class="button" on:click={() => addTopicModal()}>Add Topic </button></center>
 		{/if}
+
 		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
 			<div class="name">
 				<span on:click={() => returnToTopicsList()}>&laquo;</span>
@@ -351,7 +315,9 @@
 					<span class="tooltiptext">&#9998</span>
 				</div>
 			</div>
+
 			<br /><br /><br />
+
 			<center>
 				<button
 					class="button-delete"
