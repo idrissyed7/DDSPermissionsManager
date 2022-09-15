@@ -1,6 +1,7 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -39,16 +40,10 @@ public class GroupController {
         this.groupUserService = groupUserService;
     }
 
-    @Get
+    @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<GroupResponseDTO> index(@Valid Pageable pageable) {
-        return groupService.findAll(pageable);
-    }
-
-    @Get("/search/{searchText}")
-    @ExecuteOn(TaskExecutors.IO)
-    public List<Group> search(@NonNull String searchText) {
-        return groupService.searchByNameContains(searchText);
+    public Page<GroupResponseDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+        return groupService.findAll(pageable, filter);
     }
 
     @Post("/save")
