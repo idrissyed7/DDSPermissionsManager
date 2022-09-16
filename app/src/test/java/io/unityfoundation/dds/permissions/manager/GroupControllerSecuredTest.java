@@ -28,7 +28,7 @@ class GroupControllerSecuredTest {
     @Test
     void groupControllerRequiresAuthentication() {
         BlockingHttpClient client = httpClient.toBlocking();
-        URI uri = UriBuilder.of("/groups").path("/search").path("foo").build();
+        URI uri = UriBuilder.of("/groups").path("?filter=").path("foo").build();
         Executable e = () -> client.exchange(HttpRequest.GET(uri));
         HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, e);
         assertEquals(HttpStatus.UNAUTHORIZED, thrown.getStatus());

@@ -41,8 +41,8 @@ public class GroupService {
         this.topicRepository = topicRepository;
     }
 
-    public Page<GroupResponseDTO> findAll(Pageable pageable) {
-        return getGroupPage(pageable).map(group -> {
+    public Page<GroupResponseDTO> findAll(Pageable pageable, String filter) {
+        return getGroupPage(pageable, filter).map(group -> {
             GroupResponseDTO groupsResponseDTO = new GroupResponseDTO();
             groupsResponseDTO.setGroupFields(group);
             groupsResponseDTO.setTopicCount(group.getTopics().size());
@@ -53,17 +53,26 @@ public class GroupService {
         });
     }
 
-    private Page<Group> getGroupPage(Pageable pageable) {
+    private Page<Group> getGroupPage(Pageable pageable, String filter) {
         if (!pageable.isSorted()) {
             pageable = pageable.order(Sort.Order.asc("name"));
         }
 
         if (securityUtil.isCurrentUserAdmin()) {
-            return groupRepository.findAll(pageable);
+            if (filter == null) {
+                return groupRepository.findAll(pageable);
+            }
+
+            return groupRepository.findAllByNameContainsIgnoreCase(filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
-            return groupRepository.findAllByIdIn(groupsList, pageable);
+
+            if (filter == null) {
+                return groupRepository.findAllByIdIn(groupsList, pageable);
+            }
+
+            return groupRepository.findAllByIdInAndNameContainsIgnoreCase(groupsList, filter, pageable);
         }
     }
 
@@ -147,9 +156,5 @@ public class GroupService {
         }
 
         return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
-    }
-
-    public List<Group> searchByNameContains(String searchText) {
-        return groupRepository.findTop10ByNameContainsIgnoreCase(searchText);
     }
 }

@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.context.annotation.Property;
 import io.micronaut.core.util.StringUtils;
+import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
@@ -166,30 +167,31 @@ public class GroupApiTest {
 
     @Test
     public void canSearch() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/ta");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() <= 10);
+        HttpRequest<?> request = HttpRequest.GET("/groups?filter=ta");
+        Page response = blockingClient.retrieve(request, Page.class);
+
+        assertEquals(2, response.getContent().size());
     }
 
     @Test
     public void canSearchCaseInsensitive() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/alpha");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertEquals(1,  response.size());
+        HttpRequest<?> request = HttpRequest.GET("/groups?filter=alpha");
+        Page response = blockingClient.retrieve(request, Page.class);
+        assertEquals(1,  response.getContent().size());
     }
 
     @Test
     public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() == 0);
+        HttpRequest<?> request = HttpRequest.GET("/groups?filter=foobarbaz");
+        Page response = blockingClient.retrieve(request, Page.class);
+        assertEquals(0, response.getContent().size());
     }
 
     @Test
     public void searchReturnsGroupIfExist() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/Alpha");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() == 1);
+        HttpRequest<?> request = HttpRequest.GET("/groups?filter=Alpha");
+        Page response = blockingClient.retrieve(request, Page.class);
+        assertEquals(1, response.getContent().size());
     }
 
     @Test
