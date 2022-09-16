@@ -8,49 +8,53 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.model.user.AdminDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import javax.validation.Valid;
 import java.net.URI;
 
-@Controller("/users")
-@Secured(SecurityRule.IS_AUTHENTICATED)
-@Tag(name = "user")
-public class UserController {
+@Controller("/admins")
+@Secured("ADMIN")
+@Tag(name = "admin")
+public class AdminController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public AdminController(UserService userService) {
         this.userService = userService;
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     @Get
+    @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
         return HttpResponse.ok(userService.findAll(pageable));
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     @Post("/save")
+    @ExecuteOn(TaskExecutors.IO)
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "303", description = "Returns result of /users")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminDTO.class))
+    )
     @ApiResponse(responseCode = "400", description = "Bad Request")
-    HttpResponse<?> save(@Body User user) {
+    HttpResponse<?> save(@Body AdminDTO adminDTO) {
         try {
-            userService.save(user);
+            return HttpResponse.ok(userService.save(adminDTO));
         } catch (Exception e) {
             return HttpResponse.badRequest(e.getMessage());
         }
-        return HttpResponse.seeOther(URI.create("/users/"));
     }
 
-    @ExecuteOn(TaskExecutors.IO)
     @Post("/delete/{id}")
-    @ApiResponse(responseCode = "303", description = "Returns result of /topics")
+    @ExecuteOn(TaskExecutors.IO)
+    @ApiResponse(responseCode = "303", description = "Returns result of /users")
     HttpResponse<?> delete(Long id) {
         userService.deleteById(id);
         return HttpResponse.seeOther(URI.create("/users"));

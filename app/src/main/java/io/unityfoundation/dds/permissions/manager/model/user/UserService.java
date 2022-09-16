@@ -55,18 +55,31 @@ public class UserService {
     }
 
     @Transactional
-    public void save(User user) throws Exception {
+    public User save(AdminDTO adminDTO) throws Exception {
 
-        if (user.getId() == null) {
-            Optional<User> userSearchByEmail = userRepository.findByEmail(user.getEmail());
+        if (adminDTO.getId() == null) {
+            Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
             if (userSearchByEmail.isPresent()) {
-                throw new Exception("User with same email already exists");
+                throw new Exception("User with same email already exists.");
             }
 
-            userRepository.save(user);
+            return userRepository.save(generateAdminFromDTO(adminDTO));
         } else {
-            userRepository.update(user);
+            Optional<User> existingUserOptional = userRepository.findById(adminDTO.getId());
+            if (existingUserOptional.isEmpty()) {
+                throw new Exception("User with given id does not exist.");
+            }
+
+            return userRepository.update(generateAdminFromDTO(adminDTO));
         }
+    }
+
+    private User generateAdminFromDTO(AdminDTO adminDTO) {
+        User user = new User();
+        user.setId(adminDTO.getId());
+        user.setEmail(adminDTO.getEmail());
+        user.setAdmin(true);
+        return user;
     }
 
     @Transactional
