@@ -40,7 +40,7 @@
 	let selectedGroupName;
 
 	// Pagination
-	const groupsPerPage = 3;
+	const groupsPerPage = 10;
 	let groupsTotalPages;
 	let groupsCurrentPage = 0;
 
@@ -49,10 +49,8 @@
 
 	// Search Feature
 	$: if (searchString?.trim().length >= 3) {
-		console.log('searching');
 		searchGroups(searchString.trim());
 	} else {
-		console.log('reloading all groups');
 		reloadAllGroups();
 	}
 
@@ -65,11 +63,9 @@
 	});
 
 	const searchGroups = async (searchStr) => {
-		console.log('$groups', $groups);
 		setTimeout(async () => {
-			const res = await httpAdapter.get(`/groups/search/${searchStr}`);
-			console.log('res.data', res.data);
-			if (res.data) groups.set(res.data);
+			const res = await httpAdapter.get(`/groups?page=0&size=10&filter=${searchStr}`);
+			if (res.data.content) groups.set(res.data.content);
 		}, 1000);
 	};
 
@@ -370,7 +366,17 @@
 					{/each}
 				{/if}
 			</table>
-			<br /> <br /><br />
+			<br />
+			<center>
+				<button
+					class:hidden={!$isAdmin}
+					class="button"
+					style="margin: 1rem 0 2rem 0"
+					on:click={() => addGroupModal()}
+					>Add Group
+				</button></center
+			>
+			<br />
 			{#if $groups}
 				<center
 					><button
@@ -406,12 +412,7 @@
 					></center
 				>
 			{/if}
-			<br /><br />
-			<center>
-				<button class:hidden={!$isAdmin} class="button" on:click={() => addGroupModal()}
-					>Add Group
-				</button></center
-			>
+			<!-- <br /><br /> -->
 		{:else}
 			<p><center>No Groups Found</center></p>
 		{/if}
