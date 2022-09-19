@@ -64,7 +64,7 @@
 
 	const searchGroups = async (searchStr) => {
 		setTimeout(async () => {
-			const res = await httpAdapter.get(`/groups?page=0&size=10&filter=${searchStr}`);
+			const res = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}&filter=${searchStr}`);
 			if (res.data.content) groups.set(res.data.content);
 		}, 1000);
 	};

@@ -27,6 +27,7 @@
 	let selectedIsGroupAdmin = false;
 	let selectedIsApplicationAdmin = false;
 	let selectedIsTopicAdmin = false;
+	let groupsDropdownSuggestion = 7;
 
 	// Group Permissions
 	let isGroupAdmin = false;
@@ -151,7 +152,9 @@
 
 	const searchGroup = async (searchString) => {
 		setTimeout(async () => {
-			searchGroupResults = await httpAdapter.get(`/groups?page=0&size=7&filter=${searchString}`);
+			searchGroupResults = await httpAdapter.get(
+				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchString}`
+			);
 		}, 1000);
 	};
 
