@@ -98,6 +98,7 @@ public class UserService {
         groupUserService.removeUserFromAllGroups(userId);
     }
 
+    @Transactional
     public boolean removeAdminPrivilegeById(Long id) {
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
@@ -109,10 +110,10 @@ public class UserService {
 
         if (user.isAdmin() && countByPermissionsUser == 0) {
             userRepository.delete(user);
+        } else {
+            user.setAdmin(false);
+            userRepository.update(user);
         }
-
-        user.setAdmin(false);
-        userRepository.update(user);
 
         return true;
     }
