@@ -3,6 +3,7 @@ package io.unityfoundation.dds.permissions.manager.model.user;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.micronaut.data.model.Sort;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
@@ -33,11 +34,11 @@ public class UserService {
     }
 
     public Page<User> findAll(Pageable pageable) {
-        if (securityUtil.isCurrentUserAdmin()) {
-            return userRepository.findAll(pageable);
+        if (!pageable.isSorted()) {
+            pageable = pageable.order(Sort.Order.asc("email"));
         }
-        List<Long> userIds = getIdsOfUsersWhoShareGroupsWithCurrentUser();
-        return userRepository.findAllByIdIn(userIds, pageable);
+
+        return userRepository.findByAdminTrue(pageable);
     }
 
     public List<Long> getIdsOfUsersWhoShareGroupsWithCurrentUser() {

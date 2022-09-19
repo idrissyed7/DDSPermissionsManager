@@ -32,8 +32,8 @@ public class AdminController {
 
     @Get
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(userService.findAll(pageable));
+    public Page<User> index(@Valid Pageable pageable) {
+        return userService.findAll(pageable);
     }
 
     @Post("/save")
