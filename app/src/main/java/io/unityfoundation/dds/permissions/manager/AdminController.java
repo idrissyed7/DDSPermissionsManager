@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -30,10 +31,10 @@ public class AdminController {
         this.userService = userService;
     }
 
-    @Get
+    @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<Page<User>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(userService.findAll(pageable));
+    public Page<User> index(@Valid Pageable pageable, @Nullable String filter) {
+        return userService.findAll(pageable, filter);
     }
 
     @Post("/save")

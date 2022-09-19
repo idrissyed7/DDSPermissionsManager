@@ -16,7 +16,7 @@ public class User {
     @Email
     private String email;
 
-    private boolean isAdmin = false;
+    private boolean admin = false;
 
     public User() {
     }
@@ -25,9 +25,9 @@ public class User {
         this.email = email;
     }
 
-    public User(@NonNull String email, @NonNull boolean isAdmin) {
+    public User(@NonNull String email, @NonNull boolean admin) {
         this.email = email;
-        this.isAdmin = isAdmin;
+        this.admin = admin;
     }
 
     public Long getId() {
@@ -48,10 +48,10 @@ public class User {
     }
 
     public boolean isAdmin() {
-        return isAdmin;
+        return admin;
     }
 
     public void setAdmin(boolean admin) {
-        isAdmin = admin;
+        this.admin = admin;
     }
 }
