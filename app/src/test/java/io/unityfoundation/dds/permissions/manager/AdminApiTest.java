@@ -157,7 +157,22 @@ public class AdminApiTest {
             List<String> groupNames = admins.stream().flatMap(map -> Stream.of((String) map.get("email"))).collect(Collectors.toList());
             assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
         }
+
         // delete
+        @Test
+        void canRemoveAdmin(){
+            AdminDTO justin = new AdminDTO("jjones@foobar.com");
+            HttpRequest<?> request = HttpRequest.POST("/admins/save", justin);
+            HttpResponse<?> response = blockingClient.exchange(request, AdminDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<User> jjones = response.getBody(User.class);
+            assertTrue(jjones.isPresent());
+
+            request = HttpRequest.GET("/admins/remove-admin/"+jjones.get().getId());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            assertTrue(userRepository.findById(jjones.get().getId()).isEmpty());
+        }
     }
 
     @Nested
@@ -202,7 +217,17 @@ public class AdminApiTest {
             });
             assertEquals(FORBIDDEN, thrown.getStatus());
         }
+
         // delete
+        @Test
+        void cannotRemoveAdmins(){
+            loginAsNonAdmin();
+            HttpRequest<?>request = HttpRequest.GET("/admins/remove-admin/1");
+            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(FORBIDDEN, thrown.getStatus());
+        }
     }
 
 

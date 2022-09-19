@@ -18,7 +18,6 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import javax.validation.Valid;
-import java.net.URI;
 
 @Controller("/admins")
 @Secured("ADMIN")
@@ -53,11 +52,13 @@ public class AdminController {
         }
     }
 
-    @Post("/delete/{id}")
+    @Get("/remove-admin/{id}")
     @ExecuteOn(TaskExecutors.IO)
-    @ApiResponse(responseCode = "303", description = "Returns result of /users")
-    HttpResponse<?> delete(Long id) {
-        userService.deleteById(id);
-        return HttpResponse.seeOther(URI.create("/users"));
+    @ApiResponse(responseCode = "404", description = "User cannot be found.")
+    HttpResponse<?> removeAdminPrivilege(Long id) {
+        if (!userService.removeAdminPrivilegeById(id)) {
+            return HttpResponse.notFound();
+        }
+        return HttpResponse.ok();
     }
 }

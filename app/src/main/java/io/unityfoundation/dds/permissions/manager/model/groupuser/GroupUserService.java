@@ -96,6 +96,10 @@ public class GroupUserService {
         return groupUserRepository.findAllByPermissionsGroupId(groupId);
     }
 
+    public int countMembershipsByUserId(Long id) {
+        return groupUserRepository.countByPermissionsUserId(id);
+    }
+
     public boolean isAdminOrGroupAdmin(Long groupId) {
         Optional<Group> group = groupRepository.findById(groupId);
         Optional<User> user = securityUtil.getCurrentlyAuthenticatedUser();
