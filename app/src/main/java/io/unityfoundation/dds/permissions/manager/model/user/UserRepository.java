@@ -10,6 +10,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends PageableRepository<User, Long> {
     Optional<User> findByEmail(String email);
-
     Page<User> findByAdminTrue(Pageable pageable);
+    Page<User> findByAdminTrueAndEmailContainsIgnoreCase(String email, Pageable pageable);
 }

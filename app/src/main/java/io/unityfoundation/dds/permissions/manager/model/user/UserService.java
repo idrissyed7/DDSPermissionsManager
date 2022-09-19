@@ -33,12 +33,16 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public Page<User> findAll(Pageable pageable) {
+    public Page<User> findAll(Pageable pageable, String filter) {
         if (!pageable.isSorted()) {
             pageable = pageable.order(Sort.Order.asc("email"));
         }
 
-        return userRepository.findByAdminTrue(pageable);
+        if (filter == null) {
+            return userRepository.findByAdminTrue(pageable);
+        }
+
+        return userRepository.findByAdminTrueAndEmailContainsIgnoreCase(filter, pageable);
     }
 
     public List<Long> getIdsOfUsersWhoShareGroupsWithCurrentUser() {

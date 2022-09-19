@@ -98,6 +98,25 @@ public class AdminApiTest {
 
         // update
         // list
+        @Test
+        public void shouldBeAbleToFilterByEmail() {
+
+            AdminDTO homer = new AdminDTO("hsimpson@foobar.com");
+            HttpRequest<?> request = HttpRequest.POST("/admins/save", homer);
+            HttpResponse<?> response = blockingClient.exchange(request, AdminDTO.class);
+            assertEquals(OK, response.getStatus());
+
+            AdminDTO bart = new AdminDTO("bsimpson@foobar.com");
+            request = HttpRequest.POST("/admins/save", bart);
+            response = blockingClient.exchange(request, AdminDTO.class);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/admins?filter=hsimpson");
+            Page<Map> responsePage = blockingClient.retrieve(request, Page.class);
+            List<Map> admins = responsePage.getContent();
+            assertEquals("hsimpson@foobar.com", admins.get(0).get("email"));
+            assertEquals(1, admins.size());
+        }
 
         @Test
         public void shouldSeeAdminsInAscendingOrderByDefault() {
