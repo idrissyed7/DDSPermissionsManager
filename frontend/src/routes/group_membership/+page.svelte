@@ -4,7 +4,6 @@
 	import { httpAdapter } from '../../appconfig';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupMembershipList from '../../stores/groupMembershipList';
-	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 
 	export let data, errors;
@@ -20,7 +19,7 @@
 	let searchGroups;
 	let searchGroupResults;
 	let searchGroupsResultsVisible = false;
-	let searchActive = true;
+	let searchGroupActive = true;
 
 	// Forms
 	let emailValue = '';
@@ -28,6 +27,7 @@
 	let selectedIsGroupAdmin = false;
 	let selectedIsApplicationAdmin = false;
 	let selectedIsTopicAdmin = false;
+	let groupsDropdownSuggestion = 7;
 
 	// Group Permissions
 	let isGroupAdmin = false;
@@ -55,14 +55,14 @@
 	}
 
 	// Search Groups Feature
-	$: if (searchGroups?.trim().length >= 3 && searchActive) {
+	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
 		searchGroup(searchGroups.trim());
 	} else {
 		searchGroupsResultsVisible = false;
 	}
 
 	// Search Groups Dropdown Visibility
-	$: if (searchGroupResults?.data?.length >= 1 && searchActive) {
+	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
 		searchGroupsResultsVisible = true;
 	} else {
 		searchGroupsResultsVisible = false;
@@ -152,7 +152,9 @@
 
 	const searchGroup = async (searchString) => {
 		setTimeout(async () => {
-			searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
+			searchGroupResults = await httpAdapter.get(
+				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchString}`
+			);
 		}, 1000);
 	};
 
@@ -251,7 +253,7 @@
 		selectedGroup = groupId;
 		searchGroups = groupName;
 		searchGroupsResultsVisible = false;
-		searchActive = false;
+		searchGroupActive = false;
 	};
 </script>
 
@@ -364,7 +366,7 @@
 		<h1>Group Membership</h1>
 		<center
 			><input
-				style="border-width: 1px;"
+				style="border-width: 1px; width: 20rem"
 				placeholder="Search"
 				bind:value={searchString}
 				on:blur={() => {
@@ -446,9 +448,10 @@
 		{#if $isAdmin || isGroupAdmin}
 			<center
 				><button
-					style="cursor:pointer"
+					class="button"
+					style="cursor:pointer; width: 10.5rem; margin: 1rem 0 2rem 0"
 					on:click={() => addGroupMembershipInput()}
-					class:hidden={addGroupMembershipVisible}>+</button
+					class:hidden={addGroupMembershipVisible}>Add Group Membership</button
 				></center
 			>
 			<br />
@@ -494,14 +497,16 @@
 								}}
 								on:click={async () => {
 									searchGroupResults = [];
-									searchActive = true;
-									searchGroupResults = await httpAdapter.get(`/groups/search/${searchString}`);
+									searchGroupActive = true;
+									if (searchGroups?.length >= 3) {
+										searchGroup(searchGroups);
+									}
 								}}
 							/>
 
 							{#if searchGroupsResultsVisible}
 								<table class="searchGroup">
-									{#each searchGroupResults.data as result}
+									{#each searchGroupResults.data.content as result}
 										<tr
 											><td
 												on:click={() => {
