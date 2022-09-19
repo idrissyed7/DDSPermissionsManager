@@ -106,9 +106,8 @@ public class UserService {
         }
 
         User user = userOptional.get();
-        int countByPermissionsUser = groupUserService.countMembershipsByUserId(user.getId());
 
-        if (user.isAdmin() && countByPermissionsUser == 0) {
+        if (user.isAdmin() && groupUserService.countMembershipsByUserId(id) == 0) {
             userRepository.delete(user);
         } else {
             user.setAdmin(false);
