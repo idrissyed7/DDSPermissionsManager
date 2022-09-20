@@ -97,4 +97,23 @@ public class UserService {
     public void removeUserFromGroups(Long userId) {
         groupUserService.removeUserFromAllGroups(userId);
     }
+
+    @Transactional
+    public boolean removeAdminPrivilegeById(Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+
+        User user = userOptional.get();
+
+        if (user.isAdmin() && groupUserService.countMembershipsByUserId(id) == 0) {
+            userRepository.delete(user);
+        } else {
+            user.setAdmin(false);
+            userRepository.update(user);
+        }
+
+        return true;
+    }
 }
