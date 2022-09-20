@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -32,9 +33,9 @@ public class TopicController {
     }
 
     @ExecuteOn(TaskExecutors.IO)
-    @Get
-    public HttpResponse<Page<Topic>> index(@Valid Pageable pageable) {
-        return HttpResponse.ok(topicService.findAll(pageable));
+    @Get("{?filter}")
+    public Page<Topic> index(@Valid Pageable pageable, @Nullable String filter) {
+        return topicService.findAll(pageable, filter);
     }
 
     @Get("kinds")
