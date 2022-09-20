@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/stores';
+	import { isAdmin } from '../../stores/authentication';
 
 	export let isAuthenticated;
 
@@ -18,9 +19,11 @@
 					<li class:active={$page.url.pathname === '/'}>
 						<a sveltekit:prefetch href="/">Home</a>
 					</li>
-					<li class:active={$page.url.pathname === '/users'}>
-						<a sveltekit:prefetch href="/users">Users</a>
-					</li>
+					{#if $isAdmin}
+						<li class:active={$page.url.pathname === '/superadmin'}>
+							<a sveltekit:prefetch href="/superadmin">Super Admin</a>
+						</li>
+					{/if}
 					<li class:active={$page.url.pathname === '/group_membership'}>
 						<a sveltekit:prefetch href="/group_membership">Group Membership</a>
 					</li>
