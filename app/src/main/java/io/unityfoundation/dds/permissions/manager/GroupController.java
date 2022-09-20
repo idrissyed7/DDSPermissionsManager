@@ -1,6 +1,5 @@
 package io.unityfoundation.dds.permissions.manager;
 
-import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -23,7 +22,6 @@ import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserServi
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 

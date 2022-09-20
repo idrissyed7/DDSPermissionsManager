@@ -3,11 +3,9 @@ package io.unityfoundation.dds.permissions.manager;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;
-import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
@@ -25,13 +23,11 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest

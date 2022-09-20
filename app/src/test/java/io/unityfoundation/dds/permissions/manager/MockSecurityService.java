@@ -8,7 +8,6 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import jakarta.inject.Singleton;
 
 import javax.annotation.PostConstruct;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
