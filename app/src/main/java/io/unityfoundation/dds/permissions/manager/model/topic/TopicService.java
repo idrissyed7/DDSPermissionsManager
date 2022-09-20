@@ -29,14 +29,22 @@ public class TopicService {
         this.groupRepository = groupRepository;
     }
 
-    public Page<Topic> findAll(Pageable pageable) {
+    public Page<Topic> findAll(Pageable pageable, String filter) {
 
         if (securityUtil.isCurrentUserAdmin()) {
-            return topicRepository.findAll(pageable);
+            if (filter == null) {
+                return topicRepository.findAll(pageable);
+            }
+            return topicRepository.findAllByTopicNameAndGroupNameContainsIgnoreCase(filter, filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
-            return topicRepository.findAllByPermissionsGroupIn(groups, pageable);
+
+            if (filter == null) {
+                return topicRepository.findAllByPermissionsGroupIn(groups, pageable);
+            }
+
+            return topicRepository.findAllByTopicNameAndGroupNameContainsIgnoreCaseAndGroupIdIn(filter, filter, groups, pageable);
         }
     }
 
