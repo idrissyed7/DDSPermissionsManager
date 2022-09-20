@@ -19,7 +19,9 @@
 	let searchGroups;
 	let searchGroupResults;
 	let searchGroupsResultsVisible = false;
-	let searchGroupActive = true;
+	let searchGroupActive = false;
+	let timer;
+	const waitTime = 500;
 
 	// Forms
 	let emailValue = '';
@@ -49,14 +51,21 @@
 
 	// Search Group Membership Feature
 	$: if (searchString?.trim().length >= 3) {
-		searchGroupMemberships(searchString.trim());
+		searchGroupActive = false;
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchGroupMemberships(searchString.trim());
+		}, waitTime);
 	} else {
 		reloadGroupMemberships();
 	}
 
 	// Search Groups Feature
 	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
-		searchGroup(searchGroups.trim());
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchGroup(searchGroups.trim());
+		}, waitTime);
 	} else {
 		searchGroupsResultsVisible = false;
 	}
@@ -144,16 +153,14 @@
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
-		setTimeout(async () => {
-			const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
-			if (res.data.content) createGroupMembershipList(res.data.content);
-		}, 1000);
+		const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
+		if (res.data.content) createGroupMembershipList(res.data.content);
 	};
 
-	const searchGroup = async (searchString) => {
+	const searchGroup = async (searchGroupStr) => {
 		setTimeout(async () => {
 			searchGroupResults = await httpAdapter.get(
-				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchString}`
+				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
 			);
 		}, 1000);
 	};
@@ -163,7 +170,7 @@
 	};
 
 	const addGroupMembership = async () => {
-		const res = await httpAdapter
+		await httpAdapter
 			.post(`/group_membership`, {
 				email: emailValue,
 				permissionsGroup: selectedGroup,

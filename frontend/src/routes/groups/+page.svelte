@@ -13,6 +13,8 @@
 
 	// Search
 	let searchString;
+	let timer;
+	const waitTime = 500;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -49,7 +51,10 @@
 
 	// Search Feature
 	$: if (searchString?.trim().length >= 3) {
-		searchGroups(searchString.trim());
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchGroups(searchString.trim());
+		}, waitTime);
 	} else {
 		reloadAllGroups();
 	}
@@ -63,10 +68,8 @@
 	});
 
 	const searchGroups = async (searchStr) => {
-		setTimeout(async () => {
-			const res = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}&filter=${searchStr}`);
-			if (res.data.content) groups.set(res.data.content);
-		}, 1000);
+		const res = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}&filter=${searchStr}`);
+		if (res.data.content) groups.set(res.data.content);
 	};
 
 	const errorMessage = (errMsg, errObj) => {
