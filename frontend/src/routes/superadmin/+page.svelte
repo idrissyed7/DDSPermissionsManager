@@ -7,8 +7,7 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
-	export const data = {};
-        export const errors = {};
+	export let data, errors;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -21,22 +20,38 @@
 	let confirmDeleteVisible = false;
 	let addUserVisible = false;
 
-	// Users
-	let userFirstName;
-	let userLastName;
+	// SearchBox
+	let searchString;
+	let searchUserResults;
+	let timer;
+	const waitTime = 500;
 
 	// Forms
 	let emailValue = '';
 
+	// Reactive Statements
+	$: if (emailValue.length > 10) invalidEmail = false;
+	$: if (addUserVisible === false) emailValue = '';
+	$: if (confirmDeleteVisible === true) addUserVisible = false;
+
 	// Selection
-	let selectedUserFirstName;
-	let selectedUserLastName;
 	let selectedUserId;
+	let selectedUserEmail;
 
 	// Pagination
 	const usersPerPage = 5;
 	let usersTotalPages;
 	let usersCurrentPage = 0;
+
+	// Search Feature
+	$: if (searchString?.trim().length >= 3) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchUser(searchString.trim());
+		}, waitTime);
+	} else {
+		reloadUsers();
+	}
 
 	onMount(async () => {
 		await reloadUsers();
@@ -59,56 +74,51 @@
 		errorMessageVisible = false;
 	};
 
+	const searchUser = async (searchString) => {
+		searchUserResults = await httpAdapter.get(
+			`/admins?page=0&size=${usersPerPage}&filter=${searchString}`
+		);
+		if (searchUserResults.data.content) users.set(searchUserResults.data.content);
+	};
+
 	const reloadUsers = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/users?page=${page}&size=${usersPerPage}`);
+			const res = await httpAdapter.get(`/admins?page=${page}&size=${usersPerPage}`);
 			users.set(res.data.content);
 			usersTotalPages = res.data.totalPages;
 		} catch (err) {
-			errorMessage('Error Loading Users', err.message);
+			errorMessage('Error Loading Super Admins', err.message);
 		}
 	};
 
 	const userDelete = async () => {
 		confirmDeleteVisible = false;
-		const res = await httpAdapter
-			.post(`/users/delete/${selectedUserId}`, {
-				firstName: userFirstName,
-				lastName: userLastName
-			})
-			.catch((err) => {
-				errorMessage('Error Deleting User', err.message);
-			});
+		const res = await httpAdapter.put(`/admins/remove-admin/${selectedUserId}`, {}).catch((err) => {
+			errorMessage('Error Deleting Super Admin', err.message);
+		});
 
 		selectedUserId = '';
-		selectedUserFirstName = '';
-		selectedUserLastName = '';
 
 		reloadUsers();
 	};
 
-	const confirmUserDelete = (ID, firstName, lastName) => {
+	const confirmUserDelete = (ID, email) => {
 		confirmDeleteVisible = true;
-
-		selectedUserFirstName = firstName;
-		selectedUserLastName = lastName;
 		selectedUserId = ID;
+		selectedUserEmail = email;
 	};
 
 	const addUserInput = () => {
 		addUserVisible = true;
 	};
 
-	const addUser = async () => {
-		const res = await httpAdapter
-			.post(`/users/save`, {
-				firstName: userFirstName,
-				lastName: userLastName,
-				email: userEmail,
-				isAdmin: false
+	const addUser = async (userEmail) => {
+		await httpAdapter
+			.post(`/admins/save`, {
+				email: userEmail
 			})
 			.catch((err) => {
-				errorMessage('Error Saving User', err.message);
+				errorMessage('Error Saving Super Admin', err.message);
 			});
 
 		addUserVisible = false;
@@ -116,14 +126,14 @@
 		reloadUsers();
 	};
 
-	const ValidateEmail = (input) => {
+	const validateEmail = (input) => {
 		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
 	};
 </script>
 
 <svelte:head>
-	<title>Users | DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager Users" />
+	<title>Super Admin | DDS Permissions Manager</title>
+	<meta name="description" content="DDS Permission Manager Super Admin" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -149,10 +159,7 @@
 	{/if}
 
 	{#if confirmDeleteVisible && !errorMessageVisible}
-		<Modal
-			title="Delete {selectedUserFirstName} {selectedUserLastName}?"
-			on:cancel={() => (confirmDeleteVisible = false)}
-		>
+		<Modal title="Delete {selectedUserEmail}?" on:cancel={() => (confirmDeleteVisible = false)}>
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
 				>&nbsp;
@@ -162,64 +169,96 @@
 	{/if}
 
 	<div class="content">
-		<h1>Users</h1>
-		<table align="center">
-			<tr style="border-width: 0px">
-				<th><strong>Email</strong></th>
-				<th><strong>Group</strong></th>
-				<th><strong>Role</strong></th>
-			</tr>
+		<h1>Super Admin</h1>
+
+		<center
+			><input
+				style="border-width: 1px; width: 20rem"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					const returnKey = 13;
+					if (event.which === returnKey) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;</center
+		>
+
+		<table align="center" style="margin-top: 2rem">
 			{#if $users && $users.length > 0}
+				<tr style="border-width: 0px">
+					<th><strong>Email</strong></th>
+					<th><strong>Role</strong></th>
+				</tr>
 				{#each $users as user}
 					<tr>
-						<td style="width: 25rem;">{user.email}</td>
-						<td>Group Name</td>
+						<td style="width: 23rem">{user.email}</td>
 						<td>Admin</td>
 						<td
-							><button
-								class="button-delete"
-								on:click={() => confirmUserDelete(user.id, user.firstName, user.lastName)}
+							><button class="button-delete" on:click={() => confirmUserDelete(user.id, user.email)}
 								><span>Delete</span></button
 							></td
 						>
 					</tr>
 				{/each}
 			{:else}
-				<p style="margin-left: 0.3rem">No Users Found</p>
+				<center><p style="margin-left: 0.3rem">No Super Admin Found</p></center>
 			{/if}
 		</table>
 		{#if addUserVisible}
-			<table>
+			<table align="center">
 				<tr>
-					<td style="width: 15rem"
-						><input
+					<td style="width: 23rem">
+						<input
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
-							style="display: inline-flex"
+							style="display: inline-flex; width:12rem"
 							bind:value={emailValue}
-							on:blur={() => ValidateEmail(emailValue)}
+							on:blur={() => validateEmail(emailValue)}
 							on:keydown={(event) => {
 								if (event.which === 13) {
-									ValidateEmail(emailValue);
+									validateEmail(emailValue);
 									document.querySelector('#name').blur();
 								}
 							}}
 						/>
+					</td>
+
+					<td>
+						<button
+							class="button"
+							style="width: 4rem;"
+							disabled={invalidEmail}
+							on:click={() => addUser(emailValue)}
+						>
+							<span>Add</span>
+						</button>
+						&nbsp;
 						<button
 							class="remove-button"
 							on:click={() => {
 								emailValue = '';
 								addUserVisible = false;
-							}}>x</button
-						></td
-					>
+							}}
+							>x
+						</button>
+					</td>
+					<td />
 				</tr>
 			</table>
 		{/if}
 		<br />
 		<center
-			><button style="cursor:pointer" on:click={() => addUserInput()} class:hidden={addUserVisible}
-				>+</button
+			><button
+				style="cursor: pointer; min-width: 8rem; margin: 1rem 0 2rem 0"
+				class="button"
+				on:click={() => addUserInput()}
+				class:hidden={addUserVisible}>Add Super Admin</button
 			></center
 		>
 
@@ -274,10 +313,5 @@
 		height: 1.7rem;
 		text-align: left;
 		font-size: small;
-		min-width: 12rem;
-	}
-
-	table {
-		width: 100%;
 	}
 </style>

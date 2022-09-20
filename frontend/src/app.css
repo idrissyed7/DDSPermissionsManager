@@ -188,6 +188,12 @@ button:disabled {
 	background-color: rgb(44, 58, 209);
 }
 
+.button:disabled:hover {
+	background-color: lightgrey;
+	cursor: default;
+
+}
+
 .button span {
 	cursor: pointer;
 	display: inline-block;
@@ -204,9 +210,25 @@ button:disabled {
 	transition: 0.5s;
 }
 
+.button:disabled span:after {
+	content: '';
+	cursor: default;
+	position: absolute;
+	opacity: 0;
+	top: 0;
+	right: 0px;
+}
+
 .button:hover span {
 	padding-right: 20px;
 }
+
+.button:disabled:hover span {
+	padding-right: 0px;
+	cursor: default;
+
+}
+
 
 .button:hover span:after {
 	opacity: 1;
