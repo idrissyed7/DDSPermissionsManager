@@ -52,7 +52,7 @@ public class AdminController {
         }
     }
 
-    @Get("/remove-admin/{id}")
+    @Put("/remove-admin/{id}")
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "404", description = "User cannot be found.")
     HttpResponse<?> removeAdminPrivilege(Long id) {

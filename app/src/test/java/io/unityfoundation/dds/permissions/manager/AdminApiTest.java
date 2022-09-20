@@ -168,7 +168,7 @@ public class AdminApiTest {
             Optional<User> jjones = response.getBody(User.class);
             assertTrue(jjones.isPresent());
 
-            request = HttpRequest.GET("/admins/remove-admin/"+jjones.get().getId());
+            request = HttpRequest.PUT("/admins/remove-admin/"+jjones.get().getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
             assertTrue(userRepository.findById(jjones.get().getId()).isEmpty());
