@@ -69,7 +69,11 @@
 
 	const searchGroups = async (searchStr) => {
 		const res = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}&filter=${searchStr}`);
-		if (res.data.content) groups.set(res.data.content);
+		if (res.data.content) {
+			groups.set(res.data.content);
+		} else {
+			groups.set([]);
+		}
 	};
 
 	const errorMessage = (errMsg, errObj) => {
@@ -326,24 +330,23 @@
 
 	<div class="content">
 		<h1>Groups</h1>
-		{#if $groups && groupsListVisible && !groupDetailVisible}
-			<center
-				><input
-					style="border-width: 1px;"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
+		<center
+			><input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === 13) {
+						document.activeElement.blur();
 						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							document.activeElement.blur();
-							searchString = searchString?.trim();
-						}
-					}}
-				/>&nbsp; &#x1F50E;</center
-			>
-
+					}
+				}}
+			/>&nbsp; &#x1F50E;</center
+		>
+		{#if $groups.length > 0 && groupsListVisible && !groupDetailVisible}
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>Group</strong></th>

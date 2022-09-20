@@ -78,7 +78,11 @@
 		searchUserResults = await httpAdapter.get(
 			`/admins?page=0&size=${usersPerPage}&filter=${searchString}`
 		);
-		if (searchUserResults.data.content) users.set(searchUserResults.data.content);
+		if (searchUserResults.data.content) {
+			users.set(searchUserResults.data.content);
+		} else {
+			users.set([]);
+		}
 	};
 
 	const reloadUsers = async (page = 0) => {
