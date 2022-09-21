@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicShowResponseDTO;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -58,6 +59,22 @@ public class TopicController {
         } catch (AuthenticationException ae) {
             return HttpResponse.unauthorized();
         } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
+    }
+
+    @Get("/show/{id}")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TopicShowResponseDTO.class))
+    )
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse show(Long id) {
+        try {
+            return topicService.show(id);
+        } catch (AuthenticationException authenticationException) {
+            return HttpResponse.unauthorized();
+        }  catch (Exception e) {
             return HttpResponse.badRequest(e.getMessage());
         }
     }
