@@ -84,10 +84,6 @@
 		} else {
 			topics.set([]);
 		}
-		console.log(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
-		console.log('res', res);
-		console.log(searchStr);
-		console.log('$topics', $topics);
 	};
 
 	const errorMessage = (errMsg, errObj) => {
