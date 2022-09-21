@@ -72,6 +72,10 @@ public class Bootstrap {
         groupUserRepository.save(betaDaniel);
 
         Topic topic1 = topicRepository.save(new Topic("Cakes", TopicKind.B, alphaGroup.getId()));
+
+        alphaGroup.addTopic(topic1);
+        groupRepository.update(alphaGroup);
+
         Topic topic2 = topicRepository.save(new Topic("Peaches", TopicKind.C, alphaGroup.getId()));
         Topic topic3 = topicRepository.save(new Topic("Cheese", TopicKind.C, alphaGroup.getId()));
         Topic topic4 = topicRepository.save(new Topic("Kombucha", TopicKind.B, alphaGroup.getId()));
