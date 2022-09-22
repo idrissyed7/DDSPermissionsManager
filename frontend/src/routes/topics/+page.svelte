@@ -10,6 +10,21 @@
 
 	export let data, errors;
 
+	// Search
+	let searchString;
+	let timer;
+	const waitTime = 500;
+
+	// Search Feature
+	$: if (searchString?.trim().length >= 3) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchTopics(searchString.trim());
+		}, waitTime);
+	} else {
+		reloadAllTopics();
+	}
+
 	// Authentication
 	let isTopicAdmin = false;
 
@@ -61,6 +76,15 @@
 			urlparameters.set([]);
 		}
 	});
+
+	const searchTopics = async (searchStr) => {
+		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
+		if (res.data.content) {
+			topics.set(res.data.content);
+		} else {
+			topics.set([]);
+		}
+	};
 
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -229,7 +253,25 @@
 
 	<div class="content">
 		<h1>Topics</h1>
-		{#if $topics && topicsListVisible && !topicDetailVisible}
+
+		<center>
+			<input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === 13) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;
+		</center>
+
+		{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 			<table align="center">
 				{#if $topics.length > 0}
 					<tr style="border-width: 0px">
