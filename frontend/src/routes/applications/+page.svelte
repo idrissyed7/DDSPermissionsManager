@@ -9,8 +9,7 @@
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
-	export const data = {};
-        export const errors = {};
+	export let data, errors;
 
 	// Authentication
 	let isApplicationAdmin = false;
@@ -258,7 +257,7 @@
 
 <svelte:head>
 	<title>Applications | DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager Applications" />
+	<meta name="description" content="DDS Permission Manager Applications" />
 </svelte:head>
 
 {#if $isAuthenticated}

@@ -234,7 +234,7 @@
 
 <svelte:head>
 	<title>Groups | DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager Groups" />
+	<meta name="description" content="DDS Permission Manager Groups" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -330,31 +330,33 @@
 
 	<div class="content">
 		<h1>Groups</h1>
-		<center
-			><input
-				style="border-width: 1px;"
-				placeholder="Search"
-				bind:value={searchString}
-				on:blur={() => {
-					searchString = searchString?.trim();
-				}}
-				on:keydown={(event) => {
-					if (event.which === 13) {
-						document.activeElement.blur();
+		{#if !groupDetailVisible}
+			<center
+				><input
+					style="border-width: 1px;"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
 						searchString = searchString?.trim();
-					}
-				}}
-			/>&nbsp; &#x1F50E;</center
-		>
-		{#if $groups.length > 0 && groupsListVisible && !groupDetailVisible}
-			<table align="center" style="margin-top: 2rem">
-				<tr style="border-width: 0px">
-					<th><strong>Group</strong></th>
-					<th><strong><center>Memberships:</center></strong></th>
-					<th><strong><center>Topics:</center></strong></th>
-					<th><strong><center>Applications:</center></strong></th>
-				</tr>
-				{#if $groups.length > 0}
+					}}
+					on:keydown={(event) => {
+						if (event.which === 13) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;</center
+			>
+		{/if}
+		{#if $groups}
+			{#if $groups.length > 0 && groupsListVisible && !groupDetailVisible}
+				<table align="center" style="margin-top: 2rem">
+					<tr style="border-width: 0px">
+						<th><strong>Group</strong></th>
+						<th><strong><center>Memberships:</center></strong></th>
+						<th><strong><center>Topics:</center></strong></th>
+						<th><strong><center>Applications:</center></strong></th>
+					</tr>
 					{#each $groups as group}
 						<tr>
 							<td
@@ -370,20 +372,18 @@
 							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
 						</tr>
 					{/each}
-				{/if}
-			</table>
-			<br />
-			<center>
-				<button
-					class:hidden={!$isAdmin}
-					class="button"
-					style="margin: 1rem 0 2rem 0"
-					on:click={() => addGroupModal()}
-					>Add Group
-				</button></center
-			>
-			<br />
-			{#if $groups}
+				</table>
+				<br />
+				<center>
+					<button
+						class:hidden={!$isAdmin}
+						class="button"
+						style="margin: 1rem 0 2rem 0"
+						on:click={() => addGroupModal()}
+						>Add Group
+					</button></center
+				>
+				<br />
 				<center
 					><button
 						on:click={async () => {
@@ -418,7 +418,6 @@
 					></center
 				>
 			{/if}
-			<!-- <br /><br /> -->
 		{:else}
 			<p><center>No Groups Found</center></p>
 		{/if}

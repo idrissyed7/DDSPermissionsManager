@@ -4,7 +4,6 @@
 	import { httpAdapter } from '../../appconfig';
 	import users from '../../stores/users';
 	import groups from '../../stores/groups';
-	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
 
 	export let data, errors;
@@ -55,8 +54,6 @@
 
 	onMount(async () => {
 		await reloadUsers();
-		console.log($users);
-		console.log($permissionsByGroup);
 
 		const groupsData = await httpAdapter.get(`/groups`);
 		groups.set(groupsData.data.content);

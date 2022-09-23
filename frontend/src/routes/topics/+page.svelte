@@ -43,6 +43,9 @@
 		try {
 			reloadAllTopics();
 
+			const res = await httpAdapter.get(`/token_info`);
+			permissionsByGroup.set(res.data.permissionsByGroup);
+
 			if ($permissionsByGroup) {
 				isTopicAdmin = $permissionsByGroup.some(
 					(groupPermission) => groupPermission.isTopicAdmin === true
@@ -171,7 +174,7 @@
 
 <svelte:head>
 	<title>Topics | DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager Topics" />
+	<meta name="description" content="DDS Permission Manager Topics" />
 </svelte:head>
 
 {#if $isAuthenticated}
