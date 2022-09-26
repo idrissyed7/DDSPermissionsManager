@@ -5,6 +5,7 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -58,6 +59,47 @@ public class TopicService {
         return HttpResponse.ok(topicRepository.save(topic));
     }
 
+    public void deleteById(Long id) throws Exception {
+        Optional<Topic> topic = topicRepository.findById(id);
+        if (topic.isEmpty()) {
+            throw new Exception("Topic not found");
+        }
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
+            throw new AuthenticationException("Not authorized");
+        }
+
+        topicRepository.deleteById(id);
+    }
+
+    public HttpResponse show(Long id) {
+        Optional<Topic> topicOptional = topicRepository.findById(id);
+        if (topicOptional.isEmpty()) {
+            return HttpResponse.notFound();
+        }
+
+        Topic topic = topicOptional.get();
+        TopicShowResponseDTO topicResponseDTO = new TopicShowResponseDTO(topic);
+
+        if (topic.getPermissionsGroup() != null) {
+            Optional<Group> groupOptional = groupRepository.findById(topic.getPermissionsGroup());
+            if (groupOptional.isPresent()) {
+                if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(groupOptional)) {
+                    throw new AuthenticationException("Not authorized");
+                }
+                topicResponseDTO.setGroupId(groupOptional.get().getId());
+                topicResponseDTO.setGroupName(groupOptional.get().getName());
+            }
+        }
+
+        return HttpResponse.ok(topicResponseDTO);
+    }
+
+    private boolean isMemberOfTopicGroup(Optional<Group> groupOptional) {
+        return groupUserService.isUserMemberOfGroup(
+                groupOptional.get().getId(),
+                securityUtil.getCurrentlyAuthenticatedUser().get().getId());
+    }
+
     private boolean isUserTopicAdminOfGroup(Topic topic) throws Exception {
         Long topicGroupId = topic.getPermissionsGroup();
         if (topicGroupId == null) {
@@ -70,17 +112,5 @@ public class TopicService {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             return groupUserService.isUserTopicAdminOfGroup(topicGroupId, user.getId());
         }
-    }
-
-    public void deleteById(Long id) throws Exception {
-        Optional<Topic> topic = topicRepository.findById(id);
-        if (topic.isEmpty()) {
-            throw new Exception("Topic not found");
-        }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
-            throw new AuthenticationException("Not authorized");
-        }
-
-        topicRepository.deleteById(id);
     }
 }
