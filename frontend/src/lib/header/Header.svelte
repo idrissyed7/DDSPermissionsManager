@@ -51,6 +51,7 @@
 			<ul>
 				<li class:active={$page.url.pathname === '/login'}>
 					<a
+                                                rel=external
 						href={isAuthenticated === true
 							? `${URL_PREFIX}/logout`
 							: `${URL_PREFIX}/oauth/login/google`}

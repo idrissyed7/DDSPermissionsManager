@@ -19,7 +19,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import javax.validation.Valid;
 
-@Controller("/admins")
+@Controller("/api/admins")
 @Secured("ADMIN")
 @Tag(name = "admin")
 public class AdminController {

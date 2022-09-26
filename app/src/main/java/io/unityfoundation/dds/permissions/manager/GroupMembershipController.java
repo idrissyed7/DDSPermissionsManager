@@ -21,7 +21,7 @@ import javax.validation.Valid;
 import java.util.Map;
 import java.util.Optional;
 
-@Controller("/group_membership")
+@Controller("/api/group_membership")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "group membership")
 public class GroupMembershipController {

@@ -25,7 +25,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
-@Controller("/groups")
+@Controller("/api/groups")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "group")
 public class GroupController {

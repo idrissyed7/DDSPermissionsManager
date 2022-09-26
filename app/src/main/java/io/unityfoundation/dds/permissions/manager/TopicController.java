@@ -22,7 +22,7 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 import javax.validation.Valid;
 import java.net.URI;
 
-@Controller("/topics")
+@Controller("/api/topics")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "topic")
 public class TopicController {

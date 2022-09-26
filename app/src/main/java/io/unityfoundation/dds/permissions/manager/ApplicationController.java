@@ -20,7 +20,7 @@ import io.unityfoundation.dds.permissions.manager.model.application.ApplicationS
 import javax.validation.Valid;
 import java.net.URI;
 
-@Controller("/applications")
+@Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "application")
 public class ApplicationController {
