@@ -40,9 +40,9 @@ public class ApplicationPermissionController {
         return AccessType.values();
     }
 
-    @Post("/{topic}/{application}/{access}")
+    @Post("/{applicationId}/{topicId}/{access}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AccessPermissionDTO> addAccess(Long topic, Long application, AccessType access) {
-        return applicationPermissionService.addAccess(application, topic, access);
+    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
+        return applicationPermissionService.addAccess(applicationId, topicId, access);
     }
 }
