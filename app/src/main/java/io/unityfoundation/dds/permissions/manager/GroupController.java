@@ -75,7 +75,7 @@ public class GroupController {
         } catch (AuthenticationException ae) {
             return HttpResponse.unauthorized();
         }
-        return HttpResponse.seeOther(URI.create("/groups"));
+        return HttpResponse.seeOther(URI.create("/api/groups"));
     }
 
     @Get("/{id}")
