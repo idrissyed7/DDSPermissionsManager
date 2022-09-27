@@ -75,6 +75,6 @@ public class TopicController {
         } catch (Exception e) {
             HttpResponse.badRequest(e.getMessage());
         }
-        return HttpResponse.seeOther(URI.create("/topics"));
+        return HttpResponse.seeOther(URI.create("/api/topics"));
     }
 }

@@ -82,6 +82,6 @@ public class ApplicationController {
             return HttpResponse.badRequest(e.getMessage());
         }
 
-        return HttpResponse.seeOther(URI.create("/applications"));
+        return HttpResponse.seeOther(URI.create("/api/applications"));
     }
 }

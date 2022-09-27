@@ -121,7 +121,7 @@ public class GroupController {
 
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeTopic(groupId, topicId)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
             }
         } else {
             return HttpResponse.unauthorized();
@@ -141,7 +141,7 @@ public class GroupController {
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             try {
                 if (groupService.addTopic(groupId, topicId)) {
-                    return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                    return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
                 }
             } catch (Exception e) {
                 return HttpResponse.badRequest(e.getMessage());
