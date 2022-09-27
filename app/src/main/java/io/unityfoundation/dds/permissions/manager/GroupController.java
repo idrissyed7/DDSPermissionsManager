@@ -25,7 +25,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
-@Controller("/groups")
+@Controller("/api/groups")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "group")
 public class GroupController {
@@ -75,7 +75,7 @@ public class GroupController {
         } catch (AuthenticationException ae) {
             return HttpResponse.unauthorized();
         }
-        return HttpResponse.seeOther(URI.create("/groups"));
+        return HttpResponse.seeOther(URI.create("/api/groups"));
     }
 
     @Get("/{id}")
@@ -121,7 +121,7 @@ public class GroupController {
 
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             if (groupService.removeTopic(groupId, topicId)) {
-                return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
             }
         } else {
             return HttpResponse.unauthorized();
@@ -141,7 +141,7 @@ public class GroupController {
         if (groupUserService.isAdminOrGroupAdmin(groupId)) {
             try {
                 if (groupService.addTopic(groupId, topicId)) {
-                    return HttpResponse.seeOther(URI.create("/groups/" + groupId));
+                    return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
                 }
             } catch (Exception e) {
                 return HttpResponse.badRequest(e.getMessage());

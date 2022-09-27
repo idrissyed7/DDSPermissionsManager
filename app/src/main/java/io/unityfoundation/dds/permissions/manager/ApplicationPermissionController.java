@@ -16,7 +16,7 @@ import io.unityfoundation.dds.permissions.manager.model.applicationpermission.Ap
 
 import javax.validation.Valid;
 
-@Controller("/application_permissions")
+@Controller("/api/application_permissions")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "application permissions")
 public class ApplicationPermissionController {

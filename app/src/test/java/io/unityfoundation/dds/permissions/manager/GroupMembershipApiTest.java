@@ -48,7 +48,7 @@ public class GroupMembershipApiTest {
     DbCleanup dbCleanup;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @BeforeEach

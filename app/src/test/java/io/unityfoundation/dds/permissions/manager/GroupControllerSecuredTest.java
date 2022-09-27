@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @MicronautTest
 class GroupControllerSecuredTest {
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient httpClient;
 
     @Test
