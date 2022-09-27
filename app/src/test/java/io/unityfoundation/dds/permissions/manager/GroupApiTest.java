@@ -36,7 +36,7 @@ public class GroupApiTest {
     private BlockingHttpClient blockingClient;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @Inject

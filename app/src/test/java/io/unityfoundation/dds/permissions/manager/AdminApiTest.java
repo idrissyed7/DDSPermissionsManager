@@ -31,7 +31,7 @@ public class AdminApiTest {
     private BlockingHttpClient blockingClient;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @Inject
