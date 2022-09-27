@@ -82,10 +82,10 @@ public class ApplicationPermissionService {
         return applicationPermissionRepository.save(applicationPermission);
     }
 
-    public AccessPermissionDTO createDTO(ApplicationPermission save) {
-        Long topicId = save.getPermissionsTopic().getId();
-        Long applicationid = save.getPermissionsApplication().getId();
-        AccessType accessType = save.getAccessType();
+    public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
+        Long topicId = applicationPermission.getPermissionsTopic().getId();
+        Long applicationid = applicationPermission.getPermissionsApplication().getId();
+        AccessType accessType = applicationPermission.getAccessType();
         return new AccessPermissionDTO(topicId, applicationid, accessType);
     }
 }
