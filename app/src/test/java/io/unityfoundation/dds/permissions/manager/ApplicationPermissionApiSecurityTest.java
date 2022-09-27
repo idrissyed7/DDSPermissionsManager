@@ -124,26 +124,26 @@ public class ApplicationPermissionApiSecurityTest {
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
         }
 
-        private void addReadWritePermission(Long applicationOneId, Long testTopicId) {
-            addPermission(applicationOneId, testTopicId, AccessType.READ_WRITE);
+        private void addReadWritePermission(Long applicationId, Long topicId) {
+            addPermission(applicationId, topicId, AccessType.READ_WRITE);
         }
 
-        private void addReadPermission(Long applicationOneId, Long testTopicId) {
-            addPermission(applicationOneId, testTopicId, AccessType.READ);
+        private void addReadPermission(Long applicationId, Long topicId) {
+            addPermission(applicationId, topicId, AccessType.READ);
         }
 
-        private void addPermission(Long applicationOneId, Long testTopicId, AccessType accessType) {
+        private void addPermission(Long applicationId, Long topicId, AccessType accessType) {
             HttpRequest<?> request;
             HashMap<String, Object> responseMap;
 
-            request = HttpRequest.POST("/application_permissions/" + applicationOneId + "/" + testTopicId + "/" + accessType.name(), Map.of());
+            request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
             responseMap = blockingClient.retrieve(request, HashMap.class);
 
             assertNotNull(responseMap);
 
             assertEquals(accessType.name(), responseMap.get("accessType"));
-            assertEquals(applicationOneId.intValue(), responseMap.get("applicationId"));
-            assertEquals(testTopicId.intValue(), responseMap.get("topicId"));
+            assertEquals(applicationId.intValue(), responseMap.get("applicationId"));
+            assertEquals(topicId.intValue(), responseMap.get("topicId"));
         }
     }
 }
