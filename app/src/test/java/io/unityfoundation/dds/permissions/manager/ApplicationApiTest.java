@@ -45,7 +45,7 @@ public class ApplicationApiTest {
     DbCleanup dbCleanup;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @BeforeEach

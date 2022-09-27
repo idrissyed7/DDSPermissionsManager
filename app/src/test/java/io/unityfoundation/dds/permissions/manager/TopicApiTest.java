@@ -37,7 +37,7 @@ public class TopicApiTest {
     private BlockingHttpClient blockingClient;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @Inject

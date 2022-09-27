@@ -65,4 +65,15 @@ tasks.withType(JavaCompile) {
     options.forkOptions.jvmArgs << '-Dmicronaut.openapi.views.spec=rapidoc.enabled=true,swagger-ui.enabled=true,swagger-ui.theme=flattop'
 }
 
+task copyClientResources(dependsOn: ':frontend:build') {
+    group = 'build'
+    description = 'Copy client resources into server'
+    copy {
+        from "${project(':frontend').projectDir}/build"
+        into "${project(':app').projectDir}/src/main/resources/public"
+    }
+}
 
+buildLayers {
+    dependsOn 'copyClientResources'
+}
