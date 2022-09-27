@@ -10,14 +10,8 @@ task run {
     dependsOn 'npm_run'
 }
 
-task copyPackage(type: Copy) {
-    dependsOn (['npm_install', 'npm_run_build'])
-    from 'build'
-    into '../app/src/main/resources/public'
-}
-
 task build {
-    dependsOn (['npm_install', 'npm_run_build', 'copyPackage'])
+    dependsOn (['npm_install', 'npm_run_build'])
 }
 
 npm_run_build {
