@@ -15,10 +15,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
-import io.unityfoundation.dds.permissions.manager.model.topic.TopicShowResponseDTO;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -35,7 +34,7 @@ public class TopicController {
 
     @ExecuteOn(TaskExecutors.IO)
     @Get("{?filter}")
-    public Page<Topic> index(@Valid Pageable pageable, @Nullable String filter) {
+    public Page<TopicDTO> index(@Valid Pageable pageable, @Nullable String filter) {
         return topicService.findAll(pageable, filter);
     }
 
@@ -48,12 +47,12 @@ public class TopicController {
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(
             responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Topic.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TopicDTO.class))
     )
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> save(@Body Topic topic) {
+    HttpResponse<?> save(@Body TopicDTO topic) {
         try {
             return topicService.save(topic);
         } catch (AuthenticationException ae) {
@@ -66,7 +65,7 @@ public class TopicController {
     @Get("/show/{id}")
     @ApiResponse(
             responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TopicShowResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TopicDTO.class))
     )
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse show(Long id) {

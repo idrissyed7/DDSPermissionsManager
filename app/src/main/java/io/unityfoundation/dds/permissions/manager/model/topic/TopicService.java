@@ -3,6 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpResponseFactory;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -30,33 +32,57 @@ public class TopicService {
         this.groupRepository = groupRepository;
     }
 
-    public Page<Topic> findAll(Pageable pageable, String filter) {
+    public Page<TopicDTO> findAll(Pageable pageable, String filter) {
+        return getTopicPage(pageable, filter).map(TopicDTO::new);
+    }
 
+    private Page<Topic> getTopicPage(Pageable pageable, String filter) {
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
                 return topicRepository.findAll(pageable);
             }
-            return topicRepository.findAllByTopicNameAndGroupNameContainsIgnoreCase(filter, filter, pageable);
+            return topicRepository.findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
 
             if (filter == null) {
-                return topicRepository.findAllByPermissionsGroupIn(groups, pageable);
+                return topicRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            return topicRepository.findAllByTopicNameAndGroupNameContainsIgnoreCaseAndGroupIdIn(filter, filter, groups, pageable);
+            return topicRepository.findAllByTopicNameOrGroupNameContainsIgnoreCaseAndGroupIdIn(filter, filter, groups, pageable);
         }
     }
 
-    public MutableHttpResponse<Topic> save(Topic topic) throws Exception {
-        if (topic.getId() != null) {
+    public MutableHttpResponse<?> save(TopicDTO topicDTO) throws Exception {
+        if (topicDTO.getId() != null) {
             throw new Exception("Update of Topics are not allowed.");
-        } else if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
+        } else if (topicDTO.getGroup() == null) {
+            throw new Exception("Topic must be associated to a group.");
+        }
+
+        Optional<Group> groupOptional = groupRepository.findById(topicDTO.getGroup());
+
+        if (groupOptional.isEmpty()) {
+            return HttpResponse.notFound("Specified group does not exist");
+        }
+
+        Topic topic = new Topic(topicDTO.getName(), topicDTO.getKind());
+        Group group = groupOptional.get();
+        topic.setPermissionsGroup(group);
+
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
             throw new AuthenticationException("Not authorized");
         }
 
-        return HttpResponse.ok(topicRepository.save(topic));
+        Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
+                topic.getName(), topic.getPermissionsGroup());
+
+        if (searchTopicByNameAndGroup.isPresent()) {
+            return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));
+        }
+
+        return HttpResponse.ok(new TopicDTO(topicRepository.save(topic)));
     }
 
     public void deleteById(Long id) throws Exception {
@@ -78,39 +104,20 @@ public class TopicService {
         }
 
         Topic topic = topicOptional.get();
-        TopicShowResponseDTO topicResponseDTO = new TopicShowResponseDTO(topic);
-
-        if (topic.getPermissionsGroup() != null) {
-            Optional<Group> groupOptional = groupRepository.findById(topic.getPermissionsGroup());
-            if (groupOptional.isPresent()) {
-                if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(groupOptional)) {
-                    throw new AuthenticationException("Not authorized");
-                }
-                topicResponseDTO.setGroupId(groupOptional.get().getId());
-                topicResponseDTO.setGroupName(groupOptional.get().getName());
-            }
+        TopicDTO topicResponseDTO = new TopicDTO(topic);
+        if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
+            throw new AuthenticationException("Not authorized");
         }
 
         return HttpResponse.ok(topicResponseDTO);
     }
 
-    private boolean isMemberOfTopicGroup(Optional<Group> groupOptional) {
-        return groupUserService.isUserMemberOfGroup(
-                groupOptional.get().getId(),
-                securityUtil.getCurrentlyAuthenticatedUser().get().getId());
+    private boolean isMemberOfTopicGroup(Group group) {
+        return groupUserService.isUserMemberOfGroup(group.getId(), securityUtil.getCurrentlyAuthenticatedUser().get().getId());
     }
 
-    private boolean isUserTopicAdminOfGroup(Topic topic) throws Exception {
-        Long topicGroupId = topic.getPermissionsGroup();
-        if (topicGroupId == null) {
-            return false;
-        } else {
-            if (groupRepository.findById(topicGroupId).isEmpty()) {
-                throw new Exception("Specified group does not exist.");
-            }
-
-            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-            return groupUserService.isUserTopicAdminOfGroup(topicGroupId, user.getId());
-        }
+    private boolean isUserTopicAdminOfGroup(Topic topic) {
+        User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+        return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
     }
 }

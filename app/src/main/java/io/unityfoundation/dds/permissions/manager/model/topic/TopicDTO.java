@@ -3,44 +3,55 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 import io.micronaut.core.annotation.Introspected;
 
 @Introspected
-public class TopicShowResponseDTO {
+public class TopicDTO {
+
     private Long id;
-
     private String name;
-
     private TopicKind kind;
-
-    private Long groupId;
-
+    private Long group;
     private String groupName;
 
-    public TopicShowResponseDTO() {
+    public TopicDTO() {
     }
 
-    public TopicShowResponseDTO(Topic topic) {
+    public TopicDTO(Topic topic) {
         this.id = topic.getId();
         this.name = topic.getName();
         this.kind = topic.getKind();
+        this.group = topic.getPermissionsGroup().getId();
+        this.groupName = topic.getPermissionsGroup().getName();
     }
 
     public Long getId() {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public TopicKind getKind() {
         return kind;
     }
 
-    public Long getGroupId() {
-        return groupId;
+    public void setKind(TopicKind kind) {
+        this.kind = kind;
     }
 
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+    public Long getGroup() {
+        return group;
+    }
+
+    public void setGroup(Long group) {
+        this.group = group;
     }
 
     public String getGroupName() {

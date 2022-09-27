@@ -7,44 +7,40 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.http.annotation.Body;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
-import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Singleton
 public class GroupService {
 
-    private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
-    private final TopicRepository topicRepository;
 
 
-    public GroupService(UserRepository userRepository, GroupRepository groupRepository, SecurityUtil securityUtil,
-                        GroupUserService groupUserService, TopicRepository topicRepository) {
-        this.userRepository = userRepository;
+    public GroupService(GroupRepository groupRepository, SecurityUtil securityUtil,
+                        GroupUserService groupUserService) {
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
-        this.topicRepository = topicRepository;
     }
 
-    public Page<GroupResponseDTO> findAll(Pageable pageable, String filter) {
+    public Page<GroupDTO> findAll(Pageable pageable, String filter) {
         return getGroupPage(pageable, filter).map(group -> {
-            GroupResponseDTO groupsResponseDTO = new GroupResponseDTO();
+            GroupDTO groupsResponseDTO = new GroupDTO();
             groupsResponseDTO.setGroupFields(group);
+            groupsResponseDTO.setTopics(group.getTopics().stream().map(Topic::getId).collect(Collectors.toSet()));
+            groupsResponseDTO.setApplications(group.getApplications().stream().map(Application::getId).collect(Collectors.toSet()));
             groupsResponseDTO.setTopicCount(group.getTopics().size());
             groupsResponseDTO.setApplicationCount(group.getApplications().size());
             groupsResponseDTO.setMembershipCount(groupUserService.getMembershipCountByGroup(group));
@@ -111,43 +107,6 @@ public class GroupService {
             return Optional.of(Map.of("group", group));
         }
         return Optional.empty();
-    }
-
-    @Transactional
-    public boolean addTopic(@Body Long groupId, @Body Long topicId) throws Exception {
-        Optional<Group> groupOptional = groupRepository.findById(groupId);
-        Optional<Topic> topicOptional = topicRepository.findById(topicId);
-        if (groupOptional.isEmpty() || topicOptional.isEmpty()) {
-            return false;
-        }
-
-        Group group = groupOptional.get();
-        Topic topic = topicOptional.get();
-
-        // if a topic in the group with the same name exists, throw an exception
-        boolean topicExistsInGroup = group.getTopics().stream().anyMatch(groupTopic -> groupTopic.getName().equals(topic.getName()));
-
-        if (topicExistsInGroup) {
-            throw new Exception("Topic " + topic.getName() + " already exists in Group " + group.getName() + ".");
-        }
-
-        topic.setPermissionsGroup(groupId);
-        topicRepository.update(topic);
-        group.addTopic(topic);
-        groupRepository.update(group);
-        return true;
-    }
-
-    @Transactional
-    public boolean removeTopic(Long groupId, Long topicId) {
-        Optional<Group> byId = groupRepository.findById(groupId);
-        if (byId.isEmpty()) {
-            return false;
-        }
-        Group group = byId.get();
-        group.removeTopic(topicId);
-        groupRepository.update(group);
-        return true;
     }
 
     public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
