@@ -100,13 +100,21 @@ public class ApplicationPermissionService {
             if (topicById.isEmpty()) {
                 response = HttpResponse.notFound();
             } else {
-                Optional<ApplicationPermission> permission = applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndAccessType(applicationId, topicId, access);
+                Topic topic = topicById.get();
 
-                if (permission.isPresent()) {
-                    applicationPermissionRepository.delete(permission.get());
-                    response = HttpResponse.noContent();
+                User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+                if (!groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup(), user.getId()) &&
+                        !securityUtil.isCurrentUserAdmin()) {
+                    response = HttpResponse.unauthorized();
                 } else {
-                    response = HttpResponse.notFound();
+                    Optional<ApplicationPermission> permission = applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndAccessType(applicationId, topicId, access);
+
+                    if (permission.isPresent()) {
+                        applicationPermissionRepository.delete(permission.get());
+                        response = HttpResponse.noContent();
+                    } else {
+                        response = HttpResponse.notFound();
+                    }
                 }
             }
         }
