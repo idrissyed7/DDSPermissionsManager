@@ -222,7 +222,7 @@ public class AdminApiTest {
         @Test
         void cannotRemoveAdmins(){
             loginAsNonAdmin();
-            HttpRequest<?>request = HttpRequest.GET("/admins/remove-admin/1");
+            HttpRequest<?>request = HttpRequest.POST("/admins/remove-admin/1", Map.of());
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
