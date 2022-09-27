@@ -24,6 +24,9 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -263,6 +266,143 @@ public class TopicApiTest {
             topicPage = response.getBody(Page.class);
             assertTrue(topicPage.isPresent());
             assertEquals(1, topicPage.get().getContent().size());
+        }
+
+        @Test
+        void canListAllTopicsNameInAscendingOrderByDefault(){
+            // Group - Topics
+            // ---
+            // Theta - Xyz789
+            // Zeta - Abc123 & Def456
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            Group zeta = new Group("Zeta");
+            request = HttpRequest.POST("/groups/save", zeta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> zetaOptional = response.getBody(Group.class);
+            assertTrue(zetaOptional.isPresent());
+            zeta = zetaOptional.get();
+
+            // create topics
+            TopicDTO abcDTO = new TopicDTO();
+            abcDTO.setName("Abc123");
+            abcDTO.setKind(TopicKind.B);
+            abcDTO.setGroup(zeta.getId());
+
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+
+            TopicDTO defDTO = new TopicDTO();
+            defDTO.setName("Def456");
+            defDTO.setKind(TopicKind.C);
+            defDTO.setGroup(zeta.getId());
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.POST("/topics/save", abcDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.POST("/topics/save", defDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/topics");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            List<Map> topics = topicPage.get().getContent();
+
+            List<String> groupNames = topics.stream()
+                    .flatMap(map -> Stream.of((String) map.get("groupName")))
+                    .collect(Collectors.toList());
+            assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
+
+            List<String> zetaTopics = topics.stream().filter(map -> {
+                String groupName = (String) map.get("groupName");
+                return groupName.equals("Zeta");
+            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
+            assertEquals(zetaTopics.stream().sorted().collect(Collectors.toList()), zetaTopics);
+        }
+
+        @Test
+        void canListAllTopicsNameInDescendingOrder(){
+            // Group - Topics
+            // ---
+            // Theta - Xyz789
+            // Zeta - Abc123 & Def456
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            Group zeta = new Group("Zeta");
+            request = HttpRequest.POST("/groups/save", zeta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> zetaOptional = response.getBody(Group.class);
+            assertTrue(zetaOptional.isPresent());
+            zeta = zetaOptional.get();
+
+            // create topics
+            TopicDTO abcDTO = new TopicDTO();
+            abcDTO.setName("Abc123");
+            abcDTO.setKind(TopicKind.B);
+            abcDTO.setGroup(zeta.getId());
+
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+
+            TopicDTO defDTO = new TopicDTO();
+            defDTO.setName("Def456");
+            defDTO.setKind(TopicKind.C);
+            defDTO.setGroup(zeta.getId());
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.POST("/topics/save", abcDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.POST("/topics/save", defDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/topics?sort=name,desc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            List<Map> topics = topicPage.get().getContent();
+
+            List<String> zetaTopics = topics.stream().filter(map -> {
+                String groupName = (String) map.get("groupName");
+                return groupName.equals("Zeta");
+            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
+            assertEquals(zetaTopics.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), zetaTopics);
         }
 
         //delete
