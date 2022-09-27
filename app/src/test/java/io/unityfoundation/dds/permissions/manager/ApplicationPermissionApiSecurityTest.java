@@ -1,6 +1,8 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.http.HttpRequest;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
@@ -86,7 +88,6 @@ public class ApplicationPermissionApiSecurityTest {
             Long applicationOneId = applicationOne.getId();
             Long testTopicId = testTopic.getId();
 
-
             addReadPermission(applicationOneId, testTopicId);
 
             HttpRequest<?> request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
@@ -106,6 +107,19 @@ public class ApplicationPermissionApiSecurityTest {
             content = (List<Map>) responseMap.get("content");
             assertEquals(2, content.size());
             assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
+            assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
+            assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
+
+            request = HttpRequest.DELETE("/application_permissions/" + applicationOneId + "/" + testTopicId + "/" + AccessType.READ.name());
+            HttpResponse<Object> response = blockingClient.exchange(request);
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatus());
+
+            request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
+            responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertFalse(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
             assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
         }

@@ -88,4 +88,29 @@ public class ApplicationPermissionService {
         AccessType accessType = applicationPermission.getAccessType();
         return new AccessPermissionDTO(topicId, applicationid, accessType);
     }
+
+    public HttpResponse<AccessPermissionDTO> removeAccess(Long applicationId, Long topicId, AccessType access) {
+        final HttpResponse response;
+
+        Optional<Application> applicationById = applicationService.findById(applicationId);
+        if (applicationById.isEmpty()) {
+            response = HttpResponse.notFound();
+        } else {
+            Optional<Topic> topicById = topicService.findById(topicId);
+            if (topicById.isEmpty()) {
+                response = HttpResponse.notFound();
+            } else {
+                Optional<ApplicationPermission> permission = applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndAccessType(applicationId, topicId, access);
+
+                if (permission.isPresent()) {
+                    applicationPermissionRepository.delete(permission.get());
+                    response = HttpResponse.noContent();
+                } else {
+                    response = HttpResponse.notFound();
+                }
+            }
+        }
+
+        return response;
+    }
 }
