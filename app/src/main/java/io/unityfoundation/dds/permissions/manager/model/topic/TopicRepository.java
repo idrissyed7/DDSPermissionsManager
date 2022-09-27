@@ -1,7 +1,6 @@
 package io.unityfoundation.dds.permissions.manager.model.topic;
 
 import io.micronaut.core.annotation.NonNull;
-import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -20,14 +19,9 @@ public interface TopicRepository extends PageableRepository<Topic, Long> {
 
     Page<Topic> findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group, Pageable pageable);
 
-    @Query(value = "select pt.* from permissions_topics as pt " +
-            "inner join permissions_group as pg on pt.permissions_group_id = pg.id " +
-            "where (pt.name ilike ('%'||:topic||'%') or pg.name ilike ('%'||:group||'%')) and pg.id in :groupIds",
-            countQuery = "select count(pt.*) from permissions_topics as pt "  +
-                    "inner join permissions_group as pg on pt.permissions_group_id = pg.id " +
-                    "where (pt.name ilike ('%'||:topic||'%') or pg.name ilike ('%'||:group||'%')) and pg.id in :groupIds",
-            nativeQuery = true )
-    Page<Topic> findAllByTopicNameOrGroupNameContainsIgnoreCaseAndGroupIdIn(String topic, String group, List<Long> groupIds, Pageable pageable);
+    List<Long> findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group);
+
+    Page<Topic> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
 
     Optional<Topic> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
                                                   @NotNull @NonNull Group group);

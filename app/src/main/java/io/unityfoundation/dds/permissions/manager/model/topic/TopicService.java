@@ -55,7 +55,9 @@ public class TopicService {
                 return topicRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            return topicRepository.findAllByTopicNameOrGroupNameContainsIgnoreCaseAndGroupIdIn(filter, filter, groups, pageable);
+            List<Long> all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            return topicRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
         }
     }
 
