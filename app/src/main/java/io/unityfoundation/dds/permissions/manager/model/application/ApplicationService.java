@@ -99,4 +99,8 @@ public class ApplicationService {
 
         return HttpResponse.ok(map);
     }
+
+    public Optional<Application> findById(Long applicationId) {
+        return applicationRepository.findById(applicationId);
+    }
 }

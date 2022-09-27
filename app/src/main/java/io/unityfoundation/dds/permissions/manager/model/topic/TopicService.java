@@ -113,4 +113,8 @@ public class TopicService {
             return groupUserService.isUserTopicAdminOfGroup(topicGroupId, user.getId());
         }
     }
+
+    public Optional<Topic> findById(Long topicId) {
+        return topicRepository.findById(topicId);
+    }
 }
