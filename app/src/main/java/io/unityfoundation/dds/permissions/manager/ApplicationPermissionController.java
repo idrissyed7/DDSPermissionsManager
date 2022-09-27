@@ -4,12 +4,15 @@ import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.annotation.*;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
@@ -35,5 +38,11 @@ public class ApplicationPermissionController {
     @Get("access_types")
     public AccessType[] getAccessTypes() {
         return AccessType.values();
+    }
+
+    @Post("/{topic}/{application}/{access}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<AccessPermissionDTO> addAccess(Long topic, Long application, AccessType access) {
+        return applicationPermissionService.addAccess(application, topic, access);
     }
 }
