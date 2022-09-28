@@ -105,13 +105,13 @@ public class ApplicationPermissionApiTest {
             userRepository.save(new User("jjones@test.test"));
 
             Group group = groupRepository.save(new Group("TestGroup"));
-            Topic topic = topicRepository.save(new Topic("TestTopic", TopicKind.B, group.getId()));
-            Application application = applicationRepository.save(new Application("ApplicationOne", group.getId()));
+            Topic topic = topicRepository.save(new Topic("TestTopic", TopicKind.B, group));
+            Application application = applicationRepository.save(new Application("ApplicationOne", group));
             applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
 
             Group group1 = groupRepository.save(new Group("TestGroup1"));
-            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, group1.getId()));
-            Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1.getId()));
+            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, group1));
+            Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
             applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
         }
 
@@ -139,7 +139,7 @@ public class ApplicationPermissionApiTest {
             loginAsNonAdmin();
 
             Group group = groupRepository.findByName("TestGroup").get();
-            Application application = applicationRepository.findByNameAndPermissionsGroup("ApplicationOne", group.getId()).get();
+            Application application = applicationRepository.findByNameAndPermissionsGroup("ApplicationOne", group).get();
 
             HttpRequest<?> request = HttpRequest.GET("/application_permissions?application="+application.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);

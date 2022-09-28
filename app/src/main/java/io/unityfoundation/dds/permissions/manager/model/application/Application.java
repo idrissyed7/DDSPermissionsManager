@@ -1,11 +1,12 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
 
 @Entity
-@Table(name = "permissions_applications")
+@Table(name = "permissions_application")
 public class Application {
 
     @Id
@@ -15,13 +16,18 @@ public class Application {
     @NonNull
     private String name;
 
-    @NonNull
-    private Long permissionsGroup;
+    @ManyToOne
+    @JoinColumn(name = "permissions_group_id", nullable = false)
+    private Group permissionsGroup;
 
     public Application() {
     }
 
-    public Application(@NonNull String name, @NonNull Long permissionsGroup) {
+    public Application(@NonNull String name) {
+        this.name = name;
+    }
+
+    public Application(@NonNull String name, @NonNull Group permissionsGroup) {
         this.name = name;
         this.permissionsGroup = permissionsGroup;
     }
@@ -43,11 +49,11 @@ public class Application {
         this.name = name;
     }
 
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(Long permissionsGroup) {
+    public void setPermissionsGroup(Group permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
     }
 }

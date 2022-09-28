@@ -14,7 +14,15 @@ public class ApplicationPermissionService {
         this.applicationPermissionRepository = applicationPermissionRepository;
     }
 
-    public Page<ApplicationPermission> findAll(Long applicationId, Long topicId, Pageable pageable) {
+    public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
+        return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
+                applicationPermission.getPermissionsTopic().getId(),
+                applicationPermission.getPermissionsApplication().getId(),
+                applicationPermission.getAccessType()
+        ));
+    }
+
+    private Page<ApplicationPermission> getApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
         if (applicationId == null && topicId == null) {
             return applicationPermissionRepository.findAll(pageable);
         } else if (applicationId != null && topicId == null)  {
