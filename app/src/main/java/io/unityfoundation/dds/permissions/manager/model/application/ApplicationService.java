@@ -111,8 +111,9 @@ public class ApplicationService {
         return HttpResponse.ok(applicationDTO);
     }
 
-    public List<ApplicationDTO> search(String filter, int max) {
-        Iterable<Application> results = applicationRepository.searchByApplicationNameAndGroupName(filter);
+    public List<ApplicationDTO> search(String filter, Pageable page) {
+        String valueForLikeClaus = String.format("%%%s%%", filter);
+        Page<Application> results = applicationRepository.searchByApplicationNameAndGroupName(valueForLikeClaus, page);
         return toDtos(results);
     }
 

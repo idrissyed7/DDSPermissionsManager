@@ -864,16 +864,24 @@ public class ApplicationApiTest {
     @Test
     public void testApplicationFilter() {
         HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Application");
-        List retrieve = blockingClient.retrieve(request, List.class);
-        assertEquals(2, retrieve.size());
+        List results = blockingClient.retrieve(request, List.class);
+        assertEquals(2, results.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Application&size=1");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(1, results.size());
 
         request = HttpRequest.GET("/applications/search?filter=Alpha");
-        retrieve = blockingClient.retrieve(request, List.class);
-        assertEquals(2, retrieve.size());
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(2, results.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Alpha&size=1");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(1, results.size());
 
         request = HttpRequest.GET("/applications/search?filter=Two");
-        retrieve = blockingClient.retrieve(request, List.class);
-        assertEquals(1, retrieve.size());
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(1, results.size());
     }
 
     private HttpResponse<?> createGroup(String groupName) {
