@@ -46,35 +46,37 @@ public class Bootstrap {
                 ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
             }
 
-            ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
-                String groupName = (String) groupMap.get("name");
-                Group group = groupRepository.save(new Group(groupName));
+            if(data.containsKey("groups")) {
+                ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
+                    String groupName = (String) groupMap.get("name");
+                    Group group = groupRepository.save(new Group(groupName));
 
-                if (groupMap.containsKey("users")) {
-                    List<String> users = (List<String>) groupMap.get("users");
-                    users.stream().forEach(email -> {
-                        groupUserRepository.save(new GroupUser(group, userRepository.findByEmail(email).get()));
-                    });
-                }
+                    if (groupMap.containsKey("users")) {
+                        List<String> users = (List<String>) groupMap.get("users");
+                        users.stream().forEach(email -> {
+                            groupUserRepository.save(new GroupUser(group, userRepository.findByEmail(email).get()));
+                        });
+                    }
 
-                if (groupMap.containsKey("topics")) {
-                    List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
-                    topics.stream().forEach(topicMap -> {
-                        String name = topicMap.get("name");
-                        TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
-                        group.addTopic(new Topic(name, kind));
-                    });
-                }
+                    if (groupMap.containsKey("topics")) {
+                        List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
+                        topics.stream().forEach(topicMap -> {
+                            String name = topicMap.get("name");
+                            TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
+                            group.addTopic(new Topic(name, kind));
+                        });
+                    }
 
-                if (groupMap.containsKey("applications")) {
-                    List<String> applications = (List<String>) groupMap.get("applications");
-                    applications.stream().forEach(applicationName -> {
-                        group.addApplication(new Application(applicationName, group.getId()));
-                    });
-                }
+                    if (groupMap.containsKey("applications")) {
+                        List<String> applications = (List<String>) groupMap.get("applications");
+                        applications.stream().forEach(applicationName -> {
+                            group.addApplication(new Application(applicationName, group.getId()));
+                        });
+                    }
 
-                groupRepository.update(group);
-            });
+                    groupRepository.update(group);
+                });
+            }
         }
     }
 
