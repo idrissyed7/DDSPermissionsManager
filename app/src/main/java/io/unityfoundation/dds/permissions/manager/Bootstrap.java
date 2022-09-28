@@ -72,10 +72,6 @@ public class Bootstrap {
         });
     }
 
-    public Map<String, Object> getData() {
-        return data;
-    }
-
     public void setData(Map<String, Object> data) {
         this.data = data;
     }
