@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest(environments = {"dev-data"})
+@MicronautTest(environments = {RunApplication.ENVIRONMENT_DEV_DATA})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 
 
