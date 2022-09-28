@@ -58,8 +58,8 @@ public class ApplicationPermissionService {
                 Topic topic = topicById.get();
 
                 User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-                if (!groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup(), user.getId()) &&
-                        !securityUtil.isCurrentUserAdmin()) {
+                if (!securityUtil.isCurrentUserAdmin() &&
+                        !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup(), user.getId())) {
                     response = HttpResponse.unauthorized();
                 } else {
                     Application application = applicationById.get();
