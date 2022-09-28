@@ -107,4 +107,8 @@ public class ApplicationService {
 
         return HttpResponse.ok(applicationDTO);
     }
+
+    public Iterable<Application> search(String filter, int max) {
+        return applicationRepository.searchByApplicationNameAndGroupName(filter);
+    }
 }
