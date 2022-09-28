@@ -32,9 +32,9 @@ public class DbCleanup {
     public void cleanup() {
         groupUserRepository.deleteAll();
         applicationPermissionRepository.deleteAll();
-        groupRepository.deleteAll();
         topicRepository.deleteAll();
         applicationRepository.deleteAll();
+        groupRepository.deleteAll();
         userRepository.deleteAll();
     }
 }

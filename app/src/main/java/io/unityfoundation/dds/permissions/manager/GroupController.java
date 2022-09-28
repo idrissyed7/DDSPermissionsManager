@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupResponseDTO;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
 import javax.validation.Valid;
@@ -40,7 +40,7 @@ public class GroupController {
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<GroupResponseDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+    public Page<GroupDTO> index(@Valid Pageable pageable, @Nullable String filter) {
         return groupService.findAll(pageable, filter);
     }
 
@@ -111,45 +111,4 @@ public class GroupController {
             return HttpResponse.unauthorized();
         }
     }
-
-    @Post("/remove_topic/{groupId}/{topicId}")
-    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
-    @ApiResponse(responseCode = "404", description = "Not Found - Topic or Group not found.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-    @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> removeTopic(Long groupId, Long topicId) {
-
-        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
-            if (groupService.removeTopic(groupId, topicId)) {
-                return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-
-        return HttpResponse.notFound();
-    }
-
-    @Post("/add_topic/{groupId}/{topicId}")
-    @ApiResponse(responseCode = "303", description = "Returns result of /groups")
-    @ApiResponse(responseCode = "400", description = "Bad Request - Topic already exists.")
-    @ApiResponse(responseCode = "404", description = "Not Found - Topic or Group not found.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-    @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> addTopic(Long groupId, Long topicId) {
-
-        if (groupUserService.isAdminOrGroupAdmin(groupId)) {
-            try {
-                if (groupService.addTopic(groupId, topicId)) {
-                    return HttpResponse.seeOther(URI.create("/api/groups/" + groupId));
-                }
-            } catch (Exception e) {
-                return HttpResponse.badRequest(e.getMessage());
-            }
-        } else {
-            return HttpResponse.unauthorized();
-        }
-        return HttpResponse.notFound();
-    }
-
 }

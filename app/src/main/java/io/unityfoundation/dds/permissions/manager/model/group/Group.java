@@ -4,8 +4,6 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -25,24 +23,10 @@ public class Group {
     @Column(unique = true)
     private String name;
 
-    @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_topics",
-            joinColumns=
-            @JoinColumn(name="group_id", referencedColumnName="id"),
-            inverseJoinColumns=
-            @JoinColumn(name="topic_id", referencedColumnName="id")
-    )
-    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
     private Set<Topic> topics = new HashSet<>();
 
-    @ManyToMany(targetEntity = Application.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_applications",
-            joinColumns=
-            @JoinColumn(name="group_id", referencedColumnName="id"),
-            inverseJoinColumns=
-            @JoinColumn(name="application_id", referencedColumnName="id")
-    )
-    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
     private Set<Application> applications = new HashSet<>();
 
     public Group() {

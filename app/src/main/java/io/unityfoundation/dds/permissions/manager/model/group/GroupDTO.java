@@ -1,28 +1,26 @@
 package io.unityfoundation.dds.permissions.manager.model.group;
 
-import io.unityfoundation.dds.permissions.manager.model.application.Application;
-import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.micronaut.core.annotation.Introspected;
 
 import java.util.Set;
 
-public class GroupResponseDTO {
+@Introspected
+public class GroupDTO {
 
     private Long id;
     private String name;
-    private Set<Topic> topics;
-    private Set<Application> applications;
+    private Set<Long> topics;
+    private Set<Long> applications;
     private int membershipCount;
     private int topicCount;
     private int applicationCount;
 
-    public GroupResponseDTO() {
+    public GroupDTO() {
     }
 
     public void setGroupFields(Group group) {
         this.id = group.getId();
         this.name = group.getName();
-        this.topics = group.getTopics();
-        this.applications = group.getApplications();
     }
 
     public Long getId() {
@@ -33,12 +31,20 @@ public class GroupResponseDTO {
         return name;
     }
 
-    public Set<Topic> getTopics() {
+    public Set<Long> getTopics() {
         return topics;
     }
 
-    public Set<Application> getApplications() {
+    public void setTopics(Set<Long> topics) {
+        this.topics = topics;
+    }
+
+    public Set<Long> getApplications() {
         return applications;
+    }
+
+    public void setApplications(Set<Long> applications) {
+        this.applications = applications;
     }
 
     public long getMembershipCount() {
