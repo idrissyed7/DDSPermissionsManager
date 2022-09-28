@@ -26,7 +26,7 @@ import java.util.*;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@MicronautTest(environments={RunApplication.ENVIRONMENT_DEV_DATA})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
@@ -859,6 +859,21 @@ public class ApplicationApiTest {
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
+    }
+
+    @Test
+    public void testApplicationFilter() {
+        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Application");
+        List retrieve = blockingClient.retrieve(request, List.class);
+        assertEquals(2, retrieve.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Alpha");
+        retrieve = blockingClient.retrieve(request, List.class);
+        assertEquals(2, retrieve.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Two");
+        retrieve = blockingClient.retrieve(request, List.class);
+        assertEquals(1, retrieve.size());
     }
 
     private HttpResponse<?> createGroup(String groupName) {
