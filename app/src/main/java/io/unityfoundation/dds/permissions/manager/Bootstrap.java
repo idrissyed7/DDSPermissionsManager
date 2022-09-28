@@ -44,8 +44,8 @@ public class Bootstrap {
         GroupUser alphaKevin = new GroupUser(alphaGroup, kevin);
         GroupUser alphaMax = new GroupUser(alphaGroup, max);
 
-        Topic topic = new Topic("TestTopic123", TopicKind.B, alphaGroup.getId());
-        Application application = new Application("TestApplication123", alphaGroup.getId());
+        Topic topic = new Topic("TestTopic123", TopicKind.B, alphaGroup);
+        Application application = new Application("TestApplication123", alphaGroup);
         alphaGroup.addTopic(topic);
         alphaGroup.addApplication(application);
         groupRepository.update(alphaGroup);

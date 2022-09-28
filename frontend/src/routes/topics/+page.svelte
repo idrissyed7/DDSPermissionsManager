@@ -51,8 +51,12 @@
 	let editTopicName;
 
 	// Selection
-	let selectedTopicId;
-	let selectedTopicName;
+	let selectedTopicId,
+		selectedTopicName,
+		selectedTopicKind,
+		selectedTopicGroupName,
+		selectedTopicGroupId;
+	let selectedTopicApplications = [];
 
 	onMount(async () => {
 		try {
@@ -95,7 +99,7 @@
 		errorMessageVisible = true;
 	};
 
-	const ErrorMessageClear = () => {
+	const errorMessageClear = () => {
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
@@ -105,11 +109,17 @@
 		topicsListVisible = false;
 		topicDetailVisible = true;
 		try {
-			const res = await httpAdapter.get(`/topics/${topicId}`);
-
+			const res = await httpAdapter.get(`/topics/show/${topicId}`);
 			topicDetails.set(res.data);
-			selectedTopicId = $topicDetails.group.id;
-			selectedTopicName = $topicDetails.group.name;
+
+			const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
+			selectedTopicApplications = resApps.data.content;
+
+			selectedTopicId = $topicDetails.id;
+			selectedTopicName = $topicDetails.name;
+			selectedTopicGroupName = $topicDetails.groupName;
+			selectedTopicGroupId = $topicDetails.groupId;
+			selectedTopicKind = $topicDetails.kind;
 		} catch (err) {
 			errorMessage('Error Loading Topic Details', err.message);
 		}
@@ -128,7 +138,7 @@
 
 		returnToTopicsList();
 		await reloadAllTopics().then(() => {
-			if (currentPage === topicsTotalPages) currentPage--;
+			if (topicsCurrentPage === topicsTotalPages) topicsCurrentPage--;
 		});
 	};
 
@@ -146,7 +156,7 @@
 			addTopicVisible = false;
 
 			await reloadAllTopics().then(() => {
-				currentPage = topicsTotalPages - 1;
+				topicsCurrentPage = topicsTotalPages - 1;
 			});
 		}
 	};
@@ -184,16 +194,6 @@
 			errorMessage('Error Loading Topics', err.message);
 		}
 	};
-
-	const reloadTopicDetails = async () => {
-		try {
-			const res = await httpAdapter.get(`/topics/${selectedTopicId}`);
-
-			topicDetails.set(res.data);
-		} catch (err) {
-			errorMessage('Error Loading Topic Details', err.message);
-		}
-	};
 </script>
 
 <svelte:head>
@@ -208,7 +208,7 @@
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
-				ErrorMessageClear();
+				errorMessageClear();
 			}}
 			><br /><br />
 			<div class="confirm">
@@ -216,7 +216,7 @@
 					class="button-delete"
 					on:click={() => {
 						errorMessageVisible = false;
-						ErrorMessageClear();
+						errorMessageClear();
 					}}>Ok</button
 				>
 			</div>
@@ -230,7 +230,7 @@
 		>
 			<div class="confirm">
 				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>
+				>&nbsp;
 				<button class="button-delete" on:click={() => deleteTopic()}><span>Delete</span></button>
 			</div>
 		</Modal>
@@ -256,46 +256,47 @@
 
 	<div class="content">
 		<h1>Topics</h1>
-
-		<center>
-			<input
-				style="border-width: 1px;"
-				placeholder="Search"
-				bind:value={searchString}
-				on:blur={() => {
-					searchString = searchString?.trim();
-				}}
-				on:keydown={(event) => {
-					if (event.which === 13) {
-						document.activeElement.blur();
+		{#if topicsListVisible && !topicDetailVisible}
+			<center>
+				<input
+					style="border-width: 1px;"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
 						searchString = searchString?.trim();
-					}
-				}}
-			/>&nbsp; &#x1F50E;
-		</center>
-
-		{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-			<table align="center">
-				{#if $topics.length > 0}
-					<tr style="border-width: 0px">
-						<th><strong>Topic</strong></th>
-					</tr>
-					{#each $topics as topic}
-						<tr>
-							<td
-								class="topic-td"
-								on:click={() => {
-									loadTopic(topic.id);
-									selectedTopicId = topic.id;
-								}}>{topic.name}</td
-							>
+					}}
+					on:keydown={(event) => {
+						if (event.which === 13) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;
+			</center>
+		{/if}
+		{#if $topics}
+			{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
+				<table align="center">
+					{#if $topics.length > 0}
+						<tr style="border-width: 0px">
+							<th><strong>Topic</strong></th>
 						</tr>
-					{/each}
-				{/if}
-			</table>
-			<br /> <br />
+						{#each $topics as topic}
+							<tr>
+								<td
+									style="line-height: 1.7rem;"
+									class="topic-td"
+									on:click={() => {
+										loadTopic(topic.id);
+										selectedTopicId = topic.id;
+									}}>{topic.name}</td
+								>
+							</tr>
+						{/each}
+					{/if}
+				</table>
+				<br /> <br />
 
-			{#if $topics}
 				<center
 					><button
 						on:click={async () => {
@@ -330,47 +331,86 @@
 						>Next</button
 					></center
 				>
-			{:else}
+			{:else if !topicDetailVisible}
 				<center><p>No Topics Found</p></center>
 			{/if}
 
-			<br /><br />
-
-			<center> <button class="button" on:click={() => addTopicModal()}>Add Topic </button></center>
+			{#if topicsListVisible && !topicDetailVisible}
+				<br /><br />
+				<center>
+					<button class="button" on:click={() => addTopicModal()}>Add Topic </button></center
+				>
+			{/if}
 		{/if}
 
 		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
-			<div class="name">
-				<span on:click={() => returnToTopicsList()}>&laquo;</span>
-				<div class="tooltip">
-					<input
-						id="name"
-						on:click={() => (editTopicName = true)}
-						on:blur={() => saveNewTopicName()}
-						on:keydown={(event) => {
-							if (event.which === 13) {
-								saveNewTopicName();
-								document.querySelector('#name').blur();
-							}
-						}}
-						bind:value={selectedTopicName}
-						readonly={!editTopicName}
-						class:name-as-label={!editTopicName}
-					/>
-					<span class="tooltiptext">&#9998</span>
-				</div>
-			</div>
+			<span
+				style="font-size: medium; margin-left: 9.5rem; cursor: pointer"
+				on:click={() => returnToTopicsList()}
+				>&laquo; &nbsp; Back
+			</span>
 
+			<table align="center" class="topics-details">
+				<tr>
+					<td>Name:</td>
+					<td>{selectedTopicName}</td>
+				</tr>
+				<tr>
+					<td>Group:</td>
+					<td>{selectedTopicGroupName}</td>
+				</tr>
+				<tr>
+					<td>Any application can read:</td>
+					<td
+						>{#if selectedTopicKind === 'B'}
+							Yes
+						{:else}
+							No
+						{/if}
+					</td>
+				</tr>
+				<tr>
+					<td>Applications:</td>
+					<td>
+						<table class="associated-apps">
+							{#if selectedTopicApplications}
+								{#each selectedTopicApplications as application}
+									<tr style="height:unset">
+										<td>{application.permissionsApplication.name}</td>
+										<td style="padding: 0 0.5rem 0 3rem">Access Type:</td>
+										<td>Read</td>
+										<td>
+											<input
+												type="checkbox"
+												style="width: 1rem"
+												checked={application.accessType === 'READ' ||
+													application.accessType === 'READ_WRITE'}
+											/>
+										</td>
+										<td style="padding-left: 0.7rem">Write</td><td>
+											<input
+												type="checkbox"
+												style="width: 1rem"
+												checked={application.accessType === 'WRITE' ||
+													application.accessType === 'READ_WRITE'}
+											/>
+										</td>
+									</tr>
+								{/each}
+							{/if}
+						</table>
+					</td>
+				</tr>
+			</table>
 			<br /><br /><br />
-
 			<center>
 				<button
 					class="button-delete"
-					style="width: 7.5rem"
+					style="width: 7.5rem; float: unset"
 					on:click={() => (confirmDeleteVisible = true)}
 					><span>Delete Topic</span>
-				</button></center
-			>
+				</button>
+			</center>
 		{/if}
 	</div>
 {:else}
@@ -378,12 +418,13 @@
 {/if}
 
 <style>
-	button {
-		margin-left: auto;
+	span {
+		position: relative;
+		left: 0;
 	}
 
-	tr {
-		line-height: 1.7rem;
+	button {
+		margin-left: auto;
 	}
 
 	input {
@@ -392,7 +433,29 @@
 		z-index: 1;
 	}
 
+	.topics-details {
+		margin-top: 2rem;
+		font-size: 12pt;
+		width: 40rem;
+	}
+
+	.topics-details tr {
+		height: 2.8rem;
+	}
+
 	.topic-td {
 		cursor: pointer;
+	}
+
+	.associated-apps tr {
+		border-width: 0px;
+	}
+
+	.associated-apps tr:nth-child(even) {
+		background-color: rgba(0, 0, 0, 0);
+	}
+
+	.associated-apps td {
+		font-size: 11pt;
 	}
 </style>

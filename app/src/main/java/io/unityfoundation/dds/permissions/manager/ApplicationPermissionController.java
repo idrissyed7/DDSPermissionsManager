@@ -15,7 +15,6 @@ import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 
 import javax.validation.Valid;
@@ -32,7 +31,7 @@ public class ApplicationPermissionController {
 
     @Get("{?application,topic")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<ApplicationPermission> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
+    public Page<AccessPermissionDTO> index(@Nullable Long application, @Nullable Long topic, @Valid Pageable pageable) {
         return applicationPermissionService.findAll(application, topic, pageable);
     }
 

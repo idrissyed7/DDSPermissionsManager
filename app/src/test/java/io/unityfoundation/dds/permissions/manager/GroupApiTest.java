@@ -160,9 +160,8 @@ public class GroupApiTest {
         long initialGroupCount = groupRepository.count();
 
         HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups = (List<Map>) responseMap.get("content");
-        assertEquals(initialGroupCount, groups.size());
+        Page page = blockingClient.retrieve(request, Page.class);
+        assertEquals(initialGroupCount, page.getContent().size());
     }
 
     @Test
