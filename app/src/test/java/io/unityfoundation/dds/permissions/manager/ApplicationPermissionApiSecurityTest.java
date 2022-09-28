@@ -79,8 +79,8 @@ public class ApplicationPermissionApiSecurityTest {
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
             testGroup = groupRepository.save(new Group("TestGroup"));
-            testTopic = topicRepository.save(new Topic("TestTopic", TopicKind.B, testGroup.getId()));
-            applicationOne = applicationRepository.save(new Application("ApplicationOne", testGroup.getId()));
+            testTopic = topicRepository.save(new Topic("TestTopic", TopicKind.B, testGroup));
+            applicationOne = applicationRepository.save(new Application("ApplicationOne", testGroup));
         }
 
         @Test

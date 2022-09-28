@@ -33,7 +33,7 @@ public class ApplicationPermissionService {
 
     public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
         return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
-                applicationPermission.getPermissionsTopic().getId(),
+                applicationPermission.getId(), applicationPermission.getPermissionsTopic().getId(),
                 applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getAccessType()
         ));
@@ -67,7 +67,7 @@ public class ApplicationPermissionService {
 
                 User user = securityUtil.getCurrentlyAuthenticatedUser().get();
                 if (!securityUtil.isCurrentUserAdmin() &&
-                        !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup(), user.getId())) {
+                        !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
                     response = HttpResponse.unauthorized();
                 } else {
                     Application application = applicationById.get();
@@ -94,7 +94,7 @@ public class ApplicationPermissionService {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
         Long applicationid = applicationPermission.getPermissionsApplication().getId();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(topicId, applicationid, accessType);
+        return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationid, accessType);
     }
 
     public void deleteById(Long permissionId) {
