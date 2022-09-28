@@ -21,7 +21,7 @@ public class RunApplication {
     public static class DefaultEnvironmentConfigurer implements ApplicationContextConfigurer {
         @Override
         public void configure(@NonNull ApplicationContextBuilder builder) {
-            builder.defaultEnvironments(Environment.DEVELOPMENT);
+            builder.defaultEnvironments(Environment.DEVELOPMENT, "dev-data");
         }
     }
     public static void main(String[] args) {

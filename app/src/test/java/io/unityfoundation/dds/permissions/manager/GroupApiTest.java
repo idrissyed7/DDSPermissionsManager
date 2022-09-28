@@ -28,22 +28,10 @@ import java.util.stream.Stream;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@MicronautTest(environments = {"dev-data"})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 
-@Property(name="bootstrap.data.admin-users[0]", value = "wilsonj@test.test")
-@Property(name="bootstrap.data.non-admin-users[0]", value = "kstanley@test.test")
-@Property(name="bootstrap.data.non-admin-users[1]", value = "montesm@test.test")
-@Property(name="bootstrap.data.non-admin-users[2]", value = "jeff@test.test")
-@Property(name="bootstrap.data.groups[0].name", value = "Alpha")
-@Property(name="bootstrap.data.groups[0].applications[0]", value = "App One")
-@Property(name="bootstrap.data.groups[0].topics[0].kind", value = "B")
-@Property(name="bootstrap.data.groups[0].topics[0].name", value = "Topic One")
-@Property(name="bootstrap.data.groups[0].users[0]", value = "wilsonj@test.test")
-@Property(name="bootstrap.data.groups[0].users[1]", value = "kstanley@test.test")
-@Property(name="bootstrap.data.groups[0].users[2]", value = "montesm@test.test")
-@Property(name="bootstrap.data.groups[1].name", value = "Beta")
-@Property(name="bootstrap.data.groups[2].name", value = "Delta")
+
 public class GroupApiTest {
 
     private BlockingHttpClient blockingClient;
@@ -238,13 +226,13 @@ public class GroupApiTest {
         Map alphaGroup = content.get(0);
         assertEquals("Alpha", alphaGroup.get("name"));
         assertEquals(3, alphaGroup.get("membershipCount"));
-        assertEquals(1, alphaGroup.get("topicCount"));
-        assertEquals(1, alphaGroup.get("applicationCount"));
+        assertEquals(2, alphaGroup.get("topicCount"));
+        assertEquals(2, alphaGroup.get("applicationCount"));
     }
 
     @Test
     public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+        HttpRequest<?> request = HttpRequest.GET("/groups/user/2");
         List responseList = blockingClient.retrieve(request, List.class);
         assertEquals(1, responseList.size());
     }
