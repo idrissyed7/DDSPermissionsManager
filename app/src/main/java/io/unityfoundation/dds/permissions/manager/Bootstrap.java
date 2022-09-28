@@ -63,14 +63,14 @@ public class Bootstrap {
                         topics.stream().forEach(topicMap -> {
                             String name = topicMap.get("name");
                             TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
-                            group.addTopic(new Topic(name, kind));
+                            group.addTopic(new Topic(name, kind, group));
                         });
                     }
 
                     if (groupMap.containsKey("applications")) {
                         List<String> applications = (List<String>) groupMap.get("applications");
                         applications.stream().forEach(applicationName -> {
-                            group.addApplication(new Application(applicationName, group.getId()));
+                            group.addApplication(new Application(applicationName, group));
                         });
                     }
 
