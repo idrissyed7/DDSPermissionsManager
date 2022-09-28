@@ -14,7 +14,10 @@ import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Singleton
 public class ApplicationService {
@@ -108,7 +111,14 @@ public class ApplicationService {
         return HttpResponse.ok(applicationDTO);
     }
 
-    public Iterable<Application> search(String filter, int max) {
-        return applicationRepository.searchByApplicationNameAndGroupName(filter);
+    public List<ApplicationDTO> search(String filter, int max) {
+        Iterable<Application> results = applicationRepository.searchByApplicationNameAndGroupName(filter);
+        return toDtos(results);
+    }
+
+    public List<ApplicationDTO> toDtos(Iterable<Application> results) {
+        return StreamSupport.stream(results.spliterator(), false)
+                .map(ApplicationDTO::new)
+                .collect(Collectors.toList());
     }
 }
