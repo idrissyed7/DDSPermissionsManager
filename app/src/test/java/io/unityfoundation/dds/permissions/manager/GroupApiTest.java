@@ -30,7 +30,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
-//@Property(name = "micronaut.security.enabled", value= StringUtils.FALSE)
+
+@Property(name="bootstrap.data.admin-users[0]", value = "wilsonj@test.test")
+@Property(name="bootstrap.data.non-admin-users[0]", value = "kstanley@test.test")
+@Property(name="bootstrap.data.non-admin-users[1]", value = "montesm@test.test")
+@Property(name="bootstrap.data.non-admin-users[2]", value = "jeff@test.test")
+@Property(name="bootstrap.data.groups[0].name", value = "Alpha")
+@Property(name="bootstrap.data.groups[0].applications[0]", value = "App One")
+@Property(name="bootstrap.data.groups[0].topics[0].kind", value = "B")
+@Property(name="bootstrap.data.groups[0].topics[0].name", value = "Topic One")
+@Property(name="bootstrap.data.groups[0].users[0]", value = "wilsonj@test.test")
+@Property(name="bootstrap.data.groups[0].users[1]", value = "kstanley@test.test")
+@Property(name="bootstrap.data.groups[0].users[2]", value = "montesm@test.test")
+@Property(name="bootstrap.data.groups[1].name", value = "Beta")
+@Property(name="bootstrap.data.groups[2].name", value = "Delta")
 public class GroupApiTest {
 
     private BlockingHttpClient blockingClient;

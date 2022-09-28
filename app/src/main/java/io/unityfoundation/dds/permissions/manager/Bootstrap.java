@@ -39,8 +39,12 @@ public class Bootstrap {
     @EventListener
     public void devData(ServerStartupEvent event) {
         if(data != null) {
-            ((List<String>) data.get("admin-users")).stream().forEach(email -> userRepository.save(new User(email, true)));
-            ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
+            if(data.containsKey("admin-users")) {
+                ((List<String>) data.get("admin-users")).stream().forEach(email -> userRepository.save(new User(email, true)));
+            }
+            if(data.containsKey("non-admin-users")) {
+                ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
+            }
 
             ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
                 String groupName = (String) groupMap.get("name");
