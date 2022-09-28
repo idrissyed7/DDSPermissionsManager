@@ -109,8 +109,9 @@ public class ApplicationPermissionApiSecurityTest {
             assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
             assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
+            int permissionId = (int) content.get(0).get("id");
 
-            request = HttpRequest.DELETE("/application_permissions/" + applicationOneId + "/" + testTopicId + "/" + AccessType.READ.name());
+            request = HttpRequest.DELETE("/application_permissions/" + permissionId);
             HttpResponse<Object> response = blockingClient.exchange(request);
             assertEquals(HttpStatus.NO_CONTENT, response.getStatus());
 

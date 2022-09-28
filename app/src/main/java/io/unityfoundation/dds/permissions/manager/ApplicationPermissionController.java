@@ -47,9 +47,10 @@ public class ApplicationPermissionController {
         return applicationPermissionService.addAccess(applicationId, topicId, access);
     }
 
-    @Delete("/{applicationId}/{topicId}/{access}")
+    @Delete("/{permissionId}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AccessPermissionDTO> removeAccess(Long applicationId, Long topicId, AccessType access) {
-        return applicationPermissionService.removeAccess(applicationId, topicId, access);
+    public HttpResponse removeAccess(Long permissionId) {
+        applicationPermissionService.deleteById(permissionId);
+        return HttpResponse.noContent();
     }
 }

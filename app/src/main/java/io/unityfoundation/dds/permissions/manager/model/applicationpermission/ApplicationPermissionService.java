@@ -89,36 +89,7 @@ public class ApplicationPermissionService {
         return new AccessPermissionDTO(topicId, applicationid, accessType);
     }
 
-    public HttpResponse<AccessPermissionDTO> removeAccess(Long applicationId, Long topicId, AccessType access) {
-        final HttpResponse response;
-
-        Optional<Application> applicationById = applicationService.findById(applicationId);
-        if (applicationById.isEmpty()) {
-            response = HttpResponse.notFound();
-        } else {
-            Optional<Topic> topicById = topicService.findById(topicId);
-            if (topicById.isEmpty()) {
-                response = HttpResponse.notFound();
-            } else {
-                Topic topic = topicById.get();
-
-                User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-                if (!groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup(), user.getId()) &&
-                        !securityUtil.isCurrentUserAdmin()) {
-                    response = HttpResponse.unauthorized();
-                } else {
-                    Optional<ApplicationPermission> permission = applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndAccessType(applicationId, topicId, access);
-
-                    if (permission.isPresent()) {
-                        applicationPermissionRepository.delete(permission.get());
-                        response = HttpResponse.noContent();
-                    } else {
-                        response = HttpResponse.notFound();
-                    }
-                }
-            }
-        }
-
-        return response;
+    public void deleteById(Long permissionId) {
+        applicationPermissionRepository.deleteById(permissionId);
     }
 }
