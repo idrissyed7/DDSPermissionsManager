@@ -1,0 +1,35 @@
+---
+bootstrap:
+  data:
+    admin-users:
+      - jeff@test.test
+      - wilsonj@test.test
+      - belloned@test.test
+      - jeff@unityfoundation
+    non-admin-users:
+      - kstanley@test.test
+      - montesm@test.test
+      - jgracia@test.test
+    groups:
+      -
+        name: Alpha
+        users:
+          - wilsonj@test.test
+          - kstanley@test.test
+          - montesm@test.test
+        topics:
+          -
+            name: Test Topic 123
+            kind: B
+          -
+            name: Test Topic 456
+            kind: B
+        applications:
+          - Application One
+          - Application Two
+      -
+        name: Beta
+      -
+        name: Gamma
+      -
+        name: Delta

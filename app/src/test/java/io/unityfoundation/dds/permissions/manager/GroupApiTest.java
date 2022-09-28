@@ -28,9 +28,10 @@ import java.util.stream.Stream;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@MicronautTest(environments = {RunApplication.ENVIRONMENT_DEV_DATA})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
-//@Property(name = "micronaut.security.enabled", value= StringUtils.FALSE)
+
+
 public class GroupApiTest {
 
     private BlockingHttpClient blockingClient;
@@ -224,13 +225,13 @@ public class GroupApiTest {
         Map alphaGroup = content.get(0);
         assertEquals("Alpha", alphaGroup.get("name"));
         assertEquals(3, alphaGroup.get("membershipCount"));
-        assertEquals(1, alphaGroup.get("topicCount"));
-        assertEquals(1, alphaGroup.get("applicationCount"));
+        assertEquals(2, alphaGroup.get("topicCount"));
+        assertEquals(2, alphaGroup.get("applicationCount"));
     }
 
     @Test
     public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
+        HttpRequest<?> request = HttpRequest.GET("/groups/user/2");
         List responseList = blockingClient.retrieve(request, List.class);
         assertEquals(1, responseList.size());
     }

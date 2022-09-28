@@ -17,11 +17,14 @@ import io.swagger.v3.oas.annotations.info.Info;
         )
 )
 public class RunApplication {
+
+    public static final String ENVIRONMENT_DEV_DATA = "dev-data";
+
     @ContextConfigurer
     public static class DefaultEnvironmentConfigurer implements ApplicationContextConfigurer {
         @Override
         public void configure(@NonNull ApplicationContextBuilder builder) {
-            builder.defaultEnvironments(Environment.DEVELOPMENT);
+            builder.defaultEnvironments(Environment.DEVELOPMENT, ENVIRONMENT_DEV_DATA);
         }
     }
     public static void main(String[] args) {

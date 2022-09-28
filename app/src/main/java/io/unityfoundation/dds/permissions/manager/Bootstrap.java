@@ -1,22 +1,29 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.convert.format.MapFormat;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
-import jakarta.inject.Singleton;
 
-@Requires(condition = DevOrTestCondition.class)
-@Singleton
+import java.util.List;
+import java.util.Map;
+
+@Requires(condition = DevDataCondition.class)
+@ConfigurationProperties("bootstrap")
 public class Bootstrap {
+
+    @MapFormat(transformation = MapFormat.MapTransformation.NESTED)
+    private Map<String, Object> data;
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
@@ -31,31 +38,49 @@ public class Bootstrap {
 
     @EventListener
     public void devData(ServerStartupEvent event) {
-        User justin = userRepository.save(new User("wilsonj@test.test", true));
-        User kevin = userRepository.save(new User("kstanley@test.test"));
-        User max = userRepository.save(new User("montesm@test.test"));
-        userRepository.save(new User("jeff@test.test"));
-        userRepository.save(new User("jgracia@test.test"));
-        userRepository.save(new User("belloned@test.test", true));
+        if(data != null) {
+            if(data.containsKey("admin-users")) {
+                ((List<String>) data.get("admin-users")).stream().forEach(email -> userRepository.save(new User(email, true)));
+            }
+            if(data.containsKey("non-admin-users")) {
+                ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
+            }
 
-        Group alphaGroup = groupRepository.save(new Group("Alpha"));
+            if(data.containsKey("groups")) {
+                ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
+                    String groupName = (String) groupMap.get("name");
+                    Group group = groupRepository.save(new Group(groupName));
 
-        GroupUser alphaJustin = new GroupUser(alphaGroup, justin);
-        GroupUser alphaKevin = new GroupUser(alphaGroup, kevin);
-        GroupUser alphaMax = new GroupUser(alphaGroup, max);
+                    if (groupMap.containsKey("users")) {
+                        List<String> users = (List<String>) groupMap.get("users");
+                        users.stream().forEach(email -> {
+                            groupUserRepository.save(new GroupUser(group, userRepository.findByEmail(email).get()));
+                        });
+                    }
 
-        Topic topic = new Topic("TestTopic123", TopicKind.B, alphaGroup);
-        Application application = new Application("TestApplication123", alphaGroup);
-        alphaGroup.addTopic(topic);
-        alphaGroup.addApplication(application);
-        groupRepository.update(alphaGroup);
+                    if (groupMap.containsKey("topics")) {
+                        List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
+                        topics.stream().forEach(topicMap -> {
+                            String name = topicMap.get("name");
+                            TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
+                            group.addTopic(new Topic(name, kind, group));
+                        });
+                    }
 
-        groupUserRepository.save(alphaJustin);
-        groupUserRepository.save(alphaKevin);
-        groupUserRepository.save(alphaMax);
+                    if (groupMap.containsKey("applications")) {
+                        List<String> applications = (List<String>) groupMap.get("applications");
+                        applications.stream().forEach(applicationName -> {
+                            group.addApplication(new Application(applicationName, group));
+                        });
+                    }
 
-        groupRepository.save(new Group("Beta"));
-        groupRepository.save(new Group("Gamma"));
-        groupRepository.save(new Group("Delta"));
+                    groupRepository.update(group);
+                });
+            }
+        }
+    }
+
+    public void setData(Map<String, Object> data) {
+        this.data = data;
     }
 }
