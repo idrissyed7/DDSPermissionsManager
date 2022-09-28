@@ -7,7 +7,7 @@ import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "permissions_topics")
+@Table(name = "permissions_topic")
 public class Topic {
 
     @Id
