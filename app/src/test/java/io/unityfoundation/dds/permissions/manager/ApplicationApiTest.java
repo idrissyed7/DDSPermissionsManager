@@ -26,7 +26,7 @@ import java.util.*;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest(environments={RunApplication.ENVIRONMENT_DEV_DATA})
+@MicronautTest(environments={"app-api-test-data"})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
@@ -863,23 +863,23 @@ public class ApplicationApiTest {
 
     @Test
     public void testApplicationFilter() {
-        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Application");
+        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
         List results = blockingClient.retrieve(request, List.class);
+        assertEquals(10, results.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Group&size=7");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(7, results.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Art");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(4, results.size());
+
+        request = HttpRequest.GET("/applications/search?filter=Art&size=2");
+        results = blockingClient.retrieve(request, List.class);
         assertEquals(2, results.size());
 
-        request = HttpRequest.GET("/applications/search?filter=Application&size=1");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(1, results.size());
-
-        request = HttpRequest.GET("/applications/search?filter=Alpha");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(2, results.size());
-
-        request = HttpRequest.GET("/applications/search?filter=Alpha&size=1");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(1, results.size());
-
-        request = HttpRequest.GET("/applications/search?filter=Two");
+        request = HttpRequest.GET("/applications/search?filter=Clay");
         results = blockingClient.retrieve(request, List.class);
         assertEquals(1, results.size());
     }
