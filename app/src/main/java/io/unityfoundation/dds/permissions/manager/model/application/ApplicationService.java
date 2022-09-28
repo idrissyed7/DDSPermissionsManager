@@ -107,4 +107,8 @@ public class ApplicationService {
 
         return HttpResponse.ok(applicationDTO);
     }
+
+    public Optional<Application> findById(Long applicationId) {
+        return applicationRepository.findById(applicationId);
+    }
 }

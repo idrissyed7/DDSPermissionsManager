@@ -127,4 +127,8 @@ public class TopicService {
         User user = securityUtil.getCurrentlyAuthenticatedUser().get();
         return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
     }
+
+    public Optional<Topic> findById(Long topicId) {
+        return topicRepository.findById(topicId);
+    }
 }
