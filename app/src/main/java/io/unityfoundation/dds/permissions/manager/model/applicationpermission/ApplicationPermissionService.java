@@ -42,9 +42,9 @@ public class ApplicationPermissionService {
     private Page<ApplicationPermission> getApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
         if (applicationId == null && topicId == null) {
             return applicationPermissionRepository.findAll(pageable);
-        } else if (applicationId != null && topicId == null)  {
+        } else if (applicationId != null && topicId == null) {
             return applicationPermissionRepository.findByPermissionsApplicationId(applicationId, pageable);
-        } else if (topicId != null && applicationId == null)  {
+        } else if (topicId != null && applicationId == null) {
             return applicationPermissionRepository.findByPermissionsTopicId(topicId, pageable);
         } else {
             return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicId(
@@ -99,20 +99,16 @@ public class ApplicationPermissionService {
 
     public HttpResponse deleteById(Long permissionId) {
 
-        if (!securityUtil.isCurrentUserAdmin()) {
-            return HttpResponse.unauthorized();
+        Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
+
+        if (applicationPermissionOptional.isEmpty()) {
+            return HttpResponse.notFound();
         } else {
-            Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
+            Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
 
-            if (applicationPermissionOptional.isEmpty()) {
-                return HttpResponse.notFound();
-            } else {
-                Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
-                User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-
-                if (!groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
-                    return HttpResponse.unauthorized();
-                }
+            if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
+                return HttpResponse.unauthorized();
             }
         }
 
