@@ -97,7 +97,26 @@ public class ApplicationPermissionService {
         return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationid, accessType);
     }
 
-    public void deleteById(Long permissionId) {
+    public HttpResponse deleteById(Long permissionId) {
+
+        if (!securityUtil.isCurrentUserAdmin()) {
+            return HttpResponse.unauthorized();
+        } else {
+            Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
+
+            if (applicationPermissionOptional.isEmpty()) {
+                return HttpResponse.notFound();
+            } else {
+                Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
+                User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+
+                if (!groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
+                    return HttpResponse.unauthorized();
+                }
+            }
+        }
+
         applicationPermissionRepository.deleteById(permissionId);
+        return HttpResponse.noContent();
     }
 }

@@ -49,7 +49,6 @@ public class ApplicationPermissionController {
     @Delete("/{permissionId}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse removeAccess(Long permissionId) {
-        applicationPermissionService.deleteById(permissionId);
-        return HttpResponse.noContent();
+        return applicationPermissionService.deleteById(permissionId);
     }
 }
