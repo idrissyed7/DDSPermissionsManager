@@ -7,8 +7,10 @@ public class AccessPermissionDTO {
     private final Long topicId;
     private final Long applicationId;
     private final AccessType accessType;
+    private final Long id;
 
-    public AccessPermissionDTO(Long topicId, Long applicationId, AccessType accessType) {
+    public AccessPermissionDTO(Long id, Long topicId, Long applicationId, AccessType accessType) {
+        this.id = id;
         this.topicId = topicId;
         this.applicationId = applicationId;
         this.accessType = accessType;
@@ -24,5 +26,9 @@ public class AccessPermissionDTO {
 
     public AccessType getAccessType() {
         return accessType;
+    }
+
+    public Long getId() {
+        return id;
     }
 }

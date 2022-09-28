@@ -3,7 +3,11 @@ package io.unityfoundation.dds.permissions.manager;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.micronaut.http.annotation.*;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
@@ -34,5 +38,17 @@ public class ApplicationPermissionController {
     @Get("access_types")
     public AccessType[] getAccessTypes() {
         return AccessType.values();
+    }
+
+    @Post("/{applicationId}/{topicId}/{access}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
+        return applicationPermissionService.addAccess(applicationId, topicId, access);
+    }
+
+    @Delete("/{permissionId}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse removeAccess(Long permissionId) {
+        return applicationPermissionService.deleteById(permissionId);
     }
 }

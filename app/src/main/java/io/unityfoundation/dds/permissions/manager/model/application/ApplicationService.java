@@ -122,4 +122,8 @@ public class ApplicationService {
                 .map(ApplicationDTO::new)
                 .collect(Collectors.toList());
     }
+    
+    public Optional<Application> findById(Long applicationId) {
+        return applicationRepository.findById(applicationId);
+    }
 }
