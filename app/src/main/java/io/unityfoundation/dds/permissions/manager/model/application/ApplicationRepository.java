@@ -17,7 +17,5 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
                                                         @NotNull @NonNull Group group);
 
-    @Query(value = "FROM Application a where a.name like :filter or a.permissionsGroup.name like :filter",
-    countQuery = "select count(*) FROM Application a where a.name like :filter or a.permissionsGroup.name like :filter")
-    Page<Application> searchByApplicationNameAndGroupName(String filter, Pageable page);
+    Page<Application> findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application,String group, Pageable page);
 }

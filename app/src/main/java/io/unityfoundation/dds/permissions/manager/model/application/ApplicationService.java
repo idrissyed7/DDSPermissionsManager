@@ -112,8 +112,7 @@ public class ApplicationService {
     }
 
     public List<ApplicationDTO> search(String filter, Pageable page) {
-        String valueForLikeClaus = String.format("%%%s%%", filter);
-        Page<Application> results = applicationRepository.searchByApplicationNameAndGroupName(valueForLikeClaus, page);
+        Page<Application> results = applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, page);
         return toDtos(results);
     }
 
