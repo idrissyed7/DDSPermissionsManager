@@ -35,6 +35,7 @@ micronaut:
     authentication: cookie
     oauth2:
       login-uri: "/api/oauth/login{/provider}"
+      callback-uri: "/api/oauth/callback{/provider}"
       clients:
         google:
           client-id: ***REMOVED***
