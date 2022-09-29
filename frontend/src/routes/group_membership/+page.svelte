@@ -16,6 +16,7 @@
 
 	// SearchBox
 	let searchString;
+	const searchStringLength = 3;
 	let searchGroups;
 	let searchGroupResults;
 	let searchGroupsResultsVisible = false;
@@ -50,7 +51,7 @@
 	let groupMembershipListArray = [];
 
 	// Search Group Membership Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		searchGroupActive = false;
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -58,7 +59,7 @@
 		}, waitTime);
 	}
 
-	$: if (searchString?.trim().length < 3) {
+	$: if (searchString?.trim().length < searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			reloadGroupMemberships();
@@ -66,7 +67,7 @@
 	}
 
 	// Search Groups Feature
-	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
+	$: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchGroup(searchGroups.trim());
@@ -126,7 +127,7 @@
 	const reloadGroupMemberships = async (page = 0) => {
 		try {
 			let res;
-			if (searchString && searchString.length >= 3) {
+			if (searchString && searchString.length >= searchStringLength) {
 				res = await httpAdapter.get(
 					`/group_membership?page=${page}&size=${groupMembershipsPerPage}&filter=${searchString}`
 				);
@@ -520,7 +521,7 @@
 								on:click={async () => {
 									searchGroupResults = [];
 									searchGroupActive = true;
-									if (searchGroups?.length >= 3) {
+									if (searchGroups?.length >= searchStringLength) {
 										searchGroup(searchGroups);
 									}
 								}}

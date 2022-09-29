@@ -21,6 +21,7 @@
 
 	// SearchBox
 	let searchString;
+	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
 	const waitTime = 500;
@@ -43,14 +44,14 @@
 	let usersCurrentPage = 0;
 
 	// Search Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchUser(searchString.trim());
 		}, waitTime);
 	}
 
-	$: if (searchString?.trim().length < 3) {
+	$: if (searchString?.trim().length < searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			reloadAllUsers();
@@ -92,7 +93,7 @@
 	const reloadAllUsers = async (page = 0) => {
 		try {
 			let res;
-			if (searchString && searchString.length >= 3) {
+			if (searchString && searchString.length >= searchStringLength) {
 				res = await httpAdapter.get(
 					`/admins?page=${page}&size=${usersPerPage}&filter=${searchString}`
 				);

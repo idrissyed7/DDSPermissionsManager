@@ -12,18 +12,19 @@
 
 	// Search
 	let searchString;
+	const searchStringLength = 3;
 	let timer;
 	const waitTime = 500;
 
 	// Search Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchTopics(searchString.trim());
 		}, waitTime);
 	}
 
-	$: if (searchString?.trim().length < 3) {
+	$: if (searchString?.trim().length < searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			reloadAllTopics();
@@ -195,7 +196,7 @@
 	const reloadAllTopics = async (page = 0) => {
 		try {
 			let res;
-			if (searchString && searchString.length >= 3) {
+			if (searchString && searchString.length >= searchStringLength) {
 				res = await httpAdapter.get(
 					`/topics?page=${page}&size=${topicsPerPage}&filter=${searchString}`
 				);
