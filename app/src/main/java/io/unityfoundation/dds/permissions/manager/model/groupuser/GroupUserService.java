@@ -32,8 +32,11 @@ public class GroupUserService {
         this.securityUtil = securityUtil;
     }
 
-    public Page<GroupUser> findAll(Pageable pageable, String filter) {
+    public Page<GroupUserResponseDTO> findAll(Pageable pageable, String filter) {
+        return getGroupMembers(pageable, filter).map(GroupUserResponseDTO::new);
+    }
 
+    private Page<GroupUser> getGroupMembers(Pageable pageable, String filter) {
         if(!pageable.isSorted()) {
             pageable = pageable.order("permissionsUser.email").order("permissionsGroup.name");
         }
@@ -123,20 +126,30 @@ public class GroupUserService {
             if (isUserMemberOfGroup(groupUserDTO.getPermissionsGroup(), userOptional.get().getId())) {
                 return HttpResponse.badRequest("Please use update endpoint");
             } else {
-                return HttpResponse.ok(saveFromDTO(userOptional.get(), groupUserDTO));
+                return HttpResponse.ok(new GroupUserResponseDTO(saveFromDTO(userOptional.get(), groupUserDTO)));
             }
         } else {
             User newUser = userRepository.save(new User(groupUserDTO.getEmail()));
-            return HttpResponse.ok(saveFromDTO(newUser, groupUserDTO));
+            return HttpResponse.ok(new GroupUserResponseDTO(saveFromDTO(newUser, groupUserDTO)));
         }
     }
 
     @Transactional
-    public MutableHttpResponse<?> updateMember(@Body GroupUser groupUser) {
+    public MutableHttpResponse<?> updateMember(@Body GroupUserDTO groupUser) {
         if (groupUser.getId() == null) {
             return HttpResponse.badRequest("Please use save endpoint instead");
         }
-        return HttpResponse.ok(groupUserRepository.update(groupUser));
+
+        if (!isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
+            return HttpResponse.unauthorized();
+        }
+
+        Optional<GroupUser> groupUserOptional = groupUserRepository.findById(groupUser.getId());
+        if (groupUserOptional.isEmpty()) {
+            return HttpResponse.notFound("Member not found");
+        }
+
+        return HttpResponse.ok(new GroupUserResponseDTO(updateFromDTO(groupUserOptional.get(), groupUser)));
     }
 
     private GroupUser saveFromDTO(User user, GroupUserDTO groupUserDTO) {
@@ -146,6 +159,13 @@ public class GroupUserService {
         groupUser.setApplicationAdmin(groupUserDTO.isApplicationAdmin());
 
         return groupUserRepository.save(groupUser);
+    }
+    private GroupUser updateFromDTO(GroupUser groupUser, GroupUserDTO groupUserDTO) {
+        groupUser.setGroupAdmin(groupUserDTO.isGroupAdmin());
+        groupUser.setTopicAdmin(groupUserDTO.isTopicAdmin());
+        groupUser.setApplicationAdmin(groupUserDTO.isApplicationAdmin());
+
+        return groupUserRepository.update(groupUser);
     }
 
     public boolean removeMember(Long id) {

@@ -13,8 +13,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 
 import javax.validation.Valid;
@@ -34,8 +36,8 @@ public class GroupMembershipController {
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<Page<GroupUser>> index(@Valid Pageable pageable, @Nullable String filter) {
-        return HttpResponse.ok(groupUserService.findAll(pageable, filter));
+    public Page<GroupUserResponseDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+        return groupUserService.findAll(pageable, filter);
     }
 
     @Post
@@ -57,13 +59,8 @@ public class GroupMembershipController {
 
     @Put
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse updateMember(@Body GroupUser groupUser) {
-
-        if (groupUserService.isAdminOrGroupAdmin(groupUser.getPermissionsGroup().getId())) {
-            return groupUserService.updateMember(groupUser);
-        } else {
-            return HttpResponse.unauthorized();
-        }
+    HttpResponse updateMember(@Body GroupUserDTO groupUser) {
+        return groupUserService.updateMember(groupUser);
     }
 
     @Delete
