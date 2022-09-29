@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -87,5 +88,11 @@ public class ApplicationController {
         }
 
         return HttpResponse.seeOther(URI.create("/api/applications"));
+    }
+
+    @Get("/search{?filter}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse search(@Nullable String filter, @Valid Pageable page) {
+        return HttpResponse.ok(applicationService.search(filter, page));
     }
 }

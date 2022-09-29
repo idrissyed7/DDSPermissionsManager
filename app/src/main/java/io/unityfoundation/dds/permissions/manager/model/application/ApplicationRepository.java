@@ -1,7 +1,10 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.model.Page;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
@@ -13,4 +16,6 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     @NonNull
     Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
                                                         @NotNull @NonNull Group group);
+
+    Page<Application> findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application,String group, Pageable page);
 }

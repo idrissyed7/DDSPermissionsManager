@@ -22,11 +22,12 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@MicronautTest(environments={"app-api-test-data"})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
@@ -859,6 +860,47 @@ public class ApplicationApiTest {
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
+    }
+
+    @Test
+    public void testApplicationFilter() {
+        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
+        List<Map> results = blockingClient.retrieve(request, List.class);
+
+        List<String> expectedApplicationNames = Arrays.asList("Go", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
+        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
+
+        request = HttpRequest.GET("/applications/search?filter=Group&size=7");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(7, results.size());
+        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
+
+        request = HttpRequest.GET("/applications/search?filter=Art");
+        results = blockingClient.retrieve(request, List.class);
+
+        expectedApplicationNames = Arrays.asList("Paint", "Clay", "Pencil", "Art");
+        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
+
+        request = HttpRequest.GET("/applications/search?filter=Art&size=2");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(2, results.size());
+        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
+
+        request = HttpRequest.GET("/applications/search?filter=Clay");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(1, results.size());
+        assertEquals("Clay", results.get(0).get("name"));
+    }
+
+    private void assertResultOnlyContainsExpectedApplicationNames(List<Map> results, List<String> expectedApplicationNames) {
+        assertTrue(results.stream().allMatch((m) -> expectedApplicationNames.contains(m.get("name"))));
+    }
+
+    private void assertResultContainsAllExpectedApplicationNames(List<String> expectedApplicationNames, List<Map> results) {
+        List<String> applicationNames = results.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
+
+        assertEquals(expectedApplicationNames.size(), applicationNames.size());
+        assertTrue(expectedApplicationNames.containsAll(applicationNames));
     }
 
     private HttpResponse<?> createGroup(String groupName) {

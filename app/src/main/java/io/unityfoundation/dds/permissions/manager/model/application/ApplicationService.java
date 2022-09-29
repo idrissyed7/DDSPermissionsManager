@@ -14,7 +14,10 @@ import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Singleton
 public class ApplicationService {
@@ -108,6 +111,17 @@ public class ApplicationService {
         return HttpResponse.ok(applicationDTO);
     }
 
+    public List<ApplicationDTO> search(String filter, Pageable page) {
+        Page<Application> results = applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, page);
+        return toDtos(results);
+    }
+
+    public List<ApplicationDTO> toDtos(Iterable<Application> results) {
+        return StreamSupport.stream(results.spliterator(), false)
+                .map(ApplicationDTO::new)
+                .collect(Collectors.toList());
+    }
+    
     public Optional<Application> findById(Long applicationId) {
         return applicationRepository.findById(applicationId);
     }

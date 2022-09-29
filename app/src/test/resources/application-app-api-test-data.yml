@@ -1,0 +1,28 @@
+---
+bootstrap:
+  data:
+    groups:
+      -
+        name: Technology Group
+        applications:
+          - Go
+          - Groovy
+          - Micronaut
+      -
+        name: Music Group
+        applications:
+          - Guitar
+          - Piano
+          - Drums
+      -
+        name: Art Group
+        applications:
+          - Paint
+          - Clay
+          - Pencil
+      -
+        name: College Degree
+        applications:
+          - Art
+          - Technology
+          - Group Psychology

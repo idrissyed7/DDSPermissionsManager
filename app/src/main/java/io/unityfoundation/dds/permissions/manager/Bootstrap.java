@@ -18,7 +18,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import java.util.List;
 import java.util.Map;
 
-@Requires(condition = DevDataCondition.class)
+@Requires(condition = DevOrTestCondition.class)
 @ConfigurationProperties("bootstrap")
 public class Bootstrap {
 
