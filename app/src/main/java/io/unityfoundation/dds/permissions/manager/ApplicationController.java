@@ -92,7 +92,7 @@ public class ApplicationController {
 
     @Get("/search{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse index(@Nullable String filter, @Valid Pageable page) {
+    public HttpResponse search(@Nullable String filter, @Valid Pageable page) {
         return HttpResponse.ok(applicationService.search(filter, page));
     }
 }
