@@ -32,7 +32,7 @@ public class AdminController {
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<User> index(@Valid Pageable pageable, @Nullable String filter) {
+    public Page<User> search(@Valid Pageable pageable, @Nullable String filter) {
         return userService.findAll(pageable, filter);
     }
 
