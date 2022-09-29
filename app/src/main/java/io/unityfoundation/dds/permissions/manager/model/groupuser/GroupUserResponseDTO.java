@@ -3,22 +3,26 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 import io.micronaut.core.annotation.Introspected;
 
 @Introspected
-public class GroupUserDTO {
+public class GroupUserResponseDTO {
 
     private Long id;
-    private String email;
+    private Long permissionsUser;
+    private String permissionsUserEmail;
     private long permissionsGroup;
+    private String permissionsGroupName;
     private boolean isGroupAdmin = false;
     private boolean isTopicAdmin = false;
     private boolean isApplicationAdmin = false;
 
-    public GroupUserDTO() {
+    public GroupUserResponseDTO() {
     }
 
-    public GroupUserDTO(GroupUser member) {
+    public GroupUserResponseDTO(GroupUser member) {
         this.id = member.getId();
-        this.email = member.getPermissionsUser().getEmail();
+        this.permissionsUser = member.getPermissionsUser().getId();
+        this.permissionsUserEmail = member.getPermissionsUser().getEmail();
         this.permissionsGroup = member.getPermissionsGroup().getId();
+        this.permissionsGroupName = member.getPermissionsGroup().getName();
         this.isGroupAdmin = member.isGroupAdmin();
         this.isTopicAdmin = member.isTopicAdmin();
         this.isApplicationAdmin = member.isApplicationAdmin();
@@ -32,12 +36,12 @@ public class GroupUserDTO {
         this.id = id;
     }
 
-    public String getEmail() {
-        return email;
+    public Long getPermissionsUser() {
+        return permissionsUser;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setPermissionsUser(Long permissionsUser) {
+        this.permissionsUser = permissionsUser;
     }
 
     public long getPermissionsGroup() {
@@ -70,5 +74,21 @@ public class GroupUserDTO {
 
     public void setApplicationAdmin(boolean applicationAdmin) {
         isApplicationAdmin = applicationAdmin;
+    }
+
+    public String getPermissionsUserEmail() {
+        return permissionsUserEmail;
+    }
+
+    public void setPermissionsUserEmail(String permissionsUserEmail) {
+        this.permissionsUserEmail = permissionsUserEmail;
+    }
+
+    public String getPermissionsGroupName() {
+        return permissionsGroupName;
+    }
+
+    public void setPermissionsGroupName(String permissionsGroupName) {
+        this.permissionsGroupName = permissionsGroupName;
     }
 }

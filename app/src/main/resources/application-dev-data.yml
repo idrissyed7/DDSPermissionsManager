@@ -6,9 +6,9 @@ bootstrap:
       - wilsonj@test.test
       - belloned@test.test
       - jeff@unityfoundation
+      - montesm@test.test
     non-admin-users:
       - kstanley@test.test
-      - montesm@test.test
       - jgracia@test.test
     groups:
       -

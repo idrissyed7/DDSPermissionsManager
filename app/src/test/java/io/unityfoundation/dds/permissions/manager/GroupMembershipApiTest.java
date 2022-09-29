@@ -15,6 +15,7 @@ import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
@@ -267,12 +268,10 @@ public class GroupMembershipApiTest {
         void assertExpectedEmailAndGroupName(List content, int index, String expectedEmail, String expectedGroup) {
             Map membership = (Map) content.get(index);
 
-            Map permissionsUser = (Map) membership.get("permissionsUser");
-            String email = (String) permissionsUser.get("email");
+            String email = (String) membership.get("permissionsUserEmail");
             assertEquals(expectedEmail, email);
 
-            Map permissionsGroup = (Map) membership.get("permissionsGroup");
-            String groupName = (String) permissionsGroup.get("name");
+            String groupName = (String) membership.get("permissionsGroupName");
             assertEquals(expectedGroup, groupName);
         }
 
@@ -361,16 +360,16 @@ public class GroupMembershipApiTest {
             dto.setPermissionsGroup(primaryGroup.getId());
             dto.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             groupUser.setGroupAdmin(true);
             groupUser.setTopicAdmin(true);
             request = HttpRequest.PUT("/group_membership", groupUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            groupUser = response.getBody(GroupUser.class).get();
+            groupUser = response.getBody(GroupUserResponseDTO.class).get();
             assertTrue(groupUser.isGroupAdmin());
             assertTrue(groupUser.isTopicAdmin());
         }
@@ -409,9 +408,9 @@ public class GroupMembershipApiTest {
             dto.setPermissionsGroup(primaryGroup.getId());
             dto.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             // delete
             request = HttpRequest.DELETE("/group_membership", Map.of("id", groupUser.getId()));
@@ -467,9 +466,9 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
         }
 
         @Test
@@ -539,29 +538,29 @@ public class GroupMembershipApiTest {
             // create group
             Group primaryGroup = new Group("PrimaryGroup");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpResponse<?> response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            GroupUserResponseDTO primaryGroupResponse = response.getBody(GroupUserResponseDTO.class).get();
 
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             GroupUserDTO dto = new GroupUserDTO();
-            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setPermissionsGroup(primaryGroupResponse.getId());
             dto.setEmail(justin.getEmail());
             dto.setGroupAdmin(true);
             request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
             groupUser.setGroupAdmin(true);
             groupUser.setTopicAdmin(true);
             request = HttpRequest.PUT("/group_membership", groupUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            groupUser = response.getBody(GroupUser.class).get();
+            groupUser = response.getBody(GroupUserResponseDTO.class).get();
             assertTrue(groupUser.isGroupAdmin());
             assertTrue(groupUser.isTopicAdmin());
         }
@@ -584,9 +583,9 @@ public class GroupMembershipApiTest {
             dto.setEmail(justin.getEmail());
             dto.setTopicAdmin(true);
             request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
@@ -626,10 +625,10 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
@@ -665,10 +664,10 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             assertTrue(userRepository.findByEmail("bob.builder@test.test").isPresent());
 
@@ -700,10 +699,10 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
@@ -743,10 +742,10 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
@@ -1116,9 +1115,9 @@ public class GroupMembershipApiTest {
             dto.setPermissionsGroup(primaryGroup.getId());
             dto.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dto);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
@@ -1148,10 +1147,10 @@ public class GroupMembershipApiTest {
             dtoNewUser.setPermissionsGroup(primaryGroup.getId());
             dtoNewUser.setEmail("bob.builder@test.test");
             request = HttpRequest.POST("/group_membership", dtoNewUser);
-            response = blockingClient.exchange(request, GroupUser.class);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(GroupUser.class).isPresent());
-            GroupUser groupUser = response.getBody(GroupUser.class).get();
+            assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
+            GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
             loginAsNonAdmin();
 
