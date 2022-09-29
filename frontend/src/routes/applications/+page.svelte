@@ -24,11 +24,16 @@
 	let confirmDeleteVisible = false;
 	let applicationDetailVisible = false;
 
-	// Pagination
-	const applicationsPerPage = 3;
-	let applicationsPageIndex;
-	let applicationsPages = [];
-	let currentPage = 0;
+	//Pagination
+	const applicationsPerPage = 10;
+	let applicationsTotalPages;
+	let applicationsCurrentPage = 0;
+
+	// SearchBox
+	let searchString;
+	let searchAppResults;
+	let timer;
+	const waitTime = 500;
 
 	// App
 	let applicationListVisible = true;
@@ -42,40 +47,32 @@
 	// Validation
 	let previousAppName;
 
+	// Search Feature
+	$: if (searchString?.trim().length >= 3) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchApp(searchString.trim());
+		}, waitTime);
+	}
+
+	$: if (searchString?.trim().length < 3) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			reloadAllApps();
+		}, waitTime);
+	}
+
 	onMount(async () => {
 		try {
-			const applicationsData = await httpAdapter.get(`/applications`);
-			applications.set(applicationsData.data.content);
+			reloadAllApps();
+
+			const res = await httpAdapter.get(`/token_info`);
+			permissionsByGroup.set(res.data.permissionsByGroup);
 
 			if ($permissionsByGroup) {
 				isApplicationAdmin = $permissionsByGroup.some(
 					(groupPermission) => groupPermission.isApplicationAdmin === true
 				);
-			}
-
-			if ($applications) {
-				// Pagination
-				let totalApplicationsCount = 0;
-				applicationsPageIndex = Math.floor(
-					applicationsData.data.content.length / applicationsPerPage
-				);
-				if (applicationsData.data.content.length % applicationsPerPage > 0) applicationsPageIndex++;
-
-				// Populate the applicationsPage Array
-				for (let page = 0; page < applicationsPageIndex; page++) {
-					let pageArray = [];
-					for (
-						let i = 0;
-						i < applicationsPerPage &&
-						totalApplicationsCount < applicationsData.data.content.length;
-						i++
-					) {
-						applicationsData.data.content[page * applicationsPerPage + i].editable = false;
-						pageArray.push(applicationsData.data.content[page * applicationsPerPage + i]);
-						totalApplicationsCount++;
-					}
-					applicationsPages.push(pageArray);
-				}
 			}
 		} catch (err) {
 			errorMessage('Error Loading Applications', err.message);
@@ -101,10 +98,23 @@
 		errorMessageVisible = true;
 	};
 
-	const ErrorMessageClear = () => {
+	const errorMessageClear = () => {
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
+	};
+
+	const searchApp = async (searchString) => {
+		searchAppResults = await httpAdapter.get(
+			`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
+		);
+		if (searchAppResults.data.content) {
+			applications.set(searchAppResults.data.content);
+		} else {
+			applications.set([]);
+		}
+		applicationsTotalPages = searchAppResults.data.totalPages;
+		applicationsCurrentPage = 0;
 	};
 
 	const addApplication = async () => {
@@ -118,7 +128,7 @@
 			errorMessage('Error Creating Application', err.message);
 		}
 
-		await reloadApps().then(() => {
+		await reloadAllApps().then(() => {
 			currentPage = applicationsPages.length - 1;
 		});
 	};
@@ -144,16 +154,22 @@
 		selectedAppName = '';
 
 		returnToAppsList();
-		await reloadApps();
+		await reloadAllApps();
 	};
 
-	const reloadApps = async () => {
+	const reloadAllApps = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/applications`);
-			applications.set(res.data.content);
-			if ($applications) {
-				calculatePagination();
+			let res;
+			if (searchString && searchString.length >= 3) {
+				res = await httpAdapter.get(
+					`/applications?page=${page}&size=${applicationsPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/applications?page=${page}&size=${applicationsPerPage}`);
 			}
+			applications.set(res.data.content);
+			applicationsTotalPages = res.data.totalPages;
+			applicationsCurrentPage = page;
 		} catch (err) {
 			applications.set();
 			errorMessage('Error Loading Applications', err.message);
@@ -179,32 +195,7 @@
 			.catch((err) => {
 				errorMessage('Error Saving New Application Name', err.message);
 			});
-		reloadApps();
-	};
-
-	const calculatePagination = () => {
-		applicationsPages = [];
-		let totalApplicationsCount = 0;
-		applicationsPageIndex = Math.floor($applications.length / applicationsPerPage);
-		if ($applications.length % applicationsPerPage > 0) applicationsPageIndex++;
-
-		if (applicationsPageIndex === currentPage) currentPage--;
-
-		// Populate the applicationsPage Array
-		let pageArray = [];
-		for (let page = 0; page < applicationsPageIndex; page++) {
-			for (
-				let i = 0;
-				i < applicationsPerPage && totalApplicationsCount < $applications.length;
-				i++
-			) {
-				$applications[page * applicationsPerPage + i].editable = false;
-				pageArray.push($applications[page * applicationsPerPage + i]);
-				totalApplicationsCount++;
-			}
-			applicationsPages.push(pageArray);
-			pageArray = [];
-		}
+		reloadAllApps();
 	};
 
 	const checkAppDuplicates = (appName, appID) => {
@@ -257,7 +248,7 @@
 
 <svelte:head>
 	<title>Applications | DDS Permissions Manager</title>
-	<meta name="description" content="DDS Permission Manager Applications" />
+	<meta name="description" content="DDS Permissions Manager Applications" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -267,7 +258,7 @@
 			description={errorObject}
 			on:cancel={() => {
 				errorMessageVisible = false;
-				ErrorMessageClear();
+				errorMessageClear();
 			}}
 			><br /><br />
 			<div class="confirm">
@@ -275,7 +266,7 @@
 					class="button-delete"
 					on:click={() => {
 						errorMessageVisible = false;
-						ErrorMessageClear();
+						errorMessageClear();
 					}}>Ok</button
 				>
 			</div>
@@ -349,59 +340,83 @@
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
 		{/if}
+		<center>
+			<input
+				style="border-width: 1px; width: 20rem"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					const returnKey = 13;
+					if (event.which === returnKey) {
+						document.activeElement.blur();
+						searchString = searchString?.trim();
+					}
+				}}
+			/>&nbsp; &#x1F50E;
+		</center>
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
-			<table align="center">
+			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
 					<th><strong>Application Name</strong></th>
 				</tr>
-				{#if applicationsPages.length > 0}
-					{#each applicationsPages[currentPage] as app, index}
-						<tr>
-							<td>{app.id}</td>
-							<td
-								style="cursor: pointer"
-								on:click={() => {
-									loadApplicationDetail(app.id, app.permissionsGroup);
-								}}>{app.name}</td
-							>
-						</tr>
-					{/each}
+				{#if $applications}
+					{#if $applications.length > 0}
+						{#each $applications as app}
+							<tr>
+								<td>{app.id}</td>
+								<td
+									style="cursor: pointer"
+									on:click={() => {
+										loadApplicationDetail(app.id, app.permissionsGroup);
+									}}>{app.name}</td
+								>
+							</tr>
+						{/each}
+					{/if}
 				{/if}
 			</table>
 			<br /> <br />
 
 			{#if $applications}
-				<center
-					><button
-						on:click={() => {
-							if (currentPage > 0) currentPage--;
+				<center>
+					<button
+						on:click={async () => {
+							if (applicationsCurrentPage > 0) applicationsCurrentPage--;
+							reloadAllApps(applicationsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={currentPage === 0}>Previous</button
+						disabled={applicationsCurrentPage === 0}>Previous</button
 					>
-					{#if applicationsPageIndex > 2}
-						{#each applicationsPages as page, i}
+					{#if applicationsTotalPages > 2}
+						{#each Array.apply( null, { length: applicationsTotalPages } ).map(Number.call, Number) as page}
 							<button
 								on:click={() => {
-									currentPage = i;
+									applicationsCurrentPage = page;
+									reloadAllApps(page);
 								}}
 								class="button-pagination"
-								class:button-pagination-selected={i === currentPage}>{i + 1}</button
+								class:button-pagination-selected={page === applicationsCurrentPage}
+								>{page + 1}</button
 							>
 						{/each}
 					{/if}
+
 					<button
-						on:click={() => {
-							if (currentPage < applicationsPages.length) currentPage++;
+						on:click={async () => {
+							if (applicationsCurrentPage + 1 < applicationsTotalPages) applicationsCurrentPage++;
+							reloadAllApps(applicationsCurrentPage);
 						}}
 						class="button-pagination"
 						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={currentPage === applicationsPages.length - 1 ||
-							applicationsPages.length === 0}>Next</button
-					></center
-				>
+						disabled={applicationsCurrentPage === applicationsTotalPages - 1 ||
+							applicationsTotalPages === 0}>Next</button
+					>
+				</center>
 			{/if}
 			<br /><br />
 		{:else if !$applications && !applicationDetailVisible && applicationListVisible}

@@ -56,8 +56,13 @@
 		timer = setTimeout(() => {
 			searchGroupMemberships(searchString.trim());
 		}, waitTime);
-	} else {
-		reloadGroupMemberships();
+	}
+
+	$: if (searchString?.trim().length < 3) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			reloadGroupMemberships();
+		}, waitTime);
 	}
 
 	// Search Groups Feature
@@ -120,21 +125,29 @@
 
 	const reloadGroupMemberships = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(
-				`/group_membership?page=${page}&size=${groupMembershipsPerPage}`
-			);
+			let res;
+			if (searchString && searchString.length >= 3) {
+				res = await httpAdapter.get(
+					`/group_membership?page=${page}&size=${groupMembershipsPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(
+					`/group_membership?page=${page}&size=${groupMembershipsPerPage}`
+				);
+			}
 			if (res.data) {
 				groupMembershipsTotalPages = res.data.totalPages;
 			}
 			if (res.data.content) {
-				createGroupMembershipList(res.data.content);
+				createGroupMembershipList(res.data.content, res.data.totalPages);
 			}
+			groupMembershipsCurrentPage = page;
 		} catch (err) {
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
 	};
 
-	const createGroupMembershipList = async (data) => {
+	const createGroupMembershipList = async (data, totalPages) => {
 		data.forEach((groupMembership) => {
 			let newGroupMembership = {
 				applicationAdmin: groupMembership.applicationAdmin,
@@ -150,11 +163,13 @@
 		});
 		groupMembershipList.set(groupMembershipListArray);
 		groupMembershipListArray = [];
+		groupMembershipsTotalPages = totalPages;
+		groupMembershipsCurrentPage = 0;
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
 		const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
-		if (res.data.content) createGroupMembershipList(res.data.content);
+		if (res.data.content) createGroupMembershipList(res.data.content, res.data.totalPages);
 	};
 
 	const searchGroup = async (searchGroupStr) => {
@@ -266,7 +281,7 @@
 
 <svelte:head>
 	<title>Group Membership | DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager Group Membership" />
+	<meta name="description" content="Permissions Manager Group Membership" />
 </svelte:head>
 
 {#if $isAuthenticated}

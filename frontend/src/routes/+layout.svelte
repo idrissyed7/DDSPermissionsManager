@@ -12,7 +12,6 @@
 		try {
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
-
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);
 			// nowTime = new Date();

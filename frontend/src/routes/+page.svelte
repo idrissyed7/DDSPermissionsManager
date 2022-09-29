@@ -6,7 +6,7 @@
 
 <svelte:head>
 	<title>DDS Permissions Manager</title>
-	<meta name="description" content="Permission Manager" />
+	<meta name="description" content="Permissions Manager" />
 </svelte:head>
 
 {#if $isAuthenticated}
