@@ -13,6 +13,7 @@
 
 	// Search
 	let searchString;
+	const searchStringLength = 3;
 	let timer;
 	const waitTime = 500;
 
@@ -50,13 +51,18 @@
 	$: newGroupName?.length === 0 ? (disabled = true) : (disabled = false);
 
 	// Search Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchGroups(searchString.trim());
 		}, waitTime);
-	} else {
-		reloadAllGroups();
+	}
+
+	$: if (searchString?.trim().length < searchStringLength) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			reloadAllGroups();
+		}, waitTime);
 	}
 
 	onMount(async () => {
@@ -74,6 +80,8 @@
 		} else {
 			groups.set([]);
 		}
+		groupsTotalPages = res.data.totalPages;
+		groupsCurrentPage = 0;
 	};
 
 	const errorMessage = (errMsg, errObj) => {
@@ -138,9 +146,17 @@
 
 	const reloadAllGroups = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/groups?page=${page}&size=${groupsPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
+			}
 			groups.set(res.data.content);
 			groupsTotalPages = res.data.totalPages;
+			groupsCurrentPage = page;
 		} catch (err) {
 			errorMessage('Error Loading Groups', err.message);
 		}
@@ -194,6 +210,7 @@
 			});
 		searchString = '';
 		addGroupVisible = false;
+		groupsCurrentPage = 0;
 
 		await reloadAllGroups();
 	};
@@ -234,7 +251,7 @@
 
 <svelte:head>
 	<title>Groups | DDS Permissions Manager</title>
-	<meta name="description" content="DDS Permission Manager Groups" />
+	<meta name="description" content="DDS Permissions Manager Groups" />
 </svelte:head>
 
 {#if $isAuthenticated}

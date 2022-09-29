@@ -12,17 +12,23 @@
 
 	// Search
 	let searchString;
+	const searchStringLength = 3;
 	let timer;
 	const waitTime = 500;
 
 	// Search Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchTopics(searchString.trim());
 		}, waitTime);
-	} else {
-		reloadAllTopics();
+	}
+
+	$: if (searchString?.trim().length < searchStringLength) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			reloadAllTopics();
+		}, waitTime);
 	}
 
 	// Authentication
@@ -91,6 +97,8 @@
 		} else {
 			topics.set([]);
 		}
+		topicsTotalPages = res.data.totalPages;
+		topicsCurrentPage = 0;
 	};
 
 	const errorMessage = (errMsg, errObj) => {
@@ -187,9 +195,17 @@
 
 	const reloadAllTopics = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/topics?page=${page}&size=${topicsPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
+			}
 			topics.set(res.data.content);
 			topicsTotalPages = res.data.totalPages;
+			topicsCurrentPage = page;
 		} catch (err) {
 			errorMessage('Error Loading Topics', err.message);
 		}
@@ -198,7 +214,7 @@
 
 <svelte:head>
 	<title>Topics | DDS Permissions Manager</title>
-	<meta name="description" content="DDS Permission Manager Topics" />
+	<meta name="description" content="DDS Permissions Manager Topics" />
 </svelte:head>
 
 {#if $isAuthenticated}

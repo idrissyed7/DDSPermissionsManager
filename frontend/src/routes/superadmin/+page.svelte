@@ -21,6 +21,7 @@
 
 	// SearchBox
 	let searchString;
+	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
 	const waitTime = 500;
@@ -38,22 +39,27 @@
 	let selectedUserEmail;
 
 	// Pagination
-	const usersPerPage = 5;
+	const usersPerPage = 10;
 	let usersTotalPages;
 	let usersCurrentPage = 0;
 
 	// Search Feature
-	$: if (searchString?.trim().length >= 3) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchUser(searchString.trim());
 		}, waitTime);
-	} else {
-		reloadUsers();
+	}
+
+	$: if (searchString?.trim().length < searchStringLength) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			reloadAllUsers();
+		}, waitTime);
 	}
 
 	onMount(async () => {
-		await reloadUsers();
+		await reloadAllUsers();
 
 		const groupsData = await httpAdapter.get(`/groups`);
 		groups.set(groupsData.data.content);
@@ -80,13 +86,23 @@
 		} else {
 			users.set([]);
 		}
+		usersTotalPages = searchUserResults.data.totalPages;
+		usersCurrentPage = 0;
 	};
 
-	const reloadUsers = async (page = 0) => {
+	const reloadAllUsers = async (page = 0) => {
 		try {
-			const res = await httpAdapter.get(`/admins?page=${page}&size=${usersPerPage}`);
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/admins?page=${page}&size=${usersPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/admins?page=${page}&size=${usersPerPage}`);
+			}
 			users.set(res.data.content);
 			usersTotalPages = res.data.totalPages;
+			usersCurrentPage = page;
 		} catch (err) {
 			errorMessage('Error Loading Super Admins', err.message);
 		}
@@ -100,7 +116,7 @@
 
 		selectedUserId = '';
 
-		reloadUsers();
+		reloadAllUsers();
 	};
 
 	const confirmUserDelete = (ID, email) => {
@@ -124,7 +140,7 @@
 
 		addUserVisible = false;
 
-		reloadUsers();
+		reloadAllUsers();
 	};
 
 	const validateEmail = (input) => {
@@ -134,7 +150,7 @@
 
 <svelte:head>
 	<title>Super Admin | DDS Permissions Manager</title>
-	<meta name="description" content="DDS Permission Manager Super Admin" />
+	<meta name="description" content="DDS Permissions Manager Super Admin" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -172,8 +188,8 @@
 	<div class="content">
 		<h1>Super Admin</h1>
 
-		<center
-			><input
+		<center>
+			<input
 				style="border-width: 1px; width: 20rem"
 				placeholder="Search"
 				bind:value={searchString}
@@ -187,8 +203,8 @@
 						searchString = searchString?.trim();
 					}
 				}}
-			/>&nbsp; &#x1F50E;</center
-		>
+			/>&nbsp; &#x1F50E;
+		</center>
 
 		<table align="center" style="margin-top: 2rem">
 			{#if $users && $users.length > 0}
@@ -270,7 +286,7 @@
 				><button
 					on:click={() => {
 						if (usersCurrentPage > 0) usersCurrentPage--;
-						reloadUsers(usersCurrentPage);
+						reloadAllUsers(usersCurrentPage);
 					}}
 					class="button-pagination"
 					style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
@@ -281,7 +297,7 @@
 						<button
 							on:click={() => {
 								usersCurrentPage = page;
-								reloadUsers(page);
+								reloadAllUsers(page);
 							}}
 							class="button-pagination"
 							class:button-pagination-selected={page === usersCurrentPage}>{page + 1}</button
@@ -292,7 +308,7 @@
 				<button
 					on:click={() => {
 						if (usersCurrentPage + 1 < usersTotalPages) usersCurrentPage++;
-						reloadUsers(usersCurrentPage);
+						reloadAllUsers(usersCurrentPage);
 					}}
 					class="button-pagination"
 					style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
