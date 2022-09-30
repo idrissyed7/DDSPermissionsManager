@@ -293,23 +293,24 @@
 		{#if $topics}
 			{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 				<table align="center">
-					{#if $topics.length > 0}
-						<tr style="border-width: 0px">
-							<th><strong>Topic</strong></th>
+					<tr style="border-width: 0px">
+						<th><strong>Topic</strong></th>
+						<th><strong>Group</strong></th>
+					</tr>
+					{#each $topics as topic}
+						<tr>
+							<td
+								style="line-height: 1.7rem;"
+								class="topic-td"
+								on:click={() => {
+									loadTopic(topic.id);
+									selectedTopicId = topic.id;
+								}}
+								>{topic.name}
+							</td>
+							<td>{topic.groupName}</td>
 						</tr>
-						{#each $topics as topic}
-							<tr>
-								<td
-									style="line-height: 1.7rem;"
-									class="topic-td"
-									on:click={() => {
-										loadTopic(topic.id);
-										selectedTopicId = topic.id;
-									}}>{topic.name}</td
-								>
-							</tr>
-						{/each}
-					{/if}
+					{/each}
 				</table>
 				<br /> <br />
 
