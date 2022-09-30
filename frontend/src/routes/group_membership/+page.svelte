@@ -154,11 +154,11 @@
 				applicationAdmin: groupMembership.applicationAdmin,
 				groupAdmin: groupMembership.groupAdmin,
 				topicAdmin: groupMembership.topicAdmin,
-				groupName: groupMembership.permissionsGroup.name,
-				groupId: groupMembership.permissionsGroup.id,
+				groupName: groupMembership.permissionsGroupName,
+				groupId: groupMembership.permissionsGroup,
 				groupMembershipId: groupMembership.id,
-				userId: groupMembership.permissionsUser.id,
-				userEmail: groupMembership.permissionsUser.email
+				userId: groupMembership.permissionsUser,
+				userEmail: groupMembership.permissionsUserEmail
 			};
 			groupMembershipListArray.push(newGroupMembership);
 		});
@@ -166,6 +166,7 @@
 		groupMembershipListArray = [];
 		groupMembershipsTotalPages = totalPages;
 		groupMembershipsCurrentPage = 0;
+		console.log('groupMembershipList', $groupMembershipList);
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
@@ -241,10 +242,11 @@
 				groupAdmin: selectedGroupMembership.groupAdmin,
 				topicAdmin: selectedGroupMembership.topicAdmin,
 				applicationAdmin: selectedGroupMembership.applicationAdmin,
-				permissionsGroup: { id: selectedGroupMembership.groupId },
-				permissionsUser: { id: selectedGroupMembership.userId }
+				permissionsGroup: selectedGroupMembership.groupId,
+				email: selectedGroupMembership.userEmail
 			};
 			try {
+				console.log('data', data);
 				await httpAdapter.put(`/group_membership`, data);
 				reloadGroupMemberships(groupMembershipsCurrentPage);
 			} catch (err) {
