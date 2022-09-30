@@ -2,6 +2,7 @@
 	import { isAdmin, isAuthenticated } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import groups from '../../stores/groups';
 	import groupDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -384,9 +385,33 @@
 								}}
 								>{group.name}
 							</td>
-							<td><center><a href="/group_membership">{group.membershipCount}</a></center></td>
-							<td><center><a href="/topics">{group.topicCount}</a></center></td>
-							<td><center><a href="/applications">{group.applicationCount}</a></center></td>
+							<td
+								><center
+									><a
+										href="/group_membership"
+										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
+										>{group.membershipCount}</a
+									></center
+								></td
+							>
+							<td
+								><center
+									><a
+										href="/topics"
+										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
+										>{group.topicCount}</a
+									></center
+								></td
+							>
+							<td
+								><center
+									><a
+										href="/applications"
+										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
+										>{group.applicationCount}</a
+									></center
+								></td
+							>
 						</tr>
 					{/each}
 				</table>

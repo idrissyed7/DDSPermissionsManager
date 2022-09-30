@@ -90,6 +90,11 @@
 			}
 			urlparameters.set([]);
 		}
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
