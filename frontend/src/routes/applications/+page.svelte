@@ -222,9 +222,8 @@
 
 		selectedAppId = appId;
 		selectedAppGroupId = groupId;
-		selectedAppName = appDetail.data.application_name;
-		selectedAppGroupName = appDetail.data.group_name;
-
+		selectedAppName = appDetail.data.name;
+		selectedAppGroupName = appDetail.data.groupName;
 		await getAppPermissions(appId);
 	};
 
@@ -362,7 +361,8 @@
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
-					<th><strong>Application Name</strong></th>
+					<th><strong>Application</strong></th>
+					<th><strong>Group</strong></th>
 				</tr>
 				{#if $applications}
 					{#if $applications.length > 0}
@@ -372,9 +372,11 @@
 								<td
 									style="cursor: pointer"
 									on:click={() => {
-										loadApplicationDetail(app.id, app.permissionsGroup);
-									}}>{app.name}</td
-								>
+										loadApplicationDetail(app.id, app.group);
+									}}
+									>{app.name}
+								</td>
+								<td>{app.groupName}</td>
 							</tr>
 						{/each}
 					{/if}
@@ -426,7 +428,6 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
-				<span on:click={() => returnToApplicationsList()}>&laquo;</span>
 				<div class="tooltip">
 					<input
 						id="name"
@@ -463,6 +464,11 @@
 					{/if}
 				</div>
 			</div>
+			<span
+				style="font-size: medium; margin-left: 11rem; cursor: pointer"
+				on:click={() => returnToApplicationsList()}
+				>&laquo; &nbsp; Back
+			</span>
 			<br /><br />
 			<table align="center">
 				<tr style="border-width: 0px">
@@ -533,6 +539,11 @@
 		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
+	}
+
+	span {
+		position: relative;
+		left: 0;
 	}
 
 	.tooltip .tooltiptext {
