@@ -367,7 +367,7 @@
 				{#if $applications}
 					{#if $applications.length > 0}
 						{#each $applications as app}
-							<tr>
+							<tr style="line-height: 1.7rem;">
 								<td>{app.id}</td>
 								<td
 									style="cursor: pointer"
