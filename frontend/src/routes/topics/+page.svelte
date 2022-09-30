@@ -283,41 +283,40 @@
 		{#if $topics}
 			{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 				<table align="center">
-					{#if $topics.length > 0}
-						<tr style="border-width: 0px">
-							<th><strong>Topic</strong></th>
-						</tr>
-						{#each $topics as topic}
-							<tr>
-								<td
-									style="line-height: 1.7rem;"
-									class="topic-td"
-									on:click={() => {
-										loadTopic();
-										selectedTopicId = topic.id;
-									}}
-									>{topic.name}
+					<tr style="border-width: 0px">
+						<th><strong>Topic</strong></th>
+						<th><strong>Group</strong></th>
+					</tr>
+					{#each $topics as topic}
+						<tr>
+							<td
+								style="line-height: 1.7rem;"
+								class="topic-td"
+								on:click={() => {
+									loadTopic(topic.id);
+									selectedTopicId = topic.id;
+								}}
+								>{topic.name}
+							</td>
+							<td>{topic.groupName}</td>
+							{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
+								<td>
+									<button
+										class="button-delete"
+										style="float: right"
+										on:click={() => {
+											selectedTopicId = topic.id;
+											selectedTopicName = topic.name;
+											confirmDeleteVisible = true;
+										}}
+										><span>Delete</span>
+									</button>
 								</td>
-
-								{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
-									<td>
-										<button
-											class="button-delete"
-											style="float: right"
-											on:click={() => {
-												selectedTopicId = topic.id;
-												selectedTopicName = topic.name;
-												confirmDeleteVisible = true;
-											}}
-											><span>Delete</span>
-										</button>
-									</td>
-								{:else}
-									<td />
-								{/if}
-							</tr>
-						{/each}
-					{/if}
+							{:else}
+								<td />
+							{/if}
+						</tr>
+					{/each}
 				</table>
 				<br /> <br />
 
