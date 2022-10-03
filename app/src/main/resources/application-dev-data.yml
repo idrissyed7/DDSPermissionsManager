@@ -14,9 +14,14 @@ bootstrap:
       -
         name: Alpha
         users:
-          - wilsonj@test.test
-          - kstanley@test.test
-          - montesm@test.test
+          -
+           email: wilsonj@test.test
+           admin-flags: [topic, application, group]
+          -
+            email: kstanley@test.test
+            admin-flags: [group]
+          -
+            email: montesm@test.test
         topics:
           -
             name: Test Topic 123
