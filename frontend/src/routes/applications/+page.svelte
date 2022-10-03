@@ -332,7 +332,6 @@
 					type="text"
 					placeholder="Application Name"
 					bind:value={appName}
-					style="text-align: left;"
 				/>
 				&nbsp;
 				<label for="groups">Group:</label>
@@ -611,7 +610,6 @@
 	input {
 		margin-top: 1.1rem;
 		text-align: left;
-		text-align: center;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
 	}
