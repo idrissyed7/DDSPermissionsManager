@@ -90,6 +90,11 @@
 			}
 			urlparameters.set([]);
 		}
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -122,16 +127,15 @@
 		try {
 			const res = await httpAdapter.post(`/applications/save`, {
 				name: appName,
-				permissionsGroup: selectedGroup
+				group: selectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
+			if (err.response.data) err.message = 'Application name already exists.';
 			errorMessage('Error Creating Application', err.message);
 		}
 
-		await reloadAllApps().then(() => {
-			currentPage = applicationsPages.length - 1;
-		});
+		await reloadAllApps();
 	};
 
 	const confirmAppDelete = (ID, name) => {
@@ -183,35 +187,6 @@
 			addApplicationVisible = true;
 		} else {
 			errorMessage('Error', 'There are no Groups available');
-		}
-	};
-
-	const saveNewAppName = async () => {
-		await httpAdapter
-			.post(`/applications/save/`, {
-				id: selectedAppId,
-				name: selectedAppName,
-				permissionsGroup: selectedAppGroupId
-			})
-			.catch((err) => {
-				errorMessage('Error Saving New Application Name', err.message);
-			});
-		reloadAllApps();
-	};
-
-	const checkAppDuplicates = (appName, appID) => {
-		if ($applications) {
-			duplicateAppName = $applications.some(
-				(appStore) => appStore.name === appName && appStore.id !== appID
-			);
-		}
-
-		if (!duplicateAppName && appID === 0) {
-			addApplication();
-		}
-
-		if (!duplicateAppName && appID !== 0) {
-			saveNewAppName();
 		}
 	};
 
@@ -286,25 +261,12 @@
 	{#if addApplicationVisible && !errorMessageVisible}
 		<div class="add">
 			<Modal
-				title="Create Application"
+				title="Add Application"
 				on:cancel={() => {
 					addApplicationVisible = false;
-					duplicateAppName = false;
 				}}
 			>
-				<input
-					type="text"
-					placeholder="Application Name"
-					class:invalid={duplicateAppName}
-					bind:value={appName}
-					on:click={() => (duplicateAppName = false)}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							document.activeElement.blur();
-							checkAppDuplicates(appName, 0);
-						}
-					}}
-				/>
+				<input type="text" placeholder="Application Name" bind:value={appName} />
 				&nbsp;
 				<label for="groups">Group:</label>
 				<select name="groups" bind:value={selectedGroup}>
@@ -322,10 +284,10 @@
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
-						checkAppDuplicates(appName, 0);
+						addApplication();
 					}}
 				>
-					<span>Create</span></button
+					<span>Add</span></button
 				>
 				{#if duplicateAppName}
 					<p style="position: absolute; left:33%; top: 38px; color: red">
@@ -535,7 +497,7 @@
 		{#if $isAdmin && !applicationDetailVisible}
 			<center
 				><button class="button" style="width: 9rem" on:click={() => addAppModal()}
-					>Create Application</button
+					>Add Application</button
 				></center
 			>
 		{/if}

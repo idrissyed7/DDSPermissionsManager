@@ -67,7 +67,6 @@
 	onMount(async () => {
 		try {
 			reloadAllTopics();
-
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
@@ -86,6 +85,11 @@
 			} else {
 				errorMessage('Only Topic Admins can create topics.', 'Contact your Group Admin.');
 			}
+			urlparameters.set([]);
+		}
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
 			urlparameters.set([]);
 		}
 	});
@@ -307,6 +311,27 @@
 										selectedTopicId = topic.id;
 									}}>{topic.name}</td
 								>
+
+								{#if $isAdmin || $permissionsByGroup.some((permissionTopic) => permissionTopic.isTopicAdmin === true)}
+									<td>
+										<button
+											class="button-delete"
+											style="float: right"
+											on:click={() => {
+												selectedTopicId = topic.id;
+												selectedTopicName = topic.name;
+												confirmDeleteVisible = true;
+											}}
+											><span>Delete</span>
+										</button>
+									</td>
+								{:else}
+									<td /><td />
+								{/if}
+
+								{#if $isAdmin || isTopicAdmin}
+									<td />
+								{/if}
 							</tr>
 						{/each}
 					{/if}

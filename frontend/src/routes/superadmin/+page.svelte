@@ -210,12 +210,10 @@
 			{#if $users && $users.length > 0}
 				<tr style="border-width: 0px">
 					<th><strong>Email</strong></th>
-					<th><strong>Role</strong></th>
 				</tr>
 				{#each $users as user}
 					<tr>
 						<td style="width: 23rem">{user.email}</td>
-						<td>Admin</td>
 						<td
 							><button class="button-delete" on:click={() => confirmUserDelete(user.id, user.email)}
 								><span>Delete</span></button
