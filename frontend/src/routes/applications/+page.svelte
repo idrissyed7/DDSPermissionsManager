@@ -25,7 +25,7 @@
 	let applicationDetailVisible = false;
 
 	//Pagination
-	const applicationsPerPage = 3;
+	const applicationsPerPage = 10;
 	let applicationsTotalPages;
 	let applicationsCurrentPage = 0;
 
