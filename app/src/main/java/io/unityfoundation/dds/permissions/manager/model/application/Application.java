@@ -4,6 +4,7 @@ import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "permissions_application")
@@ -14,6 +15,7 @@ public class Application {
     private Long id;
 
     @NonNull
+    @NotBlank
     private String name;
 
     @ManyToOne
@@ -55,5 +57,10 @@ public class Application {
 
     public void setPermissionsGroup(Group permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
+    }
+
+    @PrePersist
+    void trimName() {
+        this.name = this.name.trim();
     }
 }

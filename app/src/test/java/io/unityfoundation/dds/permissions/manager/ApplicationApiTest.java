@@ -141,6 +141,76 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void cannotCreateApplicationWithNullNorWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // null
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication(null, primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+
+            // space
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("     ", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("   Abc123  ", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+        }
+
+        @Test
+        public void cannotCreateApplicationWithSameNameInGroup() {
+
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+
+            // duplicate create attempt
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<ApplicationDTO> applicationOptionalAttempt = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptionalAttempt.isPresent());
+            assertEquals(applicationOptional.get().getId(), applicationOptionalAttempt.get().getId());
+        }
+
+        @Test
         public void canViewAllApplications() {
             HttpRequest<?> request;
             HttpResponse<?> response;
