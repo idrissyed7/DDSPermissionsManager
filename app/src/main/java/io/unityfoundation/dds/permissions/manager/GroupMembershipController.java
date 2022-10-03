@@ -40,7 +40,7 @@ public class GroupMembershipController {
         return groupUserService.findAll(pageable, filter);
     }
 
-    @Get("/validate-user")
+    @Get("/user-validity")
     @ApiResponse(responseCode = "200", description = "Valid User")
     @ApiResponse(responseCode = "404", description = "Invalid User")
     @ExecuteOn(TaskExecutors.IO)

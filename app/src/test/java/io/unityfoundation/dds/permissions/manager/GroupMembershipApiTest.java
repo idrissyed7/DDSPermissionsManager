@@ -420,7 +420,7 @@ public class GroupMembershipApiTest {
 
         @Test
         public void shouldBeConsideredValid() {
-            HttpRequest request = HttpRequest.GET("/group_membership/validate-user");
+            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
             HttpResponse response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -1092,7 +1092,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/validate-user");
+            request = HttpRequest.GET("/group_membership/user-validity");
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -1206,7 +1206,7 @@ public class GroupMembershipApiTest {
         @Test
         public void shouldBeConsideredInvalid() {
             loginAsNonAdmin();
-            HttpRequest request = HttpRequest.GET("/group_membership/validate-user");
+            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
