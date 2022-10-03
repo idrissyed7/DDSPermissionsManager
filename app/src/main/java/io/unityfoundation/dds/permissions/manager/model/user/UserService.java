@@ -8,6 +8,8 @@ import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.transaction.Transactional;
 import java.util.Collections;
@@ -20,6 +22,7 @@ public class UserService {
     private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
     private final GroupUserService groupUserService;
+    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 
     public UserService(SecurityUtil securityUtil, UserRepository userRepository, GroupUserService groupUserService) {
         this.securityUtil = securityUtil;
@@ -68,7 +71,13 @@ public class UserService {
                 throw new Exception("User with same email already exists.");
             }
 
-            return userRepository.save(generateAdminFromDTO(adminDTO));
+            User user = generateAdminFromDTO(adminDTO);
+            if (user.isAdmin()) {
+                LOG.info(user.getEmail() + " is now a super admin");
+            } else {
+                LOG.info(user.getEmail() + " is no longer a super admin");
+            }
+            return userRepository.save(user);
         } else {
             Optional<User> existingUserOptional = userRepository.findById(adminDTO.getId());
             if (existingUserOptional.isEmpty()) {
@@ -106,6 +115,8 @@ public class UserService {
         }
 
         User user = userOptional.get();
+
+        LOG.info(user.getEmail() + " is no longer a super admin");
 
         if (user.isAdmin() && groupUserService.countMembershipsByUserId(id) == 0) {
             userRepository.delete(user);
