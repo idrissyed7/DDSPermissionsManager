@@ -367,30 +367,32 @@
 				{#if $applications}
 					{#if $applications.length > 0}
 						{#each $applications as app}
-							<tr>
-								<td>{app.id}</td>
-								<td
-									style="cursor: pointer"
-									on:click={() => {
-										loadApplicationDetail(app.id, app.group);
-									}}
-									>{app.name}
-								</td>
-								<td>{app.groupName}</td>
-
-								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
-									<button
-										class="button-delete"
+							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group)) || $isAdmin}
+								<tr>
+									<td>{app.id}</td>
+									<td
+										style="cursor: pointer"
 										on:click={() => {
-											selectedAppId = app.id;
-											selectedAppName = app.name;
-											confirmDeleteVisible = true;
-										}}><span>Delete</span></button
-									>
-								{:else}
-									<td />
-								{/if}
-							</tr>
+											loadApplicationDetail(app.id, app.group);
+										}}
+										>{app.name}
+									</td>
+									<td>{app.groupName}</td>
+
+									{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
+										<button
+											class="button-delete"
+											on:click={() => {
+												selectedAppId = app.id;
+												selectedAppName = app.name;
+												confirmDeleteVisible = true;
+											}}><span>Delete</span></button
+										>
+									{:else}
+										<td />
+									{/if}
+								</tr>
+							{/if}
 						{/each}
 					{/if}
 				{/if}
