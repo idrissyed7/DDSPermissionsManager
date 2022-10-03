@@ -52,9 +52,19 @@ public class Bootstrap {
                     Group group = groupRepository.save(new Group(groupName));
 
                     if (groupMap.containsKey("users")) {
-                        List<String> users = (List<String>) groupMap.get("users");
-                        users.stream().forEach(email -> {
-                            groupUserRepository.save(new GroupUser(group, userRepository.findByEmail(email).get()));
+                        List<Map> users = (List<Map>) groupMap.get("users");
+                        users.stream().forEach((Map user) -> {
+                            String email = (String) user.get("email");
+                            GroupUser groupUser = new GroupUser(group, userRepository.findByEmail(email).get());
+
+                            if(user.containsKey("admin-flags")) {
+                                List<String> adminFlags = (List<String>) user.get("admin-flags");
+                                groupUser.setGroupAdmin(adminFlags.contains("group"));
+                                groupUser.setApplicationAdmin(adminFlags.contains("application"));
+                                groupUser.setTopicAdmin(adminFlags.contains("topic"));
+                            }
+
+                            groupUserRepository.save(groupUser);
                         });
                     }
 
