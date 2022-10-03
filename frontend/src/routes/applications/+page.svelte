@@ -18,11 +18,17 @@
 	let errorMsg, errorObject;
 	let duplicateAppName = false;
 
+	// Keys
+	const enterKey = 13;
+
 	// Modals
 	let errorMessageVisible = false;
 	let addApplicationVisible = false;
 	let confirmDeleteVisible = false;
 	let applicationDetailVisible = false;
+
+	// Application Name
+	let editSaveLabel = 'edit';
 
 	//Pagination
 	const applicationsPerPage = 10;
@@ -47,6 +53,9 @@
 
 	// Validation
 	let previousAppName;
+
+	// Edit Name Label Reactive Statement
+	$: editAppName === true ? (editSaveLabel = 'save') : (editSaveLabel = 'edit');
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -191,12 +200,14 @@
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: selectedAppName,
-				permissionsGroup: selectedAppGroupId
+				group: selectedAppGroupId
 			})
 			.catch((err) => {
 				errorMessage('Error Saving New Application Name', err.message);
 			});
+
 		reloadAllApps();
+		editAppName = false;
 	};
 
 	const checkAppDuplicates = (appName, appID) => {
@@ -299,7 +310,7 @@
 					bind:value={appName}
 					on:click={() => (duplicateAppName = false)}
 					on:keydown={(event) => {
-						if (event.which === 13) {
+						if (event.which === enterKey) {
 							document.activeElement.blur();
 							checkAppDuplicates(appName, 0);
 						}
@@ -339,24 +350,23 @@
 	<div class="content">
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
-		{/if}
-		<center>
-			<input
-				style="border-width: 1px; width: 20rem"
-				placeholder="Search"
-				bind:value={searchString}
-				on:blur={() => {
-					searchString = searchString?.trim();
-				}}
-				on:keydown={(event) => {
-					const returnKey = 13;
-					if (event.which === returnKey) {
-						document.activeElement.blur();
+			<center>
+				<input
+					style="border-width: 1px; width: 20rem"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
 						searchString = searchString?.trim();
-					}
-				}}
-			/>&nbsp; &#x1F50E;
-		</center>
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;
+			</center>
+		{/if}
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
@@ -443,41 +453,42 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
-				<div class="tooltip">
-					<input
-						id="name"
-						class:editable={$isAdmin}
+				<input
+					id="name"
+					bind:value={selectedAppName}
+					readonly={!editAppName}
+					class:name-as-label={!editAppName}
+					class:name-edit={editAppName}
+					on:keydown={(event) => {
+						if (event.which === enterKey) {
+							selectedAppName = selectedAppName.trim();
+							if (previousAppName !== selectedAppName) saveNewAppName();
+							document.querySelector('#name').blur();
+							editAppName = false;
+						}
+					}}
+				/>
+				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
+					<span
+						style="position: absolute; font-size: medium; left: 65rem; top:6rem; cursor: pointer"
 						on:click={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'edit') {
+								previousAppName = selectedAppName;
 								editAppName = true;
-								previousAppName = selectedAppName.trim();
 							}
-						}}
-						on:blur={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'save') {
 								selectedAppName = selectedAppName.trim();
-								if (previousAppName !== selectedAppName) saveNewAppName();
-								editAppName = false;
-							}
-						}}
-						on:keydown={(event) => {
-							if (event.which === 13) {
-								if ($isAdmin) {
-									selectedAppName = selectedAppName.trim();
-									if (previousAppName !== selectedAppName) saveNewAppName();
-									document.querySelector('#name').blur();
+								if (previousAppName !== selectedAppName) {
+									saveNewAppName();
+								} else {
+									editAppName = false;
 								}
 							}
 						}}
-						bind:value={selectedAppName}
-						readonly={!editAppName}
-						class:name-as-label={!editAppName}
-						class:name-edit={editAppName}
-					/>
-					{#if $isAdmin}
-						<span class="tooltiptext">&#9998</span>
-					{/if}
-				</div>
+					>
+						&raquo; &nbsp; {editSaveLabel}
+					</span>
+				{/if}
 			</div>
 			<span
 				style="font-size: medium; margin-left: 11rem; cursor: pointer"
@@ -495,7 +506,13 @@
 				</tr>
 				<tr>
 					<td>{selectedAppId}</td>
-					<td>{selectedAppName}</td>
+					<td>
+						{#if editAppName}
+							{previousAppName}
+						{:else}
+							{selectedAppName}
+						{/if}
+					</td>
 					<td>{selectedAppGroupName}</td>
 					<td>
 						{#if $applicationPermission}
@@ -561,8 +578,7 @@
 		left: 0;
 	}
 
-	.tooltip .tooltiptext {
-		top: -6px;
-		left: 303px;
+	.name input:focus {
+		outline: none;
 	}
 </style>
