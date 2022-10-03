@@ -2,6 +2,7 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupMembershipList from '../../stores/groupMembershipList';
 	import Modal from '../../lib/Modal.svelte';
@@ -122,6 +123,11 @@
 			}
 		}
 		reloadGroupMemberships();
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 
 	const reloadGroupMemberships = async (page = 0) => {

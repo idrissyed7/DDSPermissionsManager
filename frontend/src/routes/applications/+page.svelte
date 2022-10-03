@@ -90,6 +90,11 @@
 			}
 			urlparameters.set([]);
 		}
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -367,7 +372,7 @@
 				{#if $applications}
 					{#if $applications.length > 0}
 						{#each $applications as app}
-							<tr>
+							<tr style="line-height: 1.7rem;">
 								<td>{app.id}</td>
 								<td
 									style="cursor: pointer"
