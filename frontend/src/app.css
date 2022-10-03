@@ -462,6 +462,28 @@ animation: fadeIn 0.2s ease-in-out;
 	width: 15rem;
 }
 
+.searchGroup {
+	font-size: 0.75rem;
+	width: 10rem;
+	cursor: pointer;
+	list-style-type: none;
+	margin-left: 2.8rem;
+	margin-top: -0.1rem;
+	padding-top: 0.1rem;
+	padding-bottom: 0.2rem;
+	text-align: left;
+	background-color: rgba(217, 221, 254, 0.4);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+}
+
+.searchGroup tr {
+	height: 1.9rem;
+}
+
+.searchGroup tr:nth-child(even) {
+	background-color: rgba(192, 196, 240, 0.4);
+}
+
 @-webkit-keyframes fadeIn {
 0% {
 	opacity: 0;
