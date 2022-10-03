@@ -377,6 +377,17 @@
 									>{app.name}
 								</td>
 								<td>{app.groupName}</td>
+
+								{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isApplicationAdmin === true)) || $isAdmin}
+									<button
+										class="button-delete"
+										on:click={() => {
+											selectedAppId = app.id;
+											selectedAppName = app.name;
+											confirmDeleteVisible = true;
+										}}><span>Delete</span></button
+									>
+								{/if}
 							</tr>
 						{/each}
 					{/if}
