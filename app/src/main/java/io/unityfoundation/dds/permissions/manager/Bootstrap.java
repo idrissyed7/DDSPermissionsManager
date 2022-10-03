@@ -14,6 +14,8 @@ import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ public class Bootstrap {
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupUserRepository groupUserRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
 
     public Bootstrap(UserRepository userRepository, GroupRepository groupRepository,
             GroupUserRepository groupUserRepository) {
@@ -40,7 +43,10 @@ public class Bootstrap {
     public void devData(ServerStartupEvent event) {
         if(data != null) {
             if(data.containsKey("admin-users")) {
-                ((List<String>) data.get("admin-users")).stream().forEach(email -> userRepository.save(new User(email, true)));
+                ((List<String>) data.get("admin-users")).stream().forEach(email -> {
+                        LOG.info(email + " is now a super admin");
+                        userRepository.save(new User(email, true));
+                    });
             }
             if(data.containsKey("non-admin-users")) {
                 ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
@@ -52,9 +58,19 @@ public class Bootstrap {
                     Group group = groupRepository.save(new Group(groupName));
 
                     if (groupMap.containsKey("users")) {
-                        List<String> users = (List<String>) groupMap.get("users");
-                        users.stream().forEach(email -> {
-                            groupUserRepository.save(new GroupUser(group, userRepository.findByEmail(email).get()));
+                        List<Map> users = (List<Map>) groupMap.get("users");
+                        users.stream().forEach((Map user) -> {
+                            String email = (String) user.get("email");
+                            GroupUser groupUser = new GroupUser(group, userRepository.findByEmail(email).get());
+
+                            if(user.containsKey("admin-flags")) {
+                                List<String> adminFlags = (List<String>) user.get("admin-flags");
+                                groupUser.setGroupAdmin(adminFlags.contains("group"));
+                                groupUser.setApplicationAdmin(adminFlags.contains("application"));
+                                groupUser.setTopicAdmin(adminFlags.contains("topic"));
+                            }
+
+                            groupUserRepository.save(groupUser);
                         });
                     }
 

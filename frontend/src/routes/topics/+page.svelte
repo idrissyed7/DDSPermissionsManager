@@ -87,6 +87,11 @@
 			}
 			urlparameters.set([]);
 		}
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 
 	const searchTopics = async (searchStr) => {
