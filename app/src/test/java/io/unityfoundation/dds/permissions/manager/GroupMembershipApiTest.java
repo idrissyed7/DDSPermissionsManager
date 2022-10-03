@@ -417,6 +417,13 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
+
+        @Test
+        public void shouldBeConsideredValid() {
+            HttpRequest request = HttpRequest.GET("/group_membership/validate-user");
+            HttpResponse response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
     }
 
     @Nested
@@ -1056,6 +1063,40 @@ public class GroupMembershipApiTest {
             assertEquals(0, page.getContent().size());
         }
 
+        @Test
+        public void shouldBeConsideredValid() {
+            mockSecurityService.postConstruct();
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // other group and member
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = (Group) response.getBody(Group.class).get();
+
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // add non-admin test user
+            dto1.setEmail("jjones@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/group_membership/validate-user");
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
+
     }
 
     @Nested
@@ -1161,6 +1202,16 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+        @Test
+        public void shouldBeConsideredInvalid() {
+            loginAsNonAdmin();
+            HttpRequest request = HttpRequest.GET("/group_membership/validate-user");
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(NOT_FOUND, exception.getStatus());
         }
     }
 }
