@@ -12,6 +12,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @Singleton
@@ -92,9 +93,9 @@ public class ApplicationPermissionService {
 
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
-        Long applicationid = applicationPermission.getPermissionsApplication().getId();
+        Long applicationId = applicationPermission.getPermissionsApplication().getId();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationid, accessType);
+        return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationId, accessType);
     }
 
     public HttpResponse deleteById(Long permissionId) {
@@ -114,5 +115,29 @@ public class ApplicationPermissionService {
 
         applicationPermissionRepository.deleteById(permissionId);
         return HttpResponse.noContent();
+    }
+
+    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access) {
+        if (Arrays.stream(AccessType.values()).noneMatch(accessType -> accessType.equals(access))) {
+            return HttpResponse.badRequest();
+        }
+
+        Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
+
+        if (applicationPermissionOptional.isEmpty()) {
+            return HttpResponse.notFound();
+        } else {
+            Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+
+            if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
+                return HttpResponse.unauthorized();
+            }
+        }
+
+        ApplicationPermission applicationPermission = applicationPermissionOptional.get();
+        applicationPermission.setAccessType(access);
+
+        return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
     }
 }
