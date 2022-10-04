@@ -18,11 +18,17 @@
 	let errorMsg, errorObject;
 	let duplicateAppName = false;
 
+	// Keys
+	const enterKey = 13;
+
 	// Modals
 	let errorMessageVisible = false;
 	let addApplicationVisible = false;
 	let confirmDeleteVisible = false;
 	let applicationDetailVisible = false;
+
+	// Application Name
+	let editSaveLabel = 'edit';
 
 	//Pagination
 	const applicationsPerPage = 10;
@@ -59,7 +65,10 @@
 	// Validation
 	let previousAppName;
 
-	// Search Applications Feature
+	// Edit Name Label Reactive Statement
+	$: editAppName === true ? (editSaveLabel = 'save') : (editSaveLabel = 'edit');
+
+	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -92,7 +101,10 @@
 	}
 
 	// Reset add group form once closed
-	$: if (addApplicationVisible === false) searchGroups = '';
+	$: if (addApplicationVisible === false) {
+		searchGroups = '';
+		appName = '';
+	}
 
 	onMount(async () => {
 		try {
@@ -172,16 +184,15 @@
 		try {
 			const res = await httpAdapter.post(`/applications/save`, {
 				name: appName,
-				permissionsGroup: selectedGroup
+				group: selectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
+			if (err.response.data) err.message = 'Application name already exists.';
 			errorMessage('Error Creating Application', err.message);
 		}
 
-		await reloadAllApps().then(() => {
-			currentPage = applicationsPages.length - 1;
-		});
+		await reloadAllApps();
 	};
 
 	const confirmAppDelete = (ID, name) => {
@@ -232,28 +243,14 @@
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: selectedAppName,
-				permissionsGroup: selectedAppGroupId
+				group: selectedAppGroupId
 			})
 			.catch((err) => {
 				errorMessage('Error Saving New Application Name', err.message);
 			});
+
 		reloadAllApps();
-	};
-
-	const checkAppDuplicates = (appName, appID) => {
-		if ($applications) {
-			duplicateAppName = $applications.some(
-				(appStore) => appStore.name === appName && appStore.id !== appID
-			);
-		}
-
-		if (!duplicateAppName && appID === 0) {
-			addApplication();
-		}
-
-		if (!duplicateAppName && appID !== 0) {
-			saveNewAppName();
-		}
+		editAppName = false;
 	};
 
 	const loadApplicationDetail = async (appId, groupId) => {
@@ -330,22 +327,13 @@
 				title="Add Application"
 				on:cancel={() => {
 					addApplicationVisible = false;
-					duplicateAppName = false;
 				}}
 			>
 				<input
 					type="text"
 					placeholder="Application Name"
-					style="width: 15rem;"
-					class:invalid={duplicateAppName}
 					bind:value={appName}
-					on:click={() => (duplicateAppName = false)}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							document.activeElement.blur();
-							checkAppDuplicates(appName, 0);
-						}
-					}}
+					style="text-align: left;"
 				/>
 				&nbsp;
 				<label for="groups">Group:</label>
@@ -391,10 +379,10 @@
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
-						checkAppDuplicates(appName, 0);
+						addApplication();
 					}}
 				>
-					<span>Create</span></button
+					<span>Add</span></button
 				>
 				{#if duplicateAppName}
 					<p style="position: absolute; left:33%; top: 38px; color: red">
@@ -408,24 +396,23 @@
 	<div class="content">
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
-		{/if}
-		<center>
-			<input
-				style="border-width: 1px; width: 20rem"
-				placeholder="Search"
-				bind:value={searchString}
-				on:blur={() => {
-					searchString = searchString?.trim();
-				}}
-				on:keydown={(event) => {
-					const returnKey = 13;
-					if (event.which === returnKey) {
-						document.activeElement.blur();
+			<center>
+				<input
+					style="border-width: 1px; width: 20rem"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
 						searchString = searchString?.trim();
-					}
-				}}
-			/>&nbsp; &#x1F50E;
-		</center>
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;
+			</center>
+		{/if}
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
@@ -436,17 +423,35 @@
 				{#if $applications}
 					{#if $applications.length > 0}
 						{#each $applications as app}
-							<tr style="line-height: 1.7rem;">
-								<td>{app.id}</td>
-								<td
-									style="cursor: pointer"
-									on:click={() => {
-										loadApplicationDetail(app.id, app.group);
-									}}
-									>{app.name}
-								</td>
-								<td>{app.groupName}</td>
-							</tr>
+							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group)) || $isAdmin}
+								<tr>
+									<td>{app.id}</td>
+									<td
+										style="cursor: pointer"
+										on:click={() => {
+											loadApplicationDetail(app.id, app.group);
+										}}
+										>{app.name}
+									</td>
+									<td>{app.groupName}</td>
+
+									{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
+										<td>
+											<button
+												class="button-delete"
+												on:click={() => {
+													selectedAppId = app.id;
+													selectedAppName = app.name;
+													confirmDeleteVisible = true;
+												}}
+												><span>Delete</span>
+											</button>
+										</td>
+									{:else}
+										<td />
+									{/if}
+								</tr>
+							{/if}
 						{/each}
 					{/if}
 				{/if}
@@ -497,41 +502,42 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
-				<div class="tooltip">
-					<input
-						id="name"
-						class:editable={$isAdmin}
+				<input
+					id="name"
+					bind:value={selectedAppName}
+					readonly={!editAppName}
+					class:name-as-label={!editAppName}
+					class:name-edit={editAppName}
+					on:keydown={(event) => {
+						if (event.which === enterKey) {
+							selectedAppName = selectedAppName.trim();
+							if (previousAppName !== selectedAppName) saveNewAppName();
+							document.querySelector('#name').blur();
+							editAppName = false;
+						}
+					}}
+				/>
+				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
+					<span
+						style="position: absolute; font-size: medium; left: 65rem; top:6rem; cursor: pointer"
 						on:click={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'edit') {
+								previousAppName = selectedAppName;
 								editAppName = true;
-								previousAppName = selectedAppName.trim();
 							}
-						}}
-						on:blur={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'save') {
 								selectedAppName = selectedAppName.trim();
-								if (previousAppName !== selectedAppName) saveNewAppName();
-								editAppName = false;
-							}
-						}}
-						on:keydown={(event) => {
-							if (event.which === 13) {
-								if ($isAdmin) {
-									selectedAppName = selectedAppName.trim();
-									if (previousAppName !== selectedAppName) saveNewAppName();
-									document.querySelector('#name').blur();
+								if (previousAppName !== selectedAppName) {
+									saveNewAppName();
+								} else {
+									editAppName = false;
 								}
 							}
 						}}
-						bind:value={selectedAppName}
-						readonly={!editAppName}
-						class:name-as-label={!editAppName}
-						class:name-edit={editAppName}
-					/>
-					{#if $isAdmin}
-						<span class="tooltiptext">&#9998</span>
-					{/if}
-				</div>
+					>
+						&raquo; &nbsp; {editSaveLabel}
+					</span>
+				{/if}
 			</div>
 			<span
 				style="font-size: medium; margin-left: 11rem; cursor: pointer"
@@ -549,7 +555,13 @@
 				</tr>
 				<tr>
 					<td>{selectedAppId}</td>
-					<td>{selectedAppName}</td>
+					<td>
+						{#if editAppName}
+							{previousAppName}
+						{:else}
+							{selectedAppName}
+						{/if}
+					</td>
 					<td>{selectedAppGroupName}</td>
 					<td>
 						{#if $applicationPermission}
@@ -614,8 +626,7 @@
 		left: 0;
 	}
 
-	.tooltip .tooltiptext {
-		top: -6px;
-		left: 303px;
+	.name input:focus {
+		outline: none;
 	}
 </style>

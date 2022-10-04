@@ -141,6 +141,76 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void cannotCreateApplicationWithNullNorWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // null
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication(null, primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+
+            // space
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("     ", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("   Abc123  ", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+        }
+
+        @Test
+        public void cannotCreateApplicationWithSameNameInGroup() {
+
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+
+            // duplicate create attempt
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<ApplicationDTO> applicationOptionalAttempt = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptionalAttempt.isPresent());
+            assertEquals(applicationOptional.get().getId(), applicationOptionalAttempt.get().getId());
+        }
+
+        @Test
         public void canViewAllApplications() {
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -415,13 +485,58 @@ public class ApplicationApiTest {
 
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsNonAdminOfGroup() {
-        }
+        public void canViewGroupApplicationsAsMember() {
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
 
-        @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsApplicationAdminOfGroup() {
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group as an application admin
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
         }
 
         @Test

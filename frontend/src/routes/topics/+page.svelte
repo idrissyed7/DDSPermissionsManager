@@ -67,7 +67,6 @@
 	onMount(async () => {
 		try {
 			reloadAllTopics();
-
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
@@ -298,24 +297,44 @@
 		{#if $topics}
 			{#if $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 				<table align="center">
-					<tr style="border-width: 0px">
-						<th><strong>Topic</strong></th>
-						<th><strong>Group</strong></th>
-					</tr>
-					{#each $topics as topic}
-						<tr>
-							<td
-								style="line-height: 1.7rem;"
-								class="topic-td"
-								on:click={() => {
-									loadTopic(topic.id);
-									selectedTopicId = topic.id;
-								}}
-								>{topic.name}
-							</td>
-							<td>{topic.groupName}</td>
+					{#if $topics.length > 0}
+						<tr style="border-width: 0px">
+							<th><strong>Topic</strong></th>
 						</tr>
-					{/each}
+						{#each $topics as topic}
+							<tr>
+								<td
+									style="line-height: 1.7rem;"
+									class="topic-td"
+									on:click={() => {
+										loadTopic(topic.id);
+										selectedTopicId = topic.id;
+									}}>{topic.name}</td
+								>
+
+								{#if $isAdmin || $permissionsByGroup.some((permissionTopic) => permissionTopic.isTopicAdmin === true)}
+									<td>
+										<button
+											class="button-delete"
+											style="float: right"
+											on:click={() => {
+												selectedTopicId = topic.id;
+												selectedTopicName = topic.name;
+												confirmDeleteVisible = true;
+											}}
+											><span>Delete</span>
+										</button>
+									</td>
+								{:else}
+									<td /><td />
+								{/if}
+
+								{#if $isAdmin || isTopicAdmin}
+									<td />
+								{/if}
+							</tr>
+						{/each}
+					{/if}
 				</table>
 				<br /> <br />
 
@@ -371,6 +390,14 @@
 				on:click={() => returnToTopicsList()}
 				>&laquo; &nbsp; Back
 			</span>
+
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				<span
+					style="font-size: medium; float: right; margin-right: 9.5rem; cursor: pointer"
+					on:click={() => returnToTopicsList()}
+					>Edit &nbsp; <div style="display:inline-block; transform: scaleX(-1);">&#9998;</div>
+				</span>
+			{/if}
 
 			<table align="center" class="topics-details">
 				<tr>

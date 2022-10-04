@@ -1,11 +1,13 @@
 package io.unityfoundation.dds.permissions.manager.model.topic;
 
 import io.micronaut.core.annotation.Introspected;
+import io.micronaut.core.annotation.NonNull;
 
 @Introspected
 public class TopicDTO {
 
     private Long id;
+    @NonNull
     private String name;
     private TopicKind kind;
     private Long group;

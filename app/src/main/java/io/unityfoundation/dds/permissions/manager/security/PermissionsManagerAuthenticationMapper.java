@@ -37,10 +37,18 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
                                                                State state) {
         return Optional.ofNullable(openIdClaims.getEmail())
                 .flatMap(userService::getUserByEmail)
-                .map(user -> AuthenticationResponse.success(openIdClaims.getEmail(),
-                        rolesByUser(user),
-                        userAttributes(openIdClaims, user)))
+                .map(user -> isNonAdminAndNotAMemberOfAnyGroups(user) ?
+                        AuthenticationResponse.failure(AuthenticationFailureReason.USER_DISABLED) :
+                        AuthenticationResponse.success(
+                                openIdClaims.getEmail(),
+                                rolesByUser(user),
+                                userAttributes(openIdClaims, user)
+                        ))
                 .orElseGet(() -> AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND));
+    }
+
+    private boolean isNonAdminAndNotAMemberOfAnyGroups(User user) {
+        return !user.isAdmin() && groupUserService.countMembershipsByUserId(user.getId()) == 0;
     }
 
     private List<String> rolesByUser(User user) {
