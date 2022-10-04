@@ -12,6 +12,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import javax.transaction.Transactional;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -139,5 +140,11 @@ public class ApplicationPermissionService {
         applicationPermission.setAccessType(access);
 
         return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
+    }
+
+    // approach1
+    @Transactional
+    public void deleteAllByTopic(Topic topic) {
+        applicationPermissionRepository.deleteByPermissionsTopicEquals(topic);
     }
 }
