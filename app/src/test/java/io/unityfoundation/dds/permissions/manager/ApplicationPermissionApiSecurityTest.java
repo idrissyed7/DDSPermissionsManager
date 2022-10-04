@@ -111,6 +111,17 @@ public class ApplicationPermissionApiSecurityTest {
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
             int permissionId = (int) content.get(0).get("id");
 
+            updatePermission(permissionId, AccessType.WRITE);
+
+            request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
+            responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            content = (List<Map>) responseMap.get("content");
+            assertEquals(2, content.size());
+            assertFalse(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
+            assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
+            assertTrue(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
+
             request = HttpRequest.DELETE("/application_permissions/" + permissionId);
             HttpResponse<Object> response = blockingClient.exchange(request);
             assertEquals(HttpStatus.NO_CONTENT, response.getStatus());
@@ -145,6 +156,19 @@ public class ApplicationPermissionApiSecurityTest {
             assertEquals(accessType.name(), responseMap.get("accessType"));
             assertEquals(applicationId.intValue(), responseMap.get("applicationId"));
             assertEquals(topicId.intValue(), responseMap.get("topicId"));
+        }
+
+        private void updatePermission(int permissionId, AccessType accessType) {
+            HttpRequest<?> request;
+            HashMap<String, Object> responseMap;
+
+            request = HttpRequest.PUT("/application_permissions/" + permissionId + "/" + accessType.name(), Map.of());
+            responseMap = blockingClient.retrieve(request, HashMap.class);
+
+            assertNotNull(responseMap);
+
+            assertEquals(permissionId, responseMap.get("id"));
+            assertEquals(accessType.name(), responseMap.get("accessType"));
         }
     }
 }

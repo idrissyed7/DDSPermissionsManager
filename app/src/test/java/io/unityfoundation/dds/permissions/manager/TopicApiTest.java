@@ -112,7 +112,95 @@ public class TopicApiTest {
             assertTrue(topic.isPresent());
         }
 
-        // todo topics cannot exist with same name in group (covered in later story)
+        @Test
+        public void cannotCreateGroupWithNullNorWhitespace() {
+
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+
+            topicDTO.setName("     ");
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            HttpRequest<?> finalRequest1 = request;
+            HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest1);
+            });
+            assertEquals(BAD_REQUEST, exception1.getStatus());
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("   Abc123  ");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topic = response.getBody(TopicDTO.class);
+            assertTrue(topic.isPresent());
+            assertEquals("Abc123", topic.get().getName());
+        }
+
+        @Test
+        public void cannotCreateTopicWithSameNameInGroup() {
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("Abc123");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topic = response.getBody(TopicDTO.class);
+            assertTrue(topic.isPresent());
+            assertEquals("Abc123", topic.get().getName());
+
+            // confirm it is topic with kind B and not C
+            topicDTO.setKind(TopicKind.C);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            topic = response.getBody(TopicDTO.class);
+            assertTrue(topic.isPresent());
+            assertEquals(TopicKind.B, topic.get().getKind());
+        }
 
         //show
         @Test
