@@ -32,9 +32,9 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
-    @Get
-    public Page<ApplicationDTO> index(@Valid Pageable pageable) {
-        return applicationService.findAll(pageable);
+    @Get("{?filter}")
+    public Page<ApplicationDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+        return applicationService.findAll(pageable, filter);
     }
 
     @Get("/show/{id}")
