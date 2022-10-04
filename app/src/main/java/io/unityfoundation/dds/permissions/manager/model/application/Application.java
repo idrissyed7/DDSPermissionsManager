@@ -1,10 +1,13 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissions_application")
@@ -21,6 +24,10 @@ public class Application {
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
     private Group permissionsGroup;
+
+    // approach2
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsApplication")
+    private Set<ApplicationPermission> applicationPermissions = new HashSet<>();
 
     public Application() {
     }
@@ -62,5 +69,13 @@ public class Application {
     @PrePersist
     void trimName() {
         this.name = this.name.trim();
+    }
+
+    public Set<ApplicationPermission> getApplicationPermissions() {
+        return applicationPermissions;
+    }
+
+    public void setApplicationPermissions(Set<ApplicationPermission> permissions) {
+        this.applicationPermissions = permissions;
     }
 }
