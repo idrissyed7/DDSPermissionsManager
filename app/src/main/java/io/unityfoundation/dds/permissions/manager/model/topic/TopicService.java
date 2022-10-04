@@ -66,6 +66,8 @@ public class TopicService {
             throw new Exception("Update of Topics are not allowed.");
         } else if (topicDTO.getGroup() == null) {
             throw new Exception("Topic must be associated to a group.");
+        } else if (topicDTO.getName() == null) {
+            throw new Exception("Name cannot be empty.");
         }
 
         Optional<Group> groupOptional = groupRepository.findById(topicDTO.getGroup());
@@ -83,7 +85,7 @@ public class TopicService {
         }
 
         Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
-                topic.getName(), topic.getPermissionsGroup());
+                topic.getName().trim(), topic.getPermissionsGroup());
 
         if (searchTopicByNameAndGroup.isPresent()) {
             return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));

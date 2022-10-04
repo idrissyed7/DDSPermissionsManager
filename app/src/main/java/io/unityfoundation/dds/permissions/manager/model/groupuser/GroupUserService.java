@@ -211,4 +211,14 @@ public class GroupUserService {
     public int getMembershipCountByGroup(Group group) {
         return groupUserRepository.countByPermissionsGroup(group);
     }
+
+    public HttpResponse checkUserValidity() {
+
+        if (!securityUtil.isCurrentUserAdmin() &&
+                countMembershipsByUserId(securityUtil.getCurrentlyAuthenticatedUser().get().getId()) == 0) {
+            return HttpResponse.notFound();
+        }
+
+        return HttpResponse.ok();
+    }
 }

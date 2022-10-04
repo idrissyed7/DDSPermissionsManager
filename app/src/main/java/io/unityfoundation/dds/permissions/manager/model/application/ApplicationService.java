@@ -10,6 +10,7 @@ import io.micronaut.security.authentication.AuthenticationException;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
@@ -35,7 +36,19 @@ public class ApplicationService {
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable) {
-        return applicationRepository.findAll(pageable).map(ApplicationDTO::new);
+        return getApplicationPage(pageable).map(ApplicationDTO::new);
+    }
+
+    private Page<Application> getApplicationPage(Pageable pageable) {
+
+        if (securityUtil.isCurrentUserAdmin()) {
+            return applicationRepository.findAll(pageable);
+        } else {
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+            List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+
+            return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+        }
     }
 
     @Transactional
