@@ -20,13 +20,13 @@ public class GroupUser {
     private User permissionsUser;
 
     @NonNull
-    private boolean isGroupAdmin = false;
+    private boolean groupAdmin = false;
 
     @NonNull
-    private boolean isTopicAdmin = false;
+    private boolean topicAdmin = false;
 
     @NonNull
-    private boolean isApplicationAdmin = false;
+    private boolean applicationAdmin = false;
 
     public GroupUser() {
     }
@@ -61,26 +61,26 @@ public class GroupUser {
     }
 
     public boolean isGroupAdmin() {
-        return isGroupAdmin;
+        return groupAdmin;
     }
 
     public void setGroupAdmin(boolean groupAdmin) {
-        isGroupAdmin = groupAdmin;
+        this.groupAdmin = groupAdmin;
     }
 
     public boolean isTopicAdmin() {
-        return isTopicAdmin;
+        return topicAdmin;
     }
 
     public void setTopicAdmin(boolean topicAdmin) {
-        isTopicAdmin = topicAdmin;
+        this.topicAdmin = topicAdmin;
     }
 
     public boolean isApplicationAdmin() {
-        return isApplicationAdmin;
+        return applicationAdmin;
     }
 
     public void setApplicationAdmin(boolean applicationAdmin) {
-        isApplicationAdmin = applicationAdmin;
+        this.applicationAdmin = applicationAdmin;
     }
 }
