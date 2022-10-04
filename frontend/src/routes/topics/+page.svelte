@@ -391,6 +391,14 @@
 				>&laquo; &nbsp; Back
 			</span>
 
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				<span
+					style="font-size: medium; float: right; margin-right: 9.5rem; cursor: pointer"
+					on:click={() => returnToTopicsList()}
+					>Edit &nbsp; <div style="display:inline-block; transform: scaleX(-1);">&#9998;</div>
+				</span>
+			{/if}
+
 			<table align="center" class="topics-details">
 				<tr>
 					<td>Name:</td>
