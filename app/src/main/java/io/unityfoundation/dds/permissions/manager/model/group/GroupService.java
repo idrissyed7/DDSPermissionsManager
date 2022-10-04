@@ -128,14 +128,18 @@ public class GroupService {
     }
 
     private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {
-        if (!pageable.isSorted()) {
-            pageable = pageable.order(Sort.Order.asc("permissionsGroup.name"));
-        }
 
         if (securityUtil.isCurrentUserAdmin()) {
+            if (!pageable.isSorted()) {
+                pageable = pageable.order(Sort.Order.asc("name"));
+            }
+
             return groupRepository.findAllByNameContainsIgnoreCase(filter, pageable);
         } else {
-            // search based on context
+            if (!pageable.isSorted()) {
+                pageable = pageable.order(Sort.Order.asc("permissionsGroup.name"));
+            }
+
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             return groupUserService.getAllGroupsUserIsAnAdminOf(user, filter, pageable, role);
         }
