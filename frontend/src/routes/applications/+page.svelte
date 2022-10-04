@@ -35,10 +35,21 @@
 	let applicationsTotalPages;
 	let applicationsCurrentPage = 0;
 
-	// SearchBox
+	// Applications SearchBox
 	let searchString;
 	const searchStringLength = 3;
 	let searchAppResults;
+
+	// Groups SearchBox
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchGroupActive = false;
+
+	// Forms
+	let groupsDropdownSuggestion = 7;
+
+	// Timer
 	let timer;
 	const waitTime = 500;
 
@@ -72,10 +83,32 @@
 		}, waitTime);
 	}
 
+	// Search Groups Feature///
+	$: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchGroup(searchGroups.trim());
+		}, waitTime);
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addApplicationVisible === false) {
+		searchGroups = '';
+		appName = '';
+	}
+
 	onMount(async () => {
 		try {
 			reloadAllApps();
-
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
@@ -117,6 +150,21 @@
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
+	};
+
+	const searchGroup = async (searchGroupStr) => {
+		setTimeout(async () => {
+			searchGroupResults = await httpAdapter.get(
+				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+			);
+		}, 1000);
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchGroupActive = false;
 	};
 
 	const searchApp = async (searchString) => {
@@ -187,15 +235,6 @@
 		} catch (err) {
 			applications.set();
 			errorMessage('Error Loading Applications', err.message);
-		}
-	};
-
-	const addAppModal = () => {
-		if ($groups) {
-			appName = '';
-			addApplicationVisible = true;
-		} else {
-			errorMessage('Error', 'There are no Groups available');
 		}
 	};
 
@@ -290,20 +329,52 @@
 					addApplicationVisible = false;
 				}}
 			>
-				<input type="text" placeholder="Application Name" bind:value={appName} />
+				<input
+					type="text"
+					placeholder="Application Name"
+					bind:value={appName}
+					style="text-align: left;"
+				/>
 				&nbsp;
 				<label for="groups">Group:</label>
-				<select name="groups" bind:value={selectedGroup}>
-					{#if $isAdmin}
-						{#each $groups as group}
-							<option value={group.id}>{group.name}</option>
-						{/each}
-					{:else}
-						{#each $permissionsByGroup as group, i}
-							<option value={group.groupId}>{group.groupName}</option>
-						{/each}
+				<div style="display: inline-block">
+					<input
+						placeholder="Group Name"
+						style="
+					display: inline-flex;       
+					height: 1.7rem;
+					text-align: left;
+					font-size: small;
+					min-width: 9rem;"
+						bind:value={searchGroups}
+						on:blur={() => {
+							setTimeout(() => {
+								searchGroupsResultsVisible = false;
+							}, waitTime);
+						}}
+						on:click={async () => {
+							searchGroupResults = [];
+							searchGroupActive = true;
+							if (searchGroups?.length >= searchStringLength) {
+								searchGroup(searchGroups);
+							}
+						}}
+					/>
+
+					{#if searchGroupsResultsVisible}
+						<table class="searchGroup" style="position: relative; margin-left: 1rem;width: 9.5rem">
+							{#each searchGroupResults.data.content as result}
+								<tr
+									><td
+										on:click={() => {
+											selectedSearchGroup(result.name, result.id);
+										}}>{result.name}</td
+									></tr
+								>
+							{/each}
+						</table>
 					{/if}
-				</select>
+				</div>
 				<button
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
@@ -529,7 +600,7 @@
 		<br /><br />
 		{#if $isAdmin && !applicationDetailVisible}
 			<center
-				><button class="button" style="width: 9rem" on:click={() => addAppModal()}
+				><button class="button" style="width: 9rem" on:click={() => (addApplicationVisible = true)}
 					>Add Application</button
 				></center
 			>
@@ -546,7 +617,6 @@
 		margin-top: 1.1rem;
 		text-align: left;
 		text-align: center;
-		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
 	}
