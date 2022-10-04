@@ -56,6 +56,8 @@ public class ApplicationService {
 
         if (applicationDTO.getGroup() == null) {
             throw new Exception("Application must be associated to a group.");
+        } else if (applicationDTO.getName() == null) {
+            throw new Exception("Name cannot be empty.");
         }
 
         Optional<Group> groupOptional = groupRepository.findById(applicationDTO.getGroup());
@@ -74,7 +76,7 @@ public class ApplicationService {
         }
 
         Optional<Application> searchApplicationByNameAndGroup = applicationRepository.findByNameAndPermissionsGroup(
-                application.getName(), application.getPermissionsGroup());
+                application.getName().trim(), application.getPermissionsGroup());
 
         if (searchApplicationByNameAndGroup.isPresent()) {
             return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new ApplicationDTO(searchApplicationByNameAndGroup.get()));
