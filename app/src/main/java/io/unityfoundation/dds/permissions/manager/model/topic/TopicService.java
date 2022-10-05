@@ -7,11 +7,13 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -24,12 +26,14 @@ public class TopicService {
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final GroupRepository groupRepository;
+    private final Provider<ApplicationPermissionService> applicationPermissionService;
 
-    public TopicService(TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository) {
+    public TopicService(TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository, Provider<ApplicationPermissionService> applicationPermissionService) {
         this.topicRepository = topicRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.groupRepository = groupRepository;
+        this.applicationPermissionService = applicationPermissionService;
     }
 
     public Page<TopicDTO> findAll(Pageable pageable, String filter) {
@@ -95,13 +99,17 @@ public class TopicService {
     }
 
     public void deleteById(Long id) throws Exception {
-        Optional<Topic> topic = topicRepository.findById(id);
-        if (topic.isEmpty()) {
+        Optional<Topic> optionalTopic = topicRepository.findById(id);
+        if (optionalTopic.isEmpty()) {
             throw new Exception("Topic not found");
         }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.get())) {
+        Topic topic = optionalTopic.get();
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
             throw new AuthenticationException("Not authorized");
         }
+
+        // TODO - Need to investigate cascade management to eliminate this
+        applicationPermissionService.get().deleteAllByTopic(topic);
 
         topicRepository.deleteById(id);
     }
