@@ -16,7 +16,96 @@
 	let timer;
 	const waitTime = 500;
 
-	// Search Feature
+	// Search Groups
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchGroupActive = true;
+
+	// Search Applications
+	let searchApplications;
+	let searchApplicationActive = true;
+	let searchApplicationResults;
+	let searchApplicationsResultsVisible = false;
+
+	// Authentication
+	let isTopicAdmin = false;
+
+	// Error Handling
+	let errorMsg, errorObject;
+
+	//Pagination
+	const topicsPerPage = 10;
+	let topicsTotalPages;
+	let topicsCurrentPage = 0;
+
+	// Forms
+	let anyApplicationCanRead = false;
+	let selectedGroup;
+	// let selectedApp;
+	const applicationsResult = 7;
+
+	// Modals
+	let errorMessageVisible = false;
+	let topicsListVisible = true;
+	let topicDetailVisible = false;
+	let addTopicVisible = false;
+	let confirmDeleteVisible = false;
+
+	// Validation
+	// let disabled = false;
+
+	// Group Name
+	let newTopicName;
+	// let editTopicName;
+
+	// Selection
+	let selectedTopicId,
+		selectedTopicName,
+		selectedTopicKind,
+		selectedTopicGroupName,
+		selectedTopicGroupId;
+	let selectedTopicApplications = [];
+	let selectedApplicationList = [];
+
+	// Search Groups Feature
+	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
+		searchGroup(searchGroups.trim());
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addTopicVisible === false) {
+		searchGroups = '';
+		searchApplications = '';
+		newTopicName = '';
+		selectedApplicationList = [];
+		anyApplicationCanRead = false;
+	}
+
+	// Search Applications Feature
+	$: if (searchApplications?.trim().length >= 3 && searchApplicationActive) {
+		searchApplication(searchApplications.trim());
+	} else {
+		searchApplicationsResultsVisible = false;
+	}
+
+	// Search Applications Dropdown Visibility
+	$: if (searchApplicationResults?.data?.length >= 1 && searchApplicationActive) {
+		searchApplicationsResultsVisible = true;
+	} else {
+		searchApplicationsResultsVisible = false;
+	}
+
+	// Topics Filter Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -30,39 +119,6 @@
 			reloadAllTopics();
 		}, waitTime);
 	}
-
-	// Authentication
-	let isTopicAdmin = false;
-
-	// Error Handling
-	let errorMsg, errorObject;
-
-	//Pagination
-	const topicsPerPage = 10;
-	let topicsTotalPages;
-	let topicsCurrentPage = 0;
-
-	// Modals
-	let errorMessageVisible = false;
-	let topicsListVisible = true;
-	let topicDetailVisible = false;
-	let addTopicVisible = false;
-	let confirmDeleteVisible = false;
-
-	// Validation
-	let disabled = false;
-
-	// Group Name
-	let newTopicName;
-	let editTopicName;
-
-	// Selection
-	let selectedTopicId,
-		selectedTopicName,
-		selectedTopicKind,
-		selectedTopicGroupName,
-		selectedTopicGroupId;
-	let selectedTopicApplications = [];
 
 	onMount(async () => {
 		try {
@@ -94,6 +150,37 @@
 		}
 	});
 
+	const searchGroup = async (searchString) => {
+		setTimeout(async () => {
+			searchGroupResults = await httpAdapter.get(`/groups?page=0&size=7&filter=${searchString}`);
+		}, 1000);
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchGroupActive = false;
+	};
+
+	const searchApplication = async (searchString) => {
+		setTimeout(async () => {
+			searchApplicationResults = await httpAdapter.get(
+				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
+			);
+		}, 1000);
+	};
+
+	const selectedSearchApplication = (appName, appId, appAccessType) => {
+		selectedApplicationList.push({ id: appId, name: appName, accessType: appAccessType });
+		// This statement is used to trigger Svelte reactivity and re-render the component
+		selectedApplicationList = selectedApplicationList;
+		// selectedApp = appId;
+		searchApplications = appName;
+		searchApplicationsResultsVisible = false;
+		searchApplicationActive = false;
+	};
+
 	const searchTopics = async (searchStr) => {
 		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
 		if (res.data.content) {
@@ -118,6 +205,7 @@
 	};
 
 	const loadTopic = async (topicId) => {
+		addTopicVisible = false;
 		topicsListVisible = false;
 		topicDetailVisible = true;
 		try {
@@ -126,7 +214,7 @@
 
 			const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
 			selectedTopicApplications = resApps.data.content;
-
+			console.log('selectedTopicApplications', selectedTopicApplications);
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
 			selectedTopicGroupName = $topicDetails.groupName;
@@ -155,46 +243,38 @@
 	};
 
 	const addTopic = async () => {
-		if (!disabled) {
-			await httpAdapter
-				.post(`/topics/save/`, {
-					name: newTopicName
-				})
-				.catch((err) => {
-					addTopicVisible = false;
-					errorMessage('Error Adding Topic', err.message);
-				});
-
-			addTopicVisible = false;
-
-			await reloadAllTopics().then(() => {
-				topicsCurrentPage = topicsTotalPages - 1;
+		const res = await httpAdapter
+			.post(`/topics/save/`, {
+				name: newTopicName,
+				kind: anyApplicationCanRead ? 'B' : 'C',
+				group: selectedGroup,
+				groupName: searchGroups
+			})
+			.catch((err) => {
+				addTopicVisible = false;
+				errorMessage('Error Adding Topic', err.message);
 			});
-		}
+
+		const createdTopicId = res.data.id;
+		addTopicApplicationAssociations(createdTopicId);
+
+		addTopicVisible = false;
+
+		await reloadAllTopics().then(() => {
+			topicsCurrentPage = topicsTotalPages - 1;
+		});
 	};
 
-	const addTopicModal = () => {
-		newTopicName = '';
-		addTopicVisible = true;
+	const addTopicApplicationAssociations = (topicId) => {
+		let access = 'READ';
+		selectedApplicationList.forEach(async (app) => {
+			await httpAdapter.post(`/application_permissions/${app.id}/${topicId}/${access}`);
+		});
 	};
 
 	const returnToTopicsList = () => {
 		topicDetailVisible = false;
 		topicsListVisible = true;
-	};
-
-	const saveNewTopicName = async () => {
-		editTopicName = false;
-		await httpAdapter
-			.post(`/topics/save/`, {
-				id: selectedTopicId,
-				name: selectedTopicName.trim()
-			})
-			.catch((err) => {
-				errorMessage('Error Editing Topic Name', err.message);
-			});
-
-		reloadAllTopics();
 	};
 
 	const reloadAllTopics = async (page = 0) => {
@@ -256,30 +336,12 @@
 		</Modal>
 	{/if}
 
-	{#if addTopicVisible && !errorMessageVisible}
-		<Modal title="Add New Topic" on:cancel={() => (addTopicVisible = false)}>
-			<div class="confirm">
-				<input type="text" placeholder="Topic Name" bind:value={newTopicName} />
-				<button
-					class:button={!disabled}
-					style="margin-left: 1rem; width: 6.5rem"
-					{disabled}
-					on:click={() => addTopic()}><span>Add Topic</span></button
-				>
-			</div>
-			{#if disabled}
-				<br />
-				<center><span class="create-error">Please choose a unique name</span></center>
-			{/if}
-		</Modal>
-	{/if}
-
 	<div class="content">
 		<h1>Topics</h1>
 		{#if topicsListVisible && !topicDetailVisible}
 			<center>
 				<input
-					style="border-width: 1px;"
+					style="border-width: 1px; width: 20rem; text-align: center; height: 1.7rem"
 					placeholder="Search"
 					bind:value={searchString}
 					on:blur={() => {
@@ -376,12 +438,182 @@
 				<center><p>No Topics Found</p></center>
 			{/if}
 
-			{#if topicsListVisible && !topicDetailVisible}
+			{#if topicsListVisible && !topicDetailVisible && !addTopicVisible}
 				<br /><br />
 				<center>
-					<button class="button" on:click={() => addTopicModal()}>Add Topic </button></center
-				>
+					<button class="button" on:click={() => (addTopicVisible = true)}>Add Topic </button>
+				</center>
 			{/if}
+		{/if}
+
+		{#if addTopicVisible && !errorMessageVisible}
+			<table class="new-topic" align="center" style="margin-top: 2rem">
+				<center>
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="groups">Name:</label>
+							</td>
+							<td>
+								<input
+									placeholder="Topic Name"
+									style="width: 14rem; padding-left: 0.3rem"
+									bind:value={newTopicName}
+								/>
+							</td>
+						</div>
+					</tr>
+
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="groups">Group:</label>
+							</td>
+							<td>
+								<input
+									placeholder="Group Name"
+									style="width: 13.9rem; padding-left: 0.3rem"
+									bind:value={searchGroups}
+									on:blur={() => {
+										setTimeout(() => {
+											searchGroupsResultsVisible = false;
+										}, 500);
+									}}
+									on:click={async () => {
+										searchGroupResults = [];
+										searchGroupActive = true;
+										if (searchGroups?.length >= 3) {
+											searchGroup(searchGroups);
+										}
+									}}
+								/>
+							</td>
+
+							{#if searchGroupsResultsVisible}
+								<table class="searchGroup">
+									{#each searchGroupResults.data.content as result}
+										<tr>
+											<td
+												on:click={() => {
+													selectedSearchGroup(result.name, result.id);
+												}}
+												>{result.name}
+											</td>
+										</tr>
+									{/each}
+								</table>
+							{/if}
+						</div>
+					</tr>
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="anyApplicationCanRead">Any application can read this topic:</label>
+							</td>
+							<td>
+								<input type="checkbox" bind:checked={anyApplicationCanRead} />
+							</td>
+						</div>
+					</tr>
+
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="applications">Application:</label>
+							</td>
+							<td>
+								<input
+									placeholder="Application Name"
+									style="width: 11.8rem; padding-left: 0.3rem"
+									bind:value={searchApplications}
+									on:blur={() => {
+										setTimeout(() => {
+											searchApplicationsResultsVisible = false;
+										}, 500);
+									}}
+									on:click={async () => {
+										searchApplicationResults = [];
+										searchApplicationActive = true;
+										if (searchApplications?.length >= 3) {
+											searchApplication(searchApplications);
+										}
+									}}
+								/>
+							</td>
+
+							{#if searchApplicationsResultsVisible}
+								<table class="searchApplication">
+									{#each searchApplicationResults.data as result}
+										<tr style="border-width: 0px;">
+											<td
+												on:click={() => {
+													selectedSearchApplication(result.name, result.id, 'READ');
+													searchApplications = '';
+												}}>{result.name} (Read)</td
+											>
+										</tr>
+										<tr style="border-width: 0px;">
+											<td
+												on:click={() => {
+													selectedSearchApplication(result.name, result.id, 'WRITE');
+													searchApplications = '';
+												}}>{result.name} (Write)</td
+											>
+										</tr>
+									{/each}
+								</table>
+							{/if}
+						</div>
+
+						<div class="add-item">
+							{#if selectedApplicationList?.length > 0}
+								<ul>
+									{#each selectedApplicationList as app}
+										<div style="display:inline-flex">
+											<li style="margin-left: 2rem; margin-top: 0.5rem">
+												{app.name} ({app.accessType})
+											</li>
+											<button
+												class="remove-button"
+												style="margin-left: 0.5rem; height: 1.2rem; width: 1.2rem; margin-top: 0.3rem"
+												on:click={() => {
+													selectedApplicationList = selectedApplicationList.filter(
+														(selectedApplication) => selectedApplication.name != app.name
+													);
+												}}
+												>x
+											</button>
+										</div>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					</tr>
+
+					<div class="nextline-item">
+						<button
+							class="button"
+							style="width: 5.7rem"
+							disabled={newTopicName.length < 3 ||
+								searchGroups.length < 3 ||
+								selectedApplicationList?.length === 0}
+							on:click={() => addTopic()}><span>Add Topic</span></button
+						>
+
+						<button
+							class="button-cancel"
+							style="margin-left: 0.5rem"
+							on:click={() => {
+								newTopicName = '';
+								searchGroups = '';
+								addTopicVisible = false;
+							}}
+							>Cancel
+						</button>
+					</div>
+					<br />
+				</center>
+			</table>
 		{/if}
 
 		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
@@ -418,14 +650,14 @@
 						{/if}
 					</td>
 				</tr>
-				<tr>
+				<tr style="border-width: 0px;">
 					<td>Applications:</td>
 					<td>
 						<table class="associated-apps">
 							{#if selectedTopicApplications}
 								{#each selectedTopicApplications as application}
 									<tr style="height:unset">
-										<td>{application.permissionsApplication.name}</td>
+										<td>{application.applicationId}</td>
 										<td style="padding: 0 0.5rem 0 3rem">Access Type:</td>
 										<td>Read</td>
 										<td>
@@ -477,9 +709,30 @@
 	}
 
 	input {
-		text-align: center;
-		width: 20rem;
-		z-index: 1;
+		vertical-align: middle;
+		height: 1.2rem;
+		text-align: left;
+		height: 1.5rem;
+	}
+
+	label {
+		font-size: medium;
+	}
+
+	ul {
+		display: grid;
+		font-size: 0.8rem;
+		margin-left: 0.7rem;
+		padding-left: 0;
+		width: 2rem;
+	}
+
+	li {
+		margin-bottom: 0.2rem;
+	}
+
+	td label {
+		margin: 0.5rem;
 	}
 
 	.topics-details {
@@ -506,5 +759,65 @@
 
 	.associated-apps td {
 		font-size: 11pt;
+	}
+
+	.add-item {
+		/* height: 1.7rem; */
+		text-align: left;
+		font-size: small;
+	}
+
+	.new-topic tr:nth-child(even) {
+		background-color: rgba(0, 0, 0, 0);
+	}
+
+	.nextline-item {
+		display: block;
+		margin-top: 1rem;
+		margin-bottom: 2rem;
+	}
+
+	.searchGroup {
+		font-size: 0.75rem;
+		width: 9.5rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin-left: 4.75rem;
+		margin-top: -0.3rem;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		text-align: left;
+		background-color: rgba(217, 221, 254, 0.4);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchGroup tr {
+		height: 1.9rem;
+	}
+
+	.searchGroup tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
+	}
+
+	.searchApplication {
+		font-size: 0.75rem;
+		width: 9.5rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin-left: 6.9rem;
+		margin-top: -0.3rem;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		text-align: left;
+		background-color: rgba(217, 221, 254, 0.4);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
+
+	.searchApplication tr {
+		height: 1.9rem;
+	}
+
+	.searchApplication tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 0.4);
 	}
 </style>
