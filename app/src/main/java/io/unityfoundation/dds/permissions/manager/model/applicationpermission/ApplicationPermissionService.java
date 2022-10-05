@@ -35,8 +35,8 @@ public class ApplicationPermissionService {
     public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
         return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(), applicationPermission.getPermissionsTopic().getId(),
-                applicationPermission.getPermissionsApplication().getId(),
-                applicationPermission.getAccessType()
+                applicationPermission.getPermissionsTopic().getName(), applicationPermission.getPermissionsApplication().getId(),
+                applicationPermission.getPermissionsApplication().getName(), applicationPermission.getAccessType()
         ));
     }
 
@@ -93,9 +93,11 @@ public class ApplicationPermissionService {
 
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
+        String topicName = applicationPermission.getPermissionsTopic().getName();
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
+        String applicationName = applicationPermission.getPermissionsApplication().getName();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationId, accessType);
+        return new AccessPermissionDTO(applicationPermission.getId(), topicId, topicName, applicationId, applicationName, accessType);
     }
 
     public HttpResponse deleteById(Long permissionId) {
