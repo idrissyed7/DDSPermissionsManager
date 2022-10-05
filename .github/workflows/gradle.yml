@@ -39,3 +39,4 @@ jobs:
       with:
         report_paths: 'app/build/test-results/**/*.xml'
         detailed_summary: true
+        include_passed: true
