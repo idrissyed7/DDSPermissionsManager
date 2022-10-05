@@ -271,7 +271,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationGroup() {
+        public void cannotUpdateApplicationGroup() {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
@@ -295,13 +295,13 @@ public class ApplicationApiTest {
             assertTrue(applicationOptional.isPresent());
             ApplicationDTO application = applicationOptional.get();
 
+            // change group
             application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getGroup());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
@@ -587,7 +587,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
+        public void cannotUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
             mockSecurityService.postConstruct();
 
             HttpRequest<?> request;
@@ -630,11 +630,11 @@ public class ApplicationApiTest {
             // change the application to the other group
             application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getGroup());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
