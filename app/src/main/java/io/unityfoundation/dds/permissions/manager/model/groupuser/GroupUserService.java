@@ -6,6 +6,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
@@ -206,6 +207,19 @@ public class GroupUserService {
         });
 
         return result;
+    }
+
+    public Page<Group> getAllGroupsUserIsAnAdminOf(User user, String filter, Pageable pageable, GroupAdminRole role) {
+
+        switch (role) {
+            case GROUP_ADMIN:
+                return groupUserRepository.findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndGroupAdminTrue(user, filter, pageable);
+            case APPLICATION_ADMIN:
+                return groupUserRepository.findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndApplicationAdminTrue(user, filter, pageable);
+            case TOPIC_ADMIN:
+                return groupUserRepository.findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndTopicAdminTrue(user, filter, pageable);
+        }
+        return (Page<Group>) Page.EMPTY;
     }
 
     public int getMembershipCountByGroup(Group group) {
