@@ -16,7 +16,92 @@
 	let timer;
 	const waitTime = 500;
 
-	// Search Feature
+	// Search Groups
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchGroupActive = true;
+
+	// Search Applications
+	let searchApplications, searchApplicationsId;
+	let searchApplicationActive = true;
+	let searchApplicationResults;
+	let searchApplicationsResultsVisible = false;
+
+	// Authentication
+	let isTopicAdmin = false;
+
+	// Error Handling
+	let errorMsg, errorObject;
+
+	//Pagination
+	const topicsPerPage = 3;
+	let topicsTotalPages;
+	let topicsCurrentPage = 0;
+
+	// Forms
+	let anyApplicationCanRead = false;
+	let selectedGroup;
+	// let selectedApp;
+	const applicationsResult = 7;
+
+	// Modals
+	let errorMessageVisible = false;
+	let topicsListVisible = true;
+	let topicDetailVisible = false;
+	let addTopicVisible = false;
+	let confirmDeleteVisible = false;
+
+	// Group Name
+	let newTopicName;
+
+	// Selection
+	let selectedTopicId,
+		selectedTopicName,
+		selectedTopicKind,
+		selectedTopicGroupName,
+		selectedTopicGroupId;
+	let selectedTopicApplications = [];
+	let selectedApplicationList = [];
+
+	// Search Groups Feature
+	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
+		searchGroup(searchGroups.trim());
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.length >= 1 && searchGroupActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addTopicVisible === false) {
+		searchGroups = '';
+		searchApplications = '';
+		newTopicName = '';
+		selectedApplicationList = [];
+		anyApplicationCanRead = false;
+	}
+
+	// Search Applications Feature
+	$: if (searchApplications?.trim().length >= 3 && searchApplicationActive) {
+		searchApplication(searchApplications.trim());
+	} else {
+		searchApplicationsResultsVisible = false;
+	}
+
+	// Search Applications Dropdown Visibility
+	$: if (searchApplicationResults?.data?.length >= 1 && searchApplicationActive) {
+		searchApplicationsResultsVisible = true;
+	} else {
+		searchApplicationsResultsVisible = false;
+	}
+
+	// Topics Filter Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -30,39 +115,6 @@
 			reloadAllTopics();
 		}, waitTime);
 	}
-
-	// Authentication
-	let isTopicAdmin = false;
-
-	// Error Handling
-	let errorMsg, errorObject;
-
-	//Pagination
-	const topicsPerPage = 10;
-	let topicsTotalPages;
-	let topicsCurrentPage = 0;
-
-	// Modals
-	let errorMessageVisible = false;
-	let topicsListVisible = true;
-	let topicDetailVisible = false;
-	let addTopicVisible = false;
-	let confirmDeleteVisible = false;
-
-	// Validation
-	let disabled = false;
-
-	// Group Name
-	let newTopicName;
-	let editTopicName;
-
-	// Selection
-	let selectedTopicId,
-		selectedTopicName,
-		selectedTopicKind,
-		selectedTopicGroupName,
-		selectedTopicGroupId;
-	let selectedTopicApplications = [];
 
 	onMount(async () => {
 		try {
@@ -94,6 +146,48 @@
 		}
 	});
 
+	const searchGroup = async (searchString) => {
+		setTimeout(async () => {
+			if (!$isAdmin) {
+				console.log('not admin');
+				searchGroupResults = $permissionsByGroup.filter(
+					(groupIsTopicAdmin) =>
+						groupIsTopicAdmin.isTopicAdmin === true &&
+						groupIsTopicAdmin.groupName.toUpperCase().includes(searchString.toUpperCase())
+				);
+			} else {
+				searchGroupResults = await httpAdapter.get(`/groups?page=0&size=7&filter=${searchString}`);
+				searchGroupResults = searchGroupResults.data.content;
+				console.log('searchResults', searchGroupResults);
+			}
+		}, 1000);
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchGroupActive = false;
+	};
+
+	const searchApplication = async (searchString) => {
+		setTimeout(async () => {
+			searchApplicationResults = await httpAdapter.get(
+				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
+			);
+		}, 1000);
+	};
+
+	const selectedSearchApplication = (appName, appId) => {
+		selectedApplicationList.push({ id: appId, name: appName, accessType: 'READ' });
+
+		// This statement is used to trigger Svelte reactivity and re-render the component
+		selectedApplicationList = selectedApplicationList;
+		searchApplications = appName;
+		searchApplicationsResultsVisible = false;
+		searchApplicationActive = false;
+	};
+
 	const searchTopics = async (searchStr) => {
 		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
 		if (res.data.content) {
@@ -118,23 +212,28 @@
 	};
 
 	const loadTopic = async (topicId) => {
+		addTopicVisible = false;
 		topicsListVisible = false;
 		topicDetailVisible = true;
 		try {
 			const res = await httpAdapter.get(`/topics/show/${topicId}`);
 			topicDetails.set(res.data);
 
-			const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
-			selectedTopicApplications = resApps.data.content;
-
+			loadApplicationPermissions(topicId);
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
 			selectedTopicGroupName = $topicDetails.groupName;
-			selectedTopicGroupId = $topicDetails.groupId;
+			selectedTopicGroupId = $topicDetails.group;
+
 			selectedTopicKind = $topicDetails.kind;
 		} catch (err) {
 			errorMessage('Error Loading Topic Details', err.message);
 		}
+	};
+
+	const loadApplicationPermissions = async (topicId) => {
+		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
+		selectedTopicApplications = resApps.data.content;
 	};
 
 	const deleteTopic = async () => {
@@ -155,46 +254,56 @@
 	};
 
 	const addTopic = async () => {
-		if (!disabled) {
-			await httpAdapter
-				.post(`/topics/save/`, {
-					name: newTopicName
-				})
-				.catch((err) => {
-					addTopicVisible = false;
-					errorMessage('Error Adding Topic', err.message);
-				});
-
-			addTopicVisible = false;
-
-			await reloadAllTopics().then(() => {
-				topicsCurrentPage = topicsTotalPages - 1;
+		const res = await httpAdapter
+			.post(`/topics/save/`, {
+				name: newTopicName,
+				kind: anyApplicationCanRead ? 'B' : 'C',
+				group: selectedGroup,
+				groupName: searchGroups
+			})
+			.catch((err) => {
+				addTopicVisible = false;
+				errorMessage('Error Adding Topic', err.message);
 			});
+
+		const createdTopicId = res.data.id;
+		addTopicApplicationAssociation(createdTopicId);
+
+		addTopicVisible = false;
+
+		await reloadAllTopics().then(() => {
+			topicsCurrentPage = 0;
+		});
+	};
+
+	const addTopicApplicationAssociation = async (topicId, reload = false) => {
+		if (selectedApplicationList && selectedApplicationList.length > 0 && !reload) {
+			selectedApplicationList.forEach(async (app) => {
+				await httpAdapter.post(`/application_permissions/${app.id}/${topicId}/${app.accessType}`);
+			});
+		}
+		if (reload) {
+			await httpAdapter
+				.post(
+					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
+				)
+				.then(() => loadApplicationPermissions(topicId));
 		}
 	};
 
-	const addTopicModal = () => {
-		newTopicName = '';
-		addTopicVisible = true;
+	const deleteTopicApplicationAssociation = async (permissionId, topicId) => {
+		await httpAdapter.delete(`/application_permissions/${permissionId}`);
+		loadApplicationPermissions(topicId);
+	};
+
+	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
+		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
+		loadApplicationPermissions(topicId);
 	};
 
 	const returnToTopicsList = () => {
 		topicDetailVisible = false;
 		topicsListVisible = true;
-	};
-
-	const saveNewTopicName = async () => {
-		editTopicName = false;
-		await httpAdapter
-			.post(`/topics/save/`, {
-				id: selectedTopicId,
-				name: selectedTopicName.trim()
-			})
-			.catch((err) => {
-				errorMessage('Error Editing Topic Name', err.message);
-			});
-
-		reloadAllTopics();
 	};
 
 	const reloadAllTopics = async (page = 0) => {
@@ -256,30 +365,12 @@
 		</Modal>
 	{/if}
 
-	{#if addTopicVisible && !errorMessageVisible}
-		<Modal title="Add New Topic" on:cancel={() => (addTopicVisible = false)}>
-			<div class="confirm">
-				<input type="text" placeholder="Topic Name" bind:value={newTopicName} />
-				<button
-					class:button={!disabled}
-					style="margin-left: 1rem; width: 6.5rem"
-					{disabled}
-					on:click={() => addTopic()}><span>Add Topic</span></button
-				>
-			</div>
-			{#if disabled}
-				<br />
-				<center><span class="create-error">Please choose a unique name</span></center>
-			{/if}
-		</Modal>
-	{/if}
-
 	<div class="content">
 		<h1>Topics</h1>
 		{#if topicsListVisible && !topicDetailVisible}
 			<center>
 				<input
-					style="border-width: 1px;"
+					style="border-width: 1px; width: 20rem; text-align: center; height: 1.7rem"
 					placeholder="Search"
 					bind:value={searchString}
 					on:blur={() => {
@@ -309,10 +400,11 @@
 									on:click={() => {
 										loadTopic(topic.id);
 										selectedTopicId = topic.id;
-									}}>{topic.name}</td
-								>
+									}}
+									>{topic.name}
+								</td>
 
-								{#if $isAdmin || $permissionsByGroup.some((permissionTopic) => permissionTopic.isTopicAdmin === true)}
+								{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 									<td>
 										<button
 											class="button-delete"
@@ -326,10 +418,6 @@
 										</button>
 									</td>
 								{:else}
-									<td /><td />
-								{/if}
-
-								{#if $isAdmin || isTopicAdmin}
 									<td />
 								{/if}
 							</tr>
@@ -376,12 +464,209 @@
 				<center><p>No Topics Found</p></center>
 			{/if}
 
-			{#if topicsListVisible && !topicDetailVisible}
-				<br /><br />
-				<center>
-					<button class="button" on:click={() => addTopicModal()}>Add Topic </button></center
-				>
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				{#if topicsListVisible && !topicDetailVisible && !addTopicVisible}
+					<br /><br />
+					<center>
+						<button class="button" on:click={() => (addTopicVisible = true)}>Add Topic</button>
+					</center>
+				{/if}
 			{/if}
+		{/if}
+
+		{#if addTopicVisible && !errorMessageVisible}
+			<table class="new-topic" align="center" style="margin-top: 2rem">
+				<center>
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="groups">Name:</label>
+							</td>
+							<td>
+								<input
+									placeholder="Topic Name"
+									style="width: 13rem; padding-left: 0.3rem"
+									bind:value={newTopicName}
+								/>
+							</td>
+						</div>
+					</tr>
+
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="groups">Group:</label>
+							</td>
+							<td>
+								<input
+									placeholder="Group Name"
+									style="width: 12.9rem; padding-left: 0.3rem"
+									bind:value={searchGroups}
+									on:blur={() => {
+										setTimeout(() => {
+											searchGroupsResultsVisible = false;
+										}, 500);
+									}}
+									on:click={async () => {
+										searchGroupResults = [];
+										searchGroupActive = true;
+										if (searchGroups?.length >= 3) {
+											searchGroup(searchGroups);
+										}
+									}}
+								/>
+							</td>
+
+							{#if searchGroupsResultsVisible}
+								<table class="searchGroup" style="position: absolute;">
+									{#each searchGroupResults as result}
+										<tr>
+											<td
+												on:click={() => {
+													if ($isAdmin) {
+														selectedSearchGroup(result.name, result.id);
+													} else {
+														selectedSearchGroup(result.groupName, result.groupId);
+													}
+												}}
+												>{#if $isAdmin}
+													{result.name}
+												{:else}
+													{result.groupName}
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</table>
+							{/if}
+						</div>
+					</tr>
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="anyApplicationCanRead">Any application can read this topic:</label>
+							</td>
+							<td>
+								<input type="checkbox" bind:checked={anyApplicationCanRead} />
+							</td>
+						</div>
+					</tr>
+
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<label for="applications">Application:</label>
+							</td>
+						</div>
+
+						<div class="add-item">
+							{#if selectedApplicationList?.length > 0}
+								<td>
+									<ul style="margin-top: -0.2rem; margin-bottom: -0.1rem">
+										{#each selectedApplicationList as app}
+											<div style="display:inline-flex">
+												<td style="width: 10rem">
+													<li style="margin-left: 3rem; margin-top: 0.3rem; margin-bottom: 0.3rem">
+														{app.name}
+													</li>
+												</td>
+												<td>
+													<select
+														on:change={(e) => {
+															const applicationIndex = selectedApplicationList.findIndex(
+																(application) => application.name === app.name
+															);
+
+															selectedApplicationList[applicationIndex].accessType = e.target.value;
+														}}
+														name="AccessType"
+													>
+														<option value="READ">Read</option>
+														<option value="WRITE">Write</option>
+														<option value="READ_WRITE">Read/Write</option>
+													</select>
+												</td>
+												<td>
+													<button
+														class="remove-button"
+														style="margin-left: 0.7rem; height: 1.2rem; width: 1.2rem; margin-top: 0.1rem"
+														on:click={() => {
+															selectedApplicationList = selectedApplicationList.filter(
+																(selectedApplication) => selectedApplication.name != app.name
+															);
+														}}
+														>x
+													</button>
+												</td>
+											</div>
+										{/each}
+									</ul>
+								</td>
+							{/if}
+						</div>
+					</tr>
+
+					<tr style="border-width: 0px;">
+						<div class="add-item">
+							<td>
+								<input
+									placeholder="Search Application"
+									style="width: 8.5rem; margin-left: 0.5rem; padding-left: 0.3rem"
+									bind:value={searchApplications}
+									on:blur={() => {
+										setTimeout(() => {
+											searchApplicationsResultsVisible = false;
+										}, 500);
+									}}
+									on:click={async () => {
+										searchApplicationResults = [];
+										searchApplicationActive = true;
+										if (searchApplications?.length >= 3) {
+											searchApplication(searchApplications);
+										}
+									}}
+								/>
+							</td>
+
+							{#if searchApplicationsResultsVisible}
+								<table class="searchApplication" style="position: absolute;">
+									{#each searchApplicationResults.data as result}
+										<tr style="border-width: 0px;">
+											<td
+												on:click={() => {
+													selectedSearchApplication(result.name, result.id);
+													searchApplications = '';
+												}}>{result.name}</td
+											>
+										</tr>
+									{/each}
+								</table>
+							{/if}
+						</div>
+					</tr>
+
+					<div class="nextline-item">
+						<button
+							class="button"
+							style="width: 5.7rem"
+							disabled={newTopicName.length < 3 || searchGroups.length < 3}
+							on:click={() => addTopic()}><span>Add Topic</span></button
+						>
+
+						<button
+							class="button-cancel"
+							style="margin-left: 0.5rem"
+							on:click={() => {
+								newTopicName = '';
+								searchGroups = '';
+								addTopicVisible = false;
+							}}
+							>Cancel
+						</button>
+					</div>
+					<br />
+				</center>
+			</table>
 		{/if}
 
 		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
@@ -390,26 +675,17 @@
 				on:click={() => returnToTopicsList()}
 				>&laquo; &nbsp; Back
 			</span>
-
-			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-				<span
-					style="font-size: medium; float: right; margin-right: 9.5rem; cursor: pointer"
-					on:click={() => returnToTopicsList()}
-					>Edit &nbsp; <div style="display:inline-block; transform: scaleX(-1);">&#9998;</div>
-				</span>
-			{/if}
-
 			<table align="center" class="topics-details">
 				<tr>
-					<td>Name:</td>
+					<td><strong>Name:</strong></td>
 					<td>{selectedTopicName}</td>
 				</tr>
 				<tr>
-					<td>Group:</td>
+					<td><strong>Group:</strong></td>
 					<td>{selectedTopicGroupName}</td>
 				</tr>
 				<tr>
-					<td>Any application can read:</td>
+					<td><strong>Any application can read:</strong></td>
 					<td
 						>{#if selectedTopicKind === 'B'}
 							Yes
@@ -418,48 +694,113 @@
 						{/if}
 					</td>
 				</tr>
-				<tr>
-					<td>Applications:</td>
+				<tr style="border-width: 0px;">
+					<td><strong>Applications:</strong></td>
 					<td>
 						<table class="associated-apps">
 							{#if selectedTopicApplications}
 								{#each selectedTopicApplications as application}
 									<tr style="height:unset">
-										<td>{application.permissionsApplication.name}</td>
-										<td style="padding: 0 0.5rem 0 3rem">Access Type:</td>
-										<td>Read</td>
+										<td>{application.applicationName}</td>
+										<td style="padding: 0 0.5rem 0 3rem"><strong>Access Type:</strong></td>
 										<td>
-											<input
-												type="checkbox"
-												style="width: 1rem"
-												checked={application.accessType === 'READ' ||
-													application.accessType === 'READ_WRITE'}
-											/>
+											<select
+												bind:value={application.accessType}
+												on:change={() =>
+													updateTopicApplicationAssociation(
+														application.id,
+														application.accessType,
+														application.topicId
+													)}
+												readonly={!isAdmin ||
+													!(
+														$permissionsByGroup &&
+														$permissionsByGroup.some(
+															(groupPermission) => groupPermission.isTopicAdmin === true
+														)
+													)}
+											>
+												<option value="READ">Read</option>
+												<option value="WRITE">Write</option>
+												<option value="READ_WRITE">Read/Write</option>
+											</select>
 										</td>
-										<td style="padding-left: 0.7rem">Write</td><td>
-											<input
-												type="checkbox"
-												style="width: 1rem"
-												checked={application.accessType === 'WRITE' ||
-													application.accessType === 'READ_WRITE'}
-											/>
+										<td>
+											<button
+												class="remove-button"
+												style="margin-left: 0.7rem; height: 1.2rem; width: 1.2rem; margin-top: 0.1rem"
+												on:click={async () => {
+													deleteTopicApplicationAssociation(application.id, application.topicId);
+												}}
+												>x
+											</button>
 										</td>
 									</tr>
 								{/each}
+							{:else}
+								<td style="width: 24.3rem; " />
 							{/if}
 						</table>
 					</td>
 				</tr>
 			</table>
-			<br /><br /><br />
-			<center>
-				<button
-					class="button-delete"
-					style="width: 7.5rem; float: unset"
-					on:click={() => (confirmDeleteVisible = true)}
-					><span>Delete Topic</span>
-				</button>
-			</center>
+
+			<br /><br />
+			{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
+				<div class="add-item">
+					<center>
+						<input
+							placeholder="Search Application"
+							style="width: 8.5rem; margin-left: 0.5rem; padding-left: 0.3rem"
+							bind:value={searchApplications}
+							on:blur={() => {
+								setTimeout(() => {
+									searchApplicationsResultsVisible = false;
+								}, 500);
+							}}
+							on:click={async () => {
+								searchApplicationResults = [];
+								searchApplicationActive = true;
+								if (searchApplications?.length >= 3) {
+									searchApplication(searchApplications);
+								}
+							}}
+						/>
+
+						{#if searchApplicationsResultsVisible}
+							<table
+								class="searchApplication"
+								style="position:absolute; margin-left: 22.2rem; margin-top: -0.05rem; width: 9rem"
+							>
+								{#each searchApplicationResults.data as result}
+									<tr style="border-width: 0px;">
+										<td
+											on:click={() => {
+												searchApplications = result.name;
+												searchApplicationsId = result.id;
+												searchApplicationActive = false;
+											}}>{result.name}</td
+										>
+									</tr>
+								{/each}
+							</table>
+						{/if}
+						<button
+							class="button"
+							style="width:8rem; height: 1.9rem; margin-left: 1rem"
+							disabled={searchApplications.length < 3}
+							on:click={async () => {
+								selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
+								addTopicApplicationAssociation(selectedTopicId, true);
+
+								searchApplications = '';
+								selectedApplicationList = [];
+							}}
+							>Add Application
+						</button>
+					</center>
+				</div>
+			{/if}
 		{/if}
 	</div>
 {:else}
@@ -467,6 +808,13 @@
 {/if}
 
 <style>
+	select {
+		margin-left: 0.5rem;
+		margin-top: 0rem;
+		height: 1.5rem;
+		font-size: small;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	}
 	span {
 		position: relative;
 		left: 0;
@@ -477,9 +825,30 @@
 	}
 
 	input {
-		text-align: center;
-		width: 20rem;
-		z-index: 1;
+		vertical-align: middle;
+		height: 1.2rem;
+		text-align: left;
+		height: 1.5rem;
+	}
+
+	label {
+		font-size: medium;
+	}
+
+	ul {
+		display: grid;
+		font-size: 0.8rem;
+		margin-left: 0.7rem;
+		padding-left: 0;
+		width: 2rem;
+	}
+
+	li {
+		margin-bottom: 0.2rem;
+	}
+
+	td label {
+		margin: 0.5rem;
 	}
 
 	.topics-details {
@@ -506,5 +875,49 @@
 
 	.associated-apps td {
 		font-size: 11pt;
+	}
+
+	.add-item {
+		text-align: left;
+		font-size: small;
+	}
+
+	.new-topic tr:nth-child(even) {
+		background-color: rgba(0, 0, 0, 0);
+	}
+
+	.nextline-item {
+		display: block;
+		margin-top: 2rem;
+		margin-bottom: 2rem;
+	}
+
+	.searchGroup {
+		margin-left: 4.75rem;
+		margin-top: -0.3rem;
+	}
+
+	.searchApplication {
+		font-size: 0.75rem;
+		width: 9.5rem;
+		cursor: pointer;
+		list-style-type: none;
+		margin-left: 0.9rem;
+		margin-top: -0.3rem;
+		padding-top: 0.1rem;
+		padding-bottom: 0.2rem;
+		text-align: left;
+		background-color: rgba(217, 221, 254, 1);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+		z-index: 10;
+	}
+
+	.searchApplication tr {
+		height: 1.9rem;
+	}
+
+	.searchApplication tr:nth-child(even) {
+		background-color: rgba(192, 196, 240, 1);
+		z-index: 10;
 	}
 </style>
