@@ -52,7 +52,7 @@ public class ApplicationService {
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
 
             if (filter == null) {
-                applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+                return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
             List<Long> all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
 
