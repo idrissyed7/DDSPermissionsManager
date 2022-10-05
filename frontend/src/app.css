@@ -472,7 +472,7 @@ animation: fadeIn 0.2s ease-in-out;
 	padding-top: 0.1rem;
 	padding-bottom: 0.2rem;
 	text-align: left;
-	background-color: rgba(217, 221, 254, 0.4);
+	background-color: rgba(217, 221, 254, 1);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
 }
 
