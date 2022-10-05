@@ -35,19 +35,28 @@ public class ApplicationService {
         this.groupUserService = groupUserService;
     }
 
-    public Page<ApplicationDTO> findAll(Pageable pageable) {
-        return getApplicationPage(pageable).map(ApplicationDTO::new);
+    public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
+        return getApplicationPage(pageable, filter).map(ApplicationDTO::new);
     }
 
-    private Page<Application> getApplicationPage(Pageable pageable) {
+    private Page<Application> getApplicationPage(Pageable pageable, String filter) {
 
         if (securityUtil.isCurrentUserAdmin()) {
-            return applicationRepository.findAll(pageable);
+            if (filter == null) {
+                return applicationRepository.findAll(pageable);
+            }
+
+            return applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
 
-            return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+            if (filter == null) {
+                return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+            }
+            List<Long> all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
         }
     }
 
