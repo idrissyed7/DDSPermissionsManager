@@ -149,7 +149,6 @@
 	const searchGroup = async (searchString) => {
 		setTimeout(async () => {
 			if (!$isAdmin) {
-				console.log('not admin');
 				searchGroupResults = $permissionsByGroup.filter(
 					(groupIsTopicAdmin) =>
 						groupIsTopicAdmin.isTopicAdmin === true &&
@@ -158,7 +157,6 @@
 			} else {
 				searchGroupResults = await httpAdapter.get(`/groups?page=0&size=7&filter=${searchString}`);
 				searchGroupResults = searchGroupResults.data.content;
-				console.log('searchResults', searchGroupResults);
 			}
 		}, 1000);
 	};
@@ -263,11 +261,14 @@
 			})
 			.catch((err) => {
 				addTopicVisible = false;
+				if (err.response.status) err.message = 'Topic already exists. Topic name should be unique.';
 				errorMessage('Error Adding Topic', err.message);
 			});
 
-		const createdTopicId = res.data.id;
-		addTopicApplicationAssociation(createdTopicId);
+		if (res) {
+			const createdTopicId = res.data.id;
+			addTopicApplicationAssociation(createdTopicId);
+		}
 
 		addTopicVisible = false;
 
@@ -487,6 +488,7 @@
 									placeholder="Topic Name"
 									style="width: 13rem; padding-left: 0.3rem"
 									bind:value={newTopicName}
+									on:blur={() => (newTopicName = newTopicName.trim())}
 								/>
 							</td>
 						</div>
@@ -649,7 +651,7 @@
 						<button
 							class="button"
 							style="width: 5.7rem"
-							disabled={newTopicName.length < 3 || searchGroups.length < 3}
+							disabled={newTopicName.length < 1 || searchGroups.length < 3}
 							on:click={() => addTopic()}><span>Add Topic</span></button
 						>
 
