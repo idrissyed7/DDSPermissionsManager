@@ -5,7 +5,6 @@
 	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import applicationPermission from '../../stores/applicationPermission';
-	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
@@ -16,10 +15,9 @@
 
 	// Error Handling
 	let errorMsg, errorObject;
-	let duplicateAppName = false;
 
 	// Keys
-	const enterKey = 13;
+	const returnKey = 13;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -329,6 +327,7 @@
 					addApplicationVisible = false;
 				}}
 			>
+				<label for="name">Name:</label>
 				<input
 					type="text"
 					placeholder="Application Name"
@@ -362,7 +361,7 @@
 					/>
 
 					{#if searchGroupsResultsVisible}
-						<table class="searchGroup" style="position: relative; margin-left: 1rem;width: 9.5rem">
+						<table class="searchGroup" style="position: absolute; margin-left: 1rem; width: 9.5rem">
 							{#each searchGroupResults.data.content as result}
 								<tr
 									><td
@@ -384,11 +383,7 @@
 				>
 					<span>Add</span></button
 				>
-				{#if duplicateAppName}
-					<p style="position: absolute; left:33%; top: 38px; color: red">
-						Application name must be unique
-					</p>
-				{/if}
+				<br /><br />
 			</Modal>
 		</div>
 	{/if}
@@ -509,7 +504,7 @@
 					class:name-as-label={!editAppName}
 					class:name-edit={editAppName}
 					on:keydown={(event) => {
-						if (event.which === enterKey) {
+						if (event.which === returnKey) {
 							selectedAppName = selectedAppName.trim();
 							if (previousAppName !== selectedAppName) saveNewAppName();
 							document.querySelector('#name').blur();
