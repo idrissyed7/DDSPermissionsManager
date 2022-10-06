@@ -412,6 +412,44 @@ public class ApplicationApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
+
+        @Test
+        void canGeneratePassphraseAndVerify() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            // update application with secret
+            applicationOne.setPassword(optional.get());
+            request = HttpRequest.POST("/applications/save", applicationOne);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+
+            // verify matches
+            request = HttpRequest.GET("/applications/verify-passphrase/" + applicationOne.getId() + "/" + optional.get());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
     }
 
     @Nested

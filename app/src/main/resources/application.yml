@@ -120,3 +120,9 @@ micronaut:
     info:
       enabled: true
       sensitive: false
+---
+permissions-manager:
+  data:
+    key: dooda
+    passphrase:
+      length: 16
