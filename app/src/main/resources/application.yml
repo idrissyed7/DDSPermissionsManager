@@ -123,6 +123,5 @@ micronaut:
 ---
 permissions-manager:
   data:
-    key: dooda
     passphrase:
       length: 16
