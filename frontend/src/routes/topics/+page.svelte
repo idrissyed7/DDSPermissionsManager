@@ -7,6 +7,7 @@
 	import topicDetails from '../../stores/groupDetails';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import Modal from '../../lib/Modal.svelte';
+	import TopicDetails from './TopicDetails.svelte';
 
 	export let data, errors;
 
@@ -42,7 +43,6 @@
 	// Forms
 	let anyApplicationCanRead = false;
 	let selectedGroup;
-	// let selectedApp;
 	const applicationsResult = 7;
 
 	// Modals
@@ -209,24 +209,10 @@
 		errorMessageVisible = false;
 	};
 
-	const loadTopic = async (topicId) => {
+	const loadTopic = () => {
 		addTopicVisible = false;
 		topicsListVisible = false;
 		topicDetailVisible = true;
-		try {
-			const res = await httpAdapter.get(`/topics/show/${topicId}`);
-			topicDetails.set(res.data);
-
-			loadApplicationPermissions(topicId);
-			selectedTopicId = $topicDetails.id;
-			selectedTopicName = $topicDetails.name;
-			selectedTopicGroupName = $topicDetails.groupName;
-			selectedTopicGroupId = $topicDetails.group;
-
-			selectedTopicKind = $topicDetails.kind;
-		} catch (err) {
-			errorMessage('Error Loading Topic Details', err.message);
-		}
 	};
 
 	const loadApplicationPermissions = async (topicId) => {
@@ -290,16 +276,6 @@
 				)
 				.then(() => loadApplicationPermissions(topicId));
 		}
-	};
-
-	const deleteTopicApplicationAssociation = async (permissionId, topicId) => {
-		await httpAdapter.delete(`/application_permissions/${permissionId}`);
-		loadApplicationPermissions(topicId);
-	};
-
-	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
-		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
-		loadApplicationPermissions(topicId);
 	};
 
 	const returnToTopicsList = () => {
@@ -399,7 +375,7 @@
 									style="line-height: 1.7rem;"
 									class="topic-td"
 									on:click={() => {
-										loadTopic(topic.id);
+										loadTopic();
 										selectedTopicId = topic.id;
 									}}
 									>{topic.name}
@@ -671,138 +647,15 @@
 			</table>
 		{/if}
 
-		{#if $topicDetails && topicDetailVisible && !topicsListVisible}
-			<span
-				style="font-size: medium; margin-left: 9.5rem; cursor: pointer"
-				on:click={() => returnToTopicsList()}
-				>&laquo; &nbsp; Back
-			</span>
-			<table align="center" class="topics-details">
-				<tr>
-					<td><strong>Name:</strong></td>
-					<td>{selectedTopicName}</td>
-				</tr>
-				<tr>
-					<td><strong>Group:</strong></td>
-					<td>{selectedTopicGroupName}</td>
-				</tr>
-				<tr>
-					<td><strong>Any application can read:</strong></td>
-					<td
-						>{#if selectedTopicKind === 'B'}
-							Yes
-						{:else}
-							No
-						{/if}
-					</td>
-				</tr>
-				<tr style="border-width: 0px;">
-					<td><strong>Applications:</strong></td>
-					<td>
-						<table class="associated-apps">
-							{#if selectedTopicApplications}
-								{#each selectedTopicApplications as application}
-									<tr style="height:unset">
-										<td>{application.applicationName}</td>
-										<td style="padding: 0 0.5rem 0 3rem"><strong>Access Type:</strong></td>
-										<td>
-											<select
-												bind:value={application.accessType}
-												on:change={() =>
-													updateTopicApplicationAssociation(
-														application.id,
-														application.accessType,
-														application.topicId
-													)}
-												readonly={!isAdmin ||
-													!(
-														$permissionsByGroup &&
-														$permissionsByGroup.some(
-															(groupPermission) => groupPermission.isTopicAdmin === true
-														)
-													)}
-											>
-												<option value="READ">Read</option>
-												<option value="WRITE">Write</option>
-												<option value="READ_WRITE">Read/Write</option>
-											</select>
-										</td>
-										<td>
-											<button
-												class="remove-button"
-												style="margin-left: 0.7rem; height: 1.2rem; width: 1.2rem; margin-top: 0.1rem"
-												on:click={async () => {
-													deleteTopicApplicationAssociation(application.id, application.topicId);
-												}}
-												>x
-											</button>
-										</td>
-									</tr>
-								{/each}
-							{:else}
-								<td style="width: 24.3rem; " />
-							{/if}
-						</table>
-					</td>
-				</tr>
-			</table>
-
-			<br /><br />
-			{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
-				<div class="add-item">
-					<center>
-						<input
-							placeholder="Search Application"
-							style="width: 8.5rem; margin-left: 0.5rem; padding-left: 0.3rem"
-							bind:value={searchApplications}
-							on:blur={() => {
-								setTimeout(() => {
-									searchApplicationsResultsVisible = false;
-								}, 500);
-							}}
-							on:click={async () => {
-								searchApplicationResults = [];
-								searchApplicationActive = true;
-								if (searchApplications?.length >= 3) {
-									searchApplication(searchApplications);
-								}
-							}}
-						/>
-
-						{#if searchApplicationsResultsVisible}
-							<table
-								class="searchApplication"
-								style="position:absolute; margin-left: 22.2rem; margin-top: -0.05rem; width: 9rem"
-							>
-								{#each searchApplicationResults.data as result}
-									<tr style="border-width: 0px;">
-										<td
-											on:click={() => {
-												searchApplications = result.name;
-												searchApplicationsId = result.id;
-												searchApplicationActive = false;
-											}}>{result.name}</td
-										>
-									</tr>
-								{/each}
-							</table>
-						{/if}
-						<button
-							class="button"
-							style="width:8rem; height: 1.9rem; margin-left: 1rem"
-							disabled={searchApplications.length < 3}
-							on:click={async () => {
-								selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
-								addTopicApplicationAssociation(selectedTopicId, true);
-
-								searchApplications = '';
-								selectedApplicationList = [];
-							}}
-							>Add Application
-						</button>
-					</center>
-				</div>
-			{/if}
+		{#if topicDetailVisible && !topicsListVisible}
+			<TopicDetails
+				{selectedTopicName}
+				{selectedTopicId}
+				{selectedTopicKind}
+				{selectedTopicGroupName}
+				{selectedTopicGroupId}
+				on:back={() => returnToTopicsList()}
+			/>
 		{/if}
 	</div>
 {:else}
@@ -853,30 +706,8 @@
 		margin: 0.5rem;
 	}
 
-	.topics-details {
-		margin-top: 2rem;
-		font-size: 12pt;
-		width: 40rem;
-	}
-
-	.topics-details tr {
-		height: 2.8rem;
-	}
-
 	.topic-td {
 		cursor: pointer;
-	}
-
-	.associated-apps tr {
-		border-width: 0px;
-	}
-
-	.associated-apps tr:nth-child(even) {
-		background-color: rgba(0, 0, 0, 0);
-	}
-
-	.associated-apps td {
-		font-size: 11pt;
 	}
 
 	.add-item {
@@ -897,29 +728,5 @@
 	.searchGroup {
 		margin-left: 4.75rem;
 		margin-top: -0.3rem;
-	}
-
-	.searchApplication {
-		font-size: 0.75rem;
-		width: 9.5rem;
-		cursor: pointer;
-		list-style-type: none;
-		margin-left: 0.9rem;
-		margin-top: -0.3rem;
-		padding-top: 0.1rem;
-		padding-bottom: 0.2rem;
-		text-align: left;
-		background-color: rgba(217, 221, 254, 1);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-		z-index: 10;
-	}
-
-	.searchApplication tr {
-		height: 1.9rem;
-	}
-
-	.searchApplication tr:nth-child(even) {
-		background-color: rgba(192, 196, 240, 1);
-		z-index: 10;
 	}
 </style>

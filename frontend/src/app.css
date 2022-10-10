@@ -484,6 +484,30 @@ animation: fadeIn 0.2s ease-in-out;
 	background-color: rgba(192, 196, 240, 0.4);
 }
 
+.searchApplication {
+	font-size: 0.75rem;
+	width: 9.5rem;
+	cursor: pointer;
+	list-style-type: none;
+	margin-left: 0.9rem;
+	margin-top: -0.3rem;
+	padding-top: 0.1rem;
+	padding-bottom: 0.2rem;
+	text-align: left;
+	background-color: rgba(217, 221, 254, 1);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	z-index: 10;
+}
+
+.searchApplication tr {
+	height: 1.9rem;
+}
+
+.searchApplication tr:nth-child(even) {
+	background-color: rgba(192, 196, 240, 1);
+	z-index: 10;
+}
+
 @-webkit-keyframes fadeIn {
 0% {
 	opacity: 0;
