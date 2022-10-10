@@ -1,11 +1,11 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
-	import { createEventDispatcher } from 'svelte';
+	import AddTopic from './AddTopic.svelte';
 
 	export let selectedTopicName,
 		selectedTopicId,
@@ -19,21 +19,15 @@
 	const dispatch = createEventDispatcher();
 
 	// Modals
-	let topicDetailVisible = true;
-	let topicsListVisible = false;
 	let errorMessageVisible = false;
+	let addTopicVisible = false;
+	let copyTopicVisible = false;
 
 	// Forms
 	const applicationsResult = 7;
 
 	// Error Handling
 	let errorMsg, errorObject;
-
-	// Search
-	// let searchString;
-	// const searchStringLength = 3;
-	// let timer;
-	// const waitTime = 500;
 
 	// Search Groups
 	let searchGroups;
@@ -249,56 +243,88 @@
 	{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
 		<div class="add-item">
 			<center>
-				<input
-					placeholder="Search Application"
-					style="width: 8.5rem; margin-left: 0.5rem; padding-left: 0.3rem"
-					bind:value={searchApplications}
-					on:blur={() => {
-						setTimeout(() => {
-							searchApplicationsResultsVisible = false;
-						}, 500);
-					}}
-					on:click={async () => {
-						searchApplicationResults = [];
-						searchApplicationActive = true;
-						if (searchApplications?.length >= 3) {
-							searchApplication(searchApplications);
-						}
-					}}
-				/>
+				{#if !copyTopicVisible}
+					<input
+						placeholder="Search Application"
+						style="width: 8.5rem; padding-left: 0.3rem"
+						bind:value={searchApplications}
+						on:blur={() => {
+							setTimeout(() => {
+								searchApplicationsResultsVisible = false;
+							}, 500);
+						}}
+						on:click={async () => {
+							searchApplicationResults = [];
+							searchApplicationActive = true;
+							if (searchApplications?.length >= 3) {
+								searchApplication(searchApplications);
+							}
+						}}
+					/>
 
-				{#if searchApplicationsResultsVisible}
-					<table
-						class="searchApplication"
-						style="position:absolute; margin-left: 22.2rem; margin-top: -0.05rem; width: 9rem"
+					{#if searchApplicationsResultsVisible}
+						<table
+							class="searchApplication"
+							style="position:absolute; margin-left: 11rem; margin-top: -0.05rem; width: 9rem"
+						>
+							{#each searchApplicationResults.data as result}
+								<tr style="border-width: 0px;">
+									<td
+										on:click={() => {
+											searchApplications = result.name;
+											searchApplicationsId = result.id;
+											searchApplicationActive = false;
+										}}>{result.name}</td
+									>
+								</tr>
+							{/each}
+						</table>
+					{/if}
+
+					<button
+						class="button"
+						style="width:8rem; height: 1.9rem; margin-left: 1rem"
+						disabled={searchApplications?.length < 3 || searchApplications === undefined}
+						on:click={async () => {
+							selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
+							addTopicApplicationAssociation(selectedTopicId, true);
+
+							searchApplications = '';
+							selectedApplicationList = [];
+						}}
+						>Add Application
+					</button>
+
+					<button
+						class="button"
+						style="width:5.5rem; height: 1.9rem; margin-left: 16rem"
+						on:click={() => {
+							copyTopicVisible = true;
+							addTopicVisible = true;
+						}}>Copy Topic</button
 					>
-						{#each searchApplicationResults.data as result}
-							<tr style="border-width: 0px;">
-								<td
-									on:click={() => {
-										searchApplications = result.name;
-										searchApplicationsId = result.id;
-										searchApplicationActive = false;
-									}}>{result.name}</td
-								>
-							</tr>
-						{/each}
-					</table>
 				{/if}
-				<button
-					class="button"
-					style="width:8rem; height: 1.9rem; margin-left: 1rem"
-					disabled={searchApplications?.length < 3}
-					on:click={async () => {
-						selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
-						addTopicApplicationAssociation(selectedTopicId, true);
-
-						searchApplications = '';
-						selectedApplicationList = [];
-					}}
-					>Add Application
-				</button>
 			</center>
+
+			{#if addTopicVisible && !errorMessageVisible}
+				<h2>Copy Topic</h2>
+				<AddTopic
+					on:closecreate={() => {
+						addTopicVisible = false;
+						copyTopicVisible = false;
+					}}
+					on:backtolist={() => {
+						addTopicVisible = false;
+						dispatch('back');
+					}}
+					topicName={selectedTopicName}
+					groupName={selectedTopicGroupName}
+					groupId={selectedTopicGroupId}
+					anyAppCanRead={selectedTopicKind === 'B' ? true : false}
+					applications={selectedTopicApplications}
+					isCopyTopic={true}
+				/>
+			{/if}
 		</div>
 	{/if}
 {:else}
