@@ -6,6 +6,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
@@ -24,8 +25,8 @@ public class GroupUserService {
     private final UserRepository userRepository;
     private final SecurityUtil securityUtil;
 
-
-    public GroupUserService(GroupUserRepository groupUserRepository, GroupRepository groupRepository, UserRepository userRepository, SecurityUtil securityUtil) {
+    public GroupUserService(GroupUserRepository groupUserRepository, GroupRepository groupRepository,
+            UserRepository userRepository, SecurityUtil securityUtil) {
         this.groupUserRepository = groupUserRepository;
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
@@ -37,28 +38,33 @@ public class GroupUserService {
     }
 
     private Page<GroupUser> getGroupMembers(Pageable pageable, String filter) {
-        if(!pageable.isSorted()) {
+        if (!pageable.isSorted()) {
             pageable = pageable.order("permissionsUser.email").order("permissionsGroup.name");
         }
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
                 return groupUserRepository.findAll(pageable);
             } else {
-                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter, pageable);
+                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter,
+                        filter, pageable);
             }
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+
             List<Long> groupsList = getAllGroupsUserIsAMemberOf(user.getId());
 
             if (filter == null) {
                 return groupUserRepository.findAllByPermissionsGroupIdIn(groupsList, pageable);
             } else {
-                List<Long> all = groupUserRepository.findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter);
+                List<Long> all = groupUserRepository
+                        .findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter);
 
                 return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, groupsList, pageable);
 
                 // more efficient if Or-And query worked
-//                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(filter, filter, groupsList, pageable);
+                // return
+                // groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(filter,
+                // filter, groupsList, pageable);
             }
         }
     }
@@ -73,22 +79,26 @@ public class GroupUserService {
     }
 
     public boolean isUserGroupAdminOfGroup(Long groupId, Long userId) {
-        int groupUserCount = groupUserRepository.countByPermissionsGroupIdAndPermissionsUserIdAndGroupAdminTrue(groupId, userId);
+        int groupUserCount = groupUserRepository.countByPermissionsGroupIdAndPermissionsUserIdAndGroupAdminTrue(groupId,
+                userId);
         return groupUserCount > 0;
     }
 
     public boolean isUserTopicAdminOfGroup(Long groupId, Long userId) {
-        int groupUserCount =  groupUserRepository.countByPermissionsGroupIdAndPermissionsUserIdAndTopicAdminTrue(groupId, userId);
+        int groupUserCount = groupUserRepository.countByPermissionsGroupIdAndPermissionsUserIdAndTopicAdminTrue(groupId,
+                userId);
         return groupUserCount > 0;
     }
 
     public boolean isUserApplicationAdminOfGroup(Long groupId, Long userId) {
-        int groupUserCount = groupUserRepository.countByPermissionsGroupIdAndPermissionsUserIdAndApplicationAdminTrue(groupId, userId);
+        int groupUserCount = groupUserRepository
+                .countByPermissionsGroupIdAndPermissionsUserIdAndApplicationAdminTrue(groupId, userId);
         return groupUserCount > 0;
     }
 
     public List<Long> getAllGroupsUserIsAMemberOf(Long userId) {
-        return groupUserRepository.findAllByPermissionsUserId(userId).stream().map(GroupUser::getPermissionsGroup).map(Group::getId).collect(Collectors.toList());
+        return groupUserRepository.findAllByPermissionsUserId(userId).stream().map(GroupUser::getPermissionsGroup)
+                .map(Group::getId).collect(Collectors.toList());
     }
 
     public boolean isUserMemberOfGroup(Long groupId, Long userId) {
@@ -160,6 +170,7 @@ public class GroupUserService {
 
         return groupUserRepository.save(groupUser);
     }
+
     private GroupUser updateFromDTO(GroupUser groupUser, GroupUserDTO groupUserDTO) {
         groupUser.setGroupAdmin(groupUserDTO.isGroupAdmin());
         groupUser.setTopicAdmin(groupUserDTO.isTopicAdmin());
@@ -199,13 +210,30 @@ public class GroupUserService {
                                 "groupName", group.getName(),
                                 "isGroupAdmin", groupUser.isGroupAdmin(),
                                 "isTopicAdmin", groupUser.isTopicAdmin(),
-                                "isApplicationAdmin", groupUser.isApplicationAdmin()
-                        )
-                );
+                                "isApplicationAdmin", groupUser.isApplicationAdmin()));
             }
         });
 
         return result;
+    }
+
+    public Page<Group> getAllGroupsUserIsAnAdminOf(User user, String filter, Pageable pageable, GroupAdminRole role) {
+
+        switch (role) {
+            case GROUP_ADMIN:
+                return groupUserRepository
+                        .findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndGroupAdminTrue(
+                                user, filter, pageable);
+            case APPLICATION_ADMIN:
+                return groupUserRepository
+                        .findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndApplicationAdminTrue(
+                                user, filter, pageable);
+            case TOPIC_ADMIN:
+                return groupUserRepository
+                        .findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndTopicAdminTrue(
+                                user, filter, pageable);
+        }
+        return (Page<Group>) Page.EMPTY;
     }
 
     public int getMembershipCountByGroup(Group group) {
@@ -214,8 +242,9 @@ public class GroupUserService {
 
     public HttpResponse checkUserValidity() {
 
-        if (!securityUtil.isCurrentUserAdmin() &&
-                countMembershipsByUserId(securityUtil.getCurrentlyAuthenticatedUser().get().getId()) == 0) {
+        Optional<User> userOptional = securityUtil.getCurrentlyAuthenticatedUser();
+        if (userOptional.isEmpty()
+                || (!userOptional.get().isAdmin() && countMembershipsByUserId(userOptional.get().getId()) == 0)) {
             return HttpResponse.notFound();
         }
 

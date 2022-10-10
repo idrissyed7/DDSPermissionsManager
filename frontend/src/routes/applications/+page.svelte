@@ -5,7 +5,6 @@
 	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import applicationPermission from '../../stores/applicationPermission';
-	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
 
@@ -16,7 +15,9 @@
 
 	// Error Handling
 	let errorMsg, errorObject;
-	let duplicateAppName = false;
+
+	// Keys
+	const returnKey = 13;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -24,15 +25,29 @@
 	let confirmDeleteVisible = false;
 	let applicationDetailVisible = false;
 
+	// Application Name
+	let editSaveLabel = 'edit';
+
 	//Pagination
 	const applicationsPerPage = 10;
 	let applicationsTotalPages;
 	let applicationsCurrentPage = 0;
 
-	// SearchBox
+	// Applications SearchBox
 	let searchString;
 	const searchStringLength = 3;
 	let searchAppResults;
+
+	// Groups SearchBox
+	let searchGroups;
+	let searchGroupResults;
+	let searchGroupsResultsVisible = false;
+	let searchGroupActive = false;
+
+	// Forms
+	let groupsDropdownSuggestion = 7;
+
+	// Timer
 	let timer;
 	const waitTime = 500;
 
@@ -47,6 +62,9 @@
 
 	// Validation
 	let previousAppName;
+
+	// Edit Name Label Reactive Statement
+	$: editAppName === true ? (editSaveLabel = 'save') : (editSaveLabel = 'edit');
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -63,10 +81,32 @@
 		}, waitTime);
 	}
 
+	// Search Groups Feature///
+	$: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchGroup(searchGroups.trim());
+		}, waitTime);
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Search Groups Dropdown Visibility
+	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+		searchGroupsResultsVisible = true;
+	} else {
+		searchGroupsResultsVisible = false;
+	}
+
+	// Reset add group form once closed
+	$: if (addApplicationVisible === false) {
+		searchGroups = '';
+		appName = '';
+	}
+
 	onMount(async () => {
 		try {
 			reloadAllApps();
-
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
 
@@ -108,6 +148,21 @@
 		errorMsg = '';
 		errorObject = '';
 		errorMessageVisible = false;
+	};
+
+	const searchGroup = async (searchGroupStr) => {
+		setTimeout(async () => {
+			searchGroupResults = await httpAdapter.get(
+				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+			);
+		}, 1000);
+	};
+
+	const selectedSearchGroup = (groupName, groupId) => {
+		selectedGroup = groupId;
+		searchGroups = groupName;
+		searchGroupsResultsVisible = false;
+		searchGroupActive = false;
 	};
 
 	const searchApp = async (searchString) => {
@@ -181,13 +236,19 @@
 		}
 	};
 
-	const addAppModal = () => {
-		if ($groups) {
-			appName = '';
-			addApplicationVisible = true;
-		} else {
-			errorMessage('Error', 'There are no Groups available');
-		}
+	const saveNewAppName = async () => {
+		await httpAdapter
+			.post(`/applications/save/`, {
+				id: selectedAppId,
+				name: selectedAppName,
+				group: selectedAppGroupId
+			})
+			.catch((err) => {
+				errorMessage('Error Saving New Application Name', err.message);
+			});
+
+		reloadAllApps();
+		editAppName = false;
 	};
 
 	const loadApplicationDetail = async (appId, groupId) => {
@@ -266,20 +327,53 @@
 					addApplicationVisible = false;
 				}}
 			>
-				<input type="text" placeholder="Application Name" bind:value={appName} />
+				<label for="name">Name:</label>
+				<input
+					type="text"
+					placeholder="Application Name"
+					bind:value={appName}
+					style="text-align: left;"
+				/>
 				&nbsp;
 				<label for="groups">Group:</label>
-				<select name="groups" bind:value={selectedGroup}>
-					{#if $isAdmin}
-						{#each $groups as group}
-							<option value={group.id}>{group.name}</option>
-						{/each}
-					{:else}
-						{#each $permissionsByGroup as group, i}
-							<option value={group.groupId}>{group.groupName}</option>
-						{/each}
+				<div style="display: inline-block">
+					<input
+						placeholder="Group Name"
+						style="
+					display: inline-flex;       
+					height: 1.7rem;
+					text-align: left;
+					font-size: small;
+					min-width: 9rem;"
+						bind:value={searchGroups}
+						on:blur={() => {
+							setTimeout(() => {
+								searchGroupsResultsVisible = false;
+							}, waitTime);
+						}}
+						on:click={async () => {
+							searchGroupResults = [];
+							searchGroupActive = true;
+							if (searchGroups?.length >= searchStringLength) {
+								searchGroup(searchGroups);
+							}
+						}}
+					/>
+
+					{#if searchGroupsResultsVisible}
+						<table class="searchGroup" style="position: absolute; margin-left: 1rem; width: 9.5rem">
+							{#each searchGroupResults.data.content as result}
+								<tr
+									><td
+										on:click={() => {
+											selectedSearchGroup(result.name, result.id);
+										}}>{result.name}</td
+									></tr
+								>
+							{/each}
+						</table>
 					{/if}
-				</select>
+				</div>
 				<button
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
@@ -289,11 +383,7 @@
 				>
 					<span>Add</span></button
 				>
-				{#if duplicateAppName}
-					<p style="position: absolute; left:33%; top: 38px; color: red">
-						Application name must be unique
-					</p>
-				{/if}
+				<br /><br />
 			</Modal>
 		</div>
 	{/if}
@@ -301,24 +391,23 @@
 	<div class="content">
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
-		{/if}
-		<center>
-			<input
-				style="border-width: 1px; width: 20rem"
-				placeholder="Search"
-				bind:value={searchString}
-				on:blur={() => {
-					searchString = searchString?.trim();
-				}}
-				on:keydown={(event) => {
-					const returnKey = 13;
-					if (event.which === returnKey) {
-						document.activeElement.blur();
+			<center>
+				<input
+					style="border-width: 1px; width: 20rem"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
 						searchString = searchString?.trim();
-					}
-				}}
-			/>&nbsp; &#x1F50E;
-		</center>
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							document.activeElement.blur();
+							searchString = searchString?.trim();
+						}
+					}}
+				/>&nbsp; &#x1F50E;
+			</center>
+		{/if}
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
@@ -329,33 +418,35 @@
 				{#if $applications}
 					{#if $applications.length > 0}
 						{#each $applications as app}
-							<tr style="line-height: 1.7rem;">
-								<td>{app.id}</td>
-								<td
-									style="cursor: pointer"
-									on:click={() => {
-										loadApplicationDetail(app.id, app.group);
-									}}
-									>{app.name}
-								</td>
-								<td>{app.groupName}</td>
-
-								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
-									<td>
-										<button
-											class="button-delete"
-											on:click={() => {
-												selectedAppId = app.id;
-												selectedAppName = app.name;
-												confirmDeleteVisible = true;
-											}}
-											><span>Delete</span>
-										</button>
+							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group)) || $isAdmin}
+								<tr>
+									<td>{app.id}</td>
+									<td
+										style="cursor: pointer"
+										on:click={() => {
+											loadApplicationDetail(app.id, app.group);
+										}}
+										>{app.name}
 									</td>
-								{:else}
-									<td />
-								{/if}
-							</tr>
+									<td>{app.groupName}</td>
+
+									{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
+										<td>
+											<button
+												class="button-delete"
+												on:click={() => {
+													selectedAppId = app.id;
+													selectedAppName = app.name;
+													confirmDeleteVisible = true;
+												}}
+												><span>Delete</span>
+											</button>
+										</td>
+									{:else}
+										<td />
+									{/if}
+								</tr>
+							{/if}
 						{/each}
 					{/if}
 				{/if}
@@ -406,41 +497,42 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
-				<div class="tooltip">
-					<input
-						id="name"
-						class:editable={$isAdmin}
+				<input
+					id="name"
+					bind:value={selectedAppName}
+					readonly={!editAppName}
+					class:name-as-label={!editAppName}
+					class:name-edit={editAppName}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							selectedAppName = selectedAppName.trim();
+							if (previousAppName !== selectedAppName) saveNewAppName();
+							document.querySelector('#name').blur();
+							editAppName = false;
+						}
+					}}
+				/>
+				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
+					<span
+						style="position: absolute; font-size: medium; left: 65rem; top:6rem; cursor: pointer"
 						on:click={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'edit') {
+								previousAppName = selectedAppName;
 								editAppName = true;
-								previousAppName = selectedAppName.trim();
 							}
-						}}
-						on:blur={() => {
-							if ($isAdmin) {
+							if (editSaveLabel === 'save') {
 								selectedAppName = selectedAppName.trim();
-								if (previousAppName !== selectedAppName) saveNewAppName();
-								editAppName = false;
-							}
-						}}
-						on:keydown={(event) => {
-							if (event.which === 13) {
-								if ($isAdmin) {
-									selectedAppName = selectedAppName.trim();
-									if (previousAppName !== selectedAppName) saveNewAppName();
-									document.querySelector('#name').blur();
+								if (previousAppName !== selectedAppName) {
+									saveNewAppName();
+								} else {
+									editAppName = false;
 								}
 							}
 						}}
-						bind:value={selectedAppName}
-						readonly={!editAppName}
-						class:name-as-label={!editAppName}
-						class:name-edit={editAppName}
-					/>
-					{#if $isAdmin}
-						<span class="tooltiptext">&#9998</span>
-					{/if}
-				</div>
+					>
+						&raquo; &nbsp; {editSaveLabel}
+					</span>
+				{/if}
 			</div>
 			<span
 				style="font-size: medium; margin-left: 11rem; cursor: pointer"
@@ -458,7 +550,13 @@
 				</tr>
 				<tr>
 					<td>{selectedAppId}</td>
-					<td>{selectedAppName}</td>
+					<td>
+						{#if editAppName}
+							{previousAppName}
+						{:else}
+							{selectedAppName}
+						{/if}
+					</td>
 					<td>{selectedAppGroupName}</td>
 					<td>
 						{#if $applicationPermission}
@@ -497,7 +595,7 @@
 		<br /><br />
 		{#if $isAdmin && !applicationDetailVisible}
 			<center
-				><button class="button" style="width: 9rem" on:click={() => addAppModal()}
+				><button class="button" style="width: 9rem" on:click={() => (addApplicationVisible = true)}
 					>Add Application</button
 				></center
 			>
@@ -514,7 +612,6 @@
 		margin-top: 1.1rem;
 		text-align: left;
 		text-align: center;
-		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
 	}
@@ -524,8 +621,7 @@
 		left: 0;
 	}
 
-	.tooltip .tooltiptext {
-		top: -6px;
-		left: 303px;
+	.name input:focus {
+		outline: none;
 	}
 </style>

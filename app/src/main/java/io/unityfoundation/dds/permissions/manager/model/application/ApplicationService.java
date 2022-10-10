@@ -17,6 +17,7 @@ import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -38,19 +39,28 @@ public class ApplicationService {
         this.applicationPermissionService = applicationPermissionService;
     }
 
-    public Page<ApplicationDTO> findAll(Pageable pageable) {
-        return getApplicationPage(pageable).map(ApplicationDTO::new);
+    public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
+        return getApplicationPage(pageable, filter).map(ApplicationDTO::new);
     }
 
-    private Page<Application> getApplicationPage(Pageable pageable) {
+    private Page<Application> getApplicationPage(Pageable pageable, String filter) {
 
         if (securityUtil.isCurrentUserAdmin()) {
-            return applicationRepository.findAll(pageable);
+            if (filter == null) {
+                return applicationRepository.findAll(pageable);
+            }
+
+            return applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
 
-            return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+            if (filter == null) {
+                return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+            }
+            List<Long> all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
         }
     }
 
@@ -69,20 +79,35 @@ public class ApplicationService {
             return HttpResponse.notFound("Specified group does not exist");
         }
 
-        Application application = new Application(applicationDTO.getName());
-        application.setId(applicationDTO.getId());
-        Group group = groupOptional.get();
-        application.setPermissionsGroup(group);
-
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(groupOptional.get())) {
             throw new AuthenticationException("Not authorized");
         }
 
+        // check if application with same name exists in group
         Optional<Application> searchApplicationByNameAndGroup = applicationRepository.findByNameAndPermissionsGroup(
-                application.getName().trim(), application.getPermissionsGroup());
+                applicationDTO.getName().trim(), groupOptional.get());
 
         if (searchApplicationByNameAndGroup.isPresent()) {
             return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new ApplicationDTO(searchApplicationByNameAndGroup.get()));
+        }
+
+        Application application;
+        if (applicationDTO.getId() != null) {
+            // prevent group update
+            Optional<Application> applicationOptional = applicationRepository.findById(applicationDTO.getId());
+            if (applicationOptional.isEmpty()) {
+                return HttpResponse.notFound("Specified application does not exist");
+            } else if (!Objects.equals(applicationOptional.get().getPermissionsGroup().getId(), applicationDTO.getGroup())) {
+                throw new Exception("Cannot change application's group association");
+            }
+
+            application = applicationOptional.get();
+            application.setName(applicationDTO.getName());
+        } else {
+            application = new Application(applicationDTO.getName());
+            application.setId(applicationDTO.getId());
+            Group group = groupOptional.get();
+            application.setPermissionsGroup(group);
         }
 
         if (application.getId() == null) {
@@ -92,17 +117,16 @@ public class ApplicationService {
         }
     }
 
-    public boolean isUserApplicationAdminOfGroup(Application application) throws Exception {
-        Group applicationGroupId = application.getPermissionsGroup();
-        if (applicationGroupId == null) {
+    public boolean isUserApplicationAdminOfGroup(Group group) throws Exception {
+        if (group == null) {
             throw new Exception("Cannot save Application without specifying a Group.");
         }
-        if (groupRepository.findById(applicationGroupId.getId()).isEmpty()) {
+        if (groupRepository.findById(group.getId()).isEmpty()) {
             throw new Exception("Specified group does not exist.");
         }
 
         return securityUtil.getCurrentlyAuthenticatedUser()
-                .map(user -> groupUserService.isUserApplicationAdminOfGroup(applicationGroupId.getId(), user.getId()))
+                .map(user -> groupUserService.isUserApplicationAdminOfGroup(group.getId(), user.getId()))
                 .orElse(false);
     }
 
@@ -112,7 +136,7 @@ public class ApplicationService {
             throw new Exception("Application not found");
         }
         Application application = applicationOptional.get();
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
             throw new AuthenticationException("Not authorized");
         }
 

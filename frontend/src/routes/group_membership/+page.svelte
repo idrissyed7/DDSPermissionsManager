@@ -654,7 +654,7 @@
 		background-color: lightgray;
 	}
 
-	.searchGroup {
+	/* .searchGroup {
 		font-size: 0.75rem;
 		width: 10rem;
 		cursor: pointer;
@@ -674,7 +674,7 @@
 
 	.searchGroup tr:nth-child(even) {
 		background-color: rgba(192, 196, 240, 0.4);
-	}
+	} */
 
 	label {
 		font-size: small;
