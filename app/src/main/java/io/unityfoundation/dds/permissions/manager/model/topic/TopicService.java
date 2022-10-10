@@ -13,7 +13,6 @@ import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
-import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -26,9 +25,9 @@ public class TopicService {
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final GroupRepository groupRepository;
-    private final Provider<ApplicationPermissionService> applicationPermissionService;
+    private final ApplicationPermissionService applicationPermissionService;
 
-    public TopicService(TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository, Provider<ApplicationPermissionService> applicationPermissionService) {
+    public TopicService(TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, GroupRepository groupRepository, ApplicationPermissionService applicationPermissionService) {
         this.topicRepository = topicRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
@@ -109,7 +108,7 @@ public class TopicService {
         }
 
         // TODO - Need to investigate cascade management to eliminate this
-        applicationPermissionService.get().deleteAllByTopic(topic);
+        applicationPermissionService.deleteAllByTopic(topic);
 
         topicRepository.deleteById(id);
     }
