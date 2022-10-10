@@ -125,9 +125,6 @@ public class ApplicationService {
             application.setPermissionsGroup(group);
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.save(application)));
         }
-
-        // todo place below logic
-
     }
 
     public boolean isUserApplicationAdminOfGroup(Group group) throws Exception {
@@ -160,7 +157,12 @@ public class ApplicationService {
         if (applicationOptional.isEmpty()) {
             return HttpResponse.notFound();
         }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(applicationOptional.get().getPermissionsGroup())) {
+
+        if (!securityUtil.isCurrentUserAdmin() &&
+                !groupUserService.isUserMemberOfGroup(
+                        applicationOptional.get().getPermissionsGroup().getId(),
+                        securityUtil.getCurrentlyAuthenticatedUser().get().getId())
+        ){
             throw new AuthenticationException("Not authorized");
         }
         Application application = applicationOptional.get();

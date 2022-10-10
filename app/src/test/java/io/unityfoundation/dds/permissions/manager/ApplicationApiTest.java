@@ -965,7 +965,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canViewApplicationDetails() {
+        public void cannotViewApplicationDetails() {
 
             mockSecurityService.postConstruct();
 
@@ -989,8 +989,13 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             request = HttpRequest.GET("/applications/show/"+applicationOne.getId());
-            ApplicationDTO applicationDTO = blockingClient.retrieve(request, ApplicationDTO.class);
-            assertNotNull(applicationDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
+            assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test
