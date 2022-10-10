@@ -1,4 +1,5 @@
 <script>
+	import { error, redirect } from '@sveltejs/kit';
 	import { onMount } from 'svelte';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
@@ -6,6 +7,7 @@
 	import '../app.css';
 
 	export let data;
+	const userValidityInterval = 180000; // 3 minutes
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
@@ -22,10 +24,23 @@
 			// console.log(expirationTime - nowTime);
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
+			setInterval(checkValidity, userValidityInterval);
 		} catch (err) {
 			console.error(err);
 		}
 	});
+
+	const checkValidity = async () => {
+		try {
+			const res = await httpAdapter.get(`/group_membership/user-validity`);
+			console.log(res);
+		} catch (err) {
+			if (err.response.status === 404) {
+				// Logout User
+				onLoggedIn(false);
+			}
+		}
+	};
 </script>
 
 <Header isAuthenticated={$isAuthenticated} />
