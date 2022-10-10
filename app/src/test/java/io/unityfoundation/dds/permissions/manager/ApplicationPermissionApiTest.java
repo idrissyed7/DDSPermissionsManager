@@ -84,7 +84,7 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
-        public void permissionIsDeletedPostTopicOrApplicationDeletion() {
+        public void permissionIsDeletedPostTopicDeletion() {
 
             HttpResponse<?> response;
 
@@ -117,6 +117,46 @@ public class ApplicationPermissionApiTest {
 
             // topic delete
             HttpRequest<?> request = HttpRequest.POST("/topics/delete/"+topicOptional.get().getId(), Map.of());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+
+            assertTrue(applicationPermissionRepository.findById(permissionOptional.get().getId()).isEmpty());
+        }
+
+        @Test
+        public void permissionIsDeletedPostApplicationDeletion() {
+
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // create app permission
+            response = createApplicationPermission(applicationOptional.get().getId(), topicOptional.get().getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            // application delete
+            HttpRequest<?> request = HttpRequest.POST("/applications/delete/"+applicationOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
