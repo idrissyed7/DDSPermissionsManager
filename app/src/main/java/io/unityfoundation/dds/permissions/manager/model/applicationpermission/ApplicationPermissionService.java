@@ -141,10 +141,4 @@ public class ApplicationPermissionService {
 
         return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
     }
-
-    // approach1
-    @Transactional
-    public void deleteAllByTopic(Topic topic) {
-        applicationPermissionRepository.deleteByPermissionsTopicEquals(topic);
-    }
 }

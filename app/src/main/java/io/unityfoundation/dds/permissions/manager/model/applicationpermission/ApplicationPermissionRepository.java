@@ -4,7 +4,6 @@ import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
-import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 
 import java.util.Optional;
 
@@ -14,7 +13,4 @@ public interface ApplicationPermissionRepository extends PageableRepository<Appl
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicId(Long applicationId, Long topicId, Pageable pageable);
     Optional<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicIdAndAccessType(Long applicationId, Long topicId, AccessType accessType);
-
-    // approach1
-    void deleteByPermissionsTopicEquals(Topic permissionsTopic);
 }

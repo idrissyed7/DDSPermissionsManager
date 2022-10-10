@@ -16,12 +16,10 @@ public class ApplicationPermission {
 
     @NonNull
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "permissions_group_application_id", nullable = false) // approach2
     private Application permissionsApplication;
 
     @NonNull
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "permissions_group_topic_id", nullable = false) // approach2
     private Topic permissionsTopic;
 
     @NonNull
