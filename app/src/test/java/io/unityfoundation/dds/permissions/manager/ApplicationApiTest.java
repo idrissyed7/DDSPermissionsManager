@@ -446,7 +446,7 @@ public class ApplicationApiTest {
             assertEquals(OK, response.getStatus());
 
             // verify matches
-            request = HttpRequest.GET("/applications/verify-passphrase/" + applicationOne.getId() + "/" + optional.get());
+            request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }

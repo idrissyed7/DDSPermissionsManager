@@ -198,7 +198,6 @@ public class ApplicationService {
         return HttpResponse.ok(passphraseGenerator.generatePassphrase());
     }
 
-    // delete
     public MutableHttpResponse<Object> passwordMatches(Long application, String rawPassword) throws Exception {
         Optional<Application> applicationOptional = applicationRepository.findById(application);
         if (applicationOptional.isEmpty()) {

@@ -107,10 +107,9 @@ public class ApplicationController {
         }
     }
 
-    // delete
-    @Get("/verify-passphrase/{application}/{rawtext}")
+    @Post("/verify-passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> verifyPassphrase(@NonNull Long application, @NonNull String rawtext) {
+    public HttpResponse<?> verifyPassphrase(@NonNull Long application, @Body @NonNull String rawtext) {
         try {
             return applicationService.passwordMatches(application, rawtext);
         } catch (Exception e) {
