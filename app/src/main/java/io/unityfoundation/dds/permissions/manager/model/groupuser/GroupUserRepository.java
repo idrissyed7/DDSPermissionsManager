@@ -25,9 +25,9 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
 
     Page<GroupUser> findAllByPermissionsGroupIdIn(@NotNull @NonNull List<Long> groupIds, Pageable pageable);
 
-    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(@NotNull @NonNull String name, @NotNull @NonNull String email, Pageable pageable);
+    Page<GroupUser> findAllByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(@NotNull @NonNull String name, @NotNull @NonNull String email, Pageable pageable);
 
-    List<Long> findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(String filter, String filter1);
+    List<Long> findIdByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(String filter, String filter1);
 
     Page<GroupUser> findAllByIdInAndPermissionsGroupIdIn(List<Long> groupUsersList, List<Long> groupsList, Pageable pageable);
 
