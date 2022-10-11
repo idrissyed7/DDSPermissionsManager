@@ -39,7 +39,7 @@ public class TopicService {
     private Page<Topic> getTopicPage(Pageable pageable, String filter) {
 
         if(!pageable.isSorted()) {
-            pageable = pageable.order("permissionsGroup.name").order("name");
+            pageable = pageable.order("name").order("permissionsGroup.name");
         }
 
         if (securityUtil.isCurrentUserAdmin()) {

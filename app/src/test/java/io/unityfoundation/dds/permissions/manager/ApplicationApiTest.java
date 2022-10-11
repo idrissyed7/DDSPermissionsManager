@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -287,6 +288,106 @@ public class ApplicationApiTest {
             applicationPage = response.getBody(Page.class);
             assertTrue(applicationPage.isPresent());
             assertEquals(1, applicationPage.get().getContent().size());
+        }
+
+        @Test
+        void canListAllApplicationsNameInAscendingOrderByDefault(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123, Xyz789
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Xyz789", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
+
+            List<String> xyzApplications = applications.stream().filter(map -> {
+                String appName = (String) map.get("name");
+                return appName.equals("Xyz789");
+            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
+            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
+        }
+
+        @Test
+        void canListAllApplicationsNameInDescendingOrder(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications?sort=name,desc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
         }
 
         @Test
