@@ -43,7 +43,7 @@ public class ApplicationService {
     private Page<Application> getApplicationPage(Pageable pageable, String filter) {
 
         if(!pageable.isSorted()) {
-            pageable = pageable.order("permissionsGroup.name").order("name");
+            pageable = pageable.order("name").order("permissionsGroup.name");
         }
 
         if (securityUtil.isCurrentUserAdmin()) {

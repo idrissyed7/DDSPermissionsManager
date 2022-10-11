@@ -24,7 +24,6 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -360,7 +359,7 @@ public class TopicApiTest {
         void canListAllTopicsNameInAscendingOrderByDefault(){
             // Group - Topics
             // ---
-            // Theta - Xyz789
+            // Theta - Xyz789 & Def456
             // Zeta - Abc123 & Def456
 
             // create groups
@@ -408,6 +407,11 @@ public class TopicApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
+            defDTO.setGroup(theta.getId());
+            request = HttpRequest.POST("/topics/save", defDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
             request = HttpRequest.GET("/topics");
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
@@ -415,16 +419,18 @@ public class TopicApiTest {
             assertTrue(topicPage.isPresent());
             List<Map> topics = topicPage.get().getContent();
 
-            List<String> groupNames = topics.stream()
-                    .flatMap(map -> Stream.of((String) map.get("groupName")))
+            // topic names sorted
+            List<String> topicNames = topics.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
+            assertEquals(topicNames.stream().sorted().collect(Collectors.toList()), topicNames);
 
-            List<String> zetaTopics = topics.stream().filter(map -> {
-                String groupName = (String) map.get("groupName");
-                return groupName.equals("Zeta");
+            // group names should be sorted by topic
+            List<String> defTopics = topics.stream().filter(map -> {
+                String topicName = (String) map.get("name");
+                return topicName.equals("Def456");
             }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(zetaTopics.stream().sorted().collect(Collectors.toList()), zetaTopics);
+            assertEquals(defTopics.stream().sorted().collect(Collectors.toList()), defTopics);
         }
 
         @Test
@@ -486,11 +492,10 @@ public class TopicApiTest {
             assertTrue(topicPage.isPresent());
             List<Map> topics = topicPage.get().getContent();
 
-            List<String> zetaTopics = topics.stream().filter(map -> {
-                String groupName = (String) map.get("groupName");
-                return groupName.equals("Zeta");
-            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(zetaTopics.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), zetaTopics);
+            List<String> topicNames = topics.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(topicNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), topicNames);
         }
 
         //delete

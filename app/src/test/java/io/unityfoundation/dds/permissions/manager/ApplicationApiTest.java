@@ -295,7 +295,7 @@ public class ApplicationApiTest {
             // Group - Applications
             // ---
             // PrimaryGroup - Xyz789, abc098
-            // SecondaryGroup - Abc123
+            // SecondaryGroup - Abc123, Xyz789
 
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -321,6 +321,8 @@ public class ApplicationApiTest {
 
             response = createApplication("Abc123", secondaryGroup.getId());
             assertEquals(OK, response.getStatus());
+            response = createApplication("Xyz789", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
 
             // test
             request = HttpRequest.GET("/applications");
@@ -330,16 +332,16 @@ public class ApplicationApiTest {
             assertTrue(applicationsOptional.isPresent());
             List<Map> applications = applicationsOptional.get().getContent();
 
-            List<String> groupNames = applications.stream()
-                    .flatMap(map -> Stream.of((String) map.get("groupName")))
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
+            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
 
-            List<String> primaryApplications = applications.stream().filter(map -> {
-                String groupName = (String) map.get("groupName");
-                return groupName.equals("Primary");
+            List<String> xyzApplications = applications.stream().filter(map -> {
+                String appName = (String) map.get("name");
+                return appName.equals("Xyz789");
             }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(primaryApplications.stream().sorted().collect(Collectors.toList()), primaryApplications);
+            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
         }
 
         @Test
@@ -382,11 +384,10 @@ public class ApplicationApiTest {
             assertTrue(applicationsOptional.isPresent());
             List<Map> applications = applicationsOptional.get().getContent();
 
-            List<String> primaryApplications = applications.stream().filter(map -> {
-                String groupName = (String) map.get("groupName");
-                return groupName.equals("Primary");
-            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(primaryApplications.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), primaryApplications);
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
         }
 
         @Test
