@@ -120,3 +120,8 @@ micronaut:
     info:
       enabled: true
       sensitive: false
+---
+permissions-manager:
+  data:
+    passphrase:
+      length: 16

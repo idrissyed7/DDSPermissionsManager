@@ -1,6 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
@@ -17,6 +18,9 @@ public class Application {
     @NonNull
     @NotBlank
     private String name;
+
+    @Nullable
+    private String encryptedPassword;
 
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
@@ -57,6 +61,15 @@ public class Application {
 
     public void setPermissionsGroup(Group permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
+    }
+
+    @Nullable
+    public String getEncryptedPassword() {
+        return encryptedPassword;
+    }
+
+    public void setEncryptedPassword(@Nullable String encryptedPassword) {
+        this.encryptedPassword = encryptedPassword;
     }
 
     @PrePersist

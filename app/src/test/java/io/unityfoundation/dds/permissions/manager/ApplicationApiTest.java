@@ -412,6 +412,38 @@ public class ApplicationApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
+
+        @Test
+        void canGeneratePassphraseAndVerify() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            // verify matches
+            request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
     }
 
     @Nested
@@ -927,7 +959,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canViewApplicationDetails() {
+        public void cannotViewApplicationDetails() {
 
             mockSecurityService.postConstruct();
 
@@ -951,8 +983,13 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             request = HttpRequest.GET("/applications/show/"+applicationOne.getId());
-            ApplicationDTO applicationDTO = blockingClient.retrieve(request, ApplicationDTO.class);
-            assertNotNull(applicationDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
+            assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test
