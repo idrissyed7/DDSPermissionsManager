@@ -1,9 +1,9 @@
 <script>
-	import { error, redirect } from '@sveltejs/kit';
 	import { onMount } from 'svelte';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
 	import Header from '$lib/header/Header.svelte';
+	import token from '../token/token.json';
 	import '../app.css';
 
 	export let data;
@@ -14,6 +14,8 @@
 		try {
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
+			onLoggedIn(token);
+
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);
 			// nowTime = new Date();
@@ -33,7 +35,6 @@
 	const checkValidity = async () => {
 		try {
 			const res = await httpAdapter.get(`/group_membership/user-validity`);
-			console.log(res);
 		} catch (err) {
 			if (err.response.status === 404) {
 				// Logout User

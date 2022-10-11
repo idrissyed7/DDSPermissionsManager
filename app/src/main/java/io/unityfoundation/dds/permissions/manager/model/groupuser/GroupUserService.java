@@ -45,7 +45,7 @@ public class GroupUserService {
             if (filter == null) {
                 return groupUserRepository.findAll(pageable);
             } else {
-                return groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter,
+                return groupUserRepository.findAllByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter,
                         filter, pageable);
             }
         } else {
@@ -57,7 +57,7 @@ public class GroupUserService {
                 return groupUserRepository.findAllByPermissionsGroupIdIn(groupsList, pageable);
             } else {
                 List<Long> all = groupUserRepository
-                        .findIdByPermissionsGroupNameContainsOrPermissionsUserEmailContains(filter, filter);
+                        .findIdByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter, filter);
 
                 return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, groupsList, pageable);
 
