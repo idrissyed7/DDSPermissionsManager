@@ -439,12 +439,6 @@ public class ApplicationApiTest {
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
 
-            // update application with secret
-            applicationOne.setPassword(optional.get());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(OK, response.getStatus());
-
             // verify matches
             request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
             response = blockingClient.exchange(request);

@@ -7,7 +7,6 @@ public class ApplicationDTO {
 
     private Long id;
     private String name;
-    private String password;
     private Long group;
     private String groupName;
 
@@ -51,13 +50,5 @@ public class ApplicationDTO {
 
     public void setGroupName(String groupName) {
         this.groupName = groupName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 }

@@ -108,9 +108,6 @@ public class ApplicationService {
 
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
-            if (application.getEncryptedPassword() == null && applicationDTO.getPassword() != null) {
-                application.setEncryptedPassword(passwordEncoderService.encode(applicationDTO.getPassword()));
-            }
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
         } else { // new
@@ -186,8 +183,8 @@ public class ApplicationService {
         return applicationRepository.findById(applicationId);
     }
 
-    public MutableHttpResponse<Object> generateCleartextPassphrase(Long application) throws Exception {
-        Optional<Application> applicationOptional = applicationRepository.findById(application);
+    public MutableHttpResponse<Object> generateCleartextPassphrase(Long applicationId) throws Exception {
+        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
             return HttpResponse.notFound();
         }
@@ -195,7 +192,13 @@ public class ApplicationService {
             throw new AuthenticationException("Not authorized");
         }
 
-        return HttpResponse.ok(passphraseGenerator.generatePassphrase());
+        String clearTextPassphrase = passphraseGenerator.generatePassphrase();
+
+        Application application = applicationOptional.get();
+        application.setEncryptedPassword(passwordEncoderService.encode(clearTextPassphrase));
+        applicationRepository.update(application);
+
+        return HttpResponse.ok(clearTextPassphrase);
     }
 
     public MutableHttpResponse<Object> passwordMatches(Long application, String rawPassword) throws Exception {
