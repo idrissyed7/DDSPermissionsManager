@@ -9,6 +9,7 @@ import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
@@ -516,6 +517,46 @@ public class TopicApiTest {
 
         // list - same functionality as member
         // show - same functionality as member
+
+        @Test
+        void cannotDeleteAnApplication(){
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // add member to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(theta.getId());
+            dto.setEmail("jjones@test.test");
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create application
+            response = createApplication("ApplicationOne", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.POST("/applications/delete/"+applicationOne.getId(), Map.of());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
     }
 
     @Nested
@@ -1162,5 +1203,14 @@ public class TopicApiTest {
             });
             assertEquals(UNAUTHORIZED, exception3.getStatus());
         }
+    }
+
+    private HttpResponse<?> createApplication(String applicationName, Long groupId) {
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        applicationDTO.setName(applicationName);
+        applicationDTO.setGroup(groupId);
+
+        HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+        return blockingClient.exchange(request, ApplicationDTO.class);
     }
 }
