@@ -7,6 +7,7 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -30,16 +31,20 @@ public class ApplicationService {
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
+    private final ApplicationPermissionService applicationPermissionService;
     private final PassphraseGenerator passphraseGenerator;
     private final BCryptPasswordEncoderService passwordEncoderService;
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
-                              SecurityUtil securityUtil, GroupUserService groupUserService, PassphraseGenerator passphraseGenerator,
+                              ApplicationPermissionService applicationPermissionService,
+                              SecurityUtil securityUtil, GroupUserService groupUserService,
+                              PassphraseGenerator passphraseGenerator,
                               BCryptPasswordEncoderService passwordEncoderService) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
+        this.applicationPermissionService = applicationPermissionService;
         this.passphraseGenerator = passphraseGenerator;
         this.passwordEncoderService = passwordEncoderService;
     }
@@ -142,13 +147,17 @@ public class ApplicationService {
     }
 
     public void deleteById(Long id) throws Exception {
-        Optional<Application> application = applicationRepository.findById(id);
-        if (application.isEmpty()) {
+        Optional<Application> applicationOptional = applicationRepository.findById(id);
+        if (applicationOptional.isEmpty()) {
             throw new Exception("Application not found");
         }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.get().getPermissionsGroup())) {
+        Application application = applicationOptional.get();
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
             throw new AuthenticationException("Not authorized");
         }
+
+        // TODO - Need to investigate cascade management to eliminate this
+        applicationPermissionService.deleteAllByApplication(application);
 
         applicationRepository.deleteById(id);
     }

@@ -4,10 +4,10 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
-import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
@@ -19,15 +19,15 @@ import java.util.Optional;
 public class ApplicationPermissionService {
 
     private final ApplicationPermissionRepository applicationPermissionRepository;
-    private final ApplicationService applicationService;
-    private final TopicService topicService;
+    private final ApplicationRepository applicationRepository;
+    private final TopicRepository topicRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
 
-    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationService applicationService, TopicService topicService, SecurityUtil securityUtil, GroupUserService groupUserService) {
+    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService) {
         this.applicationPermissionRepository = applicationPermissionRepository;
-        this.applicationService = applicationService;
-        this.topicService = topicService;
+        this.applicationRepository = applicationRepository;
+        this.topicRepository = topicRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
     }
@@ -56,11 +56,11 @@ public class ApplicationPermissionService {
     public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
         final HttpResponse response;
 
-        Optional<Application> applicationById = applicationService.findById(applicationId);
+        Optional<Application> applicationById = applicationRepository.findById(applicationId);
         if (applicationById.isEmpty()) {
             response = HttpResponse.notFound();
         } else {
-            Optional<Topic> topicById = topicService.findById(topicId);
+            Optional<Topic> topicById = topicRepository.findById(topicId);
             if (topicById.isEmpty()) {
                 response = HttpResponse.notFound();
             } else {
@@ -141,5 +141,12 @@ public class ApplicationPermissionService {
         applicationPermission.setAccessType(access);
 
         return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
+    }
+
+    public void deleteAllByTopic(Topic topic) {
+        applicationPermissionRepository.deleteByPermissionsTopicEquals(topic);
+    }
+    public void deleteAllByApplication(Application application) {
+        applicationPermissionRepository.deleteByPermissionsApplicationEquals(application);
     }
 }
