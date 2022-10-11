@@ -276,7 +276,7 @@ public class GroupMembershipApiTest {
         }
 
         @Test
-        public void canSeeAllMembershipsFilteredByGroupName() {
+        public void canSeeAllMembershipsFilteredByGroupNameCaseInsensitive() {
             // first group and member
             Group primaryGroup = new Group("PrimaryGroup");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
@@ -305,14 +305,14 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?filter=Secondary");
+            request = HttpRequest.GET("/group_membership?filter=secondary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
         }
 
         @Test
-        public void canSeeAllMembershipsFilteredByUserEmail() {
+        public void canSeeAllMembershipsFilteredByUserEmailCaseInsensitive() {
             // first group and member
             Group primaryGroup = new Group("PrimaryGroup");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
@@ -341,7 +341,7 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?filter=bob.builder@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=Bob.Builder@UnityFoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -879,7 +879,7 @@ public class GroupMembershipApiTest {
         }
 
         @Test
-        public void canSeeCommonGroupMembershipsFilteredByGroupName() {
+        public void canSeeCommonGroupMembershipsFilteredByGroupNameCaseInsensitive() {
             mockSecurityService.postConstruct();
 
             // first group and member
@@ -918,14 +918,14 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?group=Secondary");
+            request = HttpRequest.GET("/group_membership?filter=secondary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(2, page.getContent().size());
         }
 
         @Test
-        public void canSeeCommonGroupMembershipsFilteredByUserEmail() {
+        public void canSeeCommonGroupMembershipsFilteredByUserEmailCaseInsensitive() {
             mockSecurityService.postConstruct();
 
             // first group and member
@@ -964,7 +964,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?filter=the.generalcontractor@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=The.GeneralContractor@UnityFoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
