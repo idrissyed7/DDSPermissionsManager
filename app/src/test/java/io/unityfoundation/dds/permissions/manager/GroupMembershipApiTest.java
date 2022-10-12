@@ -276,7 +276,7 @@ public class GroupMembershipApiTest {
         }
 
         @Test
-        public void canSeeAllMembershipsFilteredByGroupName() {
+        public void canSeeAllMembershipsFilteredByGroupNameCaseInsensitive() {
             // first group and member
             Group primaryGroup = new Group("PrimaryGroup");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
@@ -305,14 +305,14 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?filter=Secondary");
+            request = HttpRequest.GET("/group_membership?filter=secondary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
         }
 
         @Test
-        public void canSeeAllMembershipsFilteredByUserEmail() {
+        public void canSeeAllMembershipsFilteredByUserEmailCaseInsensitive() {
             // first group and member
             Group primaryGroup = new Group("PrimaryGroup");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
@@ -341,7 +341,7 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership?filter=bob.builder@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=Bob.Builder@UnityFoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -415,6 +415,13 @@ public class GroupMembershipApiTest {
             // delete
             request = HttpRequest.DELETE("/group_membership", Map.of("id", groupUser.getId()));
             response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
+        public void shouldBeConsideredValid() {
+            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
+            HttpResponse response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
     }
@@ -872,7 +879,7 @@ public class GroupMembershipApiTest {
         }
 
         @Test
-        public void canSeeCommonGroupMembershipsFilteredByGroupName() {
+        public void canSeeCommonGroupMembershipsFilteredByGroupNameCaseInsensitive() {
             mockSecurityService.postConstruct();
 
             // first group and member
@@ -911,14 +918,14 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?group=Secondary");
+            request = HttpRequest.GET("/group_membership?filter=secondary");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(2, page.getContent().size());
         }
 
         @Test
-        public void canSeeCommonGroupMembershipsFilteredByUserEmail() {
+        public void canSeeCommonGroupMembershipsFilteredByUserEmailCaseInsensitive() {
             mockSecurityService.postConstruct();
 
             // first group and member
@@ -957,7 +964,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership?filter=the.generalcontractor@unityfoundation");
+            request = HttpRequest.GET("/group_membership?filter=The.GeneralContractor@UnityFoundation");
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
@@ -1054,6 +1061,40 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(0, page.getContent().size());
+        }
+
+        @Test
+        public void shouldBeConsideredValid() {
+            mockSecurityService.postConstruct();
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // other group and member
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = (Group) response.getBody(Group.class).get();
+
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // add non-admin test user
+            dto1.setEmail("jjones@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/group_membership/user-validity");
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
         }
 
     }
@@ -1161,6 +1202,16 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+        @Test
+        public void shouldBeConsideredInvalid() {
+            loginAsNonAdmin();
+            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(NOT_FOUND, exception.getStatus());
         }
     }
 }

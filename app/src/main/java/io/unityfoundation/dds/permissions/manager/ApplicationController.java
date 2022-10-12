@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -32,9 +33,9 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
-    @Get
-    public Page<ApplicationDTO> index(@Valid Pageable pageable) {
-        return applicationService.findAll(pageable);
+    @Get("{?filter}")
+    public Page<ApplicationDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+        return applicationService.findAll(pageable, filter);
     }
 
     @Get("/show/{id}")
@@ -94,5 +95,25 @@ public class ApplicationController {
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse search(@Nullable String filter, @Valid Pageable page) {
         return HttpResponse.ok(applicationService.search(filter, page));
+    }
+
+    @Get("/generate-passphrase/{application}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> generatePassphrase(@NonNull Long application) {
+        try {
+            return applicationService.generateCleartextPassphrase(application);
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
+    }
+
+    @Post("/verify-passphrase/{application}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> verifyPassphrase(@NonNull Long application, @Body @NonNull String rawtext) {
+        try {
+            return applicationService.passwordMatches(application, rawtext);
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
+        }
     }
 }

@@ -4,29 +4,30 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
-import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @Singleton
 public class ApplicationPermissionService {
 
     private final ApplicationPermissionRepository applicationPermissionRepository;
-    private final ApplicationService applicationService;
-    private final TopicService topicService;
+    private final ApplicationRepository applicationRepository;
+    private final TopicRepository topicRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
 
-    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationService applicationService, TopicService topicService, SecurityUtil securityUtil, GroupUserService groupUserService) {
+    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService) {
         this.applicationPermissionRepository = applicationPermissionRepository;
-        this.applicationService = applicationService;
-        this.topicService = topicService;
+        this.applicationRepository = applicationRepository;
+        this.topicRepository = topicRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
     }
@@ -34,8 +35,8 @@ public class ApplicationPermissionService {
     public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
         return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(), applicationPermission.getPermissionsTopic().getId(),
-                applicationPermission.getPermissionsApplication().getId(),
-                applicationPermission.getAccessType()
+                applicationPermission.getPermissionsTopic().getName(), applicationPermission.getPermissionsApplication().getId(),
+                applicationPermission.getPermissionsApplication().getName(), applicationPermission.getAccessType()
         ));
     }
 
@@ -55,11 +56,11 @@ public class ApplicationPermissionService {
     public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
         final HttpResponse response;
 
-        Optional<Application> applicationById = applicationService.findById(applicationId);
+        Optional<Application> applicationById = applicationRepository.findById(applicationId);
         if (applicationById.isEmpty()) {
             response = HttpResponse.notFound();
         } else {
-            Optional<Topic> topicById = topicService.findById(topicId);
+            Optional<Topic> topicById = topicRepository.findById(topicId);
             if (topicById.isEmpty()) {
                 response = HttpResponse.notFound();
             } else {
@@ -92,9 +93,11 @@ public class ApplicationPermissionService {
 
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
-        Long applicationid = applicationPermission.getPermissionsApplication().getId();
+        String topicName = applicationPermission.getPermissionsTopic().getName();
+        Long applicationId = applicationPermission.getPermissionsApplication().getId();
+        String applicationName = applicationPermission.getPermissionsApplication().getName();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(applicationPermission.getId(), topicId, applicationid, accessType);
+        return new AccessPermissionDTO(applicationPermission.getId(), topicId, topicName, applicationId, applicationName, accessType);
     }
 
     public HttpResponse deleteById(Long permissionId) {
@@ -114,5 +117,36 @@ public class ApplicationPermissionService {
 
         applicationPermissionRepository.deleteById(permissionId);
         return HttpResponse.noContent();
+    }
+
+    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access) {
+        if (Arrays.stream(AccessType.values()).noneMatch(accessType -> accessType.equals(access))) {
+            return HttpResponse.badRequest();
+        }
+
+        Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
+
+        if (applicationPermissionOptional.isEmpty()) {
+            return HttpResponse.notFound();
+        } else {
+            Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+
+            if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
+                return HttpResponse.unauthorized();
+            }
+        }
+
+        ApplicationPermission applicationPermission = applicationPermissionOptional.get();
+        applicationPermission.setAccessType(access);
+
+        return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
+    }
+
+    public void deleteAllByTopic(Topic topic) {
+        applicationPermissionRepository.deleteByPermissionsTopicEquals(topic);
+    }
+    public void deleteAllByApplication(Application application) {
+        applicationPermissionRepository.deleteByPermissionsApplicationEquals(application);
     }
 }

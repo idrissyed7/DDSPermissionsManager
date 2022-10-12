@@ -116,4 +116,32 @@ public class GroupService {
 
         return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
     }
+
+    public Page<GroupSearchDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
+
+        return getGroupSearchPage(filter, role, pageable).map(group -> {
+            GroupSearchDTO groupsResponseDTO = new GroupSearchDTO();
+            groupsResponseDTO.setGroupFields(group);
+
+            return groupsResponseDTO;
+        });
+    }
+
+    private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {
+
+        if (securityUtil.isCurrentUserAdmin()) {
+            if (!pageable.isSorted()) {
+                pageable = pageable.order(Sort.Order.asc("name"));
+            }
+
+            return groupRepository.findAllByNameContainsIgnoreCase(filter, pageable);
+        } else {
+            if (!pageable.isSorted()) {
+                pageable = pageable.order(Sort.Order.asc("permissionsGroup.name"));
+            }
+
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+            return groupUserService.getAllGroupsUserIsAnAdminOf(user, filter, pageable, role);
+        }
+    }
 }

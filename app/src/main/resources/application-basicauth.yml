@@ -1,0 +1,6 @@
+micronaut:
+  security:
+    basic-auth:
+      enabled: true
+  server:
+    port: 8080

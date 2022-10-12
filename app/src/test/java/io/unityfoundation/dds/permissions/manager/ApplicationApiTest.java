@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,6 +142,76 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void cannotCreateApplicationWithNullNorWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // null
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication(null, primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+
+            // space
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("     ", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("   Abc123  ", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+        }
+
+        @Test
+        public void cannotCreateApplicationWithSameNameInGroup() {
+
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+
+            // duplicate create attempt
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<ApplicationDTO> applicationOptionalAttempt = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptionalAttempt.isPresent());
+            assertEquals(applicationOptional.get().getId(), applicationOptionalAttempt.get().getId());
+        }
+
+        @Test
         public void canViewAllApplications() {
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -168,6 +239,155 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications");
             Page page = blockingClient.retrieve(request, Page.class);
             assertEquals(2, page.getContent().size());
+        }
+
+        @Test
+        void canListAllApplicationsWithFilter(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // support case-insensitive
+            request = HttpRequest.GET("/applications?filter=abc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(2, applicationPage.get().getContent().size());
+
+            // group search
+            request = HttpRequest.GET("/applications?filter=secondary");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+        }
+
+        @Test
+        void canListAllApplicationsNameInAscendingOrderByDefault(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123, Xyz789
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Xyz789", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
+
+            List<String> xyzApplications = applications.stream().filter(map -> {
+                String appName = (String) map.get("name");
+                return appName.equals("Xyz789");
+            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
+            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
+        }
+
+        @Test
+        void canListAllApplicationsNameInDescendingOrder(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications?sort=name,desc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
         }
 
         @Test
@@ -201,7 +421,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationGroup() {
+        public void cannotUpdateApplicationGroup() {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
@@ -225,13 +445,13 @@ public class ApplicationApiTest {
             assertTrue(applicationOptional.isPresent());
             ApplicationDTO application = applicationOptional.get();
 
+            // change group
             application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getGroup());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
@@ -290,6 +510,38 @@ public class ApplicationApiTest {
 
             // delete
             request = HttpRequest.POST("/applications/delete/" + applicationOne.getId(), Map.of());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
+        void canGeneratePassphraseAndVerify() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            // verify matches
+            request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -415,13 +667,124 @@ public class ApplicationApiTest {
 
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsNonAdminOfGroup() {
+        public void canViewGroupApplicationsAsMember() {
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
+
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
         }
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsApplicationAdminOfGroup() {
+        void canListApplicationsWithFilterLimitedToGroupMembership(){
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
+
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            // application
+            request = HttpRequest.GET("/applications?filter=application");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // group
+            request = HttpRequest.GET("/applications?filter=aryGrouP");
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
         }
 
         @Test
@@ -472,7 +835,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
+        public void cannotUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
             mockSecurityService.postConstruct();
 
             HttpRequest<?> request;
@@ -515,11 +878,11 @@ public class ApplicationApiTest {
             // change the application to the other group
             application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getGroup());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
@@ -697,38 +1060,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void cannotViewAllApplications() {
-
-            mockSecurityService.postConstruct();
-
-            HttpRequest<?> request;
-            HttpResponse<?> response;
-
-            // create groups
-            response = createGroup("PrimaryGroup");
-            assertEquals(OK, response.getStatus());
-            Optional<Group> primaryOptional = response.getBody(Group.class);
-            assertTrue(primaryOptional.isPresent());
-            Group primaryGroup = primaryOptional.get();
-
-            // create applications
-            response = createApplication("ApplicationOne", primaryGroup.getId());
-            assertEquals(OK, response.getStatus());
-            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
-            assertTrue(applicationOptional.isPresent());
-            ApplicationDTO applicationOne = applicationOptional.get();
-
-            loginAsNonAdmin();
-
-            request = HttpRequest.GET("/applications");
-            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-            List<Map> applications = (List<Map>) responseMap.get("content");
-            assertEquals(0, applications.size());
-        }
-
-        @Test
-        public void canViewApplicationDetails() {
+        public void cannotViewApplicationDetails() {
 
             mockSecurityService.postConstruct();
 
@@ -752,8 +1084,13 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             request = HttpRequest.GET("/applications/show/"+applicationOne.getId());
-            ApplicationDTO applicationDTO = blockingClient.retrieve(request, ApplicationDTO.class);
-            assertNotNull(applicationDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
+            assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test

@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -15,10 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.unityfoundation.dds.permissions.manager.model.group.Group;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupService;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupDTO;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
+import io.unityfoundation.dds.permissions.manager.model.group.*;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -31,17 +29,21 @@ import java.util.Optional;
 public class GroupController {
 
     private final GroupService groupService;
-    private final GroupUserService groupUserService;
 
-    public GroupController(GroupService groupService, GroupUserService groupUserService) {
+    public GroupController(GroupService groupService) {
         this.groupService = groupService;
-        this.groupUserService = groupUserService;
     }
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
     public Page<GroupDTO> index(@Valid Pageable pageable, @Nullable String filter) {
         return groupService.findAll(pageable, filter);
+    }
+
+    @Get("/search/{text}{?role}")
+    @ExecuteOn(TaskExecutors.IO)
+    public Page<GroupSearchDTO> search(@NonNull String text, @Nullable GroupAdminRole role, @Valid Pageable pageable) {
+        return groupService.search(text, role, pageable);
     }
 
     @Post("/save")

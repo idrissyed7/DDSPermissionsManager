@@ -2,6 +2,7 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupMembershipList from '../../stores/groupMembershipList';
 	import Modal from '../../lib/Modal.svelte';
@@ -122,6 +123,11 @@
 			}
 		}
 		reloadGroupMemberships();
+
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+			urlparameters.set([]);
+		}
 	});
 
 	const reloadGroupMemberships = async (page = 0) => {
@@ -154,11 +160,11 @@
 				applicationAdmin: groupMembership.applicationAdmin,
 				groupAdmin: groupMembership.groupAdmin,
 				topicAdmin: groupMembership.topicAdmin,
-				groupName: groupMembership.permissionsGroup.name,
-				groupId: groupMembership.permissionsGroup.id,
+				groupName: groupMembership.permissionsGroupName,
+				groupId: groupMembership.permissionsGroup,
 				groupMembershipId: groupMembership.id,
-				userId: groupMembership.permissionsUser.id,
-				userEmail: groupMembership.permissionsUser.email
+				userId: groupMembership.permissionsUser,
+				userEmail: groupMembership.permissionsUserEmail
 			};
 			groupMembershipListArray.push(newGroupMembership);
 		});
@@ -166,6 +172,7 @@
 		groupMembershipListArray = [];
 		groupMembershipsTotalPages = totalPages;
 		groupMembershipsCurrentPage = 0;
+		console.log('groupMembershipList', $groupMembershipList);
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
@@ -241,10 +248,11 @@
 				groupAdmin: selectedGroupMembership.groupAdmin,
 				topicAdmin: selectedGroupMembership.topicAdmin,
 				applicationAdmin: selectedGroupMembership.applicationAdmin,
-				permissionsGroup: { id: selectedGroupMembership.groupId },
-				permissionsUser: { id: selectedGroupMembership.userId }
+				permissionsGroup: selectedGroupMembership.groupId,
+				email: selectedGroupMembership.userEmail
 			};
 			try {
+				console.log('data', data);
 				await httpAdapter.put(`/group_membership`, data);
 				reloadGroupMemberships(groupMembershipsCurrentPage);
 			} catch (err) {
@@ -646,7 +654,7 @@
 		background-color: lightgray;
 	}
 
-	.searchGroup {
+	/* .searchGroup {
 		font-size: 0.75rem;
 		width: 10rem;
 		cursor: pointer;
@@ -666,7 +674,7 @@
 
 	.searchGroup tr:nth-child(even) {
 		background-color: rgba(192, 196, 240, 0.4);
-	}
+	} */
 
 	label {
 		font-size: small;
