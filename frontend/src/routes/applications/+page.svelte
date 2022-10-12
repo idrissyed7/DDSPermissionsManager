@@ -19,6 +19,9 @@
 	// Keys
 	const returnKey = 13;
 
+	// Password
+	let password;
+
 	// Modals
 	let errorMessageVisible = false;
 	let addApplicationVisible = false;
@@ -46,6 +49,7 @@
 
 	// Forms
 	let groupsDropdownSuggestion = 7;
+	let generateCredentialsVisible = false;
 
 	// Timer
 	let timer;
@@ -109,7 +113,6 @@
 			reloadAllApps();
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
-
 			if ($permissionsByGroup) {
 				isApplicationAdmin = $permissionsByGroup.some(
 					(groupPermission) => groupPermission.isApplicationAdmin === true
@@ -272,6 +275,8 @@
 	};
 
 	const returnToApplicationsList = () => {
+		generateCredentialsVisible = false;
+		password = '';
 		applicationDetailVisible = false;
 		applicationListVisible = true;
 	};
@@ -279,6 +284,20 @@
 	const returnToAppsList = () => {
 		applicationDetailVisible = false;
 		applicationListVisible = true;
+	};
+
+	const copyPassword = async (applicationId) => {
+		navigator.clipboard.writeText(password);
+	};
+
+	const generatePassword = async (applicationId) => {
+		try {
+			const res = await httpAdapter.get(`/applications/generate-passphrase/${applicationId}`);
+			password = res.data;
+			generateCredentialsVisible = true;
+		} catch (err) {
+			errorMessage('Error Generating Passphrase', err.message);
+		}
 	};
 </script>
 
@@ -339,11 +358,11 @@
 					<input
 						placeholder="Group Name"
 						style="
-					display: inline-flex;       
-					height: 1.7rem;
-					text-align: left;
-					font-size: small;
-					min-width: 9rem;"
+                    display: inline-flex;       
+                    height: 1.7rem;
+                    text-align: left;
+                    font-size: small;
+                    min-width: 9rem;"
 						bind:value={searchGroups}
 						on:blur={() => {
 							setTimeout(() => {
@@ -408,7 +427,7 @@
 			</center>
 		{/if}
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
-			<table align="center" style="margin-top: 2rem">
+			<table align="center" style="margin-top: 2rem; width: 60%">
 				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
 					<th><strong>Application</strong></th>
@@ -511,7 +530,7 @@
 				/>
 				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 					<span
-						style="position: absolute; font-size: medium; left: 65rem; top:6rem; cursor: pointer"
+						style="position: absolute; font-size: medium; left: 65.5rem; top:4.9rem; cursor: pointer"
 						on:click={() => {
 							if (editSaveLabel === 'edit') {
 								previousAppName = selectedAppName;
@@ -531,13 +550,14 @@
 					</span>
 				{/if}
 			</div>
+			<br />
 			<span
 				style="font-size: medium; margin-left: 11rem; cursor: pointer"
 				on:click={() => returnToApplicationsList()}
 				>&laquo; &nbsp; Back
 			</span>
 			<br /><br />
-			<table align="center">
+			<table align="center" style="width: 60%">
 				<tr style="border-width: 0px">
 					<th><strong>ID</strong></th>
 					<th><strong>Application Name</strong></th>
@@ -577,17 +597,31 @@
 							</ul>
 						{/if}
 					</td>
-					{#if $isAdmin}
-						<td
-							><button
-								class="button-delete"
-								on:click={() => confirmAppDelete(selectedAppId, selectedAppName)}
-								><span>Delete</span></button
-							></td
-						>
-					{/if}
 				</tr>
 			</table>
+			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
+				<center>
+					<button
+						class="button"
+						style="width: 11rem; margin-top: 2rem"
+						on:click={() => generatePassword(selectedAppId)}>Generate Credentials</button
+					>
+					{#if generateCredentialsVisible}
+						<br />
+						<div style="display:flex; width: 13rem; margin-top: 2rem">
+							<button
+								style=" background-color: rgba(0,0,0,0); border-width: 0px; cursor: pointer; font-size:larger"
+								on:click={() => copyPassword(selectedAppId)}>&#128203;</button
+							>
+							<section>
+								<p style="cursor: pointer;" on:click={() => copyPassword(selectedAppId)}>
+									{password}
+								</p>
+							</section>
+						</div>
+					{/if}
+				</center>
+			{/if}
 		{/if}
 		<br /><br />
 		{#if $isAdmin && !applicationDetailVisible}
@@ -601,12 +635,26 @@
 {/if}
 
 <style>
+	section {
+		display: flex;
+		height: 1rem;
+		padding: 0.5rem;
+		border-radius: 10px;
+		border: 1px dashed #1c1cc9;
+		align-items: center;
+		justify-content: center;
+	}
+
 	ul {
 		margin: 0;
 		padding: 0.25rem 0 0.25rem 0.85rem;
 	}
+
+	tr {
+		line-height: 1.7rem;
+	}
+
 	input {
-		margin-top: 1.1rem;
 		text-align: left;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
