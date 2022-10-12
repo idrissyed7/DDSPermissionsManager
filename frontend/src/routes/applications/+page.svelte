@@ -113,7 +113,6 @@
 			reloadAllApps();
 			const res = await httpAdapter.get(`/token_info`);
 			permissionsByGroup.set(res.data.permissionsByGroup);
-			console.log('$permissionsByGroup', $permissionsByGroup);
 			if ($permissionsByGroup) {
 				isApplicationAdmin = $permissionsByGroup.some(
 					(groupPermission) => groupPermission.isApplicationAdmin === true
@@ -297,7 +296,7 @@
 			password = res.data;
 			generateCredentialsVisible = true;
 		} catch (err) {
-			errorMessage('Error Saving New Application Name', err.message);
+			errorMessage('Error Generating Passphrase', err.message);
 		}
 	};
 </script>
