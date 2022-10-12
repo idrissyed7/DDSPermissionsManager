@@ -14,7 +14,11 @@
 		try {
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
-			onLoggedIn(token);
+
+			// For Testing purposes only it's loading a Token in a JSON file
+			// The user is logged in as a Super Admin
+			// Remove this for Production //
+			if (!res.data) onLoggedIn(token);
 
 			// remindTime = 60 * 1000 * 5; // 5 minutes
 			// expirationTime = new Date(res.data.exp * 1000);
