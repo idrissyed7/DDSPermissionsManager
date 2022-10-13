@@ -81,17 +81,4 @@ public class GroupController {
         }
         return HttpResponse.seeOther(URI.create("/api/groups"));
     }
-
-    @Get("/{id}")
-    @ApiResponse(responseCode = "200")
-    @ApiResponse(responseCode = "404", description = "Not Found - Returned if the given group cannot be found.")
-    @ExecuteOn(TaskExecutors.IO)
-    HttpResponse show(Long id) {
-        Optional<Map> groupOptional = groupService.getGroupDetails(id);
-        if (groupOptional.isPresent()) {
-            Map payload = groupOptional.get();
-            return HttpResponse.ok(payload);
-        }
-        return HttpResponse.notFound();
-    }
 }
