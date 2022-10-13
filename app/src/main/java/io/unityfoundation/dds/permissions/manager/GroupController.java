@@ -92,25 +92,4 @@ public class GroupController {
         }
         return HttpResponse.notFound();
     }
-
-    @Get("/user/{id}/")
-    @ApiResponse(
-            responseCode = "200",
-            content = @Content(mediaType = "application/json"),
-            description = "Returns a list of dictionaries where each dictionary is of the form: \n" +
-                    "\"groupId\", boolean,\n" +
-                    "\"groupName\", boolean,\n" +
-                    "\"isGroupAdmin\", boolean,\n" +
-                    "\"isTopicAdmin\", boolean,\n" +
-                    "\"isApplicationAdmin\", boolean"
-    )
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-    @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> showGroupsUserIsAMemberOf(Long id) {
-        try {
-            return HttpResponse.ok(groupService.getGroupsUserIsAMemberOf(id));
-        } catch (AuthenticationException ae) {
-            return HttpResponse.unauthorized();
-        }
-    }
 }

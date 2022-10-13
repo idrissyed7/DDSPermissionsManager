@@ -109,14 +109,6 @@ public class GroupService {
         return Optional.empty();
     }
 
-    public List<Map<String, Object>> getGroupsUserIsAMemberOf(Long userId) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            throw new AuthenticationException("Not authorized");
-        }
-
-        return groupUserService.getAllPermissionsPerGroupUserIsMemberOf(userId);
-    }
-
     public Page<GroupSearchDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
 
         return getGroupSearchPage(filter, role, pageable).map(group -> {
