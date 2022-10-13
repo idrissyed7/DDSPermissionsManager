@@ -540,10 +540,15 @@ public class ApplicationApiTest {
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
 
+            Map credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+
             // verify matches
-            request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            request = HttpRequest.POST("/login", credentials);
+//            Map retrieve = blockingClient.retrieve(request, Map.class);
+//            assertEquals(OK, response.getStatus());
         }
     }
 

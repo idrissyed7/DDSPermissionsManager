@@ -7,17 +7,20 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.micronaut.security.authentication.AuthenticationResponse;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.security.BCryptPasswordEncoderService;
 import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -214,19 +217,17 @@ public class ApplicationService {
         return HttpResponse.ok(clearTextPassphrase);
     }
 
-    public MutableHttpResponse<Object> passwordMatches(Long application, String rawPassword) throws Exception {
-        Optional<Application> applicationOptional = applicationRepository.findById(application);
+    public AuthenticationResponse passwordMatches(Long applicationId, String rawPassword) {
+        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
-            return HttpResponse.notFound();
+            return AuthenticationResponse.failure("Application not found.");
         }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(applicationOptional.get().getPermissionsGroup())) {
-            throw new AuthenticationException("Not authorized");
-        }
+        Application application = applicationOptional.get();
 
-        if (passwordEncoderService.matches(rawPassword, applicationOptional.get().getEncryptedPassword())) {
-            return HttpResponse.ok();
+        if (passwordEncoderService.matches(rawPassword, application.getEncryptedPassword())) {
+            return AuthenticationResponse.success(application.getId().toString(), List.of(UserRole.APPLICATION.toString()));
         } else {
-            return HttpResponse.notFound();
+            return AuthenticationResponse.failure("Invalid passphrase.");
         }
     }
 }

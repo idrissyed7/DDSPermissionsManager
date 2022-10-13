@@ -106,14 +106,4 @@ public class ApplicationController {
             return HttpResponse.badRequest(e.getMessage());
         }
     }
-
-    @Post("/verify-passphrase/{application}")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> verifyPassphrase(@NonNull Long application, @Body @NonNull String rawtext) {
-        try {
-            return applicationService.passwordMatches(application, rawtext);
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
-    }
 }
