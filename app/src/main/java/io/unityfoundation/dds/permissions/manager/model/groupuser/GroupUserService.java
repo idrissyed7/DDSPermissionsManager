@@ -250,4 +250,8 @@ public class GroupUserService {
 
         return HttpResponse.ok();
     }
+
+    public void removeByGroup(Group group) {
+        groupUserRepository.deleteByPermissionsGroupId(group.getId());
+    }
 }

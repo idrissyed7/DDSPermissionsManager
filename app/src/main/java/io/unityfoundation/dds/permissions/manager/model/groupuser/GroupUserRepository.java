@@ -20,6 +20,7 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
     int countByPermissionsGroupIdAndPermissionsUserIdAndApplicationAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     void deleteAllByPermissionsUserId(@NotNull @NonNull Long userId);
+    void deleteByPermissionsGroupId(Long groupId);
 
     List<GroupUser> findAllByPermissionsUserId(@NotNull @NonNull Long userId);
 

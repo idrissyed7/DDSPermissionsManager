@@ -76,6 +76,8 @@ public class GroupController {
             groupService.deleteById(id);
         } catch (AuthenticationException ae) {
             return HttpResponse.unauthorized();
+        } catch (Exception e) {
+            return HttpResponse.badRequest(e.getMessage());
         }
         return HttpResponse.seeOther(URI.create("/api/groups"));
     }
