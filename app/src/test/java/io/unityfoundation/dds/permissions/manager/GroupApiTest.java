@@ -371,12 +371,12 @@ public class GroupApiTest {
             assertTrue(thetaOptional.isPresent());
             Group theta = thetaOptional.get();
 
-            // create member
-            response = createNonAdminGroupMembership("jjones@test.test", theta.getId());
+            // create member - non-admin and only membership
+            response = createNonAdminGroupMembership("cascade-user@test.test", theta.getId());
             assertEquals(OK, response.getStatus());
             Optional<GroupUserResponseDTO> jonesOptional = response.getBody(GroupUserResponseDTO.class);
             assertTrue(jonesOptional.isPresent());
-            GroupUserResponseDTO jjones = jonesOptional.get();
+            GroupUserResponseDTO cascadeUser = jonesOptional.get();
 
             // create application
             response = createApplication("CascadeTestApplication", theta.getId());
@@ -405,10 +405,11 @@ public class GroupApiTest {
             assertEquals(OK, response.getStatus());
 
             assertTrue(groupRepository.findById(theta.getId()).isEmpty());
-            assertTrue(groupUserRepository.findById(jjones.getId()).isEmpty());
+            assertTrue(groupUserRepository.findById(cascadeUser.getId()).isEmpty());
             assertTrue(applicationRepository.findById(application.getId()).isEmpty());
             assertTrue(topicRepository.findById(topic.getId()).isEmpty());
             assertTrue(applicationPermissionRepository.findById(accessPermissionDTO.getId()).isEmpty());
+            assertTrue(userRepository.findById(cascadeUser.getPermissionsUser()).isEmpty());
         }
     }
 

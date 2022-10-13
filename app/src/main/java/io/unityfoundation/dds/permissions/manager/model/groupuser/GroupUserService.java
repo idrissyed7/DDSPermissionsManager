@@ -252,6 +252,17 @@ public class GroupUserService {
     }
 
     public void removeByGroup(Group group) {
+
+        // collect non-super admin users
+        List<User> nonAdminTargetGroupMembers = groupUserRepository.findPermissionsUserByPermissionsGroupIdAndPermissionsUserAdminFalse(group.getId());
+
         groupUserRepository.deleteByPermissionsGroupId(group.getId());
+
+        nonAdminTargetGroupMembers.forEach( user -> {
+            int countByPermissionsUser = groupUserRepository.countByPermissionsUserIdAndPermissionsGroupIdNotEqual(user.getId(), group.getId());
+            if (countByPermissionsUser == 0) {
+                userRepository.delete(user);
+            }
+        });
     }
 }
