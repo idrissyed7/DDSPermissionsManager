@@ -12,6 +12,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
@@ -21,7 +22,9 @@ import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -89,6 +92,7 @@ public class GroupApiTest {
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
+            userRepository.save(new User("montesm@test.test", true));
             User jjones = userRepository.save(new User("jjones@test.test"));
             User eclair = userRepository.save(new User("eclair@test.test"));
 
@@ -374,6 +378,57 @@ public class GroupApiTest {
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
         }
+
+        @Test
+        void deleteCascades() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            // create group
+            response = createGroup("CascadeTestTheta");
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            // create member
+            response = createNonAdminGroupMembership("jjones@test.test", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserResponseDTO> jonesOptional = response.getBody(GroupUserResponseDTO.class);
+            assertTrue(jonesOptional.isPresent());
+            GroupUserResponseDTO jjones = jonesOptional.get();
+
+            // create application
+            response = createApplication("CascadeTestApplication", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
+
+            // create topic
+            response = createTopic("CascadeTestTopic", TopicKind.B, theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+
+            // create application permission
+            response = createApplicationPermission(application.getId(), topic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+            AccessPermissionDTO accessPermissionDTO = permissionOptional.get();
+
+            // delete group
+            request = HttpRequest.POST("/groups/delete/"+theta.getId(), Map.of());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            assertTrue(groupRepository.findById(theta.getId()).isEmpty());
+            assertTrue(groupUserRepository.findById(jjones.getId()).isEmpty());
+            assertTrue(applicationRepository.findById(application.getId()).isEmpty());
+            assertTrue(topicRepository.findById(topic.getId()).isEmpty());
+            assertTrue(applicationPermissionRepository.findById(accessPermissionDTO.getId()).isEmpty());
+        }
     }
 
     @Nested
@@ -638,5 +693,35 @@ public class GroupApiTest {
 
         HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
         return blockingClient.exchange(request, ApplicationDTO.class);
+    }
+
+    private HttpResponse<?> createTopic(String topicName, TopicKind topicKind, Long groupId) {
+        TopicDTO topicDTO = new TopicDTO();
+        topicDTO.setName(topicName);
+        topicDTO.setKind(topicKind);
+        topicDTO.setGroup(groupId);
+
+        HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
+        return blockingClient.exchange(request, TopicDTO.class);
+    }
+
+    private HttpResponse<?> createNonAdminGroupMembership(String email, Long groupId) {
+        return createGroupMembership(email, groupId, false, false, false);
+    }
+
+    private HttpResponse<?> createGroupMembership(String email, Long groupId, boolean groupAdmin, boolean topicAdmin, boolean applicationAdmin) {
+        GroupUserDTO dto = new GroupUserDTO();
+        dto.setPermissionsGroup(groupId);
+        dto.setEmail(email);
+        dto.setGroupAdmin(groupAdmin);
+        dto.setTopicAdmin(topicAdmin);
+        dto.setApplicationAdmin(applicationAdmin);
+        HttpRequest<?> request = HttpRequest.POST("/group_membership", dto);
+        return  blockingClient.exchange(request, GroupUserDTO.class);
+    }
+
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+        return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }
