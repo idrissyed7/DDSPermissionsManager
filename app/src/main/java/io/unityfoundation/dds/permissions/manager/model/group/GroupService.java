@@ -100,15 +100,6 @@ public class GroupService {
         groupRepository.deleteById(id);
     }
 
-    public Optional<Map> getGroupDetails(Long id) {
-        Optional<Group> groupOptional = groupRepository.findById(id);
-        if (groupOptional.isPresent()) {
-            Group group = groupOptional.get();
-            return Optional.of(Map.of("group", group));
-        }
-        return Optional.empty();
-    }
-
     public Page<GroupSearchDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
 
         return getGroupSearchPage(filter, role, pageable).map(group -> {
