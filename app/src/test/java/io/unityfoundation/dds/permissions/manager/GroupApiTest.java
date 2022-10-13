@@ -193,25 +193,6 @@ public class GroupApiTest {
             assertEquals(BAD_REQUEST, thrown.getStatus());
         }
 
-        // show
-        @Test
-        void canSeeGroup(){
-            HttpResponse response = createGroup("Beta");
-            Optional<Group> betaOptional = response.getBody(Group.class);
-            assertTrue(betaOptional.isPresent());
-            Group beta = betaOptional.get();
-
-            HttpRequest request = HttpRequest.GET("/groups/"+beta.getId());
-            response = blockingClient.exchange(request, Map.class);
-            assertEquals(OK, response.getStatus());
-            Optional<Map> groupOptional = response.getBody(Map.class);
-            assertTrue(groupOptional.isPresent());
-            Map map = groupOptional.get();
-            assertFalse(map.isEmpty());
-            Map group = (Map) map.get("group");
-            assertEquals("Beta", group.get("name"));
-        }
-
         // list
         @Test
         void canListAllGroups(){
@@ -372,7 +353,7 @@ public class GroupApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest, Page.class);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());
+            assertEquals(NOT_FOUND, exception.getStatus());
         }
     }
 
