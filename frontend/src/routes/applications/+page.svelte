@@ -347,11 +347,7 @@
 				}}
 			>
 				<label for="name">Name:</label>
-				<input
-					type="text"
-					placeholder="Application Name"
-					bind:value={appName}
-				/>
+				<input type="text" placeholder="Application Name" bind:value={appName} />
 				&nbsp;
 				<label for="groups">Group:</label>
 				<div style="display: inline-block">
@@ -411,7 +407,7 @@
 			<h1>Applications</h1>
 			<center>
 				<input
-					style="border-width: 1px; width: 20rem"
+					style="border-width: 1px; width: 20rem; text-align: center"
 					placeholder="Search"
 					bind:value={searchString}
 					on:blur={() => {
@@ -429,7 +425,6 @@
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table align="center" style="margin-top: 2rem; width: 60%">
 				<tr style="border-width: 0px">
-					<th><strong>ID</strong></th>
 					<th><strong>Application</strong></th>
 					<th><strong>Group</strong></th>
 				</tr>
@@ -437,7 +432,6 @@
 					{#if $applications.length > 0}
 						{#each $applications as app}
 							<tr>
-								<td>{app.id}</td>
 								<td
 									style="cursor: pointer"
 									on:click={() => {
@@ -513,12 +507,14 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
+				<span style="position:absolute; left:35.5rem">ID: {selectedAppId} &nbsp;</span>
 				<input
 					id="name"
 					bind:value={selectedAppName}
 					readonly={!editAppName}
 					class:name-as-label={!editAppName}
 					class:name-edit={editAppName}
+					style="text-align: center"
 					on:keydown={(event) => {
 						if (event.which === returnKey) {
 							selectedAppName = selectedAppName.trim();
@@ -559,21 +555,11 @@
 			<br /><br />
 			<table align="center" style="width: 60%">
 				<tr style="border-width: 0px">
-					<th><strong>ID</strong></th>
-					<th><strong>Application Name</strong></th>
 					<th><strong>Group</strong></th>
 					<th><strong>Topic</strong></th>
 					<th><strong>Access</strong></th>
 				</tr>
 				<tr>
-					<td>{selectedAppId}</td>
-					<td>
-						{#if editAppName}
-							{previousAppName}
-						{:else}
-							{selectedAppName}
-						{/if}
-					</td>
 					<td>{selectedAppGroupName}</td>
 					<td>
 						{#if $applicationPermission}
@@ -658,6 +644,7 @@
 		text-align: left;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
+		padding-left: 0.3rem;
 	}
 
 	span {

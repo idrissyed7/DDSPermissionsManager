@@ -187,10 +187,9 @@
 
 	<div class="content">
 		<h1>Super Admin</h1>
-
 		<center>
 			<input
-				style="border-width: 1px; width: 20rem"
+				style="border-width: 1px; width: 20rem; text-align: center"
 				placeholder="Search"
 				bind:value={searchString}
 				on:blur={() => {
