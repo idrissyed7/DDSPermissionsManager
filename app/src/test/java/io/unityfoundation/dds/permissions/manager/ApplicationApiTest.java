@@ -9,6 +9,7 @@ import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
+import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
@@ -17,6 +18,7 @@ import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
@@ -29,7 +31,6 @@ import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest(environments={"app-api-test-data"})
-@Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
 @Property(name = "micronaut.http.client.follow-redirects", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
@@ -37,6 +38,9 @@ public class ApplicationApiTest {
 
     @Inject
     MockSecurityService mockSecurityService;
+
+    @Inject
+    MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
     GroupRepository groupRepository;
@@ -63,6 +67,7 @@ public class ApplicationApiTest {
         void setup() {
             dbCleanup.cleanup();
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
@@ -585,6 +590,7 @@ public class ApplicationApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
@@ -1014,6 +1020,7 @@ public class ApplicationApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
@@ -1028,6 +1035,7 @@ public class ApplicationApiTest {
         @Test
         public void cannotCreateApplicationWithGroupSpecified() {
             mockSecurityService.postConstruct();  // create Application as Admin
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -1051,6 +1059,7 @@ public class ApplicationApiTest {
         public void cannotCreateApplicationWithSameNameAsAnotherInSameGroup() {
 
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -1085,6 +1094,7 @@ public class ApplicationApiTest {
         public void cannotViewApplicationDetails() {
 
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -1221,8 +1231,95 @@ public class ApplicationApiTest {
         }
     }
 
+    @Nested
+    class WhenAsAnApplication {
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        void loginAsApplication(Long applicationId) {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    String.valueOf(applicationId),
+                    List.of(UserRole.APPLICATION.toString()),
+                    Map.of()
+            ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        @Test
+        void canDownloadFilesAndGetHashes() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            // Need to find a way to override or mock getting secrets from Secret Manager
+//            request = HttpRequest.GET("/applications/download-identity-cert"); //.cookie(jwtOptional.get());
+//            response = blockingClient.exchange(request);
+//            assertEquals(OK, response.getStatus());
+//
+//            request = HttpRequest.GET("/applications/application-file-hashes"); //.cookie(jwtOptional.get());
+//            response = blockingClient.exchange(request);
+//            assertEquals(OK, response.getStatus());
+        }
+    }
     @Test
     public void testApplicationFilter() {
+        mockSecurityService.postConstruct();
+        mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
         HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
         List<Map> results = blockingClient.retrieve(request, List.class);
 

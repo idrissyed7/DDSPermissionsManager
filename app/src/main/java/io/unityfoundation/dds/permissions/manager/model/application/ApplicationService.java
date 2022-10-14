@@ -2,10 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.micronaut.http.HttpResponse;
-import io.micronaut.http.HttpResponseFactory;
-import io.micronaut.http.HttpStatus;
-import io.micronaut.http.MutableHttpResponse;
+import io.micronaut.http.*;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.authentication.AuthenticationResponse;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
@@ -14,14 +11,19 @@ import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
+import io.unityfoundation.dds.permissions.manager.security.ApplicationSecretsClient;
 import io.unityfoundation.dds.permissions.manager.security.BCryptPasswordEncoderService;
 import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
-import java.util.Collections;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,12 +39,13 @@ public class ApplicationService {
     private final ApplicationPermissionService applicationPermissionService;
     private final PassphraseGenerator passphraseGenerator;
     private final BCryptPasswordEncoderService passwordEncoderService;
+    private final ApplicationSecretsClient applicationSecretsClient;
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
                               ApplicationPermissionService applicationPermissionService,
                               SecurityUtil securityUtil, GroupUserService groupUserService,
                               PassphraseGenerator passphraseGenerator,
-                              BCryptPasswordEncoderService passwordEncoderService) {
+                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
@@ -50,6 +53,7 @@ public class ApplicationService {
         this.applicationPermissionService = applicationPermissionService;
         this.passphraseGenerator = passphraseGenerator;
         this.passwordEncoderService = passwordEncoderService;
+        this.applicationSecretsClient = applicationSecretsClient;
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
@@ -229,5 +233,78 @@ public class ApplicationService {
         } else {
             return AuthenticationResponse.failure("Invalid passphrase.");
         }
+    }
+
+    public HttpResponse<?> getIdentityCACertificate() throws IOException, NoSuchAlgorithmException {
+        Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
+        if (identityCACert.isPresent()) {
+            String cert = identityCACert.get();
+            String hash = getContentHash(cert);
+
+            File file = File.createTempFile("identity_ca", "pem");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(cert);
+            writer.close();
+
+            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+        }
+        return HttpResponse.notFound();
+    }
+
+    public HttpResponse<?> getPermissionsCACertificate() throws IOException, NoSuchAlgorithmException {
+        Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
+        if (permissionsCACert.isPresent()) {
+            String cert = permissionsCACert.get();
+            String hash = getContentHash(cert);
+
+            File file = File.createTempFile("permissions_ca", "pem");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(cert);
+            writer.close();
+
+            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+        }
+        return HttpResponse.notFound();
+    }
+
+    public HttpResponse<?> getGovernanceFile() throws IOException, NoSuchAlgorithmException {
+        Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
+        if (governanceFile.isPresent()) {
+            String cert = governanceFile.get();
+            String hash = getContentHash(cert);
+
+            File file = File.createTempFile("governance_xml_p7s", "txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(cert);
+            writer.close();
+
+            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+        }
+        return HttpResponse.notFound();
+    }
+
+    public HttpResponse<?> getApplicationFileHashes() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
+        Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
+        Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
+
+        if (identityCACert.isPresent() && permissionsCACert.isPresent() && governanceFile.isPresent()){
+            Map response = Map.of(
+                    "identity_ca.pem", getContentHash(identityCACert.get()),
+                    "permissions_ca.pem", getContentHash(permissionsCACert.get()),
+                    "governance_xml_p7s.txt", getContentHash(governanceFile.get())
+            );
+
+            return HttpResponse.ok(response);
+        }
+        return HttpResponse.notFound();
+    }
+
+    private static String getContentHash(String cert) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        byte[] bytesOfMessage = cert.getBytes("UTF-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(bytesOfMessage);
+        return DatatypeConverter.printHexBinary(digest).toUpperCase();
     }
 }
