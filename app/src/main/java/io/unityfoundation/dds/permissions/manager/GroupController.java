@@ -57,13 +57,7 @@ public class GroupController {
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> save(@Body Group group) {
-        try {
-            return groupService.save(group);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return groupService.save(group);
     }
 
 
@@ -72,13 +66,6 @@ public class GroupController {
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
-        try {
-            groupService.deleteById(id);
-        } catch (AuthenticationException ae) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
-        return HttpResponse.seeOther(URI.create("/api/groups"));
+        return groupService.deleteById(id);
     }
 }
