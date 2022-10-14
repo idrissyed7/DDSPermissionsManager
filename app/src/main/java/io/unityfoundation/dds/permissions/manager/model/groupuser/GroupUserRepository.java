@@ -20,6 +20,7 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
     int countByPermissionsGroupIdAndPermissionsUserIdAndApplicationAdminTrue(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     void deleteAllByPermissionsUserId(@NotNull @NonNull Long userId);
+    void deleteByPermissionsGroupId(Long groupId);
 
     List<GroupUser> findAllByPermissionsUserId(@NotNull @NonNull Long userId);
 
@@ -35,10 +36,12 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
 //    Page<GroupUser> findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(@NotNull @NonNull String name, @NotNull @NonNull String email, List<Long> groupsList, Pageable pageable);
 
     int countByPermissionsUserId(@NotNull @NonNull Long userId);
+    int countByPermissionsUserIdAndPermissionsGroupIdNotEqual(@NotNull @NonNull Long userId, @NotNull @NonNull Long groupId);
 
     Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     List<GroupUser> findAllByPermissionsGroupId(@NotNull @NonNull Long groupId);
+    List<User> findPermissionsUserByPermissionsGroupIdAndPermissionsUserAdminFalse(Long permissionsGroup_id);
     int countByPermissionsGroup(Group group);
 
     Page<Group> findPermissionsGroupByPermissionsUserEqualsAndPermissionsGroupNameContainsIgnoreCaseAndGroupAdminTrue(User permissionsUser, String group, Pageable pageable);

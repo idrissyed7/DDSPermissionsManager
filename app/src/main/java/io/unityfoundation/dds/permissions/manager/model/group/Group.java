@@ -4,6 +4,8 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -24,9 +26,11 @@ public class Group {
     private String name;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Topic> topics = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Application> applications = new HashSet<>();
 
     public Group() {

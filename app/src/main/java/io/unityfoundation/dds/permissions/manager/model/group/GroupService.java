@@ -9,12 +9,14 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,13 +26,15 @@ import java.util.stream.Collectors;
 public class GroupService {
 
     private final GroupRepository groupRepository;
+    private final ApplicationPermissionRepository applicationPermissionRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
 
 
-    public GroupService(GroupRepository groupRepository, SecurityUtil securityUtil,
+    public GroupService(GroupRepository groupRepository, ApplicationPermissionRepository applicationPermissionRepository, SecurityUtil securityUtil,
                         GroupUserService groupUserService) {
         this.groupRepository = groupRepository;
+        this.applicationPermissionRepository = applicationPermissionRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
     }
@@ -72,9 +76,11 @@ public class GroupService {
         }
     }
 
-    public MutableHttpResponse<Group> save(Group group) throws Exception {
+    public MutableHttpResponse<?> save(Group group) {
         if (!securityUtil.isCurrentUserAdmin()) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
+        } else if (group != null && group.getName() == null) {
+            return HttpResponse.badRequest("Group name cannot be null");
         }
 
         Optional<Group> searchGroupByName = groupRepository.findByName(group.getName().trim());
@@ -86,18 +92,28 @@ public class GroupService {
             return HttpResponse.ok(groupRepository.save(group));
         } else {
             if (searchGroupByName.isPresent()) {
-                throw new Exception("Group with same name already exists");
+                return HttpResponse.badRequest("Group with same name already exists");
             }
             return HttpResponse.ok(groupRepository.update(group));
         }
     }
 
-    public void deleteById(Long id) {
+    public MutableHttpResponse<?> deleteById(Long id) {
         if (!securityUtil.isCurrentUserAdmin()) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
+        }
+        Optional<Group> groupOptional = groupRepository.findById(id);
+        if (groupOptional.isEmpty()) {
+            return HttpResponse.notFound("Group not found");
         }
 
+        Group group = groupOptional.get();
+        groupUserService.removeByGroup(group);
+        applicationPermissionRepository.deleteByPermissionsApplicationIdIn(group.getApplications().stream().map(Application::getId).collect(Collectors.toList()));
+        applicationPermissionRepository.deleteByPermissionsTopicIdIn(group.getTopics().stream().map(Topic::getId).collect(Collectors.toList()));
         groupRepository.deleteById(id);
+
+        return HttpResponse.seeOther(URI.create("/api/groups"));
     }
 
     public Page<GroupSearchDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
