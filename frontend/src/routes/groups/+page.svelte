@@ -4,7 +4,6 @@
 	import { httpAdapter } from '../../appconfig';
 	import urlparameters from '../../stores/urlparameters';
 	import groups from '../../stores/groups';
-	import groupDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 
 	export let data, errors;
@@ -18,10 +17,11 @@
 	let timer;
 	const waitTime = 500;
 
+	// Keys
+	const returnKey = 13;
+
 	// Modals
 	let errorMessageVisible = false;
-	let groupsListVisible = true;
-	let groupDetailVisible = false;
 	let addGroupVisible = false;
 	let confirmRemoveUserVisible = false;
 	let confirmAddUserVisible = false;
@@ -29,7 +29,6 @@
 
 	// Validation
 	let disabled = false;
-	let previousGroupName;
 
 	// Group Name
 	let newGroupName;
@@ -97,54 +96,6 @@
 		errorMessageVisible = false;
 	};
 
-	const loadGroup = async (groupId) => {
-		groupsListVisible = false;
-		groupDetailVisible = true;
-		try {
-			const res = await httpAdapter.get(`/groups/${groupId}`);
-			groupDetails.set(res.data);
-			selectedGroupId = $groupDetails.group.id;
-			selectedGroupName = $groupDetails.group.name;
-		} catch (err) {
-			errorMessage('Error Loading Group Details', err.message);
-		}
-	};
-
-	const confirmUserMemberRemove = (ID, firstName, lastName, groupId) => {
-		confirmRemoveUserVisible = true;
-
-		selectedUserFirstName = firstName;
-		selectedUserLastName = lastName;
-		selectedUserId = ID;
-	};
-
-	const userMemberRemove = async () => {
-		confirmRemoveUserVisible = false;
-		const res = await httpAdapter
-			.post(`/groups/remove_member/${selectedGroupId}/${selectedUserId}`, {
-				firstName: selectedUserFirstName,
-				lastName: selectedUserLastName
-			})
-			.catch((err) => {
-				errorMessage('Error Removing Group Member', err.message);
-			});
-
-		selectedUserId = '';
-		selectedUserFirstName = '';
-		selectedUserLastName = '';
-
-		reloadGroupDetails();
-	};
-
-	const reloadGroupDetails = async () => {
-		try {
-			const res = await httpAdapter.get(`/groups/${selectedGroupId}`);
-			groupDetails.set(res.data);
-		} catch (err) {
-			errorMessage('Error Loading Group Details', err.message);
-		}
-	};
-
 	const reloadAllGroups = async (page = 0) => {
 		try {
 			let res;
@@ -161,35 +112,6 @@
 		} catch (err) {
 			errorMessage('Error Loading Groups', err.message);
 		}
-	};
-
-	const userCandidateAdd = async () => {
-		const res = await httpAdapter
-			.post(`/groups/add_member/${selectedGroupId}/${selectedUserId}`, {
-				isGroupAdmin: true,
-				isApplicationAdmin: true,
-				isTopicAdmin: true
-			})
-			.catch((err) => {
-				errorMessage('Error Adding Candidate Member', err.message);
-			});
-		confirmAddUserVisible = false;
-
-		reloadGroupDetails();
-	};
-
-	const confirmUserCandidateAdd = (ID, firstName, lastName, email) => {
-		confirmAddUserVisible = true;
-
-		selectedUserFirstName = firstName;
-		selectedUserLastName = lastName;
-		selectedUserId = ID;
-		selectedUserEmail = email;
-	};
-
-	const returnToGroupsList = () => {
-		groupDetailVisible = false;
-		groupsListVisible = true;
 	};
 
 	const addGroupModal = () => {
@@ -216,20 +138,6 @@
 		await reloadAllGroups();
 	};
 
-	const saveNewGroupName = async () => {
-		editGroupName = false;
-		await httpAdapter
-			.post(`/groups/save/`, {
-				id: selectedGroupId,
-				name: selectedGroupName
-			})
-			.catch((err) => {
-				errorMessage('Error Editing Group Name', err.message);
-			});
-
-		reloadAllGroups();
-	};
-
 	const deleteGroup = async () => {
 		confirmDeleteVisible = false;
 
@@ -241,7 +149,6 @@
 				errorMessage('Error Deleting Group', err.message);
 			});
 
-		returnToGroupsList();
 		await reloadAllGroups();
 	};
 
@@ -301,7 +208,7 @@
 					bind:value={newGroupName}
 					on:blur={() => (newGroupName = newGroupName.trim())}
 					use:callFocus
-					style="border-width: 1px; vertical-align: middle"
+					style="border-width: 1px; vertical-align: middle; text-align: left; width: 13rem"
 				/>
 				<button
 					class:button={!disabled}
@@ -314,60 +221,26 @@
 		</Modal>
 	{/if}
 
-	{#if confirmRemoveUserVisible && !errorMessageVisible}
-		<Modal
-			title="Remove {selectedUserFirstName} {selectedUserLastName} from {selectedGroupName}?"
-			on:cancel={() => (confirmRemoveUserVisible = false)}
-		>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmRemoveUserVisible = false)}
-					>Cancel</button
-				>
-				<button class="button-delete" style="width: 5.5rem;" on:click={() => userMemberRemove()}
-					><span>Remove</span></button
-				>
-			</div>
-		</Modal>
-	{/if}
-
-	{#if confirmAddUserVisible && !errorMessageVisible}
-		<Modal
-			title="Add {selectedUserFirstName} {selectedUserLastName} to {selectedGroupName}?"
-			on:cancel={() => (confirmAddUserVisible = false)}
-		>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmAddUserVisible = false)}
-					>Cancel</button
-				>
-				<button class="button" style="width: 4rem;" on:click={() => userCandidateAdd()}
-					><span>Add</span></button
-				>
-			</div>
-		</Modal>
-	{/if}
-
 	<div class="content">
 		<h1>Groups</h1>
-		{#if !groupDetailVisible}
-			<center
-				><input
-					style="border-width: 1px;"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
+		<center>
+			<input
+				style="border-width: 1px;"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						document.activeElement.blur();
 						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							document.activeElement.blur();
-							searchString = searchString?.trim();
-						}
-					}}
-				/>&nbsp; &#x1F50E;</center
-			>
-		{/if}
+					}
+				}}
+			/>&nbsp; &#x1F50E;
+		</center>
 		{#if $groups}
-			{#if $groups.length > 0 && groupsListVisible && !groupDetailVisible}
+			{#if $groups.length > 0}
 				<table align="center" style="margin-top: 2rem">
 					<tr style="border-width: 0px">
 						<th><strong>Group</strong></th>
@@ -377,41 +250,34 @@
 					</tr>
 					{#each $groups as group}
 						<tr>
-							<td
-								class="group-td"
-								on:click={() => {
-									loadGroup(group.id);
-									selectedGroupId = group.id;
-								}}
-								>{group.name}
-							</td>
-							<td
-								><center
-									><a
+							<td class="group-td">{group.name} </td>
+							<td>
+								<center>
+									<a
 										href="/group_membership"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.membershipCount}</a
-									></center
-								></td
-							>
-							<td
-								><center
-									><a
+									>
+								</center>
+							</td>
+							<td>
+								<center>
+									<a
 										href="/topics"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.topicCount}</a
-									></center
-								></td
-							>
-							<td
-								><center
-									><a
+									>
+								</center>
+							</td>
+							<td>
+								<center>
+									<a
 										href="/applications"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.applicationCount}</a
-									></center
-								></td
-							>
+									>
+								</center>
+							</td>
 						</tr>
 					{/each}
 				</table>
@@ -463,119 +329,12 @@
 		{:else}
 			<p><center>No Groups Found</center></p>
 		{/if}
-		{#if $groupDetails && groupDetailVisible && !groupsListVisible}
-			<div class="name">
-				<span on:click={() => returnToGroupsList()}>&laquo;</span>
-				<div class="tooltip">
-					<input
-						id="name"
-						on:click={() => {
-							if ($isAdmin) {
-								editGroupName = true;
-								previousGroupName = selectedGroupName.trim();
-							}
-						}}
-						on:blur={() => {
-							if ($isAdmin) {
-								selectedGroupName = selectedGroupName.trim();
-								if (previousGroupName !== selectedGroupName) saveNewGroupName();
-								editGroupName = false;
-							}
-						}}
-						on:keydown={(event) => {
-							if (event.which === 13) {
-								if ($isAdmin) {
-									selectedGroupName = selectedGroupName.trim();
-									if (previousGroupName !== selectedGroupName) saveNewGroupName();
-									document.querySelector('#name').blur();
-								}
-							}
-						}}
-						bind:value={selectedGroupName}
-						readonly={!editGroupName}
-						class:name-as-label={!editGroupName}
-						class:name-edit={editGroupName}
-					/>
-					{#if $isAdmin}
-						<span class="tooltiptext">&#9998</span>
-					{/if}
-				</div>
-			</div>
-			<h2>Group Members</h2>
-			<table align="center">
-				<tr style="border-width: 0px">
-					<th><strong>Member Name</strong></th>
-				</tr>
-				{#if $groupDetails.group.users}
-					{#each $groupDetails.group.users as userMember}
-						<tr>
-							<td
-								>{userMember.firstName}
-								{userMember.lastName}
-							</td>
-							<button
-								class="button-delete"
-								style="width: 5.5rem;"
-								on:click={() =>
-									confirmUserMemberRemove(userMember.id, userMember.firstName, userMember.lastName)}
-								><span>Remove</span></button
-							>
-						</tr>
-					{/each}
-				{:else}
-					<tr><td>No Members Found</td></tr>
-				{/if}
-			</table>
-			<br />
-			<h2>Candidate Members</h2>
-			<table align="center">
-				<tr style="border-width: 0px">
-					<th><strong>Member Name</strong></th>
-				</tr>
-				{#if $groupDetails.candidateUsers}
-					{#each $groupDetails.candidateUsers as userCandidate}
-						<tr>
-							<td
-								>{userCandidate.firstName}
-								{userCandidate.lastName}
-							</td>
-							<button
-								class="button"
-								on:click={() =>
-									confirmUserCandidateAdd(
-										userCandidate.id,
-										userCandidate.firstName,
-										userCandidate.lastName,
-										userCandidate.email
-									)}><span>Add User</span></button
-							>
-						</tr>
-					{/each}
-				{:else}
-					<tr><td>No Members Found</td></tr>
-				{/if}
-			</table>
-			<br /><br />
-			<center>
-				<button
-					class:hidden={!$isAdmin}
-					class="button-delete"
-					style="width: 7.5rem; float: none"
-					on:click={() => (confirmDeleteVisible = true)}
-					><span>Delete Group</span>
-				</button></center
-			>
-		{/if}
 	</div>
 {:else}
 	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
 
 <style>
-	.group-td {
-		cursor: pointer;
-	}
-
 	button {
 		margin-left: auto;
 	}
@@ -590,5 +349,6 @@
 		width: 20rem;
 		z-index: 1;
 		background-color: rgba(0, 0, 0, 0);
+		padding-left: 0.3rem;
 	}
 </style>
