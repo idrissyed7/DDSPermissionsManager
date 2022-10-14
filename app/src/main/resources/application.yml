@@ -50,6 +50,8 @@ micronaut:
       logout:
         path: /api/logout
         get-allowed: true
+      login:
+        path: /api/login
     intercept-url-map:
       - pattern: /favicon.ico
         http-method: GET

@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest(environments={"app-api-test-data"})
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
+@Property(name = "micronaut.http.client.follow-redirects", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
     private BlockingHttpClient blockingClient;
@@ -511,7 +512,7 @@ public class ApplicationApiTest {
             // delete
             request = HttpRequest.POST("/applications/delete/" + applicationOne.getId(), Map.of());
             response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            assertEquals(SEE_OTHER, response.getStatus());
         }
 
         @Test
@@ -540,10 +541,31 @@ public class ApplicationApiTest {
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
 
-            // verify matches
-            request = HttpRequest.POST("/applications/verify-passphrase/" + applicationOne.getId(), optional.get());
-            response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isPresent());
         }
     }
 
@@ -972,7 +994,7 @@ public class ApplicationApiTest {
 
             request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
             response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            assertEquals(SEE_OTHER, response.getStatus());
         }
     }
 
