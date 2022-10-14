@@ -17,6 +17,9 @@
 	let timer;
 	const waitTime = 500;
 
+	// Keys
+	const returnKey = 13;
+
 	// Modals
 	let errorMessageVisible = false;
 	let addGroupVisible = false;
@@ -229,7 +232,7 @@
 					searchString = searchString?.trim();
 				}}
 				on:keydown={(event) => {
-					if (event.which === 13) {
+					if (event.which === returnKey) {
 						document.activeElement.blur();
 						searchString = searchString?.trim();
 					}

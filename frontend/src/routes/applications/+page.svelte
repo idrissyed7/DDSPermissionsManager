@@ -507,7 +507,6 @@
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
-				<span style="position:absolute; left:35.5rem">ID: {selectedAppId} &nbsp;</span>
 				<input
 					id="name"
 					bind:value={selectedAppName}
@@ -587,11 +586,13 @@
 			</table>
 			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 				<center>
+					<span style="">ID: {selectedAppId} &nbsp;</span>
 					<button
 						class="button"
-						style="width: 11rem; margin-top: 2rem"
+						style="width: 11rem; margin-top: 2rem;"
 						on:click={() => generatePassword(selectedAppId)}>Generate Credentials</button
 					>
+
 					{#if generateCredentialsVisible}
 						<br />
 						<div style="display:flex; width: 13rem; margin-top: 2rem">
