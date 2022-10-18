@@ -172,7 +172,6 @@
 		groupMembershipListArray = [];
 		groupMembershipsTotalPages = totalPages;
 		groupMembershipsCurrentPage = 0;
-		console.log('groupMembershipList', $groupMembershipList);
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
@@ -206,6 +205,7 @@
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
 				} else if (err.response.status === 400 || 401) {
+					err.message = 'Group Membership already exists.';
 					errorMessage('Error Adding Group Membership', err.message);
 				}
 			});
@@ -252,7 +252,6 @@
 				email: selectedGroupMembership.userEmail
 			};
 			try {
-				console.log('data', data);
 				await httpAdapter.put(`/group_membership`, data);
 				reloadGroupMemberships(groupMembershipsCurrentPage);
 			} catch (err) {
