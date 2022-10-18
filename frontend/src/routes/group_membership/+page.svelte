@@ -192,6 +192,17 @@
 	};
 
 	const addGroupMembership = async () => {
+		if (!selectedGroup) {
+			const groupId = await httpAdapter.get(`/applications?page=0&size=1&filter=${searchGroups}`);
+			if (
+				groupId.data.content &&
+				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+			) {
+				selectedGroup = groupId.data.content[0]?.group;
+				searchGroupActive = false;
+			}
+		}
+
 		await httpAdapter
 			.post(`/group_membership`, {
 				email: emailValue,
@@ -489,8 +500,8 @@
 		{#if addGroupMembershipVisible}
 			<table>
 				<tr style="border-width: 0px">
-					<td style="width: 15rem"
-						><input
+					<td style="width: 15rem">
+						<input
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
 							style="
@@ -523,6 +534,13 @@
 									setTimeout(() => {
 										searchGroupsResultsVisible = false;
 									}, 500);
+								}}
+								on:focus={async () => {
+									searchGroupResults = [];
+									searchGroupActive = true;
+									if (searchGroups?.length >= searchStringLength) {
+										searchGroup(searchGroups);
+									}
 								}}
 								on:click={async () => {
 									searchGroupResults = [];

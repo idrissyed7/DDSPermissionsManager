@@ -62,7 +62,7 @@
 	let selectedGroup;
 
 	// Selection
-	let selectedAppName, selectedAppId, selectedAppGroup, selectedAppGroupId, selectedAppGroupName;
+	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
 
 	// Validation
 	let previousAppName;
@@ -182,25 +182,37 @@
 	};
 
 	const addApplication = async () => {
+		if (!selectedGroup) {
+			const groupId = await httpAdapter.get(
+				`/groups?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
+			);
+			console.log('searchGroups', searchGroups);
+			console.log('groupId', groupId);
+			if (
+				groupId.data.content &&
+				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
+			) {
+				selectedGroup = groupId.data.content[0]?.id;
+				searchGroupActive = false;
+			}
+		}
+
 		try {
-			const res = await httpAdapter.post(`/applications/save`, {
+			await httpAdapter.post(`/applications/save`, {
 				name: appName,
 				group: selectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
-			if (err.response.data) err.message = 'Application name already exists.';
+			if (err.response.data && err.response.status === 303)
+				err.message = 'Application name already exists.';
+			if (err.response.data && err.response.status === 400) err.message = 'Group not found.';
+
 			errorMessage('Error Creating Application', err.message);
 		}
+		selectedGroup = '';
 
 		await reloadAllApps();
-	};
-
-	const confirmAppDelete = (ID, name) => {
-		confirmDeleteVisible = true;
-
-		selectedAppId = ID;
-		selectedAppName = name;
 	};
 
 	const appDelete = async () => {
@@ -364,6 +376,13 @@
 							setTimeout(() => {
 								searchGroupsResultsVisible = false;
 							}, waitTime);
+						}}
+						on:focus={() => {
+							searchGroupResults = [];
+							searchGroupActive = true;
+							if (searchGroups?.length >= searchStringLength) {
+								searchGroup(searchGroups);
+							}
 						}}
 						on:click={async () => {
 							searchGroupResults = [];
