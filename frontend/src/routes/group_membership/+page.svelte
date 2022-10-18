@@ -1,5 +1,5 @@
 <script>
-	import { isAuthenticated, isAdmin } from '../../stores/authentication';
+	import { isAuthenticated, isAdmin, onLoggedIn } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import urlparameters from '../../stores/urlparameters';
@@ -147,9 +147,12 @@
 			}
 			if (res.data.content) {
 				createGroupMembershipList(res.data.content, res.data.totalPages);
+			} else {
+				groupMembershipList.set();
 			}
 			groupMembershipsCurrentPage = page;
 		} catch (err) {
+			if (err.response.status === 500) onLoggedIn(false);
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
 	};
@@ -278,10 +281,9 @@
 
 	const deleteGroupMembership = async () => {
 		try {
-			await httpAdapter.delete(`/group_membership`, {
+			const res = await httpAdapter.delete(`/group_membership`, {
 				data: { id: selectedGroupMembership.groupMembershipId }
 			});
-
 			reloadGroupMemberships(groupMembershipsCurrentPage);
 		} catch (err) {
 			errorMessage('Error Deleting Group Membership', err.message);
