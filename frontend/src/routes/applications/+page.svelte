@@ -184,13 +184,15 @@
 	const addApplication = async () => {
 		if (!selectedGroup) {
 			const groupId = await httpAdapter.get(
-				`/applications?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
+				`/groups?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
 			);
+			console.log('searchGroups', searchGroups);
+			console.log('groupId', groupId);
 			if (
 				groupId.data.content &&
-				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
 			) {
-				selectedGroup = groupId.data.content[0]?.group;
+				selectedGroup = groupId.data.content[0]?.id;
 				searchGroupActive = false;
 			}
 		}
@@ -201,7 +203,6 @@
 				group: selectedGroup
 			});
 			addApplicationVisible = false;
-			selectedGroup = '';
 		} catch (err) {
 			if (err.response.data && err.response.status === 303)
 				err.message = 'Application name already exists.';
@@ -209,6 +210,7 @@
 
 			errorMessage('Error Creating Application', err.message);
 		}
+		selectedGroup = '';
 
 		await reloadAllApps();
 	};
