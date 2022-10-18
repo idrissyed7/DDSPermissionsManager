@@ -1305,7 +1305,7 @@ public class ApplicationApiTest {
 
             loginAsApplication(applicationOne.getId());
 
-            // Need to find a way to override or mock getting secrets from Secret Manager
+            // TODO Need to find a way to override or mock getting secrets from Secret Manager
 //            request = HttpRequest.GET("/applications/download-identity-cert"); //.cookie(jwtOptional.get());
 //            response = blockingClient.exchange(request);
 //            assertEquals(OK, response.getStatus());

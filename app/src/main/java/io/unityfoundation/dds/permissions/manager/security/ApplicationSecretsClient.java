@@ -1,34 +1,35 @@
 package io.unityfoundation.dds.permissions.manager.security;
 
-import com.google.cloud.secretmanager.v1.AccessSecretVersionRequest;
-import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
-import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
-import com.google.cloud.secretmanager.v1.SecretVersionName;
+import com.google.cloud.secretmanager.v1.*;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.runtime.event.annotation.EventListener;
 import jakarta.inject.Singleton;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @Singleton
 public class ApplicationSecretsClient {
 
-    @Property(name = "permissions.manager.gcp.project")
+    @Property(name = "gcp.project-id")
     protected Optional<String> projectOptional;
-    private final SecretManagerServiceClient client;
+    @Property(name = "gcp.credentials.enabled")
+    protected Optional<Boolean> enabled;
+    private SecretManagerServiceClient client;
     private String identityCACert;
     private String permissionsCACert;
     private String governanceFile;
 
-    public ApplicationSecretsClient(SecretManagerServiceClient googleSecretManagerClient) {
-        this.client = googleSecretManagerClient;
+    public ApplicationSecretsClient() {
     }
 
     @EventListener
-    public void onStartup(StartupEvent event) {
+    public void onStartup(StartupEvent event) throws IOException {
 
-        if (projectOptional.isPresent()) {
+        if (projectOptional.isPresent() && enabled.isPresent() && enabled.get()) {
+            this.client = SecretManagerServiceClient.create();
+
             String project = projectOptional.get();
 
             try {
