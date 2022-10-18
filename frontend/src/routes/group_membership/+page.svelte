@@ -155,7 +155,7 @@
 	};
 
 	const createGroupMembershipList = async (data, totalPages) => {
-		data.forEach((groupMembership) => {
+		data?.forEach((groupMembership) => {
 			let newGroupMembership = {
 				applicationAdmin: groupMembership.applicationAdmin,
 				groupAdmin: groupMembership.groupAdmin,
@@ -172,12 +172,11 @@
 		groupMembershipListArray = [];
 		groupMembershipsTotalPages = totalPages;
 		groupMembershipsCurrentPage = 0;
-		console.log('groupMembershipList', $groupMembershipList);
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
 		const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
-		if (res.data.content) createGroupMembershipList(res.data.content, res.data.totalPages);
+		createGroupMembershipList(res.data.content, res.data.totalPages);
 	};
 
 	const searchGroup = async (searchGroupStr) => {
@@ -202,7 +201,6 @@
 				isApplicationAdmin: selectedIsTopicAdmin
 			})
 			.catch((err) => {
-				console.log('err', err);
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
 				} else if (err.response.status === 400 || 401) {
@@ -413,7 +411,7 @@
 			/>&nbsp; &#x1F50E;</center
 		>
 
-		{#if $groupMembershipList}
+		{#if $groupMembershipList && $groupMembershipList.length > 0}
 			<br /><br />
 			<table align="center">
 				<tr style="border-width: 0px">
