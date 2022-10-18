@@ -14,7 +14,7 @@
 		selectedTopicGroupId;
 
 	let selectedTopicApplications = [];
-	let selectedApplicationList = [];
+	let selectedApplicationList;
 
 	const dispatch = createEventDispatcher();
 
@@ -109,6 +109,18 @@
 			searchApplicationResults = await httpAdapter.get(
 				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
 			);
+			const applicationPermissions = await httpAdapter.get(
+				`/application_permissions/?topic=${selectedTopicId}`
+			);
+			searchApplicationResults.data.forEach((app) => {
+				applicationPermissions.data.content?.forEach((appPermission) => {
+					if (app.name === appPermission.applicationName) {
+						searchApplicationResults.data = searchApplicationResults.data.filter(
+							(result) => result.name !== appPermission.applicationName
+						);
+					}
+				});
+			});
 		}, 1000);
 	};
 
@@ -118,10 +130,10 @@
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
-		if (selectedApplicationList && selectedApplicationList.length > 0 && !reload) {
-			selectedApplicationList.forEach(async (app) => {
-				await httpAdapter.post(`/application_permissions/${app.id}/${topicId}/${app.accessType}`);
-			});
+		if (selectedApplicationList && !reload) {
+			await httpAdapter.post(
+				`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
+			);
 		}
 		if (reload) {
 			await httpAdapter
@@ -288,9 +300,8 @@
 						on:click={async () => {
 							selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
 							addTopicApplicationAssociation(selectedTopicId, true);
-
 							searchApplications = '';
-							selectedApplicationList = [];
+							selectedApplicationList = '';
 						}}
 						>Add Application
 					</button>

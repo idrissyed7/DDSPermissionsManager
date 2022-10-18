@@ -278,6 +278,20 @@
 									>
 								</center>
 							</td>
+							{#if $isAdmin}
+								<td style="float: right">
+									<button
+										class="button-delete"
+										on:click={() => {
+											selectedGroupId = group.id;
+											selectedGroupName = group.name;
+											confirmDeleteVisible = true;
+										}}><span>Delete</span></button
+									>
+								</td>
+							{:else}
+								<td />
+							{/if}
 						</tr>
 					{/each}
 				</table>
