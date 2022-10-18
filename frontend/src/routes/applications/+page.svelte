@@ -611,7 +611,7 @@
 			{/if}
 		{/if}
 		<br /><br />
-		{#if $isAdmin && !applicationDetailVisible}
+		{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
 			<center
 				><button class="button" style="width: 9rem" on:click={() => (addApplicationVisible = true)}
 					>Add Application</button
