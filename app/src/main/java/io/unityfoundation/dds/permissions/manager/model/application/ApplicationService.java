@@ -235,76 +235,33 @@ public class ApplicationService {
         }
     }
 
-    public HttpResponse<?> getIdentityCACertificate() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getIdentityCACertificate() {
         Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
         if (identityCACert.isPresent()) {
             String cert = identityCACert.get();
-            String hash = getContentHash(cert);
 
-            File file = File.createTempFile("identity_ca", "pem");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            writer.write(cert);
-            writer.close();
-
-            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+            return HttpResponse.ok(cert);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getPermissionsCACertificate() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getPermissionsCACertificate() {
         Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
         if (permissionsCACert.isPresent()) {
             String cert = permissionsCACert.get();
-            String hash = getContentHash(cert);
 
-            File file = File.createTempFile("permissions_ca", "pem");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            writer.write(cert);
-            writer.close();
-
-            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+            return HttpResponse.ok(cert);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getGovernanceFile() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getGovernanceFile() {
         Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
         if (governanceFile.isPresent()) {
             String cert = governanceFile.get();
-            String hash = getContentHash(cert);
 
-            File file = File.createTempFile("governance_xml_p7s", "txt");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            writer.write(cert);
-            writer.close();
-
-            return HttpResponse.ok(file).header("CONTENT-HASH", hash);
+            return HttpResponse.ok(cert);
         }
         return HttpResponse.notFound();
-    }
-
-    public HttpResponse<?> getApplicationFileHashes() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
-        Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
-        Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
-
-        if (identityCACert.isPresent() && permissionsCACert.isPresent() && governanceFile.isPresent()){
-            Map response = Map.of(
-                    "identity_ca.pem", getContentHash(identityCACert.get()),
-                    "permissions_ca.pem", getContentHash(permissionsCACert.get()),
-                    "governance_xml_p7s.txt", getContentHash(governanceFile.get())
-            );
-
-            return HttpResponse.ok(response);
-        }
-        return HttpResponse.notFound();
-    }
-
-    private static String getContentHash(String cert) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] bytesOfMessage = cert.getBytes("UTF-8");
-
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(bytesOfMessage);
-        return DatatypeConverter.printHexBinary(digest).toUpperCase();
     }
 }

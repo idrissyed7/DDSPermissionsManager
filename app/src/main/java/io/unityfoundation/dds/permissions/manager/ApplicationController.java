@@ -20,10 +20,7 @@ import io.unityfoundation.dds.permissions.manager.model.application.ApplicationD
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
 
 import javax.validation.Valid;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -110,31 +107,24 @@ public class ApplicationController {
         }
     }
 
-    @Get("/download-identity-cert")
+    @Get("/identity_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getIdentityCACertificate() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getIdentityCACertificate() {
         return applicationService.getIdentityCACertificate();
     }
 
-    @Get("/download-permissions-cert")
+    @Get("/permissions_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsCACertificate() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getPermissionsCACertificate() {
         return applicationService.getPermissionsCACertificate();
     }
 
-    @Get("/download-governance-file")
+    @Get("/governance.xml.p7s")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getGovernanceFile() throws IOException, NoSuchAlgorithmException {
+    public HttpResponse<?> getGovernanceFile() {
         return applicationService.getGovernanceFile();
-    }
-
-    @Get("/application-file-hashes")
-    @Secured("APPLICATION")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getApplicationFileHashes() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        return applicationService.getApplicationFileHashes();
     }
 }
