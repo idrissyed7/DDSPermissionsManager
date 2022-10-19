@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
+import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.*;
@@ -16,22 +17,41 @@ import io.unityfoundation.dds.permissions.manager.security.BCryptPasswordEncoder
 import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Singleton
 public class ApplicationService {
 
+    @Property(name = "permissions-manager.application.client.time-expiry")
+    protected Optional<Long> certExpiry;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -298,6 +318,96 @@ public class ApplicationService {
             return HttpResponse.ok(response);
         }
         return HttpResponse.notFound();
+    }
+
+    public HttpResponse<?> getApplicationPrivateKey(String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+
+        Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
+        Optional<String> identityCAKey = applicationSecretsClient.getIdentityCAKey();
+        Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
+
+        if (applicationOptional.isPresent() && identityCACert.isPresent() && identityCAKey.isPresent()) {
+            Application application = applicationOptional.get();
+
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+            keyPairGenerator.initialize(256);
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+            X509Certificate x509Certificate = makeV3Certificate(
+                    readCertificate(identityCACert.get()),
+                    readPrivateKey(identityCAKey.get().trim()),
+                    keyPair.getPublic(),
+                    application,
+                    nonce
+            );
+
+            Map creds = Map.of(
+                    "private", objectToPEMString(keyPair.getPrivate()),
+                    "public", objectToPEMString(x509Certificate)
+            );
+            return HttpResponse.ok(creds);
+        }
+
+        return HttpResponse.notFound();
+    }
+
+    public X509Certificate makeV3Certificate(
+            X509Certificate caCertificate, PrivateKey caPrivateKey, PublicKey eePublicKey, Application application, String nonce)
+            throws GeneralSecurityException, CertIOException, OperatorCreationException {
+
+        X500NameBuilder nameBuilder = new X500NameBuilder();
+        nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
+        nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
+        nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
+
+        Long expiry = certExpiry.isPresent() ? certExpiry.get(): 365;
+
+        X509v3CertificateBuilder v3CertBldr = new JcaX509v3CertificateBuilder(
+                caCertificate.getSubjectX500Principal(), // issuer
+                BigInteger.valueOf(System.currentTimeMillis()) // serial number
+                        .multiply(BigInteger.valueOf(10)),
+                new Date(System.currentTimeMillis() - 1000L * 5), // start time
+                new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(expiry)), // expiry time
+                new X500Principal(nameBuilder.build().toString()), // subject
+                eePublicKey); // subject public key
+
+        // extensions
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+        v3CertBldr.addExtension(
+                Extension.subjectKeyIdentifier,
+                false,
+                extUtils.createSubjectKeyIdentifier(eePublicKey));
+        v3CertBldr.addExtension(
+                Extension.authorityKeyIdentifier,
+                false,
+                extUtils.createAuthorityKeyIdentifier(caCertificate));
+        v3CertBldr.addExtension(
+                Extension.basicConstraints,
+                true,
+                new BasicConstraints(false));
+        JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA384withECDSA");
+
+        return new JcaX509CertificateConverter().getCertificate(v3CertBldr.build(signerBuilder.build(caPrivateKey)));
+    }
+
+    public static String objectToPEMString(Object certificate) throws IOException {
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
+        pemWriter.writeObject(certificate);
+        pemWriter.close();
+        return sWrt.toString();
+    }
+
+    public static X509Certificate readCertificate(String pemEncoding) throws IOException, CertificateException {
+        PEMParser parser = new PEMParser(new StringReader(pemEncoding));
+        X509CertificateHolder certHolder = (X509CertificateHolder) parser.readObject();
+        return new JcaX509CertificateConverter().getCertificate(certHolder);
+    }
+
+    public static PrivateKey readPrivateKey(String pemEncoding) throws IOException {
+        PEMParser parser = new PEMParser(new StringReader(pemEncoding));
+        PEMKeyPair pemKeyPair = (PEMKeyPair) parser.readObject();
+        return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
     }
 
     private static String getContentHash(String cert) throws UnsupportedEncodingException, NoSuchAlgorithmException {

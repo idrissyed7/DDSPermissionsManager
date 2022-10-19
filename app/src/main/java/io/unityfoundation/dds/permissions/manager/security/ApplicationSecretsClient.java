@@ -70,4 +70,13 @@ public class ApplicationSecretsClient {
     public Optional<String> getGovernanceFile() {
         return Optional.ofNullable(governanceFile);
     }
+
+    public Optional<String> getIdentityCAKey() {
+        if (projectOptional.isPresent() && enabled.isPresent() && enabled.get()) {
+            return Optional.ofNullable(getAccessSecretVersionResponse(projectOptional.get(), "identity_ca_key_pem")
+                    .getPayload().getData().toStringUtf8());
+        }
+
+        return Optional.empty();
+    }
 }

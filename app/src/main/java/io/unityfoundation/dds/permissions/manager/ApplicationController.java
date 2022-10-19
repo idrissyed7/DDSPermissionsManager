@@ -18,12 +18,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.validation.Valid;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -136,5 +139,15 @@ public class ApplicationController {
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getApplicationFileHashes() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         return applicationService.getApplicationFileHashes();
+    }
+
+    @Post("/application-private-key")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPrivateKey(@QueryValue Optional<String> nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+        if (nonce.isEmpty()) {
+            return HttpResponse.badRequest();
+        }
+        return applicationService.getApplicationPrivateKey(nonce.get());
     }
 }

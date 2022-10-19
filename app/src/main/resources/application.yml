@@ -129,6 +129,9 @@ gcp:
   project-id: replaceme
 ---
 permissions-manager:
+  application:
+    client:
+      time-expiry: 365 # in days
   data:
     passphrase:
       length: 16
