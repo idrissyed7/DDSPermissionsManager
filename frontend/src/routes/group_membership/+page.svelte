@@ -9,6 +9,9 @@
 
 	export let data, errors;
 
+	// Keys
+	const returnKey = 13;
+
 	// Modals
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
@@ -406,8 +409,10 @@
 
 	<div class="content">
 		<h1>Group Membership</h1>
-		<center
-			><input
+		<center>
+			<!-- svelte-ignore a11y-positive-tabindex -->
+			<input
+				tabindex="8"
 				style="border-width: 1px; width: 20rem"
 				placeholder="Search"
 				bind:value={searchString}
@@ -415,14 +420,13 @@
 					searchString = searchString?.trim();
 				}}
 				on:keydown={(event) => {
-					const returnKey = 13;
 					if (event.which === returnKey) {
 						document.activeElement.blur();
 						searchString = searchString?.trim();
 					}
 				}}
-			/>&nbsp; &#x1F50E;</center
-		>
+			/>&nbsp; &#x1F50E;
+		</center>
 
 		{#if $groupMembershipList && $groupMembershipList.length > 0}
 			<br /><br />
@@ -434,7 +438,7 @@
 					<th><center>Topic Admin</center></th>
 					<th><center>Application Admin</center></th>
 				</tr>
-				{#each $groupMembershipList as groupMembership}
+				{#each $groupMembershipList as groupMembership, i}
 					<tr>
 						<td>{groupMembership.userEmail}</td>
 						<td>{groupMembership.groupName}</td>
@@ -465,12 +469,20 @@
 
 						{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
 							<td
-								><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
-									&#9998
-								</div></td
+								tabindex={i + 9}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										updateGroupMembershipModal(groupMembership);
+									}
+								}}
 							>
+								<div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
+									&#9998
+								</div>
+							</td>
 							<td
 								><button
+									tabindex="-1"
 									class="button-delete"
 									on:click={() => deleteGroupMembershipModal(groupMembership)}
 									><span>Delete</span></button
@@ -488,14 +500,16 @@
 		<br />
 
 		{#if $isAdmin || isGroupAdmin}
-			<center
-				><button
+			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
+				<button
+					tabindex="19"
 					class="button"
 					style="cursor:pointer; width: 10.5rem; margin: 1rem 0 2rem 0"
 					on:click={() => addGroupMembershipInput()}
 					class:hidden={addGroupMembershipVisible}>Add Group Membership</button
-				></center
-			>
+				>
+			</center>
 			<br />
 		{/if}
 
