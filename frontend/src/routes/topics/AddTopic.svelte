@@ -145,6 +145,17 @@
 	};
 
 	const addTopic = async () => {
+		if (!selectedGroup) {
+			const groupId = await httpAdapter.get(`/applications?page=0&size=1&filter=${searchGroups}`);
+			if (
+				groupId.data.content &&
+				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+			) {
+				selectedGroup = groupId.data.content[0]?.group;
+				searchGroupActive = false;
+			}
+		}
+
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,
@@ -251,6 +262,13 @@
 								setTimeout(() => {
 									searchGroupsResultsVisible = false;
 								}, 500);
+							}}
+							on:focus={async () => {
+								searchGroupResults = [];
+								searchGroupActive = true;
+								if (searchGroups?.length >= 3) {
+									searchGroup(searchGroups);
+								}
 							}}
 							on:click={async () => {
 								searchGroupResults = [];

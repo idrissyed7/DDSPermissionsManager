@@ -1,5 +1,5 @@
 <script>
-	import { isAuthenticated, isAdmin } from '../../stores/authentication';
+	import { isAuthenticated, isAdmin, onLoggedIn } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import urlparameters from '../../stores/urlparameters';
@@ -8,6 +8,9 @@
 	import Modal from '../../lib/Modal.svelte';
 
 	export let data, errors;
+
+	// Keys
+	const returnKey = 13;
 
 	// Modals
 	let addGroupMembershipVisible = false;
@@ -147,15 +150,18 @@
 			}
 			if (res.data.content) {
 				createGroupMembershipList(res.data.content, res.data.totalPages);
+			} else {
+				groupMembershipList.set();
 			}
 			groupMembershipsCurrentPage = page;
 		} catch (err) {
+			if (err.response.status === 500) onLoggedIn(false);
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
 	};
 
 	const createGroupMembershipList = async (data, totalPages) => {
-		data.forEach((groupMembership) => {
+		data?.forEach((groupMembership) => {
 			let newGroupMembership = {
 				applicationAdmin: groupMembership.applicationAdmin,
 				groupAdmin: groupMembership.groupAdmin,
@@ -172,12 +178,11 @@
 		groupMembershipListArray = [];
 		groupMembershipsTotalPages = totalPages;
 		groupMembershipsCurrentPage = 0;
-		console.log('groupMembershipList', $groupMembershipList);
 	};
 
 	const searchGroupMemberships = async (searchStr) => {
 		const res = await httpAdapter.get(`/group_membership?filter=${searchStr}`);
-		if (res.data.content) createGroupMembershipList(res.data.content, res.data.totalPages);
+		createGroupMembershipList(res.data.content, res.data.totalPages);
 	};
 
 	const searchGroup = async (searchGroupStr) => {
@@ -193,6 +198,17 @@
 	};
 
 	const addGroupMembership = async () => {
+		if (!selectedGroup) {
+			const groupId = await httpAdapter.get(`/applications?page=0&size=1&filter=${searchGroups}`);
+			if (
+				groupId.data.content &&
+				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+			) {
+				selectedGroup = groupId.data.content[0]?.group;
+				searchGroupActive = false;
+			}
+		}
+
 		await httpAdapter
 			.post(`/group_membership`, {
 				email: emailValue,
@@ -202,10 +218,10 @@
 				isApplicationAdmin: selectedIsTopicAdmin
 			})
 			.catch((err) => {
-				console.log('err', err);
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
 				} else if (err.response.status === 400 || 401) {
+					err.message = 'Group Membership already exists.';
 					errorMessage('Error Adding Group Membership', err.message);
 				}
 			});
@@ -252,7 +268,6 @@
 				email: selectedGroupMembership.userEmail
 			};
 			try {
-				console.log('data', data);
 				await httpAdapter.put(`/group_membership`, data);
 				reloadGroupMemberships(groupMembershipsCurrentPage);
 			} catch (err) {
@@ -269,10 +284,9 @@
 
 	const deleteGroupMembership = async () => {
 		try {
-			await httpAdapter.delete(`/group_membership`, {
+			const res = await httpAdapter.delete(`/group_membership`, {
 				data: { id: selectedGroupMembership.groupMembershipId }
 			});
-
 			reloadGroupMemberships(groupMembershipsCurrentPage);
 		} catch (err) {
 			errorMessage('Error Deleting Group Membership', err.message);
@@ -395,8 +409,10 @@
 
 	<div class="content">
 		<h1>Group Membership</h1>
-		<center
-			><input
+		<center>
+			<!-- svelte-ignore a11y-positive-tabindex -->
+			<input
+				tabindex="8"
 				style="border-width: 1px; width: 20rem"
 				placeholder="Search"
 				bind:value={searchString}
@@ -404,16 +420,15 @@
 					searchString = searchString?.trim();
 				}}
 				on:keydown={(event) => {
-					const returnKey = 13;
 					if (event.which === returnKey) {
 						document.activeElement.blur();
 						searchString = searchString?.trim();
 					}
 				}}
-			/>&nbsp; &#x1F50E;</center
-		>
+			/>&nbsp; &#x1F50E;
+		</center>
 
-		{#if $groupMembershipList}
+		{#if $groupMembershipList && $groupMembershipList.length > 0}
 			<br /><br />
 			<table align="center">
 				<tr style="border-width: 0px">
@@ -423,7 +438,7 @@
 					<th><center>Topic Admin</center></th>
 					<th><center>Application Admin</center></th>
 				</tr>
-				{#each $groupMembershipList as groupMembership}
+				{#each $groupMembershipList as groupMembership, i}
 					<tr>
 						<td>{groupMembership.userEmail}</td>
 						<td>{groupMembership.groupName}</td>
@@ -454,12 +469,20 @@
 
 						{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
 							<td
-								><div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
-									&#9998
-								</div></td
+								tabindex={i + 9}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										updateGroupMembershipModal(groupMembership);
+									}
+								}}
 							>
+								<div class="pencil" on:click={() => updateGroupMembershipModal(groupMembership)}>
+									&#9998
+								</div>
+							</td>
 							<td
 								><button
+									tabindex="-1"
 									class="button-delete"
 									on:click={() => deleteGroupMembershipModal(groupMembership)}
 									><span>Delete</span></button
@@ -477,22 +500,24 @@
 		<br />
 
 		{#if $isAdmin || isGroupAdmin}
-			<center
-				><button
+			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
+				<button
+					tabindex="19"
 					class="button"
 					style="cursor:pointer; width: 10.5rem; margin: 1rem 0 2rem 0"
 					on:click={() => addGroupMembershipInput()}
 					class:hidden={addGroupMembershipVisible}>Add Group Membership</button
-				></center
-			>
+				>
+			</center>
 			<br />
 		{/if}
 
 		{#if addGroupMembershipVisible}
 			<table>
 				<tr style="border-width: 0px">
-					<td style="width: 15rem"
-						><input
+					<td style="width: 15rem">
+						<input
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
 							style="
@@ -525,6 +550,13 @@
 									setTimeout(() => {
 										searchGroupsResultsVisible = false;
 									}, 500);
+								}}
+								on:focus={async () => {
+									searchGroupResults = [];
+									searchGroupActive = true;
+									if (searchGroups?.length >= searchStringLength) {
+										searchGroup(searchGroups);
+									}
 								}}
 								on:click={async () => {
 									searchGroupResults = [];

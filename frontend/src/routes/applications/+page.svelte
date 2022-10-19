@@ -62,7 +62,7 @@
 	let selectedGroup;
 
 	// Selection
-	let selectedAppName, selectedAppId, selectedAppGroup, selectedAppGroupId, selectedAppGroupName;
+	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
 
 	// Validation
 	let previousAppName;
@@ -182,25 +182,37 @@
 	};
 
 	const addApplication = async () => {
+		if (!selectedGroup) {
+			const groupId = await httpAdapter.get(
+				`/groups?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
+			);
+			console.log('searchGroups', searchGroups);
+			console.log('groupId', groupId);
+			if (
+				groupId.data.content &&
+				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
+			) {
+				selectedGroup = groupId.data.content[0]?.id;
+				searchGroupActive = false;
+			}
+		}
+
 		try {
-			const res = await httpAdapter.post(`/applications/save`, {
+			await httpAdapter.post(`/applications/save`, {
 				name: appName,
 				group: selectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
-			if (err.response.data) err.message = 'Application name already exists.';
+			if (err.response.data && err.response.status === 303)
+				err.message = 'Application name already exists.';
+			if (err.response.data && err.response.status === 400) err.message = 'Group not found.';
+
 			errorMessage('Error Creating Application', err.message);
 		}
+		selectedGroup = '';
 
 		await reloadAllApps();
-	};
-
-	const confirmAppDelete = (ID, name) => {
-		confirmDeleteVisible = true;
-
-		selectedAppId = ID;
-		selectedAppName = name;
 	};
 
 	const appDelete = async () => {
@@ -365,6 +377,13 @@
 								searchGroupsResultsVisible = false;
 							}, waitTime);
 						}}
+						on:focus={() => {
+							searchGroupResults = [];
+							searchGroupActive = true;
+							if (searchGroups?.length >= searchStringLength) {
+								searchGroup(searchGroups);
+							}
+						}}
 						on:click={async () => {
 							searchGroupResults = [];
 							searchGroupActive = true;
@@ -406,7 +425,9 @@
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
 			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
 				<input
+					tabindex="8"
 					style="border-width: 1px; width: 20rem; text-align: center"
 					placeholder="Search"
 					bind:value={searchString}
@@ -430,12 +451,18 @@
 				</tr>
 				{#if $applications}
 					{#if $applications.length > 0}
-						{#each $applications as app}
+						{#each $applications as app, i}
 							<tr>
 								<td
+									tabindex={i + 9}
 									style="cursor: pointer"
 									on:click={() => {
 										loadApplicationDetail(app.id, app.group);
+									}}
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											loadApplicationDetail(app.id, app.group);
+										}
 									}}
 									>{app.name}
 								</td>
@@ -444,6 +471,7 @@
 								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 									<td>
 										<button
+											tabindex="-1"
 											class="button-delete"
 											on:click={() => {
 												selectedAppId = app.id;
@@ -508,6 +536,7 @@
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
 				<input
+					tabindex="-1"
 					id="name"
 					bind:value={selectedAppName}
 					readonly={!editAppName}
@@ -612,11 +641,15 @@
 		{/if}
 		<br /><br />
 		{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
-			<center
-				><button class="button" style="width: 9rem" on:click={() => (addApplicationVisible = true)}
-					>Add Application</button
-				></center
-			>
+			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
+				<button
+					tabindex="19"
+					class="button"
+					style="width: 9rem"
+					on:click={() => (addApplicationVisible = true)}>Add Application</button
+				>
+			</center>
 		{/if}
 	</div>
 {/if}
