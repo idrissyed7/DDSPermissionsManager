@@ -425,7 +425,9 @@
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
 			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
 				<input
+					tabindex="8"
 					style="border-width: 1px; width: 20rem; text-align: center"
 					placeholder="Search"
 					bind:value={searchString}
@@ -449,12 +451,18 @@
 				</tr>
 				{#if $applications}
 					{#if $applications.length > 0}
-						{#each $applications as app}
+						{#each $applications as app, i}
 							<tr>
 								<td
+									tabindex={i + 9}
 									style="cursor: pointer"
 									on:click={() => {
 										loadApplicationDetail(app.id, app.group);
+									}}
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											loadApplicationDetail(app.id, app.group);
+										}
 									}}
 									>{app.name}
 								</td>
@@ -463,6 +471,7 @@
 								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 									<td>
 										<button
+											tabindex="-1"
 											class="button-delete"
 											on:click={() => {
 												selectedAppId = app.id;
@@ -527,6 +536,7 @@
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
 			<div class="name">
 				<input
+					tabindex="-1"
 					id="name"
 					bind:value={selectedAppName}
 					readonly={!editAppName}
@@ -631,11 +641,15 @@
 		{/if}
 		<br /><br />
 		{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
-			<center
-				><button class="button" style="width: 9rem" on:click={() => (addApplicationVisible = true)}
-					>Add Application</button
-				></center
-			>
+			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
+				<button
+					tabindex="19"
+					class="button"
+					style="width: 9rem"
+					on:click={() => (addApplicationVisible = true)}>Add Application</button
+				>
+			</center>
 		{/if}
 	</div>
 {/if}
