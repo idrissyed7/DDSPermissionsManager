@@ -3,7 +3,10 @@ package io.unityfoundation.dds.permissions.manager.model.application;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.micronaut.http.*;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpResponseFactory;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.authentication.AuthenticationResponse;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
@@ -37,19 +40,16 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
 import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -356,7 +356,7 @@ public class ApplicationService {
                 Extension.basicConstraints,
                 true,
                 new BasicConstraints(false));
-        JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA384withECDSA");
+        JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WITHECDSA");
 
         return new JcaX509CertificateConverter().getCertificate(v3CertBldr.build(signerBuilder.build(caPrivateKey)));
     }
