@@ -33,14 +33,11 @@ public class ApplicationSecretsClient {
             String project = projectOptional.get();
 
             try {
-                this.identityCACert =  getAccessSecretVersionResponse(project, "identity_ca_pem")
-                        .getPayload().getData().toStringUtf8();
+                this.identityCACert =  getLatestSecret(project, "identity_ca_pem");
 
-                this.permissionsCACert = getAccessSecretVersionResponse(project, "permissions_ca_pem")
-                        .getPayload().getData().toStringUtf8();
+                this.permissionsCACert = getLatestSecret(project, "permissions_ca_pem");
 
-                this.governanceFile = getAccessSecretVersionResponse(project, "governance_xml_p7s")
-                        .getPayload().getData().toStringUtf8();
+                this.governanceFile = getLatestSecret(project, "governance_xml_p7s");
 
             } catch (Exception e) {
                 // all or nothing
@@ -51,12 +48,12 @@ public class ApplicationSecretsClient {
         }
     }
 
-    private AccessSecretVersionResponse getAccessSecretVersionResponse(String project, String file) {
+    private String getLatestSecret(String project, String file) {
         AccessSecretVersionResponse response = client.accessSecretVersion(AccessSecretVersionRequest
                 .newBuilder()
                 .setName(SecretVersionName.of(project, file, "latest").toString())
                 .build());
-        return response;
+        return response.getPayload().getData().toStringUtf8();
     }
 
     public Optional<String> getIdentityCACert() {

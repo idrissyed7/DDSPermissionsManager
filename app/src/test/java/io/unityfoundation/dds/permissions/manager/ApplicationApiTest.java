@@ -1251,7 +1251,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        void canDownloadFilesAndGetHashes() {
+        void canDownloadFiles() {
             HttpRequest request;
             HttpResponse response;
 
@@ -1305,14 +1305,26 @@ public class ApplicationApiTest {
 
             loginAsApplication(applicationOne.getId());
 
-            // TODO Need to find a way to override or mock getting secrets from Secret Manager
-//            request = HttpRequest.GET("/applications/download-identity-cert"); //.cookie(jwtOptional.get());
-//            response = blockingClient.exchange(request);
-//            assertEquals(OK, response.getStatus());
-//
-//            request = HttpRequest.GET("/applications/application-file-hashes"); //.cookie(jwtOptional.get());
-//            response = blockingClient.exchange(request);
-//            assertEquals(OK, response.getStatus());
+            request = HttpRequest.GET("/applications/identity_ca.pem");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("identityCACert", body.get());
+
+            request = HttpRequest.GET("/applications/permissions_ca.pem");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("permissionsCACert", body.get());
+
+            request = HttpRequest.GET("/applications/governance.xml.p7s");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("governanceFile", body.get());
         }
     }
     @Test

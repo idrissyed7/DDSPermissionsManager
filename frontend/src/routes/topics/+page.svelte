@@ -11,6 +11,9 @@
 
 	export let data, errors;
 
+	// Keys
+	const returnKey = 13;
+
 	// Search
 	let searchString;
 	const searchStringLength = 3;
@@ -353,7 +356,9 @@
 		<h1>Topics</h1>
 		{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 			<center>
+				<!-- svelte-ignore a11y-positive-tabindex -->
 				<input
+					tabindex="8"
 					style="border-width: 1px; width: 20rem; text-align: center; height: 1.7rem"
 					placeholder="Search"
 					bind:value={searchString}
@@ -374,14 +379,21 @@
 					<th><strong>Topic</strong></th>
 					<th><strong>Group</strong></th>
 				</tr>
-				{#each $topics as topic}
+				{#each $topics as topic, i}
 					<tr>
 						<td
+							tabindex={i + 9}
 							style="line-height: 1.7rem;"
 							class="topic-td"
 							on:click={() => {
 								loadTopic(topic.id);
 								selectedTopicId = topic.id;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									loadTopic(topic.id);
+									selectedTopicId = topic.id;
+								}
 							}}
 							>{topic.name}
 						</td>
@@ -389,6 +401,7 @@
 						{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 							<td>
 								<button
+									tabindex="-1"
 									class="button-delete"
 									style="float: right"
 									on:click={() => {
@@ -449,7 +462,10 @@
 			{#if topicsListVisible && !topicDetailVisible && !addTopicVisible}
 				<br /><br />
 				<center>
-					<button class="button" on:click={() => (addTopicVisible = true)}>Add Topic</button>
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<button tabindex="19" class="button" on:click={() => (addTopicVisible = true)}
+						>Add Topic</button
+					>
 				</center>
 			{/if}
 		{/if}
