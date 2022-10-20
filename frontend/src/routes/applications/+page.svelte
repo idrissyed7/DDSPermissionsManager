@@ -186,8 +186,7 @@
 			const groupId = await httpAdapter.get(
 				`/groups?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
 			);
-			console.log('searchGroups', searchGroups);
-			console.log('groupId', groupId);
+
 			if (
 				groupId.data.content &&
 				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()

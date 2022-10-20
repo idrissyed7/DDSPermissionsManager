@@ -146,16 +146,16 @@
 
 	const addTopic = async () => {
 		if (!selectedGroup) {
-			const groupId = await httpAdapter.get(`/applications?page=0&size=1&filter=${searchGroups}`);
+			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
 			if (
 				groupId.data.content &&
-				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
 			) {
-				selectedGroup = groupId.data.content[0]?.group;
+				selectedGroup = groupId.data.content[0]?.id;
 				searchGroupActive = false;
 			}
 		}
-
+		console.log('selectedGroup', selectedGroup);
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,
@@ -382,6 +382,15 @@
 								setTimeout(() => {
 									searchApplicationsResultsVisible = false;
 								}, 500);
+							}}
+							on:focus={() => {
+								async () => {
+									searchApplicationResults = [];
+									searchApplicationActive = true;
+									if (searchApplications?.length >= 3) {
+										searchApplication(searchApplications);
+									}
+								};
 							}}
 							on:click={async () => {
 								searchApplicationResults = [];

@@ -20,18 +20,6 @@
 	let timer;
 	const waitTime = 500;
 
-	// Search Groups
-	let searchGroups;
-	let searchGroupResults;
-	let searchGroupsResultsVisible = false;
-	let searchGroupActive = true;
-
-	// Search Applications
-	let searchApplications;
-	let searchApplicationActive = true;
-	let searchApplicationResults;
-	let searchApplicationsResultsVisible = false;
-
 	// Authentication
 	let isTopicAdmin = false;
 
@@ -43,9 +31,6 @@
 	let topicsTotalPages;
 	let topicsCurrentPage = 0;
 
-	// Forms
-	let anyApplicationCanRead = false;
-
 	// Modals
 	let errorMessageVisible = false;
 	let topicsListVisible = true;
@@ -53,55 +38,14 @@
 	let addTopicVisible = false;
 	let confirmDeleteVisible = false;
 
-	// Group Name
-	let newTopicName;
-
 	// Selection
 	let selectedTopicId,
 		selectedTopicName,
 		selectedTopicKind,
 		selectedTopicGroupName,
 		selectedTopicGroupId;
-	let selectedApplicationList = [];
 
 	// Reactive Variables /////////////////////
-
-	// Search Groups Feature
-	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
-		searchGroup(searchGroups.trim());
-	} else {
-		searchGroupsResultsVisible = false;
-	}
-
-	// Search Groups Dropdown Visibility
-	$: if (searchGroupResults?.length >= 1 && searchGroupActive) {
-		searchGroupsResultsVisible = true;
-	} else {
-		searchGroupsResultsVisible = false;
-	}
-
-	// Reset add group form once closed
-	$: if (addTopicVisible === false) {
-		searchGroups = '';
-		searchApplications = '';
-		newTopicName = '';
-		selectedApplicationList = [];
-		anyApplicationCanRead = false;
-	}
-
-	// Search Applications Feature
-	$: if (searchApplications?.trim().length >= 3 && searchApplicationActive) {
-		searchApplication(searchApplications.trim());
-	} else {
-		searchApplicationsResultsVisible = false;
-	}
-
-	// Search Applications Dropdown Visibility
-	$: if (searchApplicationResults?.data?.length >= 1 && searchApplicationActive) {
-		searchApplicationsResultsVisible = true;
-	} else {
-		searchApplicationsResultsVisible = false;
-	}
 
 	// Topics Filter Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -150,47 +94,6 @@
 		}
 	});
 
-	// Functions /////////////////////
-	const searchGroup = async (searchString) => {
-		setTimeout(async () => {
-			if (!$isAdmin) {
-				searchGroupResults = $permissionsByGroup.filter(
-					(groupIsTopicAdmin) =>
-						groupIsTopicAdmin.isTopicAdmin === true &&
-						groupIsTopicAdmin.groupName.toUpperCase().includes(searchString.toUpperCase())
-				);
-			} else {
-				searchGroupResults = await httpAdapter.get(`/groups?page=0&size=7&filter=${searchString}`);
-				searchGroupResults = searchGroupResults.data.content;
-			}
-		}, waitTime);
-	};
-
-	const selectedSearchGroup = (groupName, groupId) => {
-		selectedGroup = groupId;
-		searchGroups = groupName;
-		searchGroupsResultsVisible = false;
-		searchGroupActive = false;
-	};
-
-	const searchApplication = async (searchString) => {
-		setTimeout(async () => {
-			searchApplicationResults = await httpAdapter.get(
-				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
-			);
-		}, waitTime);
-	};
-
-	const selectedSearchApplication = (appName, appId) => {
-		selectedApplicationList.push({ id: appId, name: appName, accessType: 'READ' });
-
-		// This statement is used to trigger Svelte reactivity and re-render the component
-		selectedApplicationList = selectedApplicationList;
-		searchApplications = appName;
-		searchApplicationsResultsVisible = false;
-		searchApplicationActive = false;
-	};
-
 	const searchTopics = async (searchStr) => {
 		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
 		if (res.data.content) {
@@ -235,57 +138,6 @@
 		await reloadAllTopics().then(() => {
 			if (topicsCurrentPage === topicsTotalPages) topicsCurrentPage--;
 		});
-	};
-
-	const addTopic = async () => {
-		const res = await httpAdapter
-			.post(`/topics/save/`, {
-				name: newTopicName,
-				kind: anyApplicationCanRead ? 'B' : 'C',
-				group: selectedGroup,
-				groupName: searchGroups
-			})
-			.catch((err) => {
-				addTopicVisible = false;
-				if (err.response.status) err.message = 'Topic already exists. Topic name should be unique.';
-				errorMessage('Error Adding Topic', err.message);
-			});
-
-		if (res) {
-			const createdTopicId = res.data.id;
-			addTopicApplicationAssociation(createdTopicId);
-		}
-
-		addTopicVisible = false;
-
-		await reloadAllTopics().then(() => {
-			topicsCurrentPage = 0;
-		});
-	};
-
-	const addTopicApplicationAssociation = async (topicId, reload = false) => {
-		if (selectedApplicationList && selectedApplicationList.length > 0 && !reload) {
-			selectedApplicationList.forEach(async (app) => {
-				await httpAdapter.post(`/application_permissions/${app.id}/${topicId}/${app.accessType}`);
-			});
-		}
-		if (reload) {
-			await httpAdapter
-				.post(
-					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
-				)
-				.then(() => loadApplicationPermissions(topicId));
-		}
-	};
-
-	const deleteTopicApplicationAssociation = async (permissionId, topicId) => {
-		await httpAdapter.delete(`/application_permissions/${permissionId}`);
-		loadApplicationPermissions(topicId);
-	};
-
-	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
-		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
-		loadApplicationPermissions(topicId);
 	};
 
 	const returnToTopicsList = () => {
