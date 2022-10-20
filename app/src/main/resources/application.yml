@@ -123,6 +123,11 @@ micronaut:
       enabled: true
       sensitive: false
 ---
+gcp:
+  credentials:
+    enabled: false
+  project-id: replaceme
+---
 permissions-manager:
   data:
     passphrase:

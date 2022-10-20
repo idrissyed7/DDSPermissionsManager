@@ -106,4 +106,25 @@ public class ApplicationController {
             return HttpResponse.badRequest(e.getMessage());
         }
     }
+
+    @Get("/identity_ca.pem")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getIdentityCACertificate() {
+        return applicationService.getIdentityCACertificate();
+    }
+
+    @Get("/permissions_ca.pem")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsCACertificate() {
+        return applicationService.getPermissionsCACertificate();
+    }
+
+    @Get("/governance.xml.p7s")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getGovernanceFile() {
+        return applicationService.getGovernanceFile();
+    }
 }
