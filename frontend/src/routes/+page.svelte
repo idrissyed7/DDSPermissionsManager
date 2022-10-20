@@ -128,4 +128,8 @@
 	.login-button a {
 		color: #6751a4;
 	}
+
+	a:hover {
+		text-decoration: none;
+	}
 </style>
