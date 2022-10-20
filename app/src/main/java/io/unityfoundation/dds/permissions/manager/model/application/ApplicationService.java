@@ -291,7 +291,7 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getApplicationPrivateKey(String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+    public HttpResponse<?> getApplicationPrivateKeyAndClientCertificate(String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
 
         Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
         Optional<String> identityCAKey = applicationSecretsClient.getIdentityCAKey();

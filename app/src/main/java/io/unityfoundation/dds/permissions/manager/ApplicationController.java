@@ -22,10 +22,8 @@ import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 @Controller("/api/applications")
@@ -134,13 +132,13 @@ public class ApplicationController {
         return applicationService.getGovernanceFile();
     }
 
-    @Post("/application-private-key")
+    @Post("/application-credentials")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPrivateKey(@QueryValue Optional<String> nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+    public HttpResponse<?> getPrivateKeyAndClientCertificate(@QueryValue Optional<String> nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
         if (nonce.isEmpty()) {
             return HttpResponse.badRequest();
         }
-        return applicationService.getApplicationPrivateKey(nonce.get());
+        return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce.get());
     }
 }

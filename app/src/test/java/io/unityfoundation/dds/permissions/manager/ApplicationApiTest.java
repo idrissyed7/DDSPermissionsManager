@@ -1326,6 +1326,55 @@ public class ApplicationApiTest {
             assertTrue(body.isPresent());
             assertEquals("governanceFile", body.get());
         }
+
+        @Test
+        void canRetrieveClientCertAndPrivateKey() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.POST("/applications/application-credentials?nonce=unity", Map.of());
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Map> bodyOptional = response.getBody(Map.class);
+            assertTrue(bodyOptional.isPresent());
+            Map map = bodyOptional.get();
+            assertTrue(map.containsKey("public"));
+            assertTrue(map.containsKey("private"));
+        }
     }
     @Test
     public void testApplicationFilter() {
