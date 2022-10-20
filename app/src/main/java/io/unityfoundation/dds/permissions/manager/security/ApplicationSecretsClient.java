@@ -70,8 +70,7 @@ public class ApplicationSecretsClient {
 
     public Optional<String> getIdentityCAKey() {
         if (projectOptional.isPresent() && enabled.isPresent() && enabled.get()) {
-            return Optional.ofNullable(getAccessSecretVersionResponse(projectOptional.get(), "identity_ca_key_pem")
-                    .getPayload().getData().toStringUtf8());
+            return Optional.ofNullable(getLatestSecret(projectOptional.get(), "identity_ca_key_pem"));
         }
 
         return Optional.empty();
