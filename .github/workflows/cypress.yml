@@ -18,18 +18,14 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
       - name: Run the server with Gradle
+        env:
+          VITE_BACKEND_URL: /api
         run: |
           ./gradlew app:run &
-      - name: Wait for the server to start
-        run: |
-          curl --silent --retry-connrefused --retry 180 --retry-delay 1 --retry-max-time 180 --max-time 1 http://localhost:8080
-      # Install NPM dependencies, cache them correctly
-      # and run all Cypress tests
       - name: Cypress run
         uses: cypress-io/github-action@v4
-        env:
-          VITE_BACKEND_URL: http://localhost:8080
+        # env:
+        #   DEBUG: 'cypress:*'
         with:
           working-directory: ./frontend
-          build: npm run build
-          start: npm run dev
+          wait-on: 'http://localhost:8080'
