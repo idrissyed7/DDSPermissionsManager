@@ -39,11 +39,9 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -379,13 +377,5 @@ public class ApplicationService {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         PEMKeyPair pemKeyPair = (PEMKeyPair) parser.readObject();
         return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
-    }
-
-    private static String getContentHash(String cert) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] bytesOfMessage = cert.getBytes("UTF-8");
-
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(bytesOfMessage);
-        return DatatypeConverter.printHexBinary(digest).toUpperCase();
     }
 }
