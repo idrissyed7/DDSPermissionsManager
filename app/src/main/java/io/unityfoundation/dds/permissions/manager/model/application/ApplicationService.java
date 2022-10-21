@@ -55,7 +55,7 @@ import java.util.stream.StreamSupport;
 public class ApplicationService {
 
     @Property(name = "permissions-manager.application.client.time-expiry")
-    protected Optional<Long> certExpiry;
+    protected Long certExpiry;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -329,7 +329,7 @@ public class ApplicationService {
         nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
         nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
 
-        Long expiry = certExpiry.isPresent() ? certExpiry.get(): 365;
+        Long expiry = certExpiry == null ? certExpiry: 365;
 
         X509v3CertificateBuilder v3CertBldr = new JcaX509v3CertificateBuilder(
                 caCertificate.getSubjectX500Principal(), // issuer
