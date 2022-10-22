@@ -132,6 +132,8 @@ permissions-manager:
   application:
     client:
       time-expiry: 365 # in days
+    permissions-file:
+      time-expiry: 30 # in days
   data:
     passphrase:
       length: 16

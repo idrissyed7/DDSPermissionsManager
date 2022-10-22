@@ -1,5 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -9,6 +11,9 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.authentication.AuthenticationResponse;
+import io.unityfoundation.dds.permissions.manager.FreemarkerConfiguration;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -20,6 +25,15 @@ import io.unityfoundation.dds.permissions.manager.security.BCryptPasswordEncoder
 import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.Time;
+import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
+import org.bouncycastle.asn1.smime.SMIMECapability;
+import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -27,23 +41,28 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
+import org.bouncycastle.mail.smime.SMIMEException;
+import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.Store;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
 import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -66,12 +85,13 @@ public class ApplicationService {
     private final PassphraseGenerator passphraseGenerator;
     private final BCryptPasswordEncoderService passwordEncoderService;
     private final ApplicationSecretsClient applicationSecretsClient;
+    private final FreemarkerConfiguration freemarkerConfiguration;
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
                               ApplicationPermissionService applicationPermissionService,
                               SecurityUtil securityUtil, GroupUserService groupUserService,
                               PassphraseGenerator passphraseGenerator,
-                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient) {
+                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient, FreemarkerConfiguration freemarkerConfiguration) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
@@ -80,6 +100,7 @@ public class ApplicationService {
         this.passphraseGenerator = passphraseGenerator;
         this.passwordEncoderService = passwordEncoderService;
         this.applicationSecretsClient = applicationSecretsClient;
+        this.freemarkerConfiguration = freemarkerConfiguration;
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
@@ -322,14 +343,128 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
+    public HttpResponse<?> getPermissionsFile(String nonce) throws IOException, GeneralSecurityException, MessagingException, SMIMEException, OperatorCreationException, TemplateException {
+        Optional<String> permissionsCAKey = applicationSecretsClient.getPermissionsCAKey();
+        Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
+        Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
+
+
+        if (applicationOptional.isPresent() && permissionsCAKey.isPresent() && permissionsCACert.isPresent()) {
+            //openssl smime -sign -in permissions.ftlx -text -out permissions.ftlx.p7s -signer permissions_ca.pem -inkey permissions_ca_key.pem
+            String permissionsXml = generatePermissionsXml(applicationOptional.get(), nonce);
+
+            MimeBodyPart mimeBodyPart = new MimeBodyPart();
+            mimeBodyPart.setText(permissionsXml);
+            MimeMultipart signedMultipart = createSignedMultipart(
+                    readPrivateKey(permissionsCAKey.get()),
+                    readCertificate(permissionsCACert.get()),
+                    mimeBodyPart);
+
+            String result;
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                signedMultipart.writeTo(byteArrayOutputStream);
+                result = byteArrayOutputStream.toString();
+            }
+
+            return HttpResponse.ok(result);
+        }
+
+        return HttpResponse.notFound();
+    }
+
+    public static MimeMultipart createSignedMultipart(
+            PrivateKey signingKey, X509Certificate signingCert, MimeBodyPart message)
+            throws GeneralSecurityException, OperatorCreationException, SMIMEException {
+        List<X509Certificate> certList = new ArrayList<X509Certificate>();
+        certList.add(signingCert);
+        Store certs = new JcaCertStore(certList);
+        ASN1EncodableVector signedAttrs = generateSignedAttributes();
+        signedAttrs.add(new Attribute(CMSAttributes.signingTime, new DERSet(new Time(new Date()))));
+        SMIMESignedGenerator gen = new SMIMESignedGenerator();
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder()
+                .setSignedAttributeGenerator(new AttributeTable(signedAttrs))
+                .build("SHA1WITHECDSA", signingKey, signingCert));
+        gen.addCertificates(certs);
+        return gen.generate(message);
+    }
+
+    private static ASN1EncodableVector generateSignedAttributes() {
+        ASN1EncodableVector signedAttrs = new ASN1EncodableVector();
+        SMIMECapabilityVector caps = new SMIMECapabilityVector();
+        caps.addCapability(SMIMECapability.aES128_CBC);
+        caps.addCapability(SMIMECapability.aES192_CBC);
+        caps.addCapability(SMIMECapability.aES256_CBC);
+        signedAttrs.add(new SMIMECapabilitiesAttribute(caps));
+        return signedAttrs;
+    }
+
+    private String generatePermissionsXml(Application application, String nonce) throws TemplateException, IOException {
+        Map<String, Object> dataModel = buildTemplateDataModel(nonce, application);
+
+        // merge
+        return mergeDataAndTemplate(dataModel);
+    }
+
+    private Map<String, Object> buildTemplateDataModel(String nonce, Application application) {
+        HashMap<String, Object> dataModel = new HashMap<>();
+        dataModel.put("subject", buildSubject(application, nonce));
+        dataModel.put("applicationId", application.getId());
+
+        List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
+        Map<AccessType, List<ApplicationPermission>> accessTypeListMap =
+                applicationPermissions.stream().collect(Collectors.groupingBy(ApplicationPermission::getAccessType));
+
+        // list of canonical names for each publish-subscribe sections
+        List<String> subscribeList = new ArrayList<>();
+        List<String> publishList = new ArrayList<>();
+
+        // read
+        addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ));
+
+        // write
+        addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.WRITE));
+
+        // read+write
+        addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ_WRITE));
+        addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.READ_WRITE));
+
+        dataModel.put("subscribeList", subscribeList);
+        dataModel.put("publishList", publishList);
+
+        return dataModel;
+    }
+
+    private String mergeDataAndTemplate(Map<String, Object> dataModel) throws IOException, TemplateException {
+        Template template = freemarkerConfiguration.getConfiguration().getTemplate("permissions.ftlx");
+
+        String out;
+        try(StringWriter stringWriter = new StringWriter()) {
+            template.process(dataModel, stringWriter);
+            out = stringWriter.toString();
+        }
+
+        return out;
+    }
+
+    private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
+        if (applicationPermissions != null) {
+            list.addAll(applicationPermissions.stream()
+                    .map(applicationPermission -> buildCanonicalName(
+                            applicationPermission.getPermissionsApplication(),
+                            applicationPermission))
+                    .collect(Collectors.toList()));
+        }
+    }
+
+    private static String buildCanonicalName(Application application, ApplicationPermission applicationPermission) {
+        return applicationPermission.getPermissionsTopic().getKind() + "." +
+                application.getPermissionsGroup().getId() + "." +
+                applicationPermission.getPermissionsTopic().getName();
+    }
+
     public X509Certificate makeV3Certificate(
             X509Certificate caCertificate, PrivateKey caPrivateKey, PublicKey eePublicKey, Application application, String nonce)
             throws GeneralSecurityException, CertIOException, OperatorCreationException {
-
-        X500NameBuilder nameBuilder = new X500NameBuilder();
-        nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
-        nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
-        nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
 
         Long expiry = certExpiry.isPresent() ? certExpiry.get(): 365;
 
@@ -339,7 +474,7 @@ public class ApplicationService {
                         .multiply(BigInteger.valueOf(10)),
                 new Date(System.currentTimeMillis() - 1000L * 5), // start time
                 new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(expiry)), // expiry time
-                new X500Principal(nameBuilder.build().toString()), // subject
+                new X500Principal(buildSubject(application, nonce)), // subject
                 eePublicKey); // subject public key
 
         // extensions
@@ -359,6 +494,14 @@ public class ApplicationService {
         JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WITHECDSA");
 
         return new JcaX509CertificateConverter().getCertificate(v3CertBldr.build(signerBuilder.build(caPrivateKey)));
+    }
+
+    private static String buildSubject(Application application, String nonce) {
+        X500NameBuilder nameBuilder = new X500NameBuilder();
+        nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
+        nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
+        nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
+        return nameBuilder.build().toString();
     }
 
     public static String objectToPEMString(Object certificate) throws IOException {
