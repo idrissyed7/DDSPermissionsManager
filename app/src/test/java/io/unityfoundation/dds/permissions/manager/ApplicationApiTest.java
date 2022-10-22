@@ -172,6 +172,22 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+            HttpResponse<?> response;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("a", theta.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
         public void createShouldTrimWhitespace() {
             HttpResponse<?> response;
 
@@ -1503,7 +1519,7 @@ public class ApplicationApiTest {
         HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
         List<Map> results = blockingClient.retrieve(request, List.class);
 
-        List<String> expectedApplicationNames = Arrays.asList("Go", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
+        List<String> expectedApplicationNames = Arrays.asList("GoLang", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
         assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
 
         request = HttpRequest.GET("/applications/search?filter=Group&size=7");
