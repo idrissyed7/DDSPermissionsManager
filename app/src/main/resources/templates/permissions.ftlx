@@ -11,6 +11,7 @@
                 <domains>
                     <id>0</id>
                 </domains>
+                <#if publishList?size != 0>
                 <publish>
                     <topics>
                     <#list publishList as canonicalName>
@@ -18,6 +19,8 @@
                     </#list>
                     </topics>
                 </publish>
+                </#if>
+                <#if subscribeList?size != 0>
                 <subscribe>
                     <topics>
                     <#list subscribeList as canonicalName>
@@ -25,6 +28,7 @@
                     </#list>
                     </topics>
                 </subscribe>
+                </#if>
             </allow_rule>
             <default>DENY</default>
         </grant>
