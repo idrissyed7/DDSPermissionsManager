@@ -67,7 +67,9 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -414,14 +416,11 @@ public class ApplicationService {
         dataModel.put("subject", buildSubject(application, nonce));
         dataModel.put("applicationId", application.getId());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         Long expiry = permissionExpiry.isPresent() ? permissionExpiry.get(): 30;
-        Date now = new Date();
-        Calendar c = Calendar.getInstance();
-        c.setTime(now);
-        c.add(Calendar.DATE, Math.toIntExact(expiry));
-        dataModel.put("validStart", sdf.format(now));
-        dataModel.put("validEnd", sdf.format(c.getTime()));
+        String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(expiry).format(DateTimeFormatter.ISO_INSTANT);
+        dataModel.put("validStart", validStart);
+        dataModel.put("validEnd", validEnd);
 
         Long domain = permissionDomain.isPresent() ? permissionDomain.get(): 1;
         dataModel.put("domain", domain);
