@@ -4,12 +4,12 @@
         <grant name="application_${applicationId}">
             <subject_name>${subject}</subject_name>
             <validity>
-                <not_before>2022-07-25T20:29:27.082Z</not_before>
-                <not_after>2022-09-04T20:29:27.082Z</not_after>
+                <not_before>${validStart}</not_before>
+                <not_after>${validEnd}</not_after>
             </validity>
             <allow_rule>
                 <domains>
-                    <id>0</id>
+                    <id>${domain}</id>
                 </domains>
                 <#if publishList?size != 0>
                 <publish>

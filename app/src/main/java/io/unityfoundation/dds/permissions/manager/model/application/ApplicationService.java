@@ -67,6 +67,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -77,6 +78,10 @@ public class ApplicationService {
 
     @Property(name = "permissions-manager.application.client.time-expiry")
     protected Optional<Long> certExpiry;
+    @Property(name = "permissions-manager.application.permissions-file.time-expiry")
+    protected Optional<Long> permissionExpiry;
+    @Property(name = "permissions-manager.application.permissions-file.domain")
+    protected Optional<Long> permissionDomain;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -408,6 +413,18 @@ public class ApplicationService {
         HashMap<String, Object> dataModel = new HashMap<>();
         dataModel.put("subject", buildSubject(application, nonce));
         dataModel.put("applicationId", application.getId());
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        Long expiry = permissionExpiry.isPresent() ? permissionExpiry.get(): 30;
+        Date now = new Date();
+        Calendar c = Calendar.getInstance();
+        c.setTime(now);
+        c.add(Calendar.DATE, Math.toIntExact(expiry));
+        dataModel.put("validStart", sdf.format(now));
+        dataModel.put("validEnd", sdf.format(c.getTime()));
+
+        Long domain = permissionDomain.isPresent() ? permissionDomain.get(): 1;
+        dataModel.put("domain", domain);
 
         List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
         Map<AccessType, List<ApplicationPermission>> accessTypeListMap =
