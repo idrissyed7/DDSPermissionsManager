@@ -1501,7 +1501,7 @@ public class ApplicationApiTest {
 
             loginAsApplication(applicationOne.getId());
 
-            request = HttpRequest.POST("/applications/application-credentials?nonce=unity", Map.of());
+            request = HttpRequest.POST("/applications/key-pair?nonce=unity", Map.of());
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> bodyOptional = response.getBody(Map.class);
