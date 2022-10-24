@@ -78,7 +78,7 @@ import java.util.stream.StreamSupport;
 @Singleton
 public class ApplicationService {
 
-    @Property(name = "permissions-manager.application.client.time-expiry")
+    @Property(name = "permissions-manager.application.client-certificate.time-expiry")
     protected Optional<Long> certExpiry;
     @Property(name = "permissions-manager.application.permissions-file.time-expiry")
     protected Optional<Long> permissionExpiry;

@@ -130,11 +130,10 @@ gcp:
 ---
 permissions-manager:
   application:
-    client:
+    client-certificate:
       time-expiry: 365 # in days
     permissions-file:
       time-expiry: 30 # in days
       domain: 1
-  data:
     passphrase:
       length: 16
