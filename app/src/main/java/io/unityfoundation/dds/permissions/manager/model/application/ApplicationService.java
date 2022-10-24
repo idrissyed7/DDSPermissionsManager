@@ -348,7 +348,6 @@ public class ApplicationService {
         Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
         Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
 
-
         if (applicationOptional.isPresent() && permissionsCAKey.isPresent() && permissionsCACert.isPresent()) {
             //openssl smime -sign -in permissions.ftlx -text -out permissions.ftlx.p7s -signer permissions_ca.pem -inkey permissions_ca_key.pem
             String permissionsXml = generatePermissionsXml(applicationOptional.get(), nonce);

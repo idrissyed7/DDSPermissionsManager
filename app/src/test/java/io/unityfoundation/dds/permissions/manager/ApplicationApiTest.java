@@ -1510,6 +1510,55 @@ public class ApplicationApiTest {
             assertTrue(map.containsKey("public"));
             assertTrue(map.containsKey("private"));
         }
+
+        @Test
+        void canRetrievePermissions() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            Long applicationOneId = applicationOne.getId();
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOneId);
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOneId.toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOneId);
+
+            request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=unity");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> bodyOptional = response.getBody(String.class);
+            assertTrue(bodyOptional.isPresent());
+            String body = bodyOptional.get();
+            assertTrue(body.contains("CN="+ applicationOneId +"_unity,GIVENNAME="+applicationOneId+",SURNAME="+primaryGroup.getId()));
+        }
     }
     @Test
     public void testApplicationFilter() {
