@@ -9,6 +9,7 @@
 
 To connect to a database, please set the following environment variables:
 
+* DATABASE (Options include "POSTGRES" or "MYSQL")
 * JDBC_URL
 * JDBC_DRIVER (see Driver column for values)
 * JDBC_USER
