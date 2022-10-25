@@ -34,6 +34,9 @@ dependencies {
     implementation "io.micronaut.data:micronaut-data-hibernate-jpa"
     implementation("at.favre.lib:bcrypt:0.9.0")
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
+
+    runtimeOnly("org.postgresql:postgresql:42.4.2")
+    runtimeOnly("mysql:mysql-connector-java:8.0.31")
 }
 
 
