@@ -359,7 +359,7 @@ public class ApplicationService {
         return new JcaX509CertificateConverter().getCertificate(v3CertBldr.build(signerBuilder.build(caPrivateKey)));
     }
 
-    public static String objectToPEMString(Object certificate) throws IOException {
+    public String objectToPEMString(Object certificate) throws IOException {
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
         pemWriter.writeObject(certificate);
@@ -367,13 +367,13 @@ public class ApplicationService {
         return sWrt.toString();
     }
 
-    public static X509Certificate readCertificate(String pemEncoding) throws IOException, CertificateException {
+    public X509Certificate readCertificate(String pemEncoding) throws IOException, CertificateException {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         X509CertificateHolder certHolder = (X509CertificateHolder) parser.readObject();
         return new JcaX509CertificateConverter().getCertificate(certHolder);
     }
 
-    public static PrivateKey readPrivateKey(String pemEncoding) throws IOException {
+    public PrivateKey readPrivateKey(String pemEncoding) throws IOException {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         PEMKeyPair pemKeyPair = (PEMKeyPair) parser.readObject();
         return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
