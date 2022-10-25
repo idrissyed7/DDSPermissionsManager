@@ -4,4 +4,4 @@ const writableProfileStore = writable(null);
 
 export const onLoggedIn = (profile) => writableProfileStore.set(profile);
 export const isAuthenticated = derived(writableProfileStore, ($profile) => Boolean($profile?.roles));
-export let isAdmin = derived(writableProfileStore, ($profile) => Boolean($profile?.roles?.some(role => role === "ADMIN")));
+export const isAdmin = derived(writableProfileStore, ($profile) => Boolean($profile?.roles?.some(role => role === "ADMIN")));
