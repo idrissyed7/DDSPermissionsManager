@@ -2,10 +2,10 @@
 
 ### Supported Databases
 
-| Database     | Versions         | Driver                   |
-|--------------|------------------|--------------------------|
-| MySQL Server | 8.0, 5.7 and 5.6 | com.mysql.cj.jdbc.Driver |
-| PostgreSQL   | 8.2 or newer     | org.postgresql.Driver    |
+| Database     | Versions     | Driver                   | Reference                                                                                                                 |
+|--------------|--------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| MySQL Server | 8.0 and 5.7  | com.mysql.cj.jdbc.Driver | [link](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html)                                            |
+| PostgreSQL   | 8.2 or newer | org.postgresql.Driver    | [link](https://jdbc.postgresql.org/documentation/#:~:text=The%20current%20version%20of%20the,(JDBC%204.2)%20and%20above.) |
 
 To connect to a database, please set the following environment variables:
 
