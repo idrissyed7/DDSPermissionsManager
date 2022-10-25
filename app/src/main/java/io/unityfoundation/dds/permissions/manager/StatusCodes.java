@@ -1,6 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
-public enum ErrorCodes {
+public enum StatusCodes {
     // generic
     UNAUTHORIZED,
 
