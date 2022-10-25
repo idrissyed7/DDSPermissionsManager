@@ -1,6 +1,5 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
-import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
@@ -11,7 +10,6 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.authentication.AuthenticationResponse;
-import io.unityfoundation.dds.permissions.manager.FreemarkerConfiguration;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
@@ -92,13 +90,13 @@ public class ApplicationService {
     private final PassphraseGenerator passphraseGenerator;
     private final BCryptPasswordEncoderService passwordEncoderService;
     private final ApplicationSecretsClient applicationSecretsClient;
-    private final FreemarkerConfiguration freemarkerConfiguration;
+    private final TemplateService templateService;
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
                               ApplicationPermissionService applicationPermissionService,
                               SecurityUtil securityUtil, GroupUserService groupUserService,
                               PassphraseGenerator passphraseGenerator,
-                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient, FreemarkerConfiguration freemarkerConfiguration) {
+                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient, TemplateService templateService) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
@@ -107,7 +105,7 @@ public class ApplicationService {
         this.passphraseGenerator = passphraseGenerator;
         this.passwordEncoderService = passwordEncoderService;
         this.applicationSecretsClient = applicationSecretsClient;
-        this.freemarkerConfiguration = freemarkerConfiguration;
+        this.templateService = templateService;
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
@@ -407,8 +405,7 @@ public class ApplicationService {
     private String generatePermissionsXml(Application application, String nonce) throws TemplateException, IOException {
         Map<String, Object> dataModel = buildTemplateDataModel(nonce, application);
 
-        // merge
-        return mergeDataAndTemplate(dataModel);
+        return templateService.mergeDataAndTemplate(dataModel);
     }
 
     private Map<String, Object> buildTemplateDataModel(String nonce, Application application) {
@@ -447,18 +444,6 @@ public class ApplicationService {
         dataModel.put("publishList", publishList);
 
         return dataModel;
-    }
-
-    private String mergeDataAndTemplate(Map<String, Object> dataModel) throws IOException, TemplateException {
-        Template template = freemarkerConfiguration.getConfiguration().getTemplate("permissions.ftlx");
-
-        String out;
-        try(StringWriter stringWriter = new StringWriter()) {
-            template.process(dataModel, stringWriter);
-            out = stringWriter.toString();
-        }
-
-        return out;
     }
 
     private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
