@@ -2,7 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.application;
 
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import io.unityfoundation.dds.permissions.manager.FreemarkerConfiguration;
+import io.unityfoundation.dds.permissions.manager.FreemarkerConfigurationFactory;
 import jakarta.inject.Singleton;
 
 import java.io.IOException;
@@ -11,9 +11,9 @@ import java.util.Map;
 
 @Singleton
 public class TemplateService {
-    private final FreemarkerConfiguration freemarkerConfiguration;
+    private final FreemarkerConfigurationFactory freemarkerConfiguration;
 
-    public TemplateService(FreemarkerConfiguration freemarkerConfiguration) {
+    public TemplateService(FreemarkerConfigurationFactory freemarkerConfiguration) {
         this.freemarkerConfiguration = freemarkerConfiguration;
     }
 
