@@ -16,6 +16,7 @@ import io.unityfoundation.dds.permissions.manager.model.applicationpermission.Ap
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.security.ApplicationSecretsClient;
@@ -449,17 +450,15 @@ public class ApplicationService {
     private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
         if (applicationPermissions != null) {
             list.addAll(applicationPermissions.stream()
-                    .map(applicationPermission -> buildCanonicalName(
-                            applicationPermission.getPermissionsApplication(),
-                            applicationPermission))
+                    .map(applicationPermission -> buildCanonicalName(applicationPermission.getPermissionsTopic()))
                     .collect(Collectors.toList()));
         }
     }
 
-    private static String buildCanonicalName(Application application, ApplicationPermission applicationPermission) {
-        return applicationPermission.getPermissionsTopic().getKind() + "." +
-                application.getPermissionsGroup().getId() + "." +
-                applicationPermission.getPermissionsTopic().getName();
+    private static String buildCanonicalName(Topic permissionsTopic) {
+        return permissionsTopic.getKind() + "." +
+                permissionsTopic.getPermissionsGroup().getId() + "." +
+                permissionsTopic.getName();
     }
 
     public X509Certificate makeV3Certificate(
