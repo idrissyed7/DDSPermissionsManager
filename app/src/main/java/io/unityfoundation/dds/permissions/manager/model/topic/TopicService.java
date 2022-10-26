@@ -139,16 +139,12 @@ public class TopicService {
         return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
     }
 
-    private String computeCanonicalName(Object object) {
-        if (object instanceof Topic) {
-            Topic topic = (Topic) object;
-            return buildCanonicalName(topic.getKind(), topic.getPermissionsGroup().getId(), topic.getName());
-        } else if (object instanceof TopicDTO) {
-            TopicDTO topicDTO = (TopicDTO) object;
-            return buildCanonicalName(topicDTO.getKind(), topicDTO.getGroup(), topicDTO.getName());
-        }
+    private String computeCanonicalName(Topic topic) {
+        return buildCanonicalName(topic.getKind(), topic.getPermissionsGroup().getId(), topic.getName());
+    }
 
-        return null;
+    private String computeCanonicalName(TopicDTO topicDTO) {
+        return buildCanonicalName(topicDTO.getKind(), topicDTO.getGroup(), topicDTO.getName());
     }
 
     private String buildCanonicalName(TopicKind kind, Long groupId, String name) {
