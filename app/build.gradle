@@ -34,6 +34,10 @@ dependencies {
     implementation "io.micronaut.data:micronaut-data-hibernate-jpa"
     implementation("at.favre.lib:bcrypt:0.9.0")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.72")
+    implementation("org.bouncycastle:bcmail-jdk18on:1.72")
+    implementation("javax.mail:mail:1.5.0-b01")
+
+    implementation("org.freemarker:freemarker:2.3.31")
 
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
 

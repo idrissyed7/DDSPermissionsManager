@@ -73,4 +73,12 @@ public class ApplicationSecretsClient {
 
         return Optional.empty();
     }
+
+    public Optional<String> getPermissionsCAKey() {
+        if (project != null && enabled != null && enabled) {
+            return Optional.ofNullable(getLatestSecret(project, "permissions_ca_key_pem"));
+        }
+
+        return Optional.empty();
+    }
 }

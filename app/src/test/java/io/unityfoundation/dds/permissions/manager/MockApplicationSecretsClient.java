@@ -148,4 +148,12 @@ public class MockApplicationSecretsClient extends ApplicationSecretsClient {
                 "Xcvef04VJuhlvUJ4apUB2pW/exETApYKYg==\n" +
                 "-----END EC PRIVATE KEY-----");
     }
+
+    public Optional<String> getPermissionsCAKey() {
+        return Optional.of("-----BEGIN EC PRIVATE KEY-----\n" +
+                "MHcCAQEEIDTKJ3wSi26GSg7M9he8b1+1hxa1cKq/Rlu9tLT7COFtoAoGCCqGSM49\n" +
+                "AwEHoUQDQgAEgUJtwTNZffFeUf0deYHps5Opvz5hCNcoLdUrloMRceC6FOiJqq6V\n" +
+                "OgxxVU9lwr9fJuAaZm0uQpyOYvgAqBLw5w==\n" +
+                "-----END EC PRIVATE KEY-----\n");
+    }
 }

@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import freemarker.template.TemplateException;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
@@ -18,8 +19,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import org.bouncycastle.mail.smime.SMIMEException;
 import org.bouncycastle.operator.OperatorCreationException;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.net.URI;
@@ -132,7 +135,7 @@ public class ApplicationController {
         return applicationService.getGovernanceFile();
     }
 
-    @Get("/application-credentials{?nonce}")
+    @Get("/key-pair{?nonce}")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
@@ -140,5 +143,15 @@ public class ApplicationController {
             return HttpResponse.badRequest();
         }
         return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
+    }
+
+    @Get("/permissions.xml.p7s{?nonce}")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
+        if (nonce == null) {
+            return HttpResponse.badRequest();
+        }
+        return applicationService.getPermissionsFile(nonce);
     }
 }

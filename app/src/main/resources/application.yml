@@ -129,8 +129,10 @@ gcp:
 ---
 permissions-manager:
   application:
-    client:
+    client-certificate:
       time-expiry: 365 # in days
-  data:
+    permissions-file:
+      time-expiry: 30 # in days
+      domain: 1
     passphrase:
       length: 16
