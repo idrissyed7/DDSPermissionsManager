@@ -135,14 +135,14 @@ public class ApplicationController {
         return applicationService.getGovernanceFile();
     }
 
-    @Post("/key-pair")
+    @Get("/key-pair{?nonce}")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPrivateKeyAndClientCertificate(@QueryValue Optional<String> nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
-        if (nonce.isEmpty()) {
+    public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+        if (nonce == null) {
             return HttpResponse.badRequest();
         }
-        return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce.get());
+        return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
     }
 
     @Get("/permissions.xml.p7s{?nonce}")

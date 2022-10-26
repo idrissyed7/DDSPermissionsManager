@@ -60,7 +60,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -78,11 +77,11 @@ import java.util.stream.StreamSupport;
 public class ApplicationService {
 
     @Property(name = "permissions-manager.application.client-certificate.time-expiry")
-    protected Optional<Long> certExpiry;
+    protected Long certExpiry;
     @Property(name = "permissions-manager.application.permissions-file.time-expiry")
-    protected Optional<Long> permissionExpiry;
+    protected Long permissionExpiry;
     @Property(name = "permissions-manager.application.permissions-file.domain")
-    protected Optional<Long> permissionDomain;
+    protected Long permissionDomain;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -414,13 +413,13 @@ public class ApplicationService {
         dataModel.put("subject", buildSubject(application, nonce));
         dataModel.put("applicationId", application.getId());
 
-        Long expiry = permissionExpiry.isPresent() ? permissionExpiry.get(): 30;
+        Long expiry = permissionExpiry != null ? permissionExpiry: 30;
         String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
         String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(expiry).format(DateTimeFormatter.ISO_INSTANT);
         dataModel.put("validStart", validStart);
         dataModel.put("validEnd", validEnd);
 
-        Long domain = permissionDomain.isPresent() ? permissionDomain.get(): 1;
+        Long domain = permissionDomain != null ? permissionDomain : 1;
         dataModel.put("domain", domain);
 
         List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
@@ -465,7 +464,7 @@ public class ApplicationService {
             X509Certificate caCertificate, PrivateKey caPrivateKey, PublicKey eePublicKey, Application application, String nonce)
             throws GeneralSecurityException, CertIOException, OperatorCreationException {
 
-        Long expiry = certExpiry.isPresent() ? certExpiry.get(): 365;
+        Long expiry = certExpiry != null ? certExpiry : 365;
 
         X509v3CertificateBuilder v3CertBldr = new JcaX509v3CertificateBuilder(
                 caCertificate.getSubjectX500Principal(), // issuer
@@ -495,7 +494,7 @@ public class ApplicationService {
         return new JcaX509CertificateConverter().getCertificate(v3CertBldr.build(signerBuilder.build(caPrivateKey)));
     }
 
-    private static String buildSubject(Application application, String nonce) {
+    private String buildSubject(Application application, String nonce) {
         X500NameBuilder nameBuilder = new X500NameBuilder();
         nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
         nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
@@ -503,7 +502,7 @@ public class ApplicationService {
         return nameBuilder.build().toString();
     }
 
-    public static String objectToPEMString(Object certificate) throws IOException {
+    public String objectToPEMString(Object certificate) throws IOException {
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
         pemWriter.writeObject(certificate);
@@ -511,23 +510,15 @@ public class ApplicationService {
         return sWrt.toString();
     }
 
-    public static X509Certificate readCertificate(String pemEncoding) throws IOException, CertificateException {
+    public X509Certificate readCertificate(String pemEncoding) throws IOException, CertificateException {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         X509CertificateHolder certHolder = (X509CertificateHolder) parser.readObject();
         return new JcaX509CertificateConverter().getCertificate(certHolder);
     }
 
-    public static PrivateKey readPrivateKey(String pemEncoding) throws IOException {
+    public PrivateKey readPrivateKey(String pemEncoding) throws IOException {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         PEMKeyPair pemKeyPair = (PEMKeyPair) parser.readObject();
         return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
-    }
-
-    private static String getContentHash(String cert) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] bytesOfMessage = cert.getBytes("UTF-8");
-
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(bytesOfMessage);
-        return DatatypeConverter.printHexBinary(digest).toUpperCase();
     }
 }

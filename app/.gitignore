@@ -5,6 +5,7 @@ build/
 target/
 out/
 bin/
+.micronaut/
 .idea
 *.iml
 *.ipr
