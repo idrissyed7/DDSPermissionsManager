@@ -36,6 +36,9 @@ dependencies {
     implementation("org.bouncycastle:bcpkix-jdk18on:1.72")
 
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
+
+    runtimeOnly("org.postgresql:postgresql:42.4.2")
+    runtimeOnly("mysql:mysql-connector-java:8.0.31")
 }
 
 
