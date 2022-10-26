@@ -41,7 +41,7 @@ dependencies {
 
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
 
-    String databaseSelection = System.getenv("DATABASE")
+    String databaseSelection = System.getenv("DPM_DATABASE")
     if (databaseSelection != null) {
         if (databaseSelection.equalsIgnoreCase("postgres")) {
             runtimeOnly("org.postgresql:postgresql:42.4.2")
