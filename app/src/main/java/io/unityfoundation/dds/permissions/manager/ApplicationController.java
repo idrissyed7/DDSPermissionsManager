@@ -18,9 +18,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.util.Optional;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -126,5 +130,15 @@ public class ApplicationController {
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getGovernanceFile() {
         return applicationService.getGovernanceFile();
+    }
+
+    @Get("/application-credentials{?nonce}")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+        if (nonce == null) {
+            return HttpResponse.badRequest();
+        }
+        return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
     }
 }
