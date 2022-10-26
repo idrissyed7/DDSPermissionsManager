@@ -31,7 +31,7 @@ dependencies {
     runtimeOnly("com.h2database:h2")
     implementation("io.micronaut:micronaut-validation")
 
-    implementation "io.micronaut.data:micronaut-data-hibernate-jpa"
+    implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("at.favre.lib:bcrypt:0.9.0")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.72")
     implementation("org.bouncycastle:bcmail-jdk18on:1.72")
