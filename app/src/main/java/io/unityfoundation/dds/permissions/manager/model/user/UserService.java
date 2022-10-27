@@ -4,6 +4,7 @@ import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.model.Sort;
+import io.micronaut.http.HttpResponse;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
@@ -67,7 +68,7 @@ public class UserService {
     }
 
     @Transactional
-    public AdminDTO save(AdminDTO adminDTO) {
+    public HttpResponse save(AdminDTO adminDTO) {
         Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
 
         User user;
@@ -82,7 +83,7 @@ public class UserService {
             LOG.info(user.getEmail() + " is now a super admin");
         }
 
-        return new AdminDTO(user.getId(), user.getEmail());
+        return HttpResponse.ok(new AdminDTO(user.getId(), user.getEmail()));
     }
 
     private User generateAdminFromDTO(AdminDTO adminDTO) {

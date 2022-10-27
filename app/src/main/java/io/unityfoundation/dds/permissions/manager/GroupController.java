@@ -10,7 +10,6 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,9 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.group.*;
 
 import javax.validation.Valid;
-import java.net.URI;
-import java.util.Map;
-import java.util.Optional;
 
 @Controller("/api/groups")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -36,13 +32,13 @@ public class GroupController {
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<GroupDTO> index(@Valid Pageable pageable, @Nullable String filter) {
+    public Page<DetailedGroupDTO> index(@Valid Pageable pageable, @Nullable String filter) {
         return groupService.findAll(pageable, filter);
     }
 
     @Get("/search/{text}{?role}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<GroupSearchDTO> search(@NonNull String text, @Nullable GroupAdminRole role, @Valid Pageable pageable) {
+    public Page<SimpleGroupDTO> search(@NonNull String text, @Nullable GroupAdminRole role, @Valid Pageable pageable) {
         return groupService.search(text, role, pageable);
     }
 
@@ -56,7 +52,7 @@ public class GroupController {
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> save(@Body Group group) {
+    HttpResponse<?> save(@Body @Valid SimpleGroupDTO group) {
         return groupService.save(group);
     }
 

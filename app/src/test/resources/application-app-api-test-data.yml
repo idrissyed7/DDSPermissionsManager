@@ -1,28 +1,30 @@
 ---
-bootstrap:
-  data:
-    groups:
-      -
-        name: Technology Group
-        applications:
-          - GoLang
-          - Groovy
-          - Micronaut
-      -
-        name: Music Group
-        applications:
-          - Guitar
-          - Piano
-          - Drums
-      -
-        name: Art Group
-        applications:
-          - Paint
-          - Clay
-          - Pencil
-      -
-        name: College Degree
-        applications:
-          - Art
-          - Technology
-          - Group Psychology
+dpm:
+  bootstrap:
+    data:
+      enabled: true
+      groups:
+        -
+          name: Technology Group
+          applications:
+            - GoLang
+            - Groovy
+            - Micronaut
+        -
+          name: Music Group
+          applications:
+            - Guitar
+            - Piano
+            - Drums
+        -
+          name: Art Group
+          applications:
+            - Paint
+            - Clay
+            - Pencil
+        -
+          name: College Degree
+          applications:
+            - Art
+            - Technology
+            - Group Psychology

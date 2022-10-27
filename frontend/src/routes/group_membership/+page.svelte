@@ -213,9 +213,9 @@
 			.post(`/group_membership`, {
 				email: emailValue,
 				permissionsGroup: selectedGroup,
-				isGroupAdmin: selectedIsGroupAdmin,
-				isTopicAdmin: selectedIsTopicAdmin,
-				isApplicationAdmin: selectedIsTopicAdmin
+				groupAdmin: selectedIsGroupAdmin,
+				topicAdmin: selectedIsTopicAdmin,
+				applicationAdmin: selectedIsTopicAdmin
 			})
 			.catch((err) => {
 				if (err.response.status === 403) {

@@ -5,7 +5,7 @@ import io.micronaut.core.annotation.Introspected;
 import java.util.Set;
 
 @Introspected
-public class GroupDTO {
+public class DetailedGroupDTO {
 
     private Long id;
     private String name;
@@ -15,7 +15,7 @@ public class GroupDTO {
     private int topicCount;
     private int applicationCount;
 
-    public GroupDTO() {
+    public DetailedGroupDTO() {
     }
 
     public void setGroupFields(Group group) {

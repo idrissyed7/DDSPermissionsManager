@@ -3,6 +3,7 @@ package io.unityfoundation.dds.permissions.manager;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.convert.format.MapFormat;
+import io.micronaut.core.util.StringUtils;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
@@ -20,8 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-@Requires(condition = DevOrTestCondition.class)
-@ConfigurationProperties("bootstrap")
+@Requires(property = "dpm.bootstrap.data.enabled", value = StringUtils.TRUE)
+@ConfigurationProperties("dpm.bootstrap")
 public class Bootstrap {
 
     @MapFormat(transformation = MapFormat.MapTransformation.NESTED)

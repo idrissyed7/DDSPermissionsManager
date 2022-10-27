@@ -15,6 +15,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,14 +65,7 @@ public class TopicService {
         }
     }
 
-    public MutableHttpResponse<?> save(TopicDTO topicDTO) throws Exception {
-        if (topicDTO.getId() != null) {
-            throw new Exception("Update of Topics are not allowed.");
-        } else if (topicDTO.getGroup() == null) {
-            throw new Exception("Topic must be associated to a group.");
-        } else if (topicDTO.getName() == null) {
-            throw new Exception("Name cannot be empty.");
-        }
+    public MutableHttpResponse<?> save(TopicDTO topicDTO) {
 
         Optional<Group> groupOptional = groupRepository.findById(topicDTO.getGroup());
 
@@ -84,7 +78,7 @@ public class TopicService {
         topic.setPermissionsGroup(group);
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
@@ -98,20 +92,22 @@ public class TopicService {
         return HttpResponse.ok(responseTopicDTO);
     }
 
-    public void deleteById(Long id) throws Exception {
+    public HttpResponse deleteById(Long id) throws AuthenticationException {
         Optional<Topic> optionalTopic = topicRepository.findById(id);
         if (optionalTopic.isEmpty()) {
-            throw new Exception("Topic not found");
+            return HttpResponse.notFound("Topic not found");
         }
+
         Topic topic = optionalTopic.get();
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         // TODO - Need to investigate cascade management to eliminate this
         applicationPermissionService.deleteAllByTopic(topic);
 
         topicRepository.deleteById(id);
+        return HttpResponse.seeOther(URI.create("/api/topics"));
     }
 
     public HttpResponse show(Long id) {
@@ -124,7 +120,7 @@ public class TopicService {
         TopicDTO topicResponseDTO = new TopicDTO(topic);
         topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
         if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         return HttpResponse.ok(topicResponseDTO);
