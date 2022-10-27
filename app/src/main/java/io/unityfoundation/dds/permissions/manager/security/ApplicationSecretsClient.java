@@ -5,6 +5,8 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.runtime.event.annotation.EventListener;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -16,10 +18,13 @@ public class ApplicationSecretsClient {
     protected String project;
     @Property(name = "gcp.credentials.enabled")
     protected Boolean enabled;
-    private SecretManagerServiceClient client;
     private String identityCACert;
+    private String identityCAKey;
     private String permissionsCACert;
+    private String permissionsCAKey;
     private String governanceFile;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ApplicationSecretsClient.class);
 
     public ApplicationSecretsClient() {
     }
@@ -28,25 +33,26 @@ public class ApplicationSecretsClient {
     public void onStartup(StartupEvent event) throws IOException {
 
         if (project != null && enabled != null && enabled) {
-            this.client = SecretManagerServiceClient.create();
-
             try {
-                this.identityCACert =  getLatestSecret(project, "identity_ca_pem");
-
-                this.permissionsCACert = getLatestSecret(project, "permissions_ca_pem");
-
-                this.governanceFile = getLatestSecret(project, "governance_xml_p7s");
-
+                SecretManagerServiceClient client = SecretManagerServiceClient.create();
+                this.identityCACert =  getLatestSecret(client, project, "identity_ca_pem");
+                this.identityCAKey =  getLatestSecret(client, project, "identity_ca_key_pem");
+                this.permissionsCACert = getLatestSecret(client, project, "permissions_ca_pem");
+                this.permissionsCAKey = getLatestSecret(client, project, "permissions_ca_key_pem");
+                this.governanceFile = getLatestSecret(client, project, "governance_xml_p7s");
             } catch (Exception e) {
+                LOG.error("Could not get secrets from GCP: " + e.getMessage());
                 // all or nothing
                 this.identityCACert = null;
+                this.identityCAKey = null;
                 this.permissionsCACert = null;
+                this.permissionsCAKey = null;
                 this.governanceFile = null;
             }
         }
     }
 
-    private String getLatestSecret(String project, String file) {
+    private String getLatestSecret(SecretManagerServiceClient client, String project, String file) {
         AccessSecretVersionResponse response = client.accessSecretVersion(AccessSecretVersionRequest
                 .newBuilder()
                 .setName(SecretVersionName.of(project, file, "latest").toString())
@@ -67,18 +73,10 @@ public class ApplicationSecretsClient {
     }
 
     public Optional<String> getIdentityCAKey() {
-        if (project != null && enabled != null && enabled) {
-            return Optional.ofNullable(getLatestSecret(project, "identity_ca_key_pem"));
-        }
-
-        return Optional.empty();
+        return Optional.ofNullable(identityCAKey);
     }
 
     public Optional<String> getPermissionsCAKey() {
-        if (project != null && enabled != null && enabled) {
-            return Optional.ofNullable(getLatestSecret(project, "permissions_ca_key_pem"));
-        }
-
-        return Optional.empty();
+        return Optional.ofNullable(permissionsCAKey);
     }
 }
