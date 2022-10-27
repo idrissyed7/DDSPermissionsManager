@@ -36,7 +36,11 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public Page<User> findAll(Pageable pageable, String filter) {
+    public Page<AdminDTO> findAll(Pageable pageable, String filter) {
+        return getUsers(pageable, filter).map(user -> new AdminDTO(user.getId(), user.getEmail()));
+    }
+
+    private Page<User> getUsers(Pageable pageable, String filter) {
         if (!pageable.isSorted()) {
             pageable = pageable.order(Sort.Order.asc("email"));
         }
@@ -63,29 +67,22 @@ public class UserService {
     }
 
     @Transactional
-    public User save(AdminDTO adminDTO) throws Exception {
+    public AdminDTO save(AdminDTO adminDTO) {
+        Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
 
-        if (adminDTO.getId() == null) {
-            Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
-            if (userSearchByEmail.isPresent()) {
-                throw new Exception("User with same email already exists.");
-            }
-
-            User user = generateAdminFromDTO(adminDTO);
-            if (user.isAdmin()) {
-                LOG.info(user.getEmail() + " is now a super admin");
-            } else {
-                LOG.info(user.getEmail() + " is no longer a super admin");
-            }
-            return userRepository.save(user);
+        User user;
+        if (userSearchByEmail.isEmpty()) {
+            user = generateAdminFromDTO(adminDTO);
+            user = userRepository.save(user);
+            LOG.info(user.getEmail() + " is now a super admin");
         } else {
-            Optional<User> existingUserOptional = userRepository.findById(adminDTO.getId());
-            if (existingUserOptional.isEmpty()) {
-                throw new Exception("User with given id does not exist.");
-            }
-
-            return userRepository.update(generateAdminFromDTO(adminDTO));
+            user = userSearchByEmail.get();
+            user.setAdmin(true);
+            user = userRepository.update(user);
+            LOG.info(user.getEmail() + " is now a super admin");
         }
+
+        return new AdminDTO(user.getId(), user.getEmail());
     }
 
     private User generateAdminFromDTO(AdminDTO adminDTO) {

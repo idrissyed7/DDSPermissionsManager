@@ -11,6 +11,11 @@ public class AdminDTO {
         this.email = email;
     }
 
+    public AdminDTO(Long id, String email) {
+        this.id = id;
+        this.email = email;
+    }
+
     public Long getId() {
         return id;
     }
