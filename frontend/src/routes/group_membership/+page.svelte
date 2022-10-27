@@ -303,8 +303,8 @@
 </script>
 
 <svelte:head>
-	<title>Group Membership | DDS Permissions Manager</title>
-	<meta name="description" content="Permissions Manager Group Membership" />
+	<title>Group Memberships | DDS Permissions Manager</title>
+	<meta name="description" content="Permissions Manager Group Memberships" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -408,7 +408,7 @@
 	{/if}
 
 	<div class="content">
-		<h1>Group Membership</h1>
+		<h1>Group Memberships</h1>
 		<center>
 			<!-- svelte-ignore a11y-positive-tabindex -->
 			<input
