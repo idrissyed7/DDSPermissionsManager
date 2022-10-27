@@ -93,8 +93,9 @@ public class TopicService {
         if (searchTopicByNameAndGroup.isPresent()) {
             return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));
         }
-
-        return HttpResponse.ok(new TopicDTO(topicRepository.save(topic)));
+        TopicDTO responseTopicDTO = new TopicDTO(topicRepository.save(topic));
+        responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));
+        return HttpResponse.ok(responseTopicDTO);
     }
 
     public void deleteById(Long id) throws Exception {
@@ -121,6 +122,7 @@ public class TopicService {
 
         Topic topic = topicOptional.get();
         TopicDTO topicResponseDTO = new TopicDTO(topic);
+        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
         if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
             throw new AuthenticationException("Not authorized");
         }
@@ -135,6 +137,18 @@ public class TopicService {
     private boolean isUserTopicAdminOfGroup(Topic topic) {
         User user = securityUtil.getCurrentlyAuthenticatedUser().get();
         return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
+    }
+
+    private String computeCanonicalName(Topic topic) {
+        return buildCanonicalName(topic.getKind(), topic.getPermissionsGroup().getId(), topic.getName());
+    }
+
+    private String computeCanonicalName(TopicDTO topicDTO) {
+        return buildCanonicalName(topicDTO.getKind(), topicDTO.getGroup(), topicDTO.getName());
+    }
+
+    private String buildCanonicalName(TopicKind kind, Long groupId, String name) {
+        return kind + "." + groupId + "." + name;
     }
 
     public Optional<Topic> findById(Long topicId) {
