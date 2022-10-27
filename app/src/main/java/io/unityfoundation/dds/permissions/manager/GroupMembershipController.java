@@ -57,12 +57,7 @@ public class GroupMembershipController {
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse addMember(@Body GroupUserDTO dto) {
-
-        if (groupUserService.isAdminOrGroupAdmin(dto.getPermissionsGroup())) {
-            return groupUserService.addMember(dto);
-        } else {
-            return HttpResponse.unauthorized();
-        }
+        return groupUserService.addMember(dto);
     }
 
     @Put
@@ -77,19 +72,6 @@ public class GroupMembershipController {
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     HttpResponse removeMember(@Body Map payload) {
         Long id = Long.valueOf((Integer) payload.get("id"));
-        Optional<GroupUser> groupUser = groupUserService.findById(id);
-
-        if (groupUser.isPresent()) {
-            Long groupId = groupUser.get().getPermissionsGroup().getId();
-            if (groupUserService.isAdminOrGroupAdmin(groupId)) {
-                if (groupUserService.removeMember(id)) {
-                    return HttpResponse.ok();
-                }
-            } else {
-                return HttpResponse.unauthorized();
-            }
-        }
-
-        return HttpResponse.notFound();
+        return groupUserService.removeMember(id);
     }
 }

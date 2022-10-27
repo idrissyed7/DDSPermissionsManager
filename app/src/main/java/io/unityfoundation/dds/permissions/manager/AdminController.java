@@ -44,12 +44,8 @@ public class AdminController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminDTO.class))
     )
     @ApiResponse(responseCode = "400", description = "Bad Request")
-    HttpResponse<?> save(@Body AdminDTO adminDTO) {
-        try {
-            return HttpResponse.ok(userService.save(adminDTO));
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+    HttpResponse<?> save(@Body @Valid AdminDTO adminDTO) {
+        return userService.save(adminDTO);
     }
 
     @Put("/remove-admin/{id}")

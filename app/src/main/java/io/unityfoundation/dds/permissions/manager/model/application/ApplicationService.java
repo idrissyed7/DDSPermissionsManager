@@ -3,7 +3,6 @@ package io.unityfoundation.dds.permissions.manager.model.application;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.*;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.authentication.AuthenticationResponse;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -18,12 +17,8 @@ import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import javax.transaction.Transactional;
-import javax.xml.bind.DatatypeConverter;
-import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -86,14 +81,7 @@ public class ApplicationService {
     }
 
     @Transactional
-    public MutableHttpResponse<?> save(ApplicationDTO applicationDTO) throws Exception {
-
-        if (applicationDTO.getGroup() == null) {
-            throw new Exception("Application must be associated to a group.");
-        } else if (applicationDTO.getName() == null) {
-            throw new Exception("Name cannot be empty.");
-        }
-
+    public MutableHttpResponse<?> save(ApplicationDTO applicationDTO) {
         Optional<Group> groupOptional = groupRepository.findById(applicationDTO.getGroup());
 
         if (groupOptional.isEmpty()) {
@@ -101,7 +89,7 @@ public class ApplicationService {
         }
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(groupOptional.get())) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         // check if application with same name exists in group
@@ -115,7 +103,7 @@ public class ApplicationService {
             if (applicationOptional.isEmpty()) {
                 return HttpResponse.notFound("Specified application does not exist");
             } else if (!Objects.equals(applicationOptional.get().getPermissionsGroup().getId(), applicationDTO.getGroup())) {
-                throw new Exception("Cannot change application's group association");
+                return HttpResponse.badRequest("Cannot change application's group association");
             } else if (searchApplicationByNameAndGroup.isPresent() &&
                     searchApplicationByNameAndGroup.get().getId() != applicationOptional.get().getId()) {
                 // attempt to update an existing application with same name/group combo as another
@@ -140,36 +128,38 @@ public class ApplicationService {
         }
     }
 
-    public boolean isUserApplicationAdminOfGroup(Group group) throws Exception {
-        if (group == null) {
-            throw new Exception("Cannot save Application without specifying a Group.");
-        }
-        if (groupRepository.findById(group.getId()).isEmpty()) {
-            throw new Exception("Specified group does not exist.");
-        }
-
+    public boolean isUserApplicationAdminOfGroup(Group group) {
         return securityUtil.getCurrentlyAuthenticatedUser()
                 .map(user -> groupUserService.isUserApplicationAdminOfGroup(group.getId(), user.getId()))
                 .orElse(false);
     }
 
-    public void deleteById(Long id) throws Exception {
+    public HttpResponse deleteById(Long id) {
+
         Optional<Application> applicationOptional = applicationRepository.findById(id);
         if (applicationOptional.isEmpty()) {
-            throw new Exception("Application not found");
+            return HttpResponse.notFound("Application not found");
         }
+
         Application application = applicationOptional.get();
+
+        Optional<Group> groupOptional = groupRepository.findById(application.getPermissionsGroup().getId());
+        if (groupOptional.isEmpty()) {
+            return HttpResponse.notFound("Group does not exist");
+        }
+
         if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         // TODO - Need to investigate cascade management to eliminate this
         applicationPermissionService.deleteAllByApplication(application);
 
         applicationRepository.deleteById(id);
+        return HttpResponse.seeOther(URI.create("/api/applications"));
     }
 
-    public HttpResponse show(Long id) throws Exception {
+    public HttpResponse show(Long id) {
         Optional<Application> applicationOptional = applicationRepository.findById(id);
         if (applicationOptional.isEmpty()) {
             return HttpResponse.notFound();
@@ -180,7 +170,7 @@ public class ApplicationService {
                         applicationOptional.get().getPermissionsGroup().getId(),
                         securityUtil.getCurrentlyAuthenticatedUser().get().getId())
         ){
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
         Application application = applicationOptional.get();
         ApplicationDTO applicationDTO = new ApplicationDTO(application);
@@ -203,18 +193,25 @@ public class ApplicationService {
         return applicationRepository.findById(applicationId);
     }
 
-    public MutableHttpResponse<Object> generateCleartextPassphrase(Long applicationId) throws Exception {
+    public MutableHttpResponse<Object> generateCleartextPassphrase(Long applicationId) {
         Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
-            return HttpResponse.notFound();
+            return HttpResponse.notFound("Application not found");
         }
-        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(applicationOptional.get().getPermissionsGroup())) {
-            throw new AuthenticationException("Not authorized");
+
+        Application application = applicationOptional.get();
+
+        Optional<Group> groupOptional = groupRepository.findById(application.getPermissionsGroup().getId());
+        if (groupOptional.isEmpty()) {
+            return HttpResponse.notFound("Group does not exist");
+        }
+
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
+            return HttpResponse.unauthorized();
         }
 
         String clearTextPassphrase = passphraseGenerator.generatePassphrase();
 
-        Application application = applicationOptional.get();
         application.setEncryptedPassword(passwordEncoderService.encode(clearTextPassphrase));
         applicationRepository.update(application);
 

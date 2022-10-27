@@ -45,13 +45,7 @@ public class ApplicationController {
     )
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse show(Long id) {
-        try {
-            return applicationService.show(id);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return applicationService.show(id);
     }
 
     @Post("/save")
@@ -64,14 +58,8 @@ public class ApplicationController {
     @ApiResponse(responseCode = "400", description = "Bad Request.")
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> save(@Body ApplicationDTO application) {
-        try {
-            return applicationService.save(application);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+    HttpResponse<?> save(@Body @Valid ApplicationDTO application) {
+        return applicationService.save(application);
     }
 
     @Post("/delete/{id}")
@@ -80,15 +68,7 @@ public class ApplicationController {
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
-        try {
-            applicationService.deleteById(id);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
-
-        return HttpResponse.seeOther(URI.create("/api/applications"));
+        return applicationService.deleteById(id);
     }
 
     @Get("/search{?filter}")
@@ -100,11 +80,7 @@ public class ApplicationController {
     @Get("/generate-passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
-        try {
-            return applicationService.generateCleartextPassphrase(application);
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return applicationService.generateCleartextPassphrase(application);
     }
 
     @Get("/identity_ca.pem")
