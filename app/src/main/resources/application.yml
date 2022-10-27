@@ -135,8 +135,3 @@ permissions-manager:
       domain: 1
     passphrase:
       length: 16
----
-dpm:
-  bootstrap:
-    data:
-      enabled: true

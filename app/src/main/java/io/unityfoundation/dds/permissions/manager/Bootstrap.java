@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Requires(property = "dpm.bootstrap.data.enabled", value = "true")
-@ConfigurationProperties("bootstrap")
+@ConfigurationProperties("dpm.bootstrap")
 public class Bootstrap {
 
     @MapFormat(transformation = MapFormat.MapTransformation.NESTED)
