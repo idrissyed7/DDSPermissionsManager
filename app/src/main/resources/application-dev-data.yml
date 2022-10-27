@@ -1,41 +1,43 @@
 ---
-bootstrap:
-  data:
-    admin-users:
-      - jeff@test.test
-      - wilsonj@test.test
-      - belloned@test.test
-      - jeff@unityfoundation
-      - montesm@test.test
-      - pasumarthis@test.test
-    non-admin-users:
-      - kstanley@test.test
-      - jgracia@test.test
-    groups:
-      -
-        name: Alpha
-        users:
-          -
-           email: wilsonj@test.test
-           admin-flags: [topic, application, group]
-          -
-            email: kstanley@test.test
-            admin-flags: [group]
-          -
-            email: montesm@test.test
-        topics:
-          -
-            name: Test Topic 123
-            kind: B
-          -
-            name: Test Topic 456
-            kind: B
-        applications:
-          - Application One
-          - Application Two
-      -
-        name: Beta
-      -
-        name: Gamma
-      -
-        name: Delta
+dpm:
+  bootstrap:
+    data:
+      enabled: true
+      admin-users:
+        - jeff@test.test
+        - wilsonj@test.test
+        - belloned@test.test
+        - jeff@unityfoundation
+        - montesm@test.test
+        - pasumarthis@test.test
+      non-admin-users:
+        - kstanley@test.test
+        - jgracia@test.test
+      groups:
+        -
+          name: Alpha
+          users:
+            -
+             email: wilsonj@test.test
+             admin-flags: [topic, application, group]
+            -
+              email: kstanley@test.test
+              admin-flags: [group]
+            -
+              email: montesm@test.test
+          topics:
+            -
+              name: Test Topic 123
+              kind: B
+            -
+              name: Test Topic 456
+              kind: B
+          applications:
+            - Application One
+            - Application Two
+        -
+          name: Beta
+        -
+          name: Gamma
+        -
+          name: Delta
