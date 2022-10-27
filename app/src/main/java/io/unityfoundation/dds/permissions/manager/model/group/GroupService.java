@@ -7,7 +7,6 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -18,7 +17,6 @@ import jakarta.inject.Singleton;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -39,9 +37,9 @@ public class GroupService {
         this.groupUserService = groupUserService;
     }
 
-    public Page<GroupDTO> findAll(Pageable pageable, String filter) {
+    public Page<DetailedGroupDTO> findAll(Pageable pageable, String filter) {
         return getGroupPage(pageable, filter).map(group -> {
-            GroupDTO groupsResponseDTO = new GroupDTO();
+            DetailedGroupDTO groupsResponseDTO = new DetailedGroupDTO();
             groupsResponseDTO.setGroupFields(group);
             groupsResponseDTO.setTopics(group.getTopics().stream().map(Topic::getId).collect(Collectors.toSet()));
             groupsResponseDTO.setApplications(group.getApplications().stream().map(Application::getId).collect(Collectors.toSet()));
@@ -76,25 +74,37 @@ public class GroupService {
         }
     }
 
-    public MutableHttpResponse<?> save(Group group) {
+    public MutableHttpResponse<?> save(SimpleGroupDTO groupRequestDTO) {
         if (!securityUtil.isCurrentUserAdmin()) {
             return HttpResponse.unauthorized();
-        } else if (group != null && group.getName() == null) {
-            return HttpResponse.badRequest("Group name cannot be null");
         }
 
-        Optional<Group> searchGroupByName = groupRepository.findByName(group.getName().trim());
+        Optional<Group> searchGroupByName = groupRepository.findByName(groupRequestDTO.getName().trim());
 
-        if (group.getId() == null) {
+        Group group;
+        if (groupRequestDTO.getId() == null) {
             if (searchGroupByName.isPresent()) {
                 return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, searchGroupByName.get());
             }
-            return HttpResponse.ok(groupRepository.save(group));
+
+            group = groupRepository.save(new Group(groupRequestDTO.getName()));
+
+            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
         } else {
             if (searchGroupByName.isPresent()) {
                 return HttpResponse.badRequest("Group with same name already exists");
             }
-            return HttpResponse.ok(groupRepository.update(group));
+
+            Optional<Group> groupById = groupRepository.findById(groupRequestDTO.getId());
+            if (groupById.isEmpty()) {
+                return HttpResponse.notFound();
+            }
+
+            group = groupById.get();
+            group.setName(groupRequestDTO.getName());
+            group = groupRepository.update(group);
+
+            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
         }
     }
 
@@ -116,14 +126,8 @@ public class GroupService {
         return HttpResponse.seeOther(URI.create("/api/groups"));
     }
 
-    public Page<GroupSearchDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
-
-        return getGroupSearchPage(filter, role, pageable).map(group -> {
-            GroupSearchDTO groupsResponseDTO = new GroupSearchDTO();
-            groupsResponseDTO.setGroupFields(group);
-
-            return groupsResponseDTO;
-        });
+    public Page<SimpleGroupDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
+        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName()));
     }
 
     private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {

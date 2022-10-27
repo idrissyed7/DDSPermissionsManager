@@ -4,6 +4,7 @@ import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.model.Sort;
+import io.micronaut.http.HttpResponse;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
@@ -63,12 +64,12 @@ public class UserService {
     }
 
     @Transactional
-    public User save(AdminDTO adminDTO) throws Exception {
+    public HttpResponse save(AdminDTO adminDTO) {
 
         if (adminDTO.getId() == null) {
             Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
             if (userSearchByEmail.isPresent()) {
-                throw new Exception("User with same email already exists.");
+                return HttpResponse.badRequest("User with same email already exists.");
             }
 
             User user = generateAdminFromDTO(adminDTO);
@@ -77,14 +78,14 @@ public class UserService {
             } else {
                 LOG.info(user.getEmail() + " is no longer a super admin");
             }
-            return userRepository.save(user);
+            return HttpResponse.ok(userRepository.save(user));
         } else {
             Optional<User> existingUserOptional = userRepository.findById(adminDTO.getId());
             if (existingUserOptional.isEmpty()) {
-                throw new Exception("User with given id does not exist.");
+                return HttpResponse.notFound("User with given id does not exist.");
             }
 
-            return userRepository.update(generateAdminFromDTO(adminDTO));
+            return HttpResponse.ok(userRepository.update(generateAdminFromDTO(adminDTO)));
         }
     }
 
