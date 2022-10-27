@@ -28,7 +28,6 @@ dependencies {
     implementation("io.swagger.core.v3:swagger-annotations")
     implementation("jakarta.annotation:jakarta.annotation-api")
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("com.h2database:h2")
     implementation("io.micronaut:micronaut-validation")
 
     implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
@@ -41,13 +40,11 @@ dependencies {
 
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
 
-    String databaseSelection = System.getenv("DPM_DATABASE")
+    String databaseSelection = System.getenv("DPM_DATABASE_DEPENDENCY")
     if (databaseSelection != null) {
-        if (databaseSelection.equalsIgnoreCase("postgres")) {
-            runtimeOnly("org.postgresql:postgresql:42.4.2")
-        } else if (databaseSelection.equalsIgnoreCase("mysql")) {
-            runtimeOnly("mysql:mysql-connector-java:8.0.31")
-        }
+        runtimeOnly(databaseSelection)
+    } else {
+        runtimeOnly("com.h2database:h2")
     }
 }
 
