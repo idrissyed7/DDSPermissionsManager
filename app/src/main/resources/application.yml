@@ -88,12 +88,10 @@ micronaut:
 ---
 datasources:
   default:
-    url: jdbc:h2:mem:devDb;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
-    driverClassName: org.h2.Driver
-    username: sa
-    password: ""
-    schema-generate: CREATE_DROP
-    dialect: H2
+    url: ${DPM_JDBC_URL:`jdbc:h2:mem:devDb;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE`}
+    driverClassName: ${DPM_JDBC_DRIVER:org.h2.Driver}
+    username: ${DPM_JDBC_USER:sa}
+    password: ${DPM_JDBC_PASSWORD:""}
 jpa:
   default:
     entity-scan:
@@ -101,7 +99,7 @@ jpa:
     properties:
       hibernate:
         hbm2ddl:
-          auto: update
+          auto: ${DPM_AUTO_SCHEMA_GEN:update}
 ---
 micronaut:
   router:
@@ -129,6 +127,11 @@ gcp:
   project-id: replaceme
 ---
 permissions-manager:
-  data:
+  application:
+    client-certificate:
+      time-expiry: 365 # in days
+    permissions-file:
+      time-expiry: 30 # in days
+      domain: 1
     passphrase:
       length: 16

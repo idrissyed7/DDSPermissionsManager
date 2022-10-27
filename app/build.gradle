@@ -31,9 +31,24 @@ dependencies {
     runtimeOnly("com.h2database:h2")
     implementation("io.micronaut:micronaut-validation")
 
-    implementation "io.micronaut.data:micronaut-data-hibernate-jpa"
+    implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("at.favre.lib:bcrypt:0.9.0")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.72")
+    implementation("org.bouncycastle:bcmail-jdk18on:1.72")
+    implementation("javax.mail:mail:1.5.0-b01")
+
+    implementation("org.freemarker:freemarker:2.3.31")
+
     implementation("io.micronaut.gcp:micronaut-gcp-secret-manager")
+
+    String databaseSelection = System.getenv("DPM_DATABASE")
+    if (databaseSelection != null) {
+        if (databaseSelection.equalsIgnoreCase("postgres")) {
+            runtimeOnly("org.postgresql:postgresql:42.4.2")
+        } else if (databaseSelection.equalsIgnoreCase("mysql")) {
+            runtimeOnly("mysql:mysql-connector-java:8.0.31")
+        }
+    }
 }
 
 

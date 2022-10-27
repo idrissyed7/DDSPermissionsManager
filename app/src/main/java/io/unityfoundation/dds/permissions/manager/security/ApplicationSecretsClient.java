@@ -13,9 +13,9 @@ import java.util.Optional;
 public class ApplicationSecretsClient {
 
     @Property(name = "gcp.project-id")
-    protected Optional<String> projectOptional;
+    protected String project;
     @Property(name = "gcp.credentials.enabled")
-    protected Optional<Boolean> enabled;
+    protected Boolean enabled;
     private SecretManagerServiceClient client;
     private String identityCACert;
     private String permissionsCACert;
@@ -27,10 +27,8 @@ public class ApplicationSecretsClient {
     @EventListener
     public void onStartup(StartupEvent event) throws IOException {
 
-        if (projectOptional.isPresent() && enabled.isPresent() && enabled.get()) {
+        if (project != null && enabled != null && enabled) {
             this.client = SecretManagerServiceClient.create();
-
-            String project = projectOptional.get();
 
             try {
                 this.identityCACert =  getLatestSecret(project, "identity_ca_pem");
@@ -66,5 +64,21 @@ public class ApplicationSecretsClient {
 
     public Optional<String> getGovernanceFile() {
         return Optional.ofNullable(governanceFile);
+    }
+
+    public Optional<String> getIdentityCAKey() {
+        if (project != null && enabled != null && enabled) {
+            return Optional.ofNullable(getLatestSecret(project, "identity_ca_key_pem"));
+        }
+
+        return Optional.empty();
+    }
+
+    public Optional<String> getPermissionsCAKey() {
+        if (project != null && enabled != null && enabled) {
+            return Optional.ofNullable(getLatestSecret(project, "permissions_ca_key_pem"));
+        }
+
+        return Optional.empty();
     }
 }

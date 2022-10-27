@@ -19,6 +19,7 @@ public class TopicDTO {
     @NotNull
     private Long group;
     private String groupName;
+    private String canonicalName;
 
     public TopicDTO() {
     }
@@ -69,5 +70,13 @@ public class TopicDTO {
 
     public void setGroupName(String groupName) {
         this.groupName = groupName;
+    }
+
+    public String getCanonicalName() {
+        return canonicalName;
+    }
+
+    public void setCanonicalName(String canonicalName) {
+        this.canonicalName = canonicalName;
     }
 }
