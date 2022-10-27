@@ -9,7 +9,7 @@
 
 To connect to a database, please set the following environment variables:
 
-* DPM_DATABASE (Options include `POSTGRES` or `MYSQL`)
+* DPM_DATABASE_DEPENDENCY (examples include `mysql:mysql-connector-java:8.0.31` and `org.postgresql:postgresql:42.4.2`)
 * DPM_JDBC_URL
 * DPM_JDBC_DRIVER (see Driver column for values)
 * DPM_JDBC_USER
