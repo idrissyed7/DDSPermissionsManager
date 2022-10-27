@@ -9,6 +9,8 @@ import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.AdminDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
@@ -57,6 +59,7 @@ public class AdminApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
@@ -71,18 +74,36 @@ public class AdminApiTest {
         }
 
         @Test
-        void adminsWithDuplicateEntriesShouldNotExist(){
-            AdminDTO justin = new AdminDTO("jjones@foobar.com");
-            HttpRequest<?> request = HttpRequest.POST("/admins/save", justin);
-            HttpResponse<?> response = blockingClient.exchange(request, AdminDTO.class);
+        void canEscalateExistingMembersPrivilegeToAdmin(){
+            // group
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            String bobEmail = "bob.builder@test.test";
+
+            // membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(bobEmail);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.POST("/admins/save", justin);
-            HttpRequest<?> finalRequest = request;
-            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest, AdminDTO.class);
-            });
-            assertEquals(BAD_REQUEST, thrown.getStatus());
+            // escalate
+            AdminDTO bobAdmin = new AdminDTO(bobEmail);
+            request = HttpRequest.POST("/admins/save", bobAdmin);
+            response = blockingClient.exchange(request, AdminDTO.class);
+            assertEquals(OK, response.getStatus());
+
+            // assert
+            request = HttpRequest.GET("/admins");
+            Page<Map> responsePage = blockingClient.retrieve(request, Page.class);
+            List<Map> admins = responsePage.getContent();
+            List<String> adminEmails = admins.stream().map(map -> (String) map.get("email")).collect(Collectors.toList());
+            assertTrue(adminEmails.contains(bobEmail));
         }
 
         @Test
