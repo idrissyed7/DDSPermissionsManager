@@ -13,31 +13,22 @@ public class User {
     private Long id;
 
     @NonNull
-    private String firstName;
-
-    @NonNull
-    private String lastName;
-
-    @NonNull
     @Email
+    @Column(unique = true)
     private String email;
 
-    private boolean isAdmin = false;
+    private boolean admin = false;
 
     public User() {
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email) {
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public User(@NonNull String email) {
         this.email = email;
     }
 
-    public User(@NonNull String firstName, @NonNull String lastName, @NonNull String email, @NonNull boolean isAdmin) {
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public User(@NonNull String email, @NonNull boolean admin) {
         this.email = email;
-        this.isAdmin = isAdmin;
+        this.admin = admin;
     }
 
     public Long getId() {
@@ -46,24 +37,6 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    @NonNull
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(@NonNull String firstName) {
-        this.firstName = firstName;
-    }
-
-    @NonNull
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(@NonNull String lastName) {
-        this.lastName = lastName;
     }
 
     @NonNull
@@ -76,10 +49,10 @@ public class User {
     }
 
     public boolean isAdmin() {
-        return isAdmin;
+        return admin;
     }
 
     public void setAdmin(boolean admin) {
-        isAdmin = admin;
+        this.admin = admin;
     }
 }

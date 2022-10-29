@@ -5,6 +5,7 @@ import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -14,5 +15,14 @@ import java.util.Optional;
 public interface TopicRepository extends PageableRepository<Topic, Long> {
     Optional<Topic> findByName(@NotNull @NonNull String name);
 
-    Page<Topic> findAllByPermissionsGroupIn(List<Long> groupIds, Pageable pageable);
+    Page<Topic> findAllByPermissionsGroupIdIn(List<Long> groupIds, Pageable pageable);
+
+    Page<Topic> findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group, Pageable pageable);
+
+    List<Long> findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group);
+
+    Page<Topic> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
+
+    Optional<Topic> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
+                                                  @NotNull @NonNull Group group);
 }

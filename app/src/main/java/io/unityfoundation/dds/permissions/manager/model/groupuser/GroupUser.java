@@ -1,7 +1,8 @@
 package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
-
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
 
 import javax.persistence.*;
 
@@ -12,28 +13,27 @@ public class GroupUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NonNull
-    private Long permissionsGroup;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
+    private Group permissionsGroup;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
+    private User permissionsUser;
 
     @NonNull
-    private Long permissionsUser;
+    private boolean groupAdmin = false;
 
     @NonNull
-    private boolean isGroupAdmin = false;
+    private boolean topicAdmin = false;
 
     @NonNull
-    private boolean isTopicAdmin = false;
-
-    @NonNull
-    private boolean isApplicationAdmin = false;
-
+    private boolean applicationAdmin = false;
 
     public GroupUser() {
     }
 
-    public GroupUser(@NonNull Long groupId, @NonNull Long userId) {
-        this.permissionsGroup = groupId;
-        this.permissionsUser = userId;
+    public GroupUser(@NonNull Group group, @NonNull User user) {
+        this.permissionsGroup = group;
+        this.permissionsUser = user;
     }
 
     public Long getId() {
@@ -44,46 +44,43 @@ public class GroupUser {
         this.id = id;
     }
 
-    @NonNull
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(@NonNull Long groupId) {
-        this.permissionsGroup = groupId;
+    public void setPermissionsGroup(Group permissionsGroup) {
+        this.permissionsGroup = permissionsGroup;
     }
 
-    @NonNull
-    public Long getPermissionsUser() {
+    public User getPermissionsUser() {
         return permissionsUser;
     }
 
-    public void setPermissionsUser(@NonNull Long userId) {
-        this.permissionsUser = userId;
+    public void setPermissionsUser(User permissionsUser) {
+        this.permissionsUser = permissionsUser;
     }
 
-
     public boolean isGroupAdmin() {
-        return isGroupAdmin;
+        return groupAdmin;
     }
 
     public void setGroupAdmin(boolean groupAdmin) {
-        isGroupAdmin = groupAdmin;
+        this.groupAdmin = groupAdmin;
     }
 
     public boolean isTopicAdmin() {
-        return isTopicAdmin;
+        return topicAdmin;
     }
 
     public void setTopicAdmin(boolean topicAdmin) {
-        isTopicAdmin = topicAdmin;
+        this.topicAdmin = topicAdmin;
     }
 
     public boolean isApplicationAdmin() {
-        return isApplicationAdmin;
+        return applicationAdmin;
     }
 
     public void setApplicationAdmin(boolean applicationAdmin) {
-        isApplicationAdmin = applicationAdmin;
+        this.applicationAdmin = applicationAdmin;
     }
 }

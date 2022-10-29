@@ -1,22 +1,38 @@
 package io.unityfoundation.dds.permissions.manager;
 
-import io.micronaut.context.annotation.Property;
-import io.micronaut.core.util.StringUtils;
+import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
+import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
+import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.User;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -27,321 +43,675 @@ import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
-@Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
-//@Property(name = "micronaut.security.enabled", value= StringUtils.FALSE)
 public class GroupApiTest {
 
     private BlockingHttpClient blockingClient;
 
     @Inject
-    @Client("/")
-    HttpClient client;
+    MockSecurityService mockSecurityService;
+
+    @Inject
+    MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
     GroupRepository groupRepository;
 
     @Inject
+    UserRepository userRepository;
+
+    @Inject
+    ApplicationPermissionRepository applicationPermissionRepository;
+
+    @Inject
     GroupUserRepository groupUserRepository;
 
     @Inject
+    ApplicationRepository applicationRepository;
+
+    @Inject
     TopicRepository topicRepository;
+
+    @Inject
+    DbCleanup dbCleanup;
+
+    @Inject
+    @Client("/api")
+    HttpClient client;
 
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
     }
 
-    @Test
-    public void testCrudActions() {
+    @Nested
+    class WhenAsAdmin {
 
-        long initialGroupCount = groupRepository.count();
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
-        // save group without members
-        Group theta = new Group("Theta");
-        HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
-        HttpResponse<?> response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+            userRepository.save(new User("montesm@test.test", true));
+            User jjones = userRepository.save(new User("jjones@test.test"));
+            User eclair = userRepository.save(new User("eclair@test.test"));
+
+            Group groupOne = groupRepository.save(new Group("GroupOne"));
+            Topic topicOne = topicRepository.save(new Topic("TopicOne", TopicKind.B, groupOne));
+            Topic topicOne1 = topicRepository.save(new Topic("TopicOne!", TopicKind.C, groupOne));
+            Application applicationOne = applicationRepository.save(new Application("ApplicationOne", groupOne));
+            applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, AccessType.READ_WRITE));
+            groupUserRepository.save(new GroupUser(groupOne, jjones));
+            groupUserRepository.save(new GroupUser(groupOne, eclair));
+
+            Group groupTwo = groupRepository.save(new Group("GroupTwo"));
+            Topic topicTwo = topicRepository.save(new Topic("TopicTwo", TopicKind.C, groupTwo));
+            Application applicationTwo = applicationRepository.save(new Application("ApplicationTwo", groupTwo));
+            Application applicationTwo1 = applicationRepository.save(new Application("ApplicationTwo1", groupTwo));
+            applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, topicTwo, AccessType.READ_WRITE));
+            groupUserRepository.save(new GroupUser(groupTwo, eclair));
+        }
+
+        // create
+        @Test
+        void canCreateGroup(){
+            HttpResponse<?> response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
+        public void cannotCreateGroupWithSameNameAsAnExistingGroup() {
+            HttpResponse<?> response = createGroup("Theta");
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            response = createGroup("Theta");
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Group> groupDuplicate = response.getBody(Group.class);
+            assertTrue(groupDuplicate.isPresent());
+            assertEquals(theta.getId(), groupDuplicate.get().getId());
+        }
+
+        @Test
+        public void cannotCreateGroupWithNullNorWhitespace() {
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup(null);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+
+            HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup("   ");
+            });
+            assertEquals(BAD_REQUEST, exception1.getStatus());
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            HttpResponse<?> response = createGroup("   Theta  ");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+            assertEquals("Theta", theta.getName());
+        }
+
+        @Test
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup("g");
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+        }
 
         // update
-        request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "Omega"));
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+        @Test
+        void canUpdateGroup(){
+            HttpResponse<?> response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            theta.setName("ThetaTestUpdate");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaTestUpdateOptional = response.getBody(Group.class);
+            assertTrue(thetaTestUpdateOptional.isPresent());
+            assertEquals("ThetaTestUpdate", thetaTestUpdateOptional.get().getName());
+        }
+
+        @Test
+        public void cannotUpdateGroupWithSameNameAsAnExistingGroup() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> betaOptional = response.getBody(Group.class);
+            assertTrue(betaOptional.isPresent());
+            Group beta = betaOptional.get();
+
+            beta.setName("Theta");
+            request = HttpRequest.POST("/groups/save", beta);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, thrown.getStatus());
+        }
 
         // list
-        request = HttpRequest.GET("/groups");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups = (List<Map>) responseMap.get("content");
-        assertEquals(initialGroupCount + 1, groups.size());
-        assertEquals(OK, response.getStatus());
+        @Test
+        void canListAllGroups(){
+            HttpResponse<?> response;
+            HttpRequest<?> request;
 
-        // show + confirm update
-        request = HttpRequest.GET("/groups/2");
-        HashMap<String, Object> showGroupResponse = blockingClient.retrieve(request, HashMap.class);
-        Map getShowGroup = (Map) showGroupResponse.get("group");
-        assertEquals("Omega", getShowGroup.get("name"));
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Zeta");
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/groups");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(5, page.getContent().size());
+        }
+
+        @Test
+        void canListWithFilterOnAllGroupsAndCaseInsensitive(){
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("SecondGroup");
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/groups?filter=EtA");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+        }
+
+        @Test
+        void canListWithFilterYieldsEmptyResultIfGroupByNameDoesNotExist(){
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("SecondGroup");
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/groups?filter=foobarbaz");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(0, page.getContent().size());
+        }
+
+        @Test
+        public void listYieldsGroupsNamesInAscendingOrderByDefault() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("SecondGroup");
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/groups");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> groupsPage = response.getBody(Page.class);
+            assertTrue(groupsPage.isPresent());
+            List<Map> groups = groupsPage.get().getContent();
+
+            List<String> groupNames = groups.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(groupNames.stream().sorted().collect(Collectors.toList()), groupNames);
+        }
+
+        @Test
+        public void listShouldRespectRequestedGroupsNamesInDescendingOrder() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("Beta");
+            assertEquals(OK, response.getStatus());
+
+            response = createGroup("SecondGroup");
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.GET("/groups?sort=name,desc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> groupsPage = response.getBody(Page.class);
+            assertTrue(groupsPage.isPresent());
+            List<Map> groups = groupsPage.get().getContent();
+
+            List<String> groupNames = groups.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), groupNames);
+        }
+
+        @Test
+        void listGroupsWithCounts() {
+            HttpRequest<?> request = HttpRequest.GET("/groups");
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            List<Map> content = (List<Map>) responseMap.get("content");
+
+            Map groupOne = content.stream().filter(map -> {
+                String groupName = (String) map.get("name");
+                return groupName.equals("GroupOne");
+            }).collect(Collectors.toList()).get(0);
+
+            assertEquals("GroupOne", groupOne.get("name"));
+            assertEquals(2, groupOne.get("membershipCount"));
+            assertEquals(2, groupOne.get("topicCount"));
+            assertEquals(1, groupOne.get("applicationCount"));
+        }
 
         // delete
-        request = HttpRequest.POST("/groups/delete/2", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+        @Test
+        void canDeleteGroup(){
+            HttpResponse response = createGroup("Beta");
+            Optional<Group> betaOptional = response.getBody(Group.class);
+            assertTrue(betaOptional.isPresent());
+            Group beta = betaOptional.get();
 
-        // list + confirm deletion
-        request = HttpRequest.GET("/groups");
-        HashMap<String, Object> responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups1 = (List<Map>) responseMap1.get("content");
-        assertEquals(initialGroupCount, groups1.size());
-        assertEquals(OK, response.getStatus());
+            HttpRequest request = HttpRequest.POST("/groups/delete/"+beta.getId(), Map.of());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+        }
 
-        long initialAlphaGroupMemberCount = groupUserRepository.findAllByPermissionsGroup(1l).size();
+        // search
+        @Test
+        void canSearchAndShouldYieldAll(){
+            HttpResponse response;
 
-        // adding an existing member should not add to user group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/3", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+            HttpRequest<?> request = HttpRequest.GET("/groups/search/Group");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> optionalPage = response.getBody(Page.class);
+            assertTrue(optionalPage.isPresent());
+            assertEquals(2, optionalPage.get().getContent().size());
 
-        request = HttpRequest.GET("/groups/1/members");
-        List<Map> responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(initialAlphaGroupMemberCount, responseList.size());
+            // search text is null
+            request = HttpRequest.GET("/groups/search/");
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, Page.class);
+            });
+            assertEquals(NOT_FOUND, exception.getStatus());
+        }
 
-        // add new member to group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/add_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+        @Test
+        void deleteCascades() {
+            HttpResponse response;
+            HttpRequest<?> request;
 
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        long postAddUserCount = responseList.size();
-        assertEquals(initialAlphaGroupMemberCount + 1, postAddUserCount);
+            // create group
+            response = createGroup("CascadeTestTheta");
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
 
-        // remove new member from group
-        // To see mocked authentication see MockSecurityService
-        request = HttpRequest.POST("/groups/remove_member/1/4", Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
+            // create member - non-admin and only membership
+            response = createNonAdminGroupMembership("cascade-user@test.test", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserResponseDTO> jonesOptional = response.getBody(GroupUserResponseDTO.class);
+            assertTrue(jonesOptional.isPresent());
+            GroupUserResponseDTO cascadeUser = jonesOptional.get();
 
-        request = HttpRequest.GET("/groups/1/members");
-        responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(postAddUserCount - 1, responseList.size());
+            // create application
+            response = createApplication("CascadeTestApplication", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
+
+            // create topic
+            response = createTopic("CascadeTestTopic", TopicKind.B, theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+
+            // create application permission
+            response = createApplicationPermission(application.getId(), topic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+            AccessPermissionDTO accessPermissionDTO = permissionOptional.get();
+
+            // delete group
+            request = HttpRequest.POST("/groups/delete/"+theta.getId(), Map.of());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            assertTrue(groupRepository.findById(theta.getId()).isEmpty());
+            assertTrue(groupUserRepository.findById(cascadeUser.getId()).isEmpty());
+            assertTrue(applicationRepository.findById(application.getId()).isEmpty());
+            assertTrue(topicRepository.findById(topic.getId()).isEmpty());
+            assertTrue(applicationPermissionRepository.findById(accessPermissionDTO.getId()).isEmpty());
+            assertTrue(userRepository.findById(cascadeUser.getPermissionsUser()).isEmpty());
+        }
     }
 
-    @Test
-    public void rejectGroupWithSameNameAsAnExistingGroup() {
+    @Nested
+    class WhenAsAGroupAdmin {
 
-        // save new group should succeed
-        Group myGroup = new Group("MyGroup");
-        HttpRequest<?> request = HttpRequest.POST("/groups/save", myGroup);
-        HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-        assertEquals(OK, response.getStatus());
-        myGroup = response.getBody(Group.class).get();
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("jjones@test.test"));
+        }
 
-        // Attempt to add a new group with same name, should return the existing group and 303
-        Group myGroupDup = new Group("MyGroup");
-        request = HttpRequest.POST("/groups/save", myGroupDup);
-        response = blockingClient.exchange(request, Group.class);
-        assertEquals(SEE_OTHER, response.getStatus());
-        myGroupDup = response.getBody(Group.class).get();
-        assertEquals(myGroup.getId(), myGroupDup.getId());
+        void loginAsNonAdmin() {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    "jjones@test.test",
+                    Collections.emptyList(),
+                    Map.of()
+            ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
 
-        // Attempt to update an existing group with name of another group should yield a bad request with a message
-        request = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "MyGroup"));
-        HttpRequest<?> finalRequest1 = request;
-        HttpClientResponseException thrown1 = assertThrows(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest1);
-        });
-        // Note: Since the client throws an exception for a bad-request response, capturing the response's message is
-        // not straightforward.
-        assertEquals(BAD_REQUEST, thrown1.getStatus());
+        // cannot create, update, delete
+        @Test
+        void cannotCreateGroup() {
+            loginAsNonAdmin();
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup("Theta");
+            });
+            assertEquals(UNAUTHORIZED,exception.getStatus());
+        }
+
+        @Test
+        void cannotUpdateGroup() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+
+            loginAsNonAdmin();
+
+            Group group = primaryOptional.get();
+            group.setName("Omega");
+            request = HttpRequest.POST("/groups/save", group);
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+
+        @Test
+        void cannotDeleteGroup() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+
+            loginAsNonAdmin();
+
+            Group group = primaryOptional.get();
+            request = HttpRequest.POST("/groups/delete/"+group.getId(), Map.of());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
+
+        @Test
+        void canSearchAndShouldYieldOnlyGroupsWhereGroupAdmin() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+
+            // add membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryOptional.get().getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            dto.setPermissionsGroup(secondaryOptional.get().getId());
+            dto.setGroupAdmin(false);
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            // should only see groups that current user is a group admin of
+            request = HttpRequest.GET("/groups/search/Group?role="+ GroupAdminRole.GROUP_ADMIN);
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> optionalPage = response.getBody(Page.class);
+            assertTrue(optionalPage.isPresent());
+            assertEquals(1, optionalPage.get().getContent().size());
+            Map groupMap = (Map) optionalPage.get().getContent().get(0);
+            assertEquals("PrimaryGroup", groupMap.get("name"));
+
+            // should only see groups that current user is an application admin of
+            request = HttpRequest.GET("/groups/search/Group?role="+ GroupAdminRole.APPLICATION_ADMIN);
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            optionalPage = response.getBody(Page.class);
+            assertTrue(optionalPage.isPresent());
+            assertEquals(1, optionalPage.get().getContent().size());
+            groupMap = (Map) optionalPage.get().getContent().get(0);
+            assertEquals("SecondaryGroup", groupMap.get("name"));
+        }
+
+        @Test
+        void cannotDeleteAnApplication(){
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // add member to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(theta.getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create application
+            response = createApplication("ApplicationOne", theta.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.POST("/applications/delete/"+applicationOne.getId(), Map.of());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
     }
 
-    @Test
-    public void userWithAdminRoleShouldSeeAllGroups() {
+    @Nested
+    class WhenAsAGroupMember {
 
-        long initialGroupCount = groupRepository.count();
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
+            User user = userRepository.save(new User("jjones@test.test"));
 
-        HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups = (List<Map>) responseMap.get("content");
-        assertEquals(initialGroupCount, groups.size());
+            Group group = groupRepository.save(new Group("GroupOne"));
+            Topic topic = topicRepository.save(new Topic("TopicOne", TopicKind.B, group));
+            Application application = applicationRepository.save(new Application("ApplicationOne", group));
+            applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
+            groupUserRepository.save(new GroupUser(group, user));
+
+            Group group1 = groupRepository.save(new Group("GroupTwo"));
+            Topic topic1 = topicRepository.save(new Topic("TopicTwo", TopicKind.C, group1));
+            Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
+            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
+
+            loginAsNonAdmin();
+        }
+
+        void loginAsNonAdmin() {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    "jjones@test.test",
+                    Collections.emptyList(),
+                    Map.of()
+            ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        @Test
+        void canOnlySeeGroupsIAmAMemberOf() {
+            HttpRequest<?> request = HttpRequest.GET("/groups");
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            List<Map> groups = (List<Map>) responseMap.get("content");
+            assertEquals(1, groups.size());
+            Map group = groups.get(0);
+            assertEquals("GroupOne", group.get("name"));
+        }
     }
 
-    @Test
-    public void canSearch() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/ta");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() <= 10);
+    @Nested
+    class WhenAsANonGroupMember {
+
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("jjones@test.test"));
+
+            Group group = groupRepository.save(new Group("TestGroup"));
+            Topic topic = topicRepository.save(new Topic("TestTopic", TopicKind.B, group));
+            Application application = applicationRepository.save(new Application("ApplicationOne", group));
+            applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
+
+            Group group1 = groupRepository.save(new Group("TestGroup1"));
+            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, group1));
+            Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
+            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
+        }
+
+        void loginAsNonAdmin() {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    "jjones@test.test",
+                    Collections.emptyList(),
+                    Map.of("isAdmin", false)
+            ));
+        }
+
+
     }
 
-    @Test
-    public void searchDoesNotReturnAnythingIfGroupDoesNotExist() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/foobarbaz");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() == 0);
+    private HttpResponse<?> createGroup(String groupName) {
+        Group group = new Group(groupName);
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
+        return blockingClient.exchange(request, Group.class);
     }
 
-    @Test
-    public void searchReturnsGroupIfExist() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/search/Alpha");
-        List<String> response = blockingClient.retrieve(request, List.class);
-        assertTrue(response.size() == 1);
+    private HttpResponse<?> createApplication(String applicationName, Long groupId) {
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        applicationDTO.setName(applicationName);
+        applicationDTO.setGroup(groupId);
+
+        HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+        return blockingClient.exchange(request, ApplicationDTO.class);
     }
 
-    @Test
-    public void shouldSeeGroupsNamesInAscendingOrderByDefault() {
-        HttpRequest<?> request = HttpRequest.GET("/groups");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted().collect(Collectors.toList()).equals(groupNames));
+    private HttpResponse<?> createTopic(String topicName, TopicKind topicKind, Long groupId) {
+        TopicDTO topicDTO = new TopicDTO();
+        topicDTO.setName(topicName);
+        topicDTO.setKind(topicKind);
+        topicDTO.setGroup(groupId);
+
+        HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
+        return blockingClient.exchange(request, TopicDTO.class);
     }
 
-
-    @Test
-    public void shouldRespectGroupsNamesInDescendingOrder() {
-        HttpRequest<?> request = HttpRequest.GET("/groups?sort=name,desc");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups = (List<Map>) responseMap.get("content");
-        List<String> groupNames = groups.stream().flatMap(map -> Stream.of((String) map.get("name"))).collect(Collectors.toList());
-        assertTrue(groupNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()).equals(groupNames));
+    private HttpResponse<?> createNonAdminGroupMembership(String email, Long groupId) {
+        return createGroupMembership(email, groupId, false, false, false);
     }
 
-    @Test
-    public void userWithAdminRoleCanSeeGroupsAUserIsAMemberOf() {
-        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
-        List responseList = blockingClient.retrieve(request, List.class);
-        assertEquals(1, responseList.size());
+    private HttpResponse<?> createGroupMembership(String email, Long groupId, boolean groupAdmin, boolean topicAdmin, boolean applicationAdmin) {
+        GroupUserDTO dto = new GroupUserDTO();
+        dto.setPermissionsGroup(groupId);
+        dto.setEmail(email);
+        dto.setGroupAdmin(groupAdmin);
+        dto.setTopicAdmin(topicAdmin);
+        dto.setApplicationAdmin(applicationAdmin);
+        HttpRequest<?> request = HttpRequest.POST("/group_membership", dto);
+        return  blockingClient.exchange(request, GroupUserDTO.class);
     }
 
-    @Test
-    public void testGroupTopicAddAndRemove() {
-
-        long initialTopicCount = topicRepository.count();
-
-        Topic testTopic1 = new Topic("testTopic1", TopicKind.B);
-        Topic testTopic2 = new Topic("testTopic2", TopicKind.C);
-
-        // create two topics and add to group
-        HttpRequest<?> request = HttpRequest.POST("/topics/save", testTopic1);
-        HttpResponse<?> response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.POST("/topics/save", testTopic2);
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        // topics with same name can exist in topics table
-        request = HttpRequest.POST("/topics/save", testTopic1);
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/topics");
-        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-        List<Map> topics = (List<Map>) responseMap.get("content");
-        assertEquals(OK, response.getStatus());
-        assertEquals(initialTopicCount + 3, topics.size());
-
-        // add topics to group (positive)
-        Group groupA = groupRepository.findById(1l).get();
-        List<Map> testTopic1FromResponse = topics.stream().filter(t -> t.get("name").equals("testTopic1")).collect(Collectors.toList());
-        List<Map> testTopic2FromResponse = topics.stream().filter(t -> t.get("name").equals("testTopic2")).collect(Collectors.toList());
-        Integer savedTopic1Id = (Integer) testTopic1FromResponse.get(0).get("id");
-        Integer savedTopic1IdDup = (Integer) testTopic1FromResponse.get(1).get("id");
-        Integer savedTopic2Id = (Integer) testTopic2FromResponse.get(0).get("id");
-
-        request = HttpRequest.POST("/groups/add_topic/1/"+savedTopic1Id, Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.POST("/groups/add_topic/1/"+savedTopic2Id, Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        request = HttpRequest.GET("/groups");
-        HashMap responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        List<Map> groups1 = (List<Map>) responseMap1.get("content");
-        Map firstGroup = groups1.get(0);
-        List<Map> topicList = (List<Map>) firstGroup.get("topics");
-        long postTopicAddToGroupCount = topicList.size();
-        assertEquals(2, postTopicAddToGroupCount);
-
-
-        // adding topic with same name to a group should fail (negative)
-        // ensure same number of topics and no duplicate entries
-        request = HttpRequest.POST("/groups/add_topic/1/"+savedTopic1Id, Map.of());
-        HttpRequest<?> finalRequest = request;
-        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest);
-        });
-        assertEquals(BAD_REQUEST, exception1.getStatus());
-
-        request = HttpRequest.GET("/groups");
-        responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        groups1 = (List<Map>) responseMap1.get("content");
-        firstGroup = groups1.get(0);
-        topicList = (List<Map>) firstGroup.get("topics");
-        assertEquals(2, topicList.size());
-
-        // removing a topic should succeed
-        request = HttpRequest.POST("/groups/remove_topic/1/"+savedTopic2Id, Map.of());
-        response = blockingClient.exchange(request);
-        assertEquals(OK, response.getStatus());
-
-        // total number of topics should be the same as post-addition of topics less one.
-        request = HttpRequest.GET("/groups");
-        responseMap1 = blockingClient.retrieve(request, HashMap.class);
-        groups1 = (List<Map>) responseMap1.get("content");
-        firstGroup = groups1.get(0);
-        topicList = (List<Map>) firstGroup.get("topics");
-        assertEquals(postTopicAddToGroupCount - 1, topicList.size());
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+        return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
-
-    // Change 'isAdmin' to false in MockSecurityService in order for the below tests to pass.
-    // Why? I can't seem to dynamically change the role of the
-    // authenticated user. Need to come up with a better way to mock authentication.
-//    @Test
-//    public void userWithNonAdminRoleCannotSeeGroupsAUserIsAMemberOf() {
-//        HttpRequest<?> request = HttpRequest.GET("/groups/user/1");
-//        HttpRequest<?> finalRequest = request;
-//        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-//            blockingClient.exchange(finalRequest);
-//        });
-//        assertEquals(UNAUTHORIZED, exception1.getStatus());
-//    }
-//
-//    @Test
-//    public void userWithNonAdminRoleShouldNotSeeAllGroups() {
-//
-//        long initialGroupCount = groupRepository.count();
-//
-//        HttpRequest<?> request = HttpRequest.GET("/groups");
-//        HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-//        List<Map> groups = (List<Map>) responseMap.get("content");
-//        assertNotEquals(initialGroupCount, groups.size());
-//    }
-//
-//    @Test
-//    public void userWithNonAdminRoleShouldNotBeAbleToCallGroupCrud() {
-//        // create
-//        Group theta = new Group("Theta");
-//        HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
-//        HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-//            blockingClient.exchange(request);
-//        });
-//        assertEquals(UNAUTHORIZED,exception.getStatus());
-//
-//        // update
-//        HttpRequest<?> request1 = HttpRequest.POST("/groups/save", Map.of("id", 2, "name", "Omega"));
-//        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-//            blockingClient.exchange(request1);
-//        });
-//        assertEquals(UNAUTHORIZED,exception1.getStatus());
-//
-//        // delete
-//        HttpRequest<?> request2 = HttpRequest.POST("/groups/delete/2", Map.of());
-//        HttpClientResponseException exception2 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-//            blockingClient.exchange(request2);
-//        });
-//        assertEquals(UNAUTHORIZED,exception2.getStatus());
-//    }
 }

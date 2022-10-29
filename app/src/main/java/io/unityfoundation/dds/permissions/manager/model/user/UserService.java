@@ -1,71 +1,97 @@
 package io.unityfoundation.dds.permissions.manager.model.user;
 
+import io.micronaut.core.annotation.NonNull;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.micronaut.security.authentication.Authentication;
-import io.micronaut.security.utils.SecurityService;
+import io.micronaut.data.model.Sort;
+import io.micronaut.http.HttpResponse;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
+import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.transaction.Transactional;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
 public class UserService {
-    private final SecurityService securityService;
+    private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
     private final GroupUserService groupUserService;
+    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 
-    public UserService(SecurityService securityService, UserRepository userRepository, GroupUserService groupUserService) {
-        this.securityService = securityService;
+    public UserService(SecurityUtil securityUtil, UserRepository userRepository, GroupUserService groupUserService) {
+        this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.groupUserService = groupUserService;
     }
 
     @Transactional
+    @NonNull
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
-    public Page<User> findAll(Pageable pageable) {
-        if (isCurrentUserAdmin()) {
-            return userRepository.findAll(pageable);
-        } else {
-            List<Long> userIds = getIdsOfUsersWhoShareGroupsWithCurrentUser();
+    public Page<AdminDTO> findAll(Pageable pageable, String filter) {
+        return getUsers(pageable, filter).map(user -> new AdminDTO(user.getId(), user.getEmail()));
+    }
 
-            return userRepository.findAllByIdIn(userIds, pageable);
+    private Page<User> getUsers(Pageable pageable, String filter) {
+        if (!pageable.isSorted()) {
+            pageable = pageable.order(Sort.Order.asc("email"));
         }
+
+        if (filter == null) {
+            return userRepository.findByAdminTrue(pageable);
+        }
+
+        return userRepository.findByAdminTrueAndEmailContainsIgnoreCase(filter, pageable);
     }
 
     public List<Long> getIdsOfUsersWhoShareGroupsWithCurrentUser() {
-        Long currentUserId = getCurrentlyAuthenticatedUser().getId();
-        List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
-
-        List<Long> idsOfUsersWhoShareGroupsWithCurrentUser = currentUsersGroupIds.stream()
-                .map(groupUserService::getUsersOfGroup)
-                .flatMap(List::stream)
-                .map(GroupUser::getPermissionsUser)
-                .collect(Collectors.toList());
-
-        return idsOfUsersWhoShareGroupsWithCurrentUser;
+        return securityUtil.getCurrentlyAuthenticatedUser()
+                .map(user -> {
+                    Long currentUserId = user.getId();
+                    List<Long> currentUsersGroupIds = groupUserService.getAllGroupsUserIsAMemberOf(currentUserId);
+                    return currentUsersGroupIds.stream()
+                            .map(groupUserService::getUsersOfGroup)
+                            .flatMap(List::stream)
+                            .map(GroupUser::getPermissionsUser)
+                            .map(User::getId)
+                            .collect(Collectors.toList());
+                }).orElseGet(Collections::emptyList);
     }
 
     @Transactional
-    public void save(User user) throws Exception {
+    public HttpResponse save(AdminDTO adminDTO) {
+        Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
 
-        if (user.getId() == null) {
-            Optional<User> userSearchByEmail = userRepository.findByEmail(user.getEmail());
-            if (userSearchByEmail.isPresent()) {
-                throw new Exception("User with same email already exists");
-            }
-
-            userRepository.save(user);
+        User user;
+        if (userSearchByEmail.isEmpty()) {
+            user = generateAdminFromDTO(adminDTO);
+            user = userRepository.save(user);
+            LOG.info(user.getEmail() + " is now a super admin");
         } else {
-            userRepository.update(user);
+            user = userSearchByEmail.get();
+            user.setAdmin(true);
+            user = userRepository.update(user);
+            LOG.info(user.getEmail() + " is now a super admin");
         }
+
+        return HttpResponse.ok(new AdminDTO(user.getId(), user.getEmail()));
+    }
+
+    private User generateAdminFromDTO(AdminDTO adminDTO) {
+        User user = new User();
+        user.setId(adminDTO.getId());
+        user.setEmail(adminDTO.getEmail());
+        user.setAdmin(true);
+        return user;
     }
 
     @Transactional
@@ -79,14 +105,24 @@ public class UserService {
         groupUserService.removeUserFromAllGroups(userId);
     }
 
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = securityService.getAuthentication().get();
-        return authentication.getRoles().contains(UserRole.ADMIN.toString());
-    }
+    @Transactional
+    public boolean removeAdminPrivilegeById(Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
 
-    public User getCurrentlyAuthenticatedUser() {
-        Authentication authentication = securityService.getAuthentication().get();
-        String userEmail = authentication.getName();
-        return getUserByEmail(userEmail).get();
+        User user = userOptional.get();
+
+        LOG.info(user.getEmail() + " is no longer a super admin");
+
+        if (user.isAdmin() && groupUserService.countMembershipsByUserId(id) == 0) {
+            userRepository.delete(user);
+        } else {
+            user.setAdmin(false);
+            userRepository.update(user);
+        }
+
+        return true;
     }
 }

@@ -1,9 +1,10 @@
 <script>
 	import { page } from '$app/stores';
+	import { isAdmin } from '../../stores/authentication';
 
 	export let isAuthenticated;
 
-	const URL_PREFIX = 'http://localhost:8080';
+	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 </script>
 
 <header>
@@ -15,19 +16,30 @@
 					<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 				</svg>
 				<ul>
-					<li class:active={$page.url.pathname === '/'}>
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<li tabindex="1" class:active={$page.url.pathname === '/'}>
 						<a sveltekit:prefetch href="/">Home</a>
 					</li>
-					<li class:active={$page.url.pathname === '/users'}>
-						<a sveltekit:prefetch href="/users">Users</a>
+					{#if $isAdmin}
+						<!-- svelte-ignore a11y-positive-tabindex -->
+						<li tabindex="2" class:active={$page.url.pathname === '/superadmin'}>
+							<a sveltekit:prefetch href="/superadmin">Super Admins</a>
+						</li>
+					{/if}
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<li tabindex="3" class:active={$page.url.pathname === '/group_membership'}>
+						<a sveltekit:prefetch href="/group_membership">Group Memberships</a>
 					</li>
-					<li class:active={$page.url.pathname === '/topics'}>
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<li tabindex="4" class:active={$page.url.pathname === '/topics'}>
 						<a sveltekit:prefetch href="/topics">Topics</a>
 					</li>
-					<li class:active={$page.url.pathname === '/applications'}>
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<li tabindex="5" class:active={$page.url.pathname === '/applications'}>
 						<a sveltekit:prefetch href="/applications">Applications</a>
 					</li>
-					<li class:active={$page.url.pathname === '/groups'}>
+					<!-- svelte-ignore a11y-positive-tabindex -->
+					<li tabindex="6" class:active={$page.url.pathname === '/groups'}>
 						<a sveltekit:prefetch href="/groups">Groups</a>
 					</li>
 				</ul>
@@ -43,8 +55,10 @@
 				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 			</svg>
 			<ul>
-				<li class:active={$page.url.pathname === '/login'}>
+				<!-- svelte-ignore a11y-positive-tabindex -->
+				<li tabindex="7" class:active={$page.url.pathname === '/login'}>
 					<a
+						rel="external"
 						href={isAuthenticated === true
 							? `${URL_PREFIX}/logout`
 							: `${URL_PREFIX}/oauth/login/google`}

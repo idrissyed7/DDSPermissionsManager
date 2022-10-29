@@ -2,11 +2,14 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Entity
-@Table(name = "permissions_topics")
+@Table(name = "permissions_topic")
 public class Topic {
 
     @Id
@@ -14,12 +17,16 @@ public class Topic {
     private Long id;
 
     @NonNull
+    @NotBlank
+    @Size(min = 3)
     private String name;
 
     @NonNull
     private TopicKind kind;
 
-    private Long permissionsGroup;
+    @ManyToOne
+    @JoinColumn(name = "permissions_group_id", nullable = false)
+    private Group permissionsGroup;
 
     public Topic() {
     }
@@ -29,7 +36,7 @@ public class Topic {
         this.kind = kind;
     }
 
-    public Topic(@NonNull String name, @NonNull TopicKind kind, Long permissionsGroup) {
+    public Topic(@NonNull String name, @NonNull TopicKind kind, Group permissionsGroup) {
         this.name = name;
         this.kind = kind;
         this.permissionsGroup = permissionsGroup;
@@ -61,11 +68,16 @@ public class Topic {
         this.kind = kind;
     }
 
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(Long permissionsGroup) {
+    public void setPermissionsGroup(Group permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
+    }
+
+    @PrePersist
+    void trimName() {
+        this.name = this.name.trim();
     }
 }

@@ -35,20 +35,31 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
                                                                OpenIdTokenResponse tokenResponse,
                                                                OpenIdClaims openIdClaims,
                                                                State state) {
+        return Optional.ofNullable(openIdClaims.getEmail())
+                .flatMap(userService::getUserByEmail)
+                .map(user -> isNonAdminAndNotAMemberOfAnyGroups(user) ?
+                        AuthenticationResponse.failure(AuthenticationFailureReason.USER_DISABLED) :
+                        AuthenticationResponse.success(
+                                openIdClaims.getEmail(),
+                                rolesByUser(user),
+                                userAttributes(openIdClaims, user)
+                        ))
+                .orElseGet(() -> AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND));
+    }
 
-        String email = openIdClaims.getEmail();
-        Optional<User> user = userService.getUserByEmail(email);
-        if (email == null || user.isEmpty()) {
-            return AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND);
-        }
+    private boolean isNonAdminAndNotAMemberOfAnyGroups(User user) {
+        return !user.isAdmin() && groupUserService.countMembershipsByUserId(user.getId()) == 0;
+    }
 
+    private List<String> rolesByUser(User user) {
+        return user.isAdmin() ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList();
+    }
+
+    private HashMap<String, Object> userAttributes(OpenIdClaims openIdClaims, User user) {
         HashMap<String, Object> attributes = new HashMap<>();
-        List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.get().getId());
+        List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.getId());
         attributes.put("name", openIdClaims.getName());
         attributes.put("permissionsByGroup", permissions);
-
-        return AuthenticationResponse.success( Objects.requireNonNull(openIdClaims.getEmail()),
-                (user.get().isAdmin() ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList()),
-                attributes);
+        return attributes;
     }
 }

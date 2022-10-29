@@ -1,20 +1,23 @@
 package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 
-import io.micronaut.core.annotation.NonNull;
-import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 
-import javax.validation.constraints.NotNull;
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ApplicationPermissionRepository extends PageableRepository<ApplicationPermission, Long> {
     Page<ApplicationPermission> findByPermissionsApplicationId(Long applicationId, Pageable pageable);
+    List<ApplicationPermission> findByPermissionsApplication(Application permissionsApplication);
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicId(Long applicationId, Long topicId, Pageable pageable);
+    void deleteByPermissionsTopicEquals(Topic permissionsTopic);
+    void deleteByPermissionsApplicationEquals(Application permissionsApplication);
+    void deleteByPermissionsApplicationIdIn(Collection<Long> permissionsApplications);
+    void deleteByPermissionsTopicIdIn(Collection<Long> permissionsTopics);
 }

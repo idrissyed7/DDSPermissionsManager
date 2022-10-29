@@ -1,21 +1,37 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.ConfigurationProperties;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.convert.format.MapFormat;
+import io.micronaut.core.util.StringUtils;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
-import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Singleton
+import java.util.List;
+import java.util.Map;
+
+@Requires(property = "dpm.bootstrap.data.enabled", value = StringUtils.TRUE)
+@ConfigurationProperties("dpm.bootstrap")
 public class Bootstrap {
+
+    @MapFormat(transformation = MapFormat.MapTransformation.NESTED)
+    private Map<String, Object> data;
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupUserRepository groupUserRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
 
     public Bootstrap(UserRepository userRepository, GroupRepository groupRepository,
             GroupUserRepository groupUserRepository) {
@@ -26,25 +42,62 @@ public class Bootstrap {
 
     @EventListener
     public void devData(ServerStartupEvent event) {
-        User justin = userRepository.save(new User("Justin", "Wilson", "jwilson@test.test", true));
-        User kevin = userRepository.save(new User("Kevin", "Stanley", "kstanley@test.test"));
-        User max = userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-        userRepository.save(new User("Jeff", "Brown", "jeff@test.test"));
-        userRepository.save(new User("Julian", "Gracia", "jgracia@test.test"));
-        userRepository.save(new User("Daniel", "Bellone", "belloned@test.test"));
+        if(data != null) {
+            if(data.containsKey("admin-users")) {
+                ((List<String>) data.get("admin-users")).stream().forEach(email -> {
+                        LOG.info(email + " is now a super admin");
+                        userRepository.save(new User(email, true));
+                    });
+            }
+            if(data.containsKey("non-admin-users")) {
+                ((List<String>) data.get("non-admin-users")).stream().forEach(email -> userRepository.save(new User(email)));
+            }
 
-        Group alphaGroup = groupRepository.save(new Group("Alpha"));
+            if(data.containsKey("groups")) {
+                ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
+                    String groupName = (String) groupMap.get("name");
+                    Group group = groupRepository.save(new Group(groupName));
 
-        GroupUser alphaJustin = new GroupUser(alphaGroup.getId(), justin.getId());
-        GroupUser alphaKevin = new GroupUser(alphaGroup.getId(), kevin.getId());
-        GroupUser alphaMax = new GroupUser(alphaGroup.getId(), max.getId());
+                    if (groupMap.containsKey("users")) {
+                        List<Map> users = (List<Map>) groupMap.get("users");
+                        users.stream().forEach((Map user) -> {
+                            String email = (String) user.get("email");
+                            GroupUser groupUser = new GroupUser(group, userRepository.findByEmail(email).get());
 
-        groupUserRepository.save(alphaJustin);
-        groupUserRepository.save(alphaKevin);
-        groupUserRepository.save(alphaMax);
+                            if(user.containsKey("admin-flags")) {
+                                List<String> adminFlags = (List<String>) user.get("admin-flags");
+                                groupUser.setGroupAdmin(adminFlags.contains("group"));
+                                groupUser.setApplicationAdmin(adminFlags.contains("application"));
+                                groupUser.setTopicAdmin(adminFlags.contains("topic"));
+                            }
 
-        groupRepository.save(new Group("Beta"));
-        groupRepository.save(new Group("Gamma"));
-        groupRepository.save(new Group("Delta"));
+                            groupUserRepository.save(groupUser);
+                        });
+                    }
+
+                    if (groupMap.containsKey("topics")) {
+                        List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
+                        topics.stream().forEach(topicMap -> {
+                            String name = topicMap.get("name");
+                            TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
+                            group.addTopic(new Topic(name, kind, group));
+                        });
+                    }
+
+                    if (groupMap.containsKey("applications")) {
+                        List<String> applications = (List<String>) groupMap.get("applications");
+                        applications.stream().forEach(applicationName -> {
+                            group.addApplication(new Application(applicationName, group));
+                        });
+                    }
+
+                    groupRepository.update(group);
+                });
+            }
+        }
+    }
+
+    public void setData(Map<String, Object> data) {
+        this.data = data;
     }
 }

@@ -2,36 +2,45 @@ package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.context.annotation.Property;
 import io.micronaut.core.util.StringUtils;
+import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
+import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
-@Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
+@MicronautTest(environments={"app-api-test-data"})
+@Property(name = "micronaut.http.client.follow-redirects", value = StringUtils.FALSE)
 public class ApplicationApiTest {
 
     private BlockingHttpClient blockingClient;
 
     @Inject
     MockSecurityService mockSecurityService;
+
+    @Inject
+    MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
     GroupRepository groupRepository;
@@ -43,7 +52,7 @@ public class ApplicationApiTest {
     DbCleanup dbCleanup;
 
     @Inject
-    @Client("/")
+    @Client("/api")
     HttpClient client;
 
     @BeforeEach
@@ -58,213 +67,526 @@ public class ApplicationApiTest {
         void setup() {
             dbCleanup.cleanup();
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
         public void cannotCreateWithoutGroupSpecified() {
-            Application application = new Application();
-            application.setName("TestApplication");
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(request);
+                createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
         public void canCreateApplicationWithGroupSpecified() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request);
+            // create group
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
         }
 
         @Test
         public void cannotCreateApplicationWithSameNameAsAnotherInSameGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpResponse<?> response;
 
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationOne);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
+            // create group
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
+            // create application
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(SEE_OTHER, response.getStatus());
-            Application application = response.getBody(Application.class).get();
+            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
 
-            assertEquals(applicationOne.getId(), application.getId());
+            assertEquals(applicationOptional.get().getId(), application.getId());
         }
 
         @Test
         public void canCreateApplicationWithSameNameInAnotherGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            application.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request);
+            response = createGroup("SecondaryGroup");
             assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create application
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+
+            response = createApplication("TestApplication", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
+        public void cannotCreateApplicationWithNullNorWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // null
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication(null, primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+
+            // space
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("     ", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+            HttpResponse<?> response;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("a", theta.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
+        }
+
+        @Test
+        public void createShouldTrimWhitespace() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("   Abc123  ", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+        }
+
+        @Test
+        public void cannotCreateApplicationWithSameNameInGroup() {
+
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Abc123", applicationOptional.get().getName());
+
+            // duplicate create attempt
+            response = createApplication("Abc123", primaryGroup.getId());
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<ApplicationDTO> applicationOptionalAttempt = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptionalAttempt.isPresent());
+            assertEquals(applicationOptional.get().getId(), applicationOptionalAttempt.get().getId());
         }
 
         @Test
         public void canViewAllApplications() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request);
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
 
-            application.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request);
+            response = createApplication("TestApplication", secondaryGroup.getId());
             assertEquals(OK, response.getStatus());
 
             request = HttpRequest.GET("/applications");
-            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-            List<Map> applications = (List<Map>) responseMap.get("content");
-            assertEquals(2, applications.size());
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+        }
+
+        @Test
+        void canListAllApplicationsWithFilter(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // support case-insensitive
+            request = HttpRequest.GET("/applications?filter=abc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(2, applicationPage.get().getContent().size());
+
+            // group search
+            request = HttpRequest.GET("/applications?filter=secondary");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+        }
+
+        @Test
+        void canListAllApplicationsNameInAscendingOrderByDefault(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123, Xyz789
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Xyz789", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
+
+            List<String> xyzApplications = applications.stream().filter(map -> {
+                String appName = (String) map.get("name");
+                return appName.equals("Xyz789");
+            }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
+            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
+        }
+
+        @Test
+        void canListAllApplicationsNameInDescendingOrder(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // test
+            request = HttpRequest.GET("/applications?sort=name,desc");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationsOptional = response.getBody(Page.class);
+            assertTrue(applicationsOptional.isPresent());
+            List<Map> applications = applicationsOptional.get().getContent();
+
+            List<String> appNames = applications.stream()
+                    .flatMap(map -> Stream.of((String) map.get("name")))
+                    .collect(Collectors.toList());
+            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
         }
 
         @Test
         public void canUpdateApplicationName() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
 
             application.setName("TestApplicationUpdate");
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> updatedApplicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(updatedApplicationOptional.isPresent());
+            ApplicationDTO updatedApplication = updatedApplicationOptional.get();
 
-            assertEquals("TestApplicationUpdate", application.getName());
+            assertEquals("TestApplicationUpdate", updatedApplication.getName());
         }
 
         @Test
-        public void canUpdateApplicationGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
+        public void cannotUpdateApplicationGroup() {
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            application.setPermissionsGroup(secondaryGroup.getId());
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
+
+            // change group
+            application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getPermissionsGroup());
-        }
-
-
-        @Test
-        public void cannotUpdateGroupIfApplicationWithSameNameExistsInTargetGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
-
-            Application applicationOne = new Application();
-            applicationOne.setName("TestApplication");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationOne);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
-
-            Application applicationTwo = new Application();
-            applicationTwo.setName("TestApplication");
-            applicationTwo.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            applicationTwo = response.getBody(Application.class).get(); // 2
-
-            applicationOne.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
-
-            assertEquals(SEE_OTHER, response.getStatus());
-            Application application = response.getBody(Application.class).get(); // 4
-
-            // 2, 4
-            assertEquals(applicationTwo.getId(), application.getId());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
         public void cannotUpdateApplicationNameIfOneAlreadyExistsInSameGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationOne);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            Application applicationTwo = new Application();
-            applicationTwo.setName("ApplicationTwo");
-            applicationTwo.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, Application.class);
+            // create applications
+            response = createApplication("ApplicationOne", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            applicationTwo = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
 
+            response = createApplication("ApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationTwoOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationTwoOptional.isPresent());
+            ApplicationDTO applicationTwo = applicationTwoOptional.get();
+
+            // update attempt
             applicationTwo.setName(applicationOne.getName());
             request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, Application.class);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
             assertEquals(SEE_OTHER, response.getStatus());
-            Application application = response.getBody(Application.class).get();
+            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
 
             assertEquals(applicationOne.getId(), application.getId());
         }
 
         @Test
         public void canDeleteFromGroup() {
-            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("ApplicationDelete");
-            application.setPermissionsGroup(primaryGroup.getId());
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
-            HttpResponse<?> response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
 
-            request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
+            // delete
+            request = HttpRequest.POST("/applications/delete/" + applicationOne.getId(), Map.of());
             response = blockingClient.exchange(request);
+            assertEquals(SEE_OTHER, response.getStatus());
+        }
+
+        @Test
+        void canGeneratePassphraseAndVerify() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isPresent());
         }
     }
 
@@ -274,8 +596,8 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {
@@ -284,43 +606,35 @@ public class ApplicationApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
         public void cannotCreateWithoutGroupSpecified() {
             loginAsNonAdmin();
-            Application application = new Application();
-            application.setName("TestApplication");
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(request);
+                createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
         public void cannotCreateIfNotMemberOfGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            HttpResponse<?> response;
 
             mockSecurityService.postConstruct();  // create Application as Admin
 
             // save group without members
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryGroupOptional = response.getBody(Group.class);
+            assertTrue(primaryGroupOptional.isPresent());
+            Group primaryGroup = primaryGroupOptional.get();
 
-//            createUser();
             loginAsNonAdmin();
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
+                createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
@@ -330,30 +644,33 @@ public class ApplicationApiTest {
             mockSecurityService.postConstruct();
 
             // create group
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             loginAsNonAdmin();
 
             // create application with above group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(Application.class).isPresent());
+            assertTrue(response.getBody(ApplicationDTO.class).isPresent());
         }
 
         @Test
@@ -361,44 +678,157 @@ public class ApplicationApiTest {
             mockSecurityService.postConstruct();
 
             // create group
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
             // get user
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isTopicAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             loginAsNonAdmin();
 
             // create application with above group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
+                createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
 
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsNonAdminOfGroup() {
+        public void canViewGroupApplicationsAsMember() {
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
+
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
         }
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void canViewApplicationsAsApplicationAdminOfGroup() {
+        void canListApplicationsWithFilterLimitedToGroupMembership(){
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
+
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            // application
+            request = HttpRequest.GET("/applications?filter=application");
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // group
+            request = HttpRequest.GET("/applications?filter=aryGrouP");
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
         }
 
         @Test
@@ -406,140 +836,144 @@ public class ApplicationApiTest {
             mockSecurityService.postConstruct();
 
             // create group
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
             // get user
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             // add application to group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(Application.class).isPresent());
-            application = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
 
             loginAsNonAdmin();
 
             application.setName("TestApplicationUpdate");
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationUpdateOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationUpdateOptional.isPresent());
+            ApplicationDTO applicationUpdate = applicationUpdateOptional.get();
 
-            assertEquals("TestApplicationUpdate", application.getName());
+            assertEquals("TestApplicationUpdate", applicationUpdate.getName());
         }
 
         @Test
-        public void canUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
+        public void cannotUpdateApplicationGroupIfTargetGroupApplicationAdmin() {
             mockSecurityService.postConstruct();
 
-            // create two groups
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Group secondaryGroup = new Group("SecondaryGroup");
-            request = HttpRequest.POST("/groups/save", secondaryGroup);
-            response = blockingClient.exchange(request, Group.class);
+            // create two groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            secondaryGroup = response.getBody(Group.class).get();
+            Group primaryGroup = response.getBody(Group.class).get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Group secondaryGroup = response.getBody(Group.class).get();
 
             // get user
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to groups as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.POST("/groups/add_member/"+secondaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            dto.setPermissionsGroup(secondaryGroup.getId());
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             // add application to group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(Application.class).isPresent());
-            application = response.getBody(Application.class).get();
+            assertTrue(response.getBody(ApplicationDTO.class).isPresent());
+            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
 
             loginAsNonAdmin();
 
             // change the application to the other group
-            application.setPermissionsGroup(secondaryGroup.getId());
+            application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
-
-            assertEquals(secondaryGroup.getId(), application.getPermissionsGroup());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());;
         }
 
         @Test
         public void cannotUpdateApplicationGroupIfNotApplicationAdminOfTargetGroup() {
             mockSecurityService.postConstruct();
 
-            // create two groups
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Group secondaryGroup = new Group("SecondaryGroup");
-            request = HttpRequest.POST("/groups/save", secondaryGroup);
-            response = blockingClient.exchange(request, Group.class);
+            // create two groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            secondaryGroup = response.getBody(Group.class).get();
+            Group primaryGroup = response.getBody(Group.class).get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Group secondaryGroup = response.getBody(Group.class).get();
 
             // get user
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to groups as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.POST("/groups/add_member/"+secondaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isTopicAdmin", true));
+            dto.setPermissionsGroup(secondaryGroup.getId());
+            dto.setApplicationAdmin(false);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             // add application to group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(Application.class).isPresent());
-            application = response.getBody(Application.class).get();
+            assertTrue(response.getBody(ApplicationDTO.class).isPresent());
+            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
 
             loginAsNonAdmin();
 
             // change application.group to the other group
-            application.setPermissionsGroup(secondaryGroup.getId());
+            application.setGroup(secondaryGroup.getId());
             request = HttpRequest.POST("/applications/save", application);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
@@ -552,37 +986,37 @@ public class ApplicationApiTest {
         public void canDeleteFromGroup() {
             mockSecurityService.postConstruct();
 
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
             // create group
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Group primaryGroup = response.getBody(Group.class).get();
 
             // get user
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
             // add user to group as an application admin
-            request = HttpRequest.POST("/groups/add_member/"+primaryGroup.getId()+"/"+justin.getId(),
-                    Map.of("isApplicationAdmin", true));
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
             // add application to group
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            assertTrue(response.getBody(Application.class).isPresent());
-            application = response.getBody(Application.class).get();
+            assertTrue(response.getBody(ApplicationDTO.class).isPresent());
+            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
 
             loginAsNonAdmin();
 
             request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
             response = blockingClient.exchange(request);
-            assertEquals(OK, response.getStatus());
+            assertEquals(SEE_OTHER, response.getStatus());
         }
     }
 
@@ -592,8 +1026,8 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("Max", "Montes", "montesm@test.test"));
-            userRepository.save(new User("Justin", "Jones", "jjones@test.test"));
+            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("jjones@test.test"));
         }
 
         void loginAsNonAdmin() {
@@ -602,65 +1036,63 @@ public class ApplicationApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
         public void cannotCreateWithoutGroupSpecified() {
             loginAsNonAdmin();
-            Application application = new Application();
-            application.setName("TestApplication");
-            HttpRequest<?> request = HttpRequest.POST("/applications/save", application);
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(request);
+                createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
         public void cannotCreateApplicationWithGroupSpecified() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-
             mockSecurityService.postConstruct();  // create Application as Admin
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
-            // save group without members
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
             loginAsNonAdmin();
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
+                createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
 
         @Test
         public void cannotCreateApplicationWithSameNameAsAnotherInSameGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
 
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOptional.get();
 
             loginAsNonAdmin();
 
@@ -670,83 +1102,65 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<Application> application = exception.getResponse().getBody(Application.class);
+            Optional<ApplicationDTO> application = exception.getResponse().getBody(ApplicationDTO.class);
             assertTrue(application.isEmpty());
         }
 
         @Test
-        @Disabled(value = "out of scope for UFP-526; need requirements")
-        public void cannotViewAllApplications() {
+        public void cannotViewApplicationDetails() {
 
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
+            // create applications
+            response = createApplication("TestApplication", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
-
-            loginAsNonAdmin();
-
-            request = HttpRequest.GET("/applications");
-            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-            List<Map> applications = (List<Map>) responseMap.get("content");
-            assertEquals(0, applications.size());
-        }
-
-        @Test
-        public void canViewApplicationDetails() {
-
-            mockSecurityService.postConstruct();
-
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
-
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOptional.get();
 
             loginAsNonAdmin();
 
             request = HttpRequest.GET("/applications/show/"+applicationOne.getId());
-            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
-            assertNotNull(responseMap);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
+            assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test
         public void cannotUpdateApplicationName() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-
             mockSecurityService.postConstruct();
 
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            // create groups
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            response = createApplication("TestApplication", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
 
             loginAsNonAdmin();
 
@@ -757,127 +1171,38 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<Application> applicationUpdateAttempt = exception.getResponse().getBody(Application.class);
-            assertTrue(applicationUpdateAttempt.isEmpty());
-        }
-
-        @Test
-        public void cannotUpdateApplicationGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-//            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
-
-            mockSecurityService.postConstruct();  // create Application as Admin
-
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
-
-            Group secondaryGroup = new Group("SecondaryGroup");
-            request = HttpRequest.POST("/groups/save", secondaryGroup);
-            response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            secondaryGroup = response.getBody(Group.class).get();
-
-            Application application = new Application();
-            application.setName("TestApplication");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
-
-            loginAsNonAdmin(); // Attempt to create duplicate as non admin
-
-            application.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            HttpRequest<?> finalRequest = request;
-            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
-            });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<Application> applicationUpdateAttempt = exception.getResponse().getBody(Application.class);
-            assertTrue(applicationUpdateAttempt.isEmpty());
-        }
-
-        @Test
-        public void cannotUpdateGroupIfApplicationWithSameNameExistsInTargetGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-//            Group secondaryGroup = groupRepository.save(new Group("SecondaryGroup"));
-
-            mockSecurityService.postConstruct();
-
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
-
-            Group secondaryGroup = new Group("SecondaryGroup");
-            request = HttpRequest.POST("/groups/save", secondaryGroup);
-            response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            secondaryGroup = response.getBody(Group.class).get();
-
-            Application applicationOne = new Application();
-            applicationOne.setName("TestApplication");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
-
-            Application applicationTwo = new Application();
-            applicationTwo.setName("TestApplication");
-            applicationTwo.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, Application.class);
-            assertEquals(OK, response.getStatus());
-            applicationTwo = response.getBody(Application.class).get(); // 2
-
-            loginAsNonAdmin();
-
-            applicationOne.setPermissionsGroup(secondaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            HttpRequest<?> finalRequest = request;
-            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
-            });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<Application> applicationUpdateAttempt = exception.getResponse().getBody(Application.class);
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
             assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test
         public void cannotUpdateApplicationNameIfOneAlreadyExistsInSameGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
-
             mockSecurityService.postConstruct();
 
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
-            assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Application applicationOne = new Application();
-            applicationOne.setName("ApplicationOne");
-            applicationOne.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationOne);
-            response = blockingClient.exchange(request, Application.class);
+            // create group
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            applicationOne = response.getBody(Application.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            Application applicationTwo = new Application();
-            applicationTwo.setName("ApplicationTwo");
-            applicationTwo.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, Application.class);
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            applicationTwo = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
 
-            loginAsNonAdmin(); // Attempt to create duplicate as non admin
+            response = createApplication("ApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationTwoOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationTwoOptional.isPresent());
+            ApplicationDTO applicationTwo = applicationTwoOptional.get();
+
+            loginAsNonAdmin();
 
             applicationTwo.setName(applicationOne.getName());
             request = HttpRequest.POST("/applications/save", applicationTwo);
@@ -886,31 +1211,32 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<Application> applicationUpdateAttempt = exception.getResponse().getBody(Application.class);
+            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
             assertTrue(applicationUpdateAttempt.isEmpty());
         }
 
         @Test
         public void cannotDeleteFromGroup() {
-//            Group primaryGroup = groupRepository.save(new Group("PrimaryGroup"));
+            mockSecurityService.postConstruct();
 
-            mockSecurityService.postConstruct();  // create Application as Admin
+            HttpRequest<?> request;
+            HttpResponse<?> response;
 
-            Group primaryGroup = new Group("PrimaryGroup");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
-            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            // create group
+            response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            primaryGroup = response.getBody(Group.class).get();
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
 
-            Application application = new Application();
-            application.setName("ApplicationDelete");
-            application.setPermissionsGroup(primaryGroup.getId());
-            request = HttpRequest.POST("/applications/save", application);
-            response = blockingClient.exchange(request, Application.class);
+            // create application
+            response = createApplication("ApplicationDelete", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
-            application = response.getBody(Application.class).get();
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
 
-            loginAsNonAdmin(); // Attempt to create duplicate as non admin
+            loginAsNonAdmin();
 
             request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
             HttpRequest<?> finalRequest = request;
@@ -919,5 +1245,378 @@ public class ApplicationApiTest {
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
         }
+    }
+
+    @Nested
+    class WhenAsAnApplication {
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        void loginAsApplication(Long applicationId) {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    String.valueOf(applicationId),
+                    List.of(UserRole.APPLICATION.toString()),
+                    Map.of()
+            ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        @Test
+        void canDownloadFiles() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/identity_ca.pem");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("-----BEGIN CERTIFICATE-----\n" +
+                    "MIICgTCCAiagAwIBAgIJAKQ0JTu6DZZdMAoGCCqGSM49BAMCMIGSMQswCQYDVQQG\n" +
+                    "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                    "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRQwEgYDVQQDDAtJZGVudGl0eSBD\n" +
+                    "QTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wHhcNMjIx\n" +
+                    "MDIwMTYwMjU3WhcNMjIxMTE5MTYwMjU3WjCBkjELMAkGA1UEBhMCVVMxCzAJBgNV\n" +
+                    "BAgMAk1PMRQwEgYDVQQHDAtTYWludCBMb3VpczEOMAwGA1UECgwFVU5JVFkxEjAQ\n" +
+                    "BgNVBAsMCUNvbW1VTklUWTEUMBIGA1UEAwwLSWRlbnRpdHkgQ0ExJjAkBgkqhkiG\n" +
+                    "9w0BCQEWF2luZm9AdW5pdHlmb3VuZGF0aW9uLmlvMFkwEwYHKoZIzj0CAQYIKoZI\n" +
+                    "zj0DAQcDQgAEMotkUz0ZUGv8lYvglXI5l6ArVs5PyWfz3civhogC4UuTZB9JyQOM\n" +
+                    "Xcvef04VJuhlvUJ4apUB2pW/exETApYKYqNjMGEwHQYDVR0OBBYEFAADg6XL4V94\n" +
+                    "czckFXsfuvBy1sJOMB8GA1UdIwQYMBaAFAADg6XL4V94czckFXsfuvBy1sJOMA8G\n" +
+                    "A1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMAoGCCqGSM49BAMCA0kAMEYC\n" +
+                    "IQCtNp2FjbRmmpjAruZIu6L+zc+udvFS626HSugfxYGT0QIhAKKIZD0Q1OLbeFuf\n" +
+                    "9lAUsvd7k+g3XVrE1DJ3zoUh+NfQ\n" +
+                    "-----END CERTIFICATE-----",
+                    body.get());
+
+            request = HttpRequest.GET("/applications/permissions_ca.pem");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("-----BEGIN CERTIFICATE-----\n" +
+                            "MIIChzCCAiygAwIBAgIJALs53aA9RNgXMAoGCCqGSM49BAMCMIGVMQswCQYDVQQG\n" +
+                            "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                            "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRcwFQYDVQQDDA5QZXJtaXNzaW9u\n" +
+                            "cyBDQTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wHhcN\n" +
+                            "MjIxMDIwMTYwMzQ3WhcNMjIxMTE5MTYwMzQ3WjCBlTELMAkGA1UEBhMCVVMxCzAJ\n" +
+                            "BgNVBAgMAk1PMRQwEgYDVQQHDAtTYWludCBMb3VpczEOMAwGA1UECgwFVU5JVFkx\n" +
+                            "EjAQBgNVBAsMCUNvbW1VTklUWTEXMBUGA1UEAwwOUGVybWlzc2lvbnMgQ0ExJjAk\n" +
+                            "BgkqhkiG9w0BCQEWF2luZm9AdW5pdHlmb3VuZGF0aW9uLmlvMFkwEwYHKoZIzj0C\n" +
+                            "AQYIKoZIzj0DAQcDQgAETpQ3PmzztDkjocQ4jDXDmJSLKNTywfhBj+TaMRMj1llR\n" +
+                            "zzyyg84CAxvOo6aXurB7DP2mOLd3e+JcCnxyIYIjzaNjMGEwHQYDVR0OBBYEFMYW\n" +
+                            "gviUzxL5RbpFMYDY4TgcSVQXMB8GA1UdIwQYMBaAFMYWgviUzxL5RbpFMYDY4Tgc\n" +
+                            "SVQXMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMAoGCCqGSM49BAMC\n" +
+                            "A0kAMEYCIQCzNAsDtL2g3M91hl5i4EUmFtpL4KFnoQ6XrxuatOo63wIhALZhDjMy\n" +
+                            "TsRZo3Lrd0CARNDlnrUNQwgblVJCtmjCK5V4\n" +
+                            "-----END CERTIFICATE-----",
+                    body.get());
+
+            request = HttpRequest.GET("/applications/governance.xml.p7s");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            body = response.getBody(String.class);
+            assertTrue(body.isPresent());
+            assertEquals("MIME-Version: 1.0\n" +
+                    "Content-Type: multipart/signed; protocol=\"application/x-pkcs7-signature\"; micalg=\"sha1\"; boundary=\"----E7CBBA7468B3989AB3841DB52EB8FBDC\"\n" +
+                    "\n" +
+                    "This is an S/MIME signed message\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC\n" +
+                    "Content-Type: text/plain\n" +
+                    "\n" +
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<!--\n" +
+                    "  Illustrates DDS Security can be used to protect access to a DDS Domain.\n" +
+                    "  Only applications that can authenticate and have the proper permissions can\n" +
+                    "  join the Domain. Others cannot publish nor subscribe.\n" +
+                    "-->\n" +
+                    "<dds xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.omg.org/spec/DDS-SECURITY/20170901/omg_shared_ca_permissions.xsd\">\n" +
+                    "  <domain_access_rules>\n" +
+                    "    <!--\n" +
+                    "      Domain 0 is a \"protected domain.\" That is, only applications that\n" +
+                    "      can authenticate and have proper permissions can join it.\n" +
+                    "    -->\n" +
+                    "    <domain_rule>\n" +
+                    "      <domains>\n" +
+                    "        <id>0</id>\n" +
+                    "      </domains>\n" +
+                    "      <allow_unauthenticated_participants>false</allow_unauthenticated_participants>\n" +
+                    "      <enable_join_access_control>true</enable_join_access_control>\n" +
+                    "      <discovery_protection_kind>ENCRYPT</discovery_protection_kind>\n" +
+                    "      <liveliness_protection_kind>ENCRYPT</liveliness_protection_kind>\n" +
+                    "      <rtps_protection_kind>ENCRYPT</rtps_protection_kind>\n" +
+                    "      <topic_access_rules>\n" +
+                    "        <topic_rule>\n" +
+                    "          <topic_expression>B*</topic_expression>\n" +
+                    "          <enable_discovery_protection>true</enable_discovery_protection>\n" +
+                    "          <enable_liveliness_protection>true</enable_liveliness_protection>\n" +
+                    "          <enable_read_access_control>false</enable_read_access_control>\n" +
+                    "          <enable_write_access_control>true</enable_write_access_control>\n" +
+                    "          <metadata_protection_kind>ENCRYPT</metadata_protection_kind>\n" +
+                    "          <data_protection_kind>NONE</data_protection_kind>\n" +
+                    "        </topic_rule>\n" +
+                    "        <topic_rule>\n" +
+                    "          <topic_expression>C*</topic_expression>\n" +
+                    "          <enable_discovery_protection>true</enable_discovery_protection>\n" +
+                    "          <enable_liveliness_protection>true</enable_liveliness_protection>\n" +
+                    "          <enable_read_access_control>true</enable_read_access_control>\n" +
+                    "          <enable_write_access_control>true</enable_write_access_control>\n" +
+                    "          <metadata_protection_kind>ENCRYPT</metadata_protection_kind>\n" +
+                    "          <data_protection_kind>NONE</data_protection_kind>\n" +
+                    "        </topic_rule>\n" +
+                    "      </topic_access_rules>\n" +
+                    "    </domain_rule>\n" +
+                    "  </domain_access_rules>\n" +
+                    "</dds>\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC\n" +
+                    "Content-Type: application/x-pkcs7-signature; name=\"smime.p7s\"\n" +
+                    "Content-Transfer-Encoding: base64\n" +
+                    "Content-Disposition: attachment; filename=\"smime.p7s\"\n" +
+                    "\n" +
+                    "MIIE2gYJKoZIhvcNAQcCoIIEyzCCBMcCAQExCzAJBgUrDgMCGgUAMAsGCSqGSIb3\n" +
+                    "DQEHAaCCAoswggKHMIICLKADAgECAgkAuzndoD1E2BcwCgYIKoZIzj0EAwIwgZUx\n" +
+                    "CzAJBgNVBAYTAlVTMQswCQYDVQQIDAJNTzEUMBIGA1UEBwwLU2FpbnQgTG91aXMx\n" +
+                    "DjAMBgNVBAoMBVVOSVRZMRIwEAYDVQQLDAlDb21tVU5JVFkxFzAVBgNVBAMMDlBl\n" +
+                    "cm1pc3Npb25zIENBMSYwJAYJKoZIhvcNAQkBFhdpbmZvQHVuaXR5Zm91bmRhdGlv\n" +
+                    "bi5pbzAeFw0yMjEwMjAxNjAzNDdaFw0yMjExMTkxNjAzNDdaMIGVMQswCQYDVQQG\n" +
+                    "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                    "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRcwFQYDVQQDDA5QZXJtaXNzaW9u\n" +
+                    "cyBDQTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wWTAT\n" +
+                    "BgcqhkjOPQIBBggqhkjOPQMBBwNCAAROlDc+bPO0OSOhxDiMNcOYlIso1PLB+EGP\n" +
+                    "5NoxEyPWWVHPPLKDzgIDG86jppe6sHsM/aY4t3d74lwKfHIhgiPNo2MwYTAdBgNV\n" +
+                    "HQ4EFgQUxhaC+JTPEvlFukUxgNjhOBxJVBcwHwYDVR0jBBgwFoAUxhaC+JTPEvlF\n" +
+                    "ukUxgNjhOBxJVBcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwCgYI\n" +
+                    "KoZIzj0EAwIDSQAwRgIhALM0CwO0vaDcz3WGXmLgRSYW2kvgoWehDpevG5q06jrf\n" +
+                    "AiEAtmEOMzJOxFmjcut3QIBE0OWetQ1DCBuVUkK2aMIrlXgxggIXMIICEwIBATCB\n" +
+                    "ozCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk1PMRQwEgYDVQQHDAtTYWludCBM\n" +
+                    "b3VpczEOMAwGA1UECgwFVU5JVFkxEjAQBgNVBAsMCUNvbW1VTklUWTEXMBUGA1UE\n" +
+                    "AwwOUGVybWlzc2lvbnMgQ0ExJjAkBgkqhkiG9w0BCQEWF2luZm9AdW5pdHlmb3Vu\n" +
+                    "ZGF0aW9uLmlvAgkAuzndoD1E2BcwCQYFKw4DAhoFAKCCAQcwGAYJKoZIhvcNAQkD\n" +
+                    "MQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIxMDIwMTYwNDE5WjAjBgkq\n" +
+                    "hkiG9w0BCQQxFgQUJPFYFIoOlpQ91q+BZSPGJZdoCq8wgacGCSqGSIb3DQEJDzGB\n" +
+                    "mTCBljALBglghkgBZQMEASowCAYGKoUDAgIJMAoGCCqFAwcBAQICMAoGCCqFAwcB\n" +
+                    "AQIDMAgGBiqFAwICFTALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3\n" +
+                    "DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq\n" +
+                    "hkiG9w0DAgIBKDAJBgcqhkjOPQQBBEcwRQIgFusiTtqdVhanba5ezc++SFT4VQY7\n" +
+                    "v1bEzsC03JCRauYCIQCKqjWLJDrJpwd7ruWSFpQ6w/iyqN13BlWdnrn2KywpEw==\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC--\n" +
+                    "\n",
+                    body.get());
+        }
+
+        @Test
+        void canRetrieveClientCertAndPrivateKey() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/key-pair?nonce=unity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Map> bodyOptional = response.getBody(Map.class);
+            assertTrue(bodyOptional.isPresent());
+            Map map = bodyOptional.get();
+            assertTrue(map.containsKey("public"));
+            assertTrue(map.containsKey("private"));
+        }
+
+        @Test
+        void canRetrievePermissions() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            Long applicationOneId = applicationOne.getId();
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOneId);
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOneId.toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOneId);
+
+            request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=unity");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> bodyOptional = response.getBody(String.class);
+            assertTrue(bodyOptional.isPresent());
+            String body = bodyOptional.get();
+            assertTrue(body.contains("CN="+ applicationOneId +"_unity,GIVENNAME="+applicationOneId+",SURNAME="+primaryGroup.getId()));
+        }
+    }
+    @Test
+    public void testApplicationFilter() {
+        mockSecurityService.postConstruct();
+        mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
+        List<Map> results = blockingClient.retrieve(request, List.class);
+
+        List<String> expectedApplicationNames = Arrays.asList("GoLang", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
+        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
+
+        request = HttpRequest.GET("/applications/search?filter=Group&size=7");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(7, results.size());
+        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
+
+        request = HttpRequest.GET("/applications/search?filter=Art");
+        results = blockingClient.retrieve(request, List.class);
+
+        expectedApplicationNames = Arrays.asList("Paint", "Clay", "Pencil", "Art");
+        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
+
+        request = HttpRequest.GET("/applications/search?filter=Art&size=2");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(2, results.size());
+        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
+
+        request = HttpRequest.GET("/applications/search?filter=Clay");
+        results = blockingClient.retrieve(request, List.class);
+        assertEquals(1, results.size());
+        assertEquals("Clay", results.get(0).get("name"));
+    }
+
+    private void assertResultOnlyContainsExpectedApplicationNames(List<Map> results, List<String> expectedApplicationNames) {
+        assertTrue(results.stream().allMatch((m) -> expectedApplicationNames.contains(m.get("name"))));
+    }
+
+    private void assertResultContainsAllExpectedApplicationNames(List<String> expectedApplicationNames, List<Map> results) {
+        List<String> applicationNames = results.stream().map(m -> (String)m.get("name")).collect(Collectors.toList());
+
+        assertEquals(expectedApplicationNames.size(), applicationNames.size());
+        assertTrue(expectedApplicationNames.containsAll(applicationNames));
+    }
+
+    private HttpResponse<?> createGroup(String groupName) {
+        Group group = new Group(groupName);
+        HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
+        HttpResponse<?> response;
+        return blockingClient.exchange(request, Group.class);
+    }
+
+    private HttpResponse<?> createApplication(String applicationName, Long groupId) {
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        applicationDTO.setName(applicationName);
+        applicationDTO.setGroup(groupId);
+
+        HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+        return blockingClient.exchange(request, ApplicationDTO.class);
     }
 }

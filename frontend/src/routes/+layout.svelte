@@ -2,32 +2,36 @@
 	import { onMount } from 'svelte';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
-	import permissionsByGroup from '../stores/permissionsByGroup';
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
 
+	export let data;
+	const userValidityInterval = 180000; // 3 minutes
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
 		try {
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
-			permissionsByGroup.set(res.data.permissionsByGroup);
 
-			// remindTime = 60 * 1000 * 5; // 5 minutes
-			// expirationTime = new Date(res.data.exp * 1000);
-			// nowTime = new Date();
-
-			// console.log('exp:', expirationTime);
-			// console.log('now:', nowTime);
-			// console.log('Remind in:', expirationTime - nowTime - remindTime);
-			// console.log(expirationTime - nowTime);
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
+			setInterval(checkValidity, userValidityInterval);
 		} catch (err) {
 			console.error(err);
 		}
 	});
+
+	const checkValidity = async () => {
+		try {
+			const res = await httpAdapter.get(`/group_membership/user-validity`);
+		} catch (err) {
+			if (err.response.status === 404) {
+				// Logout User
+				onLoggedIn(false);
+			}
+		}
+	};
 </script>
 
 <Header isAuthenticated={$isAuthenticated} />

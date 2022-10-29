@@ -1,11 +1,15 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Entity
-@Table(name = "permissions_applications")
+@Table(name = "permissions_application")
 public class Application {
 
     @Id
@@ -13,15 +17,25 @@ public class Application {
     private Long id;
 
     @NonNull
+    @NotBlank
+    @Size(min = 3)
     private String name;
 
-    @NonNull
-    private Long permissionsGroup;
+    @Nullable
+    private String encryptedPassword;
+
+    @ManyToOne
+    @JoinColumn(name = "permissions_group_id", nullable = false)
+    private Group permissionsGroup;
 
     public Application() {
     }
 
-    public Application(@NonNull String name, @NonNull Long permissionsGroup) {
+    public Application(@NonNull String name) {
+        this.name = name;
+    }
+
+    public Application(@NonNull String name, @NonNull Group permissionsGroup) {
         this.name = name;
         this.permissionsGroup = permissionsGroup;
     }
@@ -43,11 +57,25 @@ public class Application {
         this.name = name;
     }
 
-    public Long getPermissionsGroup() {
+    public Group getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(Long permissionsGroup) {
+    public void setPermissionsGroup(Group permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
+    }
+
+    @Nullable
+    public String getEncryptedPassword() {
+        return encryptedPassword;
+    }
+
+    public void setEncryptedPassword(@Nullable String encryptedPassword) {
+        this.encryptedPassword = encryptedPassword;
+    }
+
+    @PrePersist
+    void trimName() {
+        this.name = this.name.trim();
     }
 }

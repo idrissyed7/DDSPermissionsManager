@@ -4,10 +4,12 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,27 +22,17 @@ public class Group {
     private Long id;
 
     @NonNull
+    @NotBlank
+    @Size(min = 3)
     @Column(unique = true)
     private String name;
 
-    @ManyToMany(targetEntity = Topic.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_topics",
-            joinColumns=
-            @JoinColumn(name="group_id", referencedColumnName="id"),
-            inverseJoinColumns=
-            @JoinColumn(name="topic_id", referencedColumnName="id")
-    )
-    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Topic> topics = new HashSet<>();
 
-    @ManyToMany(targetEntity = Application.class, cascade = CascadeType.ALL)
-    @JoinTable(name="permissions_group_applications",
-            joinColumns=
-            @JoinColumn(name="group_id", referencedColumnName="id"),
-            inverseJoinColumns=
-            @JoinColumn(name="application_id", referencedColumnName="id")
-    )
-    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Application> applications = new HashSet<>();
 
     public Group() {
@@ -99,5 +91,10 @@ public class Group {
 
     public void addApplication(Application application) {
         applications.add(application);
+    }
+
+    @PrePersist
+    void trimName() {
+        this.name = this.name.trim();
     }
 }
