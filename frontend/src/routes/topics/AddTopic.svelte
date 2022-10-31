@@ -410,7 +410,7 @@
 										on:click={() => {
 											selectedSearchApplication(result.name, result.id);
 											searchApplications = '';
-										}}>{result.name}</td
+										}}>{result.name} ({result.groupName})</td
 									>
 								</tr>
 							{/each}
