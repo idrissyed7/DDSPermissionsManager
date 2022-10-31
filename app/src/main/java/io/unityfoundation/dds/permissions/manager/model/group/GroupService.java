@@ -84,8 +84,7 @@ public class GroupService {
         Group group;
         if (groupRequestDTO.getId() == null) {
             if (searchGroupByName.isPresent()) {
-                Group searchedGroup = searchGroupByName.get();
-                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new SimpleGroupDTO(searchedGroup.getId(), searchedGroup.getName()));
+                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, searchGroupByName.get());
             }
 
             group = groupRepository.save(new Group(groupRequestDTO.getName()));
