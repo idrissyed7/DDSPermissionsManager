@@ -162,13 +162,13 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication(null, primaryGroup.getId());
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
 
             // space
             exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication("     ", primaryGroup.getId());
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -184,7 +184,7 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication("a", theta.getId());
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -473,7 +473,7 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -926,7 +926,7 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test

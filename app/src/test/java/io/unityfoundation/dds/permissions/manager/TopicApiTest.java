@@ -81,7 +81,7 @@ public class TopicApiTest {
             TopicDTO topicDTO = new TopicDTO();
             topicDTO.setName("testTopic1");
             topicDTO.setKind(TopicKind.B);
-            HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);;
+            HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
