@@ -74,4 +74,12 @@ public class GroupMembershipController {
         Long id = Long.valueOf((Integer) payload.get("id"));
         return groupUserService.removeMember(id);
     }
+
+    @Get("/user-exists/{id}")
+    @ExecuteOn(TaskExecutors.IO)
+    @ApiResponse(responseCode = "200", description = "Ok")
+    @ApiResponse(responseCode = "404", description = "Not found")
+    HttpResponse checkUserExists(Long id) {
+        return groupUserService.checkUserExists(id);
+    }
 }

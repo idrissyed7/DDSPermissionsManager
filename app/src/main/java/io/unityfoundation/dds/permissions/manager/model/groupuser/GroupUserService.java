@@ -272,4 +272,12 @@ public class GroupUserService {
             }
         });
     }
+
+    public HttpResponse checkUserExists(Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            return HttpResponse.ok();
+        }
+        return HttpResponse.notFound();
+    }
 }
