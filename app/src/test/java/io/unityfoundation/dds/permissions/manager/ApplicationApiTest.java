@@ -23,6 +23,7 @@ import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
+import java.text.Collator;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -357,13 +358,15 @@ public class ApplicationApiTest {
             List<String> appNames = applications.stream()
                     .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
+            Collator collator = Collator.getInstance();
+            collator.setStrength(Collator.PRIMARY);
+            assertEquals(appNames.stream().sorted(collator).collect(Collectors.toList()), appNames);
 
             List<String> xyzApplications = applications.stream().filter(map -> {
                 String appName = (String) map.get("name");
                 return appName.equals("Xyz789");
             }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
+            assertEquals(xyzApplications.stream().sorted(collator).collect(Collectors.toList()), xyzApplications);
         }
 
         @Test
@@ -406,10 +409,12 @@ public class ApplicationApiTest {
             assertTrue(applicationsOptional.isPresent());
             List<Map> applications = applicationsOptional.get().getContent();
 
+            Collator collator = Collator.getInstance();
+            collator.setStrength(Collator.PRIMARY);
             List<String> appNames = applications.stream()
                     .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
+            assertEquals(appNames.stream().sorted(collator.reversed()).collect(Collectors.toList()), appNames);
         }
 
         @Test
