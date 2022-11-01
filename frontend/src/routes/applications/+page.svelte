@@ -593,7 +593,7 @@
 							<ul>
 								{#each $applicationPermission as appPermission}
 									<li>
-										{appPermission.permissionsTopic.name}
+										{appPermission.topicName}
 									</li>
 								{/each}
 							</ul>
