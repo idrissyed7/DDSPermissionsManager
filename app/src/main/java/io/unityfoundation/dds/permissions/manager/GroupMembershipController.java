@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
@@ -21,7 +20,6 @@ import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserServi
 
 import javax.validation.Valid;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller("/api/group_membership")
 @Secured(SecurityRule.IS_AUTHENTICATED)

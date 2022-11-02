@@ -11,7 +11,6 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,9 +24,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.io.IOException;
-import java.net.URI;
 import java.security.GeneralSecurityException;
-import java.util.Optional;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
