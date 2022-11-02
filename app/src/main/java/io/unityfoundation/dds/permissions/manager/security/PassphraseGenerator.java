@@ -4,7 +4,6 @@ import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Property;
 import jakarta.inject.Singleton;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 

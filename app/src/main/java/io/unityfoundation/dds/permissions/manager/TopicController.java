@@ -19,7 +19,6 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 
 import javax.validation.Valid;
-import java.net.URI;
 
 @Controller("/api/topics")
 @Secured(SecurityRule.IS_AUTHENTICATED)
