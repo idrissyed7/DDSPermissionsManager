@@ -90,22 +90,22 @@ public class ApplicationController {
     @Get("/identity_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getIdentityCACertificate() {
-        return applicationService.getIdentityCACertificate();
+    public HttpResponse<?> getIdentityCACertificate(@Nullable @Header("ETag") String etag) {
+        return applicationService.getIdentityCACertificate(etag);
     }
 
     @Get("/permissions_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsCACertificate() {
-        return applicationService.getPermissionsCACertificate();
+    public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header("ETag") String etag) {
+        return applicationService.getPermissionsCACertificate(etag);
     }
 
     @Get("/governance.xml.p7s")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getGovernanceFile() {
-        return applicationService.getGovernanceFile();
+    public HttpResponse<?> getGovernanceFile(@Nullable @Header("ETag") String etag) {
+        return applicationService.getGovernanceFile(etag);
     }
 
     @Get("/key-pair{?nonce}")

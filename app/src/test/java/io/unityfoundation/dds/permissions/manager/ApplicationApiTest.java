@@ -44,6 +44,9 @@ public class ApplicationApiTest {
     MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
+    MockApplicationSecretsClient mockApplicationSecretsClient;
+
+    @Inject
     GroupRepository groupRepository;
 
     @Inject
@@ -1260,6 +1263,12 @@ public class ApplicationApiTest {
             userRepository.save(new User("montesm@test.test", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+            setETagPropsForMockApplicationSecretsClient("abc", false);
+        }
+
+        void setETagPropsForMockApplicationSecretsClient(String etag, boolean hasCachedFileBeenUpdated) {
+            mockApplicationSecretsClient.setEtag(etag);
+            mockApplicationSecretsClient.setHasCachedFileBeenUpdated(hasCachedFileBeenUpdated);
         }
 
         void loginAsApplication(Long applicationId) {
@@ -1329,6 +1338,7 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications/identity_ca.pem");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
+            assertEquals("abc", response.header("ETag"));
             Optional<String> body = response.getBody(String.class);
             assertTrue(body.isPresent());
             assertEquals("-----BEGIN CERTIFICATE-----\n" +
@@ -1465,6 +1475,130 @@ public class ApplicationApiTest {
                     "------E7CBBA7468B3989AB3841DB52EB8FBDC--\n" +
                     "\n",
                     body.get());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnNotModifiedIfRequestEtagIsTheSameAsCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/identity_ca.pem").header("ETag", "abc");
+            response = blockingClient.exchange(request);
+            assertEquals(NOT_MODIFIED, response.getStatus());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnUpdatedFileIfRequestEtagIsDifferentThanCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+            setETagPropsForMockApplicationSecretsClient("xyz", true);
+
+            String originalFileEtag = "abc";
+            request = HttpRequest.GET("/applications/identity_ca.pem").header("ETag", originalFileEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            assertFalse(originalFileEtag.contentEquals(response.header("ETag")));
+            assertEquals("xyz", response.header("ETag"));
         }
 
         @Test

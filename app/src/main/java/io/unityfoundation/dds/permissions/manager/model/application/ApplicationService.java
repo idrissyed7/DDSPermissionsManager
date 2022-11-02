@@ -76,6 +76,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static io.unityfoundation.dds.permissions.manager.security.ApplicationSecretsClient.*;
+
 @Singleton
 public class ApplicationService {
 
@@ -292,32 +294,56 @@ public class ApplicationService {
         }
     }
 
-    public HttpResponse<?> getIdentityCACertificate() {
+    public HttpResponse<?> getIdentityCACertificate(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(IDENTITY_CA_CERT);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(IDENTITY_CA_CERT)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(IDENTITY_CA_CERT);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
         if (identityCACert.isPresent()) {
             String cert = identityCACert.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header("ETag", etag);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getPermissionsCACertificate() {
+    public HttpResponse<?> getPermissionsCACertificate(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(PERMISSIONS_CA_CERT);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(PERMISSIONS_CA_CERT)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(PERMISSIONS_CA_CERT);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
         if (permissionsCACert.isPresent()) {
             String cert = permissionsCACert.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header("ETag", etag);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getGovernanceFile() {
+    public HttpResponse<?> getGovernanceFile(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(GOVERNANCE_FILE);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(GOVERNANCE_FILE)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(GOVERNANCE_FILE);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
         if (governanceFile.isPresent()) {
             String cert = governanceFile.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header("ETag", etag);
         }
         return HttpResponse.notFound();
     }
