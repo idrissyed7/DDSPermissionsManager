@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 
+import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
+
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Tag(name = "application")
@@ -91,21 +93,21 @@ public class ApplicationController {
     @Get("/identity_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getIdentityCACertificate(@Nullable @Header("ETag") String etag) {
+    public HttpResponse<?> getIdentityCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
         return applicationService.getIdentityCACertificate(etag);
     }
 
     @Get("/permissions_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header("ETag") String etag) {
+    public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
         return applicationService.getPermissionsCACertificate(etag);
     }
 
     @Get("/governance.xml.p7s")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getGovernanceFile(@Nullable @Header("ETag") String etag) {
+    public HttpResponse<?> getGovernanceFile(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
         return applicationService.getGovernanceFile(etag);
     }
 
@@ -132,7 +134,7 @@ public class ApplicationController {
     @Get("/permissions.json")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsJson(@Nullable @Header("ETag") String etag) throws NoSuchAlgorithmException {
+    public HttpResponse<?> getPermissionsJson(@Nullable @Header(E_TAG_HEADER_NAME) String etag) throws NoSuchAlgorithmException {
         return applicationService.getPermissionJson(etag);
     }
 }
