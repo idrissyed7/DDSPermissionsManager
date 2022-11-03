@@ -82,6 +82,8 @@ import static io.unityfoundation.dds.permissions.manager.security.ApplicationSec
 @Singleton
 public class ApplicationService {
 
+    public static final String E_TAG_HEADER_NAME = "ETag";
+
     @Property(name = "permissions-manager.application.client-certificate.time-expiry")
     protected Long certExpiry;
     @Property(name = "permissions-manager.application.permissions-file.time-expiry")
@@ -308,7 +310,7 @@ public class ApplicationService {
         if (identityCACert.isPresent()) {
             String cert = identityCACert.get();
 
-            return HttpResponse.ok(cert).header("ETag", etag);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
@@ -326,7 +328,7 @@ public class ApplicationService {
         if (permissionsCACert.isPresent()) {
             String cert = permissionsCACert.get();
 
-            return HttpResponse.ok(cert).header("ETag", etag);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
@@ -344,7 +346,7 @@ public class ApplicationService {
         if (governanceFile.isPresent()) {
             String cert = governanceFile.get();
 
-            return HttpResponse.ok(cert).header("ETag", etag);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
@@ -418,7 +420,7 @@ public class ApplicationService {
                 return HttpResponse.notModified();
             }
 
-            return HttpResponse.ok(applicationPermissions).header("ETag", etag);
+            return HttpResponse.ok(applicationPermissions).header(E_TAG_HEADER_NAME, etag);
         }
 
         return HttpResponse.notFound();

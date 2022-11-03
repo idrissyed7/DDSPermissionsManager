@@ -13,6 +13,7 @@ import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -1342,7 +1343,7 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications/identity_ca.pem");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
-            assertEquals("abc", response.header("ETag"));
+            assertEquals("abc", response.header(ApplicationService.E_TAG_HEADER_NAME));
             Optional<String> body = response.getBody(String.class);
             assertTrue(body.isPresent());
             assertEquals("-----BEGIN CERTIFICATE-----\n" +
@@ -1536,7 +1537,7 @@ public class ApplicationApiTest {
 
             loginAsApplication(applicationOne.getId());
 
-            request = HttpRequest.GET("/applications/identity_ca.pem").header("ETag", "abc");
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(ApplicationService.E_TAG_HEADER_NAME, "abc");
             response = blockingClient.exchange(request);
             assertEquals(NOT_MODIFIED, response.getStatus());
         }
@@ -1598,11 +1599,11 @@ public class ApplicationApiTest {
             setETagPropsForMockApplicationSecretsClient("xyz", true);
 
             String originalFileEtag = "abc";
-            request = HttpRequest.GET("/applications/identity_ca.pem").header("ETag", originalFileEtag);
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(ApplicationService.E_TAG_HEADER_NAME, originalFileEtag);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
-            assertFalse(originalFileEtag.contentEquals(response.header("ETag")));
-            assertEquals("xyz", response.header("ETag"));
+            assertFalse(originalFileEtag.contentEquals(response.header(ApplicationService.E_TAG_HEADER_NAME)));
+            assertEquals("xyz", response.header(ApplicationService.E_TAG_HEADER_NAME));
         }
 
         @Test
@@ -1661,11 +1662,11 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications/permissions.json");
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
-            String originalEtag = response.header("ETag");
+            String originalEtag = response.header(ApplicationService.E_TAG_HEADER_NAME);
             assertNotNull(originalEtag);
 
             // send originalEtag and expect a 304
-            request = HttpRequest.GET("/applications/permissions.json").header("ETag", originalEtag);
+            request = HttpRequest.GET("/applications/permissions.json").header(ApplicationService.E_TAG_HEADER_NAME, originalEtag);
             response = blockingClient.exchange(request);
             assertEquals(NOT_MODIFIED, response.getStatus());
 
@@ -1688,10 +1689,10 @@ public class ApplicationApiTest {
             loginAsApplication(applicationOne.getId());
 
             // send originalEtag and expect etag not equal to original and expect defined etag
-            request = HttpRequest.GET("/applications/permissions.json").header("ETag", originalEtag);
+            request = HttpRequest.GET("/applications/permissions.json").header(ApplicationService.E_TAG_HEADER_NAME, originalEtag);
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
-            String updatedEtag = response.header("ETag");
+            String updatedEtag = response.header(ApplicationService.E_TAG_HEADER_NAME);
             assertNotEquals(originalEtag, updatedEtag);
             assertNotNull(updatedEtag);
         }
