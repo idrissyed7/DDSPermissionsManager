@@ -13,9 +13,14 @@ import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
+import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest(environments={"app-api-test-data"})
@@ -42,6 +48,9 @@ public class ApplicationApiTest {
 
     @Inject
     MockAuthenticationFetcher mockAuthenticationFetcher;
+
+    @Inject
+    MockApplicationSecretsClient mockApplicationSecretsClient;
 
     @Inject
     GroupRepository groupRepository;
@@ -1260,6 +1269,12 @@ public class ApplicationApiTest {
             userRepository.save(new User("montesm@test.test", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+            setETagPropsForMockApplicationSecretsClient("abc", false);
+        }
+
+        void setETagPropsForMockApplicationSecretsClient(String etag, boolean hasCachedFileBeenUpdated) {
+            mockApplicationSecretsClient.setEtag(etag);
+            mockApplicationSecretsClient.setHasCachedFileBeenUpdated(hasCachedFileBeenUpdated);
         }
 
         void loginAsApplication(Long applicationId) {
@@ -1329,6 +1344,7 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications/identity_ca.pem");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
+            assertEquals("abc", response.header(E_TAG_HEADER_NAME));
             Optional<String> body = response.getBody(String.class);
             assertTrue(body.isPresent());
             assertEquals("-----BEGIN CERTIFICATE-----\n" +
@@ -1465,6 +1481,221 @@ public class ApplicationApiTest {
                     "------E7CBBA7468B3989AB3841DB52EB8FBDC--\n" +
                     "\n",
                     body.get());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnNotModifiedIfRequestEtagIsTheSameAsCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(E_TAG_HEADER_NAME, "abc");
+            response = blockingClient.exchange(request);
+            assertEquals(NOT_MODIFIED, response.getStatus());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnUpdatedFileIfRequestEtagIsDifferentThanCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+            setETagPropsForMockApplicationSecretsClient("xyz", true);
+
+            String originalFileEtag = "abc";
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(E_TAG_HEADER_NAME, originalFileEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            assertFalse(originalFileEtag.contentEquals(response.header(E_TAG_HEADER_NAME)));
+            assertEquals("xyz", response.header(E_TAG_HEADER_NAME));
+        }
+
+        @Test
+        void canRetrievePermissionsJson() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // create app permission
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/permissions.json");
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            String originalEtag = response.header(E_TAG_HEADER_NAME);
+            assertNotNull(originalEtag);
+
+            // send originalEtag and expect a 304
+            request = HttpRequest.GET("/applications/permissions.json").header(E_TAG_HEADER_NAME, originalEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(NOT_MODIFIED, response.getStatus());
+
+            // switch back to admin to add new permission...
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // add a new permission
+            response = createTopic("Topic789", TopicKind.B, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic789", topicOptional.get().getName());
+
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ_WRITE);
+            assertEquals(CREATED, response.getStatus());
+            permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            // send originalEtag and expect etag not equal to original and expect defined etag
+            request = HttpRequest.GET("/applications/permissions.json").header(E_TAG_HEADER_NAME, originalEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            String updatedEtag = response.header(E_TAG_HEADER_NAME);
+            assertNotEquals(originalEtag, updatedEtag);
+            assertNotNull(updatedEtag);
         }
 
         @Test
@@ -1623,5 +1854,20 @@ public class ApplicationApiTest {
 
         HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
         return blockingClient.exchange(request, ApplicationDTO.class);
+    }
+
+    private HttpResponse<?> createTopic(String topicName, TopicKind topicKind, Long groupId) {
+        TopicDTO topicDTO = new TopicDTO();
+        topicDTO.setName(topicName);
+        topicDTO.setGroup(groupId);
+        topicDTO.setKind(topicKind);
+
+        HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
+        return blockingClient.exchange(request, TopicDTO.class);
+    }
+
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+        return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }

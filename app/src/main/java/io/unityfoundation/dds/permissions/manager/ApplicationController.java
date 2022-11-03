@@ -25,6 +25,9 @@ import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+
+import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -90,22 +93,22 @@ public class ApplicationController {
     @Get("/identity_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getIdentityCACertificate() {
-        return applicationService.getIdentityCACertificate();
+    public HttpResponse<?> getIdentityCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getIdentityCACertificate(etag);
     }
 
     @Get("/permissions_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsCACertificate() {
-        return applicationService.getPermissionsCACertificate();
+    public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getPermissionsCACertificate(etag);
     }
 
     @Get("/governance.xml.p7s")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getGovernanceFile() {
-        return applicationService.getGovernanceFile();
+    public HttpResponse<?> getGovernanceFile(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getGovernanceFile(etag);
     }
 
     @Get("/key-pair{?nonce}")
@@ -126,5 +129,12 @@ public class ApplicationController {
             return HttpResponse.badRequest();
         }
         return applicationService.getPermissionsFile(nonce);
+    }
+
+    @Get("/permissions.json")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsJson(@Nullable @Header(E_TAG_HEADER_NAME) String etag) throws NoSuchAlgorithmException {
+        return applicationService.getPermissionJson(etag);
     }
 }

@@ -10,6 +10,9 @@ import java.util.Optional;
 @Singleton
 public class MockApplicationSecretsClient extends ApplicationSecretsClient {
 
+    private String etag = "abc";
+    private boolean hasCachedFileBeenUpdated = false;
+
     public MockApplicationSecretsClient() {
     }
 
@@ -155,5 +158,22 @@ public class MockApplicationSecretsClient extends ApplicationSecretsClient {
                 "AwEHoUQDQgAEgUJtwTNZffFeUf0deYHps5Opvz5hCNcoLdUrloMRceC6FOiJqq6V\n" +
                 "OgxxVU9lwr9fJuAaZm0uQpyOYvgAqBLw5w==\n" +
                 "-----END EC PRIVATE KEY-----\n");
+    }
+
+    public boolean hasCachedFileBeenUpdated(String file) {
+        return this.hasCachedFileBeenUpdated;
+    }
+
+    @Override
+    public String getCorrespondingEtag(String file) {
+        return this.etag;
+    }
+
+    public void setEtag(String etag) {
+        this.etag = etag;
+    }
+
+    public void setHasCachedFileBeenUpdated(boolean hasCachedFileBeenUpdated) {
+        this.hasCachedFileBeenUpdated = hasCachedFileBeenUpdated;
     }
 }

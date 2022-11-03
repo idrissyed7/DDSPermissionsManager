@@ -61,6 +61,7 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeMessage;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
+import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -78,8 +79,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static io.unityfoundation.dds.permissions.manager.security.ApplicationSecretsClient.*;
+
 @Singleton
 public class ApplicationService {
+
+    public static final String E_TAG_HEADER_NAME = "ETag";
 
     @Property(name = "permissions-manager.application.client-certificate.time-expiry")
     protected Long certExpiry;
@@ -294,32 +299,56 @@ public class ApplicationService {
         }
     }
 
-    public HttpResponse<?> getIdentityCACertificate() {
+    public HttpResponse<?> getIdentityCACertificate(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(IDENTITY_CA_CERT);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(IDENTITY_CA_CERT)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(IDENTITY_CA_CERT);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> identityCACert = applicationSecretsClient.getIdentityCACert();
         if (identityCACert.isPresent()) {
             String cert = identityCACert.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getPermissionsCACertificate() {
+    public HttpResponse<?> getPermissionsCACertificate(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(PERMISSIONS_CA_CERT);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(PERMISSIONS_CA_CERT)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(PERMISSIONS_CA_CERT);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
         if (permissionsCACert.isPresent()) {
             String cert = permissionsCACert.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getGovernanceFile() {
+    public HttpResponse<?> getGovernanceFile(String requestEtag) {
+        String etag = applicationSecretsClient.getCorrespondingEtag(GOVERNANCE_FILE);
+        if (applicationSecretsClient.hasCachedFileBeenUpdated(GOVERNANCE_FILE)) {
+            etag = applicationSecretsClient.getCorrespondingEtag(GOVERNANCE_FILE);
+        }
+        if (requestEtag != null && requestEtag.contentEquals(etag)) {
+            return HttpResponse.notModified();
+        }
+
         Optional<String> governanceFile = applicationSecretsClient.getGovernanceFile();
         if (governanceFile.isPresent()) {
             String cert = governanceFile.get();
 
-            return HttpResponse.ok(cert);
+            return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
         return HttpResponse.notFound();
     }
@@ -386,6 +415,29 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
+    public HttpResponse<?> getPermissionJson(String requestEtag) throws NoSuchAlgorithmException {
+        Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
+
+        if (applicationOptional.isPresent()) {
+            HashMap applicationPermissions = buildApplicationPermissions(applicationOptional.get());
+            String etag = generateMD5Hash(applicationPermissions.toString());
+            if (requestEtag != null && requestEtag.contentEquals(etag)) {
+                return HttpResponse.notModified();
+            }
+
+            return HttpResponse.ok(applicationPermissions).header(E_TAG_HEADER_NAME, etag);
+        }
+
+        return HttpResponse.notFound();
+    }
+
+    private String generateMD5Hash(String str) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(str.getBytes());
+        byte[] digest = md.digest();
+        return DatatypeConverter.printHexBinary(digest).toUpperCase();
+    }
+
     public static MimeMultipart createSignedMultipart(
             PrivateKey signingKey, X509Certificate signingCert, MimeBodyPart message)
             throws GeneralSecurityException, OperatorCreationException, SMIMEException {
@@ -432,6 +484,13 @@ public class ApplicationService {
         Long domain = permissionDomain != null ? permissionDomain : 1;
         dataModel.put("domain", domain);
 
+        dataModel.putAll(buildApplicationPermissions(application));
+
+        return dataModel;
+    }
+
+    private HashMap buildApplicationPermissions(Application application) {
+        HashMap<String, Object> dataModel = new HashMap<>();
         List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
         Map<AccessType, List<ApplicationPermission>> accessTypeListMap =
                 applicationPermissions.stream().collect(Collectors.groupingBy(ApplicationPermission::getAccessType));
@@ -450,8 +509,8 @@ public class ApplicationService {
         addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ_WRITE));
         addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.READ_WRITE));
 
-        dataModel.put("subscribeList", subscribeList);
-        dataModel.put("publishList", publishList);
+        dataModel.put("subscribe", subscribeList);
+        dataModel.put("publish", publishList);
 
         return dataModel;
     }
