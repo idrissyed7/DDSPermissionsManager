@@ -55,8 +55,10 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.Store;
 
 import javax.mail.MessagingException;
+import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.MimeMessage;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
@@ -369,9 +371,12 @@ public class ApplicationService {
                     readCertificate(permissionsCACert.get()),
                     mimeBodyPart);
 
+            MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
+            message.setContent(signedMultipart);
+
             String result;
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                signedMultipart.writeTo(byteArrayOutputStream);
+                message.writeTo(byteArrayOutputStream);
                 result = byteArrayOutputStream.toString();
             }
 
