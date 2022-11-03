@@ -1662,7 +1662,7 @@ public class ApplicationApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
             String originalEtag = response.header("ETag");
-            assertEquals("-901306534", originalEtag);
+            assertEquals("FC54A9BFB8B61437C0085FBFE4762522", originalEtag);
 
             // send originalEtag and expect a 304
             request = HttpRequest.GET("/applications/permissions.json").header("ETag", originalEtag);
@@ -1693,7 +1693,7 @@ public class ApplicationApiTest {
             assertEquals(OK, response.getStatus());
             String updatedEtag = response.header("ETag");
             assertNotEquals(originalEtag, updatedEtag);
-            assertEquals("430826916", updatedEtag);
+            assertEquals("3C594023DD0C792969D89E14FB1AE144", updatedEtag);
         }
 
         @Test

@@ -25,6 +25,7 @@ import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -131,7 +132,7 @@ public class ApplicationController {
     @Get("/permissions.json")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsJson(@Nullable @Header("ETag") String etag) {
+    public HttpResponse<?> getPermissionsJson(@Nullable @Header("ETag") String etag) throws NoSuchAlgorithmException {
         return applicationService.getPermissionJson(etag);
     }
 }

@@ -59,6 +59,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.security.auth.x500.X500Principal;
 import javax.transaction.Transactional;
+import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -407,12 +408,12 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getPermissionJson(String requestEtag) {
+    public HttpResponse<?> getPermissionJson(String requestEtag) throws NoSuchAlgorithmException {
         Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
 
         if (applicationOptional.isPresent()) {
             HashMap applicationPermissions = buildApplicationPermissions(applicationOptional.get());
-            String etag = String.valueOf(applicationPermissions.hashCode());
+            String etag = generateMD5Hash(applicationPermissions.toString());
             if (requestEtag != null && requestEtag.contentEquals(etag)) {
                 return HttpResponse.notModified();
             }
@@ -421,6 +422,13 @@ public class ApplicationService {
         }
 
         return HttpResponse.notFound();
+    }
+
+    private String generateMD5Hash(String str) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(str.getBytes());
+        byte[] digest = md.digest();
+        return DatatypeConverter.printHexBinary(digest).toUpperCase();
     }
 
     public static MimeMultipart createSignedMultipart(
