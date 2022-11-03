@@ -127,4 +127,11 @@ public class ApplicationController {
         }
         return applicationService.getPermissionsFile(nonce);
     }
+
+    @Get("/permissions.json")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsJson(@Nullable @Header("ETag") String etag) {
+        return applicationService.getPermissionJson(etag);
+    }
 }

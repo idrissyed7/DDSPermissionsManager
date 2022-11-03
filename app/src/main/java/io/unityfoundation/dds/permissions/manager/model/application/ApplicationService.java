@@ -407,6 +407,22 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
+    public HttpResponse<?> getPermissionJson(String requestEtag) {
+        Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
+
+        if (applicationOptional.isPresent()) {
+            HashMap applicationPermissions = buildApplicationPermissions(applicationOptional.get());
+            String etag = String.valueOf(applicationPermissions.hashCode());
+            if (requestEtag != null && requestEtag.contentEquals(etag)) {
+                return HttpResponse.notModified();
+            }
+
+            return HttpResponse.ok(applicationPermissions).header("ETag", etag);
+        }
+
+        return HttpResponse.notFound();
+    }
+
     public static MimeMultipart createSignedMultipart(
             PrivateKey signingKey, X509Certificate signingCert, MimeBodyPart message)
             throws GeneralSecurityException, OperatorCreationException, SMIMEException {
@@ -453,6 +469,13 @@ public class ApplicationService {
         Long domain = permissionDomain != null ? permissionDomain : 1;
         dataModel.put("domain", domain);
 
+        dataModel.putAll(buildApplicationPermissions(application));
+
+        return dataModel;
+    }
+
+    private HashMap buildApplicationPermissions(Application application) {
+        HashMap<String, Object> dataModel = new HashMap<>();
         List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
         Map<AccessType, List<ApplicationPermission>> accessTypeListMap =
                 applicationPermissions.stream().collect(Collectors.groupingBy(ApplicationPermission::getAccessType));
@@ -471,8 +494,8 @@ public class ApplicationService {
         addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ_WRITE));
         addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.READ_WRITE));
 
-        dataModel.put("subscribeList", subscribeList);
-        dataModel.put("publishList", publishList);
+        dataModel.put("subscribe", subscribeList);
+        dataModel.put("publish", publishList);
 
         return dataModel;
     }

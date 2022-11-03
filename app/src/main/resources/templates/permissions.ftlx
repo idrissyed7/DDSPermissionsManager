@@ -11,19 +11,19 @@
                 <domains>
                     <id>${domain}</id>
                 </domains>
-                <#if publishList?size != 0>
+                <#if publish?size != 0>
                 <publish>
                     <topics>
-                    <#list publishList as canonicalName>
+                    <#list publish as canonicalName>
                         <topic>${canonicalName}</topic>
                     </#list>
                     </topics>
                 </publish>
                 </#if>
-                <#if subscribeList?size != 0>
+                <#if subscribe?size != 0>
                 <subscribe>
                     <topics>
-                    <#list subscribeList as canonicalName>
+                    <#list subscribe as canonicalName>
                         <topic>${canonicalName}</topic>
                     </#list>
                     </topics>
