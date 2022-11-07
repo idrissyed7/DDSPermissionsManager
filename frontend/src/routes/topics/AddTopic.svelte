@@ -240,7 +240,9 @@
 						<label for="groups">Name:</label>
 					</td>
 					<td>
+						<!-- svelte-ignore a11y-autofocus -->
 						<input
+							autofocus
 							placeholder="Topic Name"
 							style="width: 13rem; padding-left: 0.3rem"
 							bind:value={newTopicName}
