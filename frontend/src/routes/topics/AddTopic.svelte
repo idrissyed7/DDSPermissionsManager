@@ -14,11 +14,14 @@
 
 	const dispatch = createEventDispatcher();
 
+	// Constants
+	const minNameLength = 3;
+
 	// Group Name
 	let newTopicName = '';
 
 	// Search Groups
-	let searchGroups;
+	let searchGroups = '';
 	let searchGroupResults;
 	let searchGroupsResultsVisible = false;
 	let searchGroupActive = true;
@@ -155,7 +158,6 @@
 				searchGroupActive = false;
 			}
 		}
-		console.log('selectedGroup', selectedGroup);
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,
@@ -423,9 +425,10 @@
 				<button
 					class="button"
 					style="width: 5.7rem"
-					disabled={newTopicName?.length < 1 || searchGroups?.length < 3}
-					on:click={() => addTopic()}><span>Add Topic</span></button
-				>
+					disabled={newTopicName?.length < minNameLength || searchGroups?.length < minNameLength}
+					on:click={() => addTopic()}
+					><span>Add Topic</span>
+				</button>
 
 				<button
 					class="button-cancel"

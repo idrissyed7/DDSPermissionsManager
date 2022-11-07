@@ -8,6 +8,9 @@
 
 	export let data, errors;
 
+	// Constants
+	const minNameLength = 3;
+
 	// Error Handling
 	let errorMsg, errorObject;
 
@@ -214,7 +217,7 @@
 					class:button={!disabled}
 					class:button-disabled={disabled}
 					style="margin-left: 1rem; width: 6.5rem; height: 2rem;"
-					{disabled}
+					disabled={disabled || newGroupName?.length < minNameLength}
 					on:click={() => addGroup()}><span>Add Group</span></button
 				>
 			</div>
