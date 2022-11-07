@@ -228,7 +228,9 @@
 			<table align="center">
 				<tr>
 					<td style="width: 23rem">
+						<!-- svelte-ignore a11y-autofocus -->
 						<input
+							autofocus
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
 							style="display: inline-flex; width:12rem"
