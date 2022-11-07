@@ -155,7 +155,6 @@
 				searchGroupActive = false;
 			}
 		}
-		console.log('selectedGroup', selectedGroup);
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,

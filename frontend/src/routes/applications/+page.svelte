@@ -275,6 +275,7 @@
 		selectedAppName = appDetail.data.name;
 		selectedAppGroupName = appDetail.data.groupName;
 		await getAppPermissions(appId);
+		await getCanonicalTopicName();
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -283,6 +284,25 @@
 		);
 
 		applicationPermission.set(appPermissionData.data.content);
+	};
+
+	const getCanonicalTopicName = async () => {
+		if ($applicationPermission) {
+			$applicationPermission.forEach(async (topic) => {
+				const topicDetails = await httpAdapter.get(`/topics/show/${topic.topicId}`);
+
+				$applicationPermission.find((permissionTopic) => {
+					if (permissionTopic.topicId === topic.topicId) {
+						permissionTopic.topicName =
+							permissionTopic.topicName + ' ' + '(' + topicDetails.data.canonicalName + ')';
+					}
+				});
+
+				applicationPermission.update((appPermission) => {
+					return [...appPermission];
+				});
+			});
+		}
 	};
 
 	const returnToApplicationsList = () => {
@@ -614,7 +634,7 @@
 			</table>
 			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 				<center>
-					<span style="">ID: {selectedAppId} &nbsp;</span>
+					<span style="">Username: {selectedAppId} &nbsp;</span>
 					<button
 						class="button"
 						style="width: 11rem; margin-top: 2rem;"
