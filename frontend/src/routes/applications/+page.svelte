@@ -290,11 +290,11 @@
 		if ($applicationPermission) {
 			$applicationPermission.forEach(async (topic) => {
 				const topicDetails = await httpAdapter.get(`/topics/show/${topic.topicId}`);
-
 				$applicationPermission.find((permissionTopic) => {
 					if (permissionTopic.topicId === topic.topicId) {
 						permissionTopic.topicName =
 							permissionTopic.topicName + ' ' + '(' + topicDetails.data.canonicalName + ')';
+						permissionTopic.topicGroup = topicDetails.data.groupName;
 					}
 				});
 
@@ -606,31 +606,20 @@
 					<th><strong>Topic</strong></th>
 					<th><strong>Access</strong></th>
 				</tr>
-				<tr>
-					<td>{selectedAppGroupName}</td>
-					<td>
-						{#if $applicationPermission}
-							<ul>
-								{#each $applicationPermission as appPermission}
-									<li>
-										{appPermission.topicName}
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</td>
-					<td>
-						{#if $applicationPermission}
-							<ul style="list-style-type: none;">
-								{#each $applicationPermission as appPermission}
-									<li>
-										{appPermission.accessType}
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</td>
-				</tr>
+				{#if $applicationPermission}
+					{#each $applicationPermission as appPermission}
+						<tr>
+							<td>
+								{appPermission.topicGroup}
+							</td><td>
+								{appPermission.topicName}
+							</td>
+							<td>
+								{appPermission.accessType}
+							</td>
+						</tr>
+					{/each}
+				{/if}
 			</table>
 			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 				<center>
@@ -684,10 +673,10 @@
 		justify-content: center;
 	}
 
-	ul {
+	/* ul {
 		margin: 0;
 		padding: 0.25rem 0 0.25rem 0.85rem;
-	}
+	} */
 
 	tr {
 		line-height: 1.7rem;
@@ -703,6 +692,9 @@
 	span {
 		position: relative;
 		left: 0;
+	}
+	.application-details {
+		display: inline-block;
 	}
 
 	.name input:focus {
