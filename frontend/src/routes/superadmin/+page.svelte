@@ -228,6 +228,7 @@
 			<table align="center">
 				<tr>
 					<td style="width: 23rem">
+						<!-- svelte-ignore a11y-autofocus -->
 						<input
 							autofocus
 							placeholder="Email Address"
