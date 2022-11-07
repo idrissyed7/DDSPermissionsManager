@@ -14,6 +14,9 @@
 
 	const dispatch = createEventDispatcher();
 
+	// Constants
+	const minNameLength = 3;
+
 	// Group Name
 	let newTopicName = '';
 
@@ -422,7 +425,7 @@
 				<button
 					class="button"
 					style="width: 5.7rem"
-					disabled={newTopicName?.length < 3 || searchGroups?.length < 3}
+					disabled={newTopicName?.length < minNameLength || searchGroups?.length < minNameLength}
 					on:click={() => addTopic()}
 					><span>Add Topic</span>
 				</button>
