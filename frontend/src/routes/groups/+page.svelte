@@ -214,7 +214,7 @@
 					class:button={!disabled}
 					class:button-disabled={disabled}
 					style="margin-left: 1rem; width: 6.5rem; height: 2rem;"
-					{disabled}
+					disabled={disabled || newGroupName?.length < 3}
 					on:click={() => addGroup()}><span>Add Group</span></button
 				>
 			</div>

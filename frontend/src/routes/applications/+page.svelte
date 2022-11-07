@@ -59,7 +59,7 @@
 	let applicationListVisible = true;
 	let appName;
 	let editAppName;
-	let selectedGroup;
+	let selectedGroup = '';
 
 	// Selection
 	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
@@ -407,6 +407,7 @@
 					{/if}
 				</div>
 				<button
+					disabled={appName?.length < 3 || searchGroups?.length < 3}
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
