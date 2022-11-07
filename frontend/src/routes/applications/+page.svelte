@@ -10,6 +10,9 @@
 
 	export let data, errors;
 
+	// Constants
+	const minNameLength = 3;
+
 	// Authentication
 	let isApplicationAdmin = false;
 
@@ -407,7 +410,7 @@
 					{/if}
 				</div>
 				<button
-					disabled={appName?.length < 3 || searchGroups?.length < 3}
+					disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
