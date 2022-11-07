@@ -673,11 +673,6 @@
 		justify-content: center;
 	}
 
-	/* ul {
-		margin: 0;
-		padding: 0.25rem 0 0.25rem 0.85rem;
-	} */
-
 	tr {
 		line-height: 1.7rem;
 	}
@@ -692,9 +687,6 @@
 	span {
 		position: relative;
 		left: 0;
-	}
-	.application-details {
-		display: inline-block;
 	}
 
 	.name input:focus {
