@@ -20,6 +20,9 @@
 	// Keys
 	const returnKey = 13;
 
+	// Selector
+	let emailField;
+
 	// Modals
 	let addGroupMembershipVisible = false;
 	let errorMessageVisible = false;
@@ -204,6 +207,7 @@
 
 	const addGroupMembershipInput = async () => {
 		addGroupMembershipVisible = true;
+		document.querySelector('abc').focus();
 	};
 
 	const addGroupMembership = async () => {
@@ -526,7 +530,9 @@
 			<table>
 				<tr style="border-width: 0px">
 					<td style="width: 15rem">
+						<!-- svelte-ignore a11y-autofocus -->
 						<input
+							autofocus
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
 							style="
