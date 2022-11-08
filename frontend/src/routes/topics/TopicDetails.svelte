@@ -288,7 +288,7 @@
 											searchApplications = result.name;
 											searchApplicationsId = result.id;
 											searchApplicationActive = false;
-										}}>{result.name}</td
+										}}>{result.name} ({result.groupName})</td
 									>
 								</tr>
 							{/each}
