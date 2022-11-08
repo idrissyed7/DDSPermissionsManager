@@ -10,6 +10,9 @@
 
 	export let data, errors;
 
+	// Constants
+	const minNameLength = 3;
+
 	// Authentication
 	let isApplicationAdmin = false;
 
@@ -59,7 +62,7 @@
 	let applicationListVisible = true;
 	let appName;
 	let editAppName;
-	let selectedGroup;
+	let selectedGroup = '';
 
 	// Selection
 	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
@@ -427,6 +430,7 @@
 					{/if}
 				</div>
 				<button
+					disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
