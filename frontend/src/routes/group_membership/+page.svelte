@@ -6,6 +6,14 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupMembershipList from '../../stores/groupMembershipList';
 	import Modal from '../../lib/Modal.svelte';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
+
+	// Redirects the User to the Login screen if not authenticated
+	$: if (!$isAuthenticated && browser) {
+		console.log('redirect');
+		goto(`/`, true);
+	}
 
 	export let data, errors;
 

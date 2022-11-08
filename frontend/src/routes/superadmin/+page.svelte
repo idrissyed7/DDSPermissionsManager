@@ -5,8 +5,16 @@
 	import users from '../../stores/users';
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
 
 	export let data, errors;
+
+	// Redirects the User to the Login screen if not authenticated
+	$: if (!$isAuthenticated && browser) {
+		console.log('redirect');
+		goto(`/`, true);
+	}
 
 	// Error Handling
 	let errorMsg, errorObject;
