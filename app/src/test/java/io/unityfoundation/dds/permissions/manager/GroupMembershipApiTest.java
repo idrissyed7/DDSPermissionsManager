@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -421,8 +422,12 @@ public class GroupMembershipApiTest {
         @Test
         public void shouldBeConsideredValid() {
             HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
-            HttpResponse response = blockingClient.exchange(request);
+            HttpResponse response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
+            Optional<Map> mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            Map map = mapOptional.get();
+            assertTrue((Boolean) map.get("isAdmin"));
         }
     }
 

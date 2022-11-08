@@ -255,7 +255,15 @@ public class GroupUserService {
             return HttpResponse.notFound();
         }
 
-        return HttpResponse.ok();
+        User user = userOptional.get();
+        HashMap<String, Object> attributes = new HashMap<>();
+        List<Map<String, Object>> permissions = getAllPermissionsPerGroupUserIsMemberOf(user.getId());
+        attributes.put("name", user.getEmail());
+        attributes.put("permissionsByGroup", permissions);
+        attributes.put("id", user.getId());
+        attributes.put("isAdmin", user.isAdmin());
+
+        return HttpResponse.ok(attributes);
     }
 
     public void removeByGroup(Group group) {
