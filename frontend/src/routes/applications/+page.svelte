@@ -12,7 +12,7 @@
 
 	// Constants
 	const minNameLength = 3;
-	const fiveSeconds = 3000;
+	const fiveSeconds = 5000;
 
 	// Authentication
 	let isApplicationAdmin = false;
