@@ -1,31 +1,21 @@
 package io.unityfoundation.dds.permissions.manager.security;
 
 import io.micronaut.context.annotation.ConfigurationProperties;
-import io.micronaut.core.convert.format.MapFormat;
-import io.micronaut.security.token.jwt.encryption.EncryptionConfiguration;
-import io.micronaut.security.token.jwt.encryption.secret.SecretEncryption;
-import io.micronaut.security.token.jwt.encryption.secret.SecretEncryptionConfiguration;
-import io.micronaut.security.token.jwt.encryption.secret.SecretEncryptionFactory;
+import io.micronaut.context.annotation.Property;
 import jakarta.inject.Singleton;
 
-import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 @Singleton
 @ConfigurationProperties("permissions-manager")
 public class PassphraseGenerator {
 
-    @MapFormat(transformation = MapFormat.MapTransformation.NESTED)
-    private Map<String, Object> data;
+    @Property(name = "permissions-manager.application.passphrase.length")
+    protected Optional<Integer> lengthOptional;
 
     public String generatePassphrase(){
-        int length = 16;
-        if (data != null) {
-            Map passphrase = (Map) data.get("passphrase");
-            if (passphrase != null && passphrase.get("length") != null) {
-                length = (int) passphrase.get("length");
-            }
-        }
+        int length = lengthOptional.orElse(16);
 
         // see https://www.baeldung.com/java-random-string#java8-alphanumeric
         int leftLimit = 48; // numeral '0'
@@ -37,9 +27,5 @@ public class PassphraseGenerator {
                 .limit(length)
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
-    }
-
-    public void setData(Map<String, Object> data) {
-        this.data = data;
     }
 }

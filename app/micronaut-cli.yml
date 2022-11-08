@@ -1,6 +1,6 @@
 applicationType: default
-defaultPackage: 'io.unityfoundation.dds.permissions.manager'
+defaultPackage: io.unityfoundation.dds.permissions.manager
 testFramework: junit
 sourceLanguage: java
 buildTool: gradle
-features: [annotation-api, app-name, gradle, http-client, jackson-databind, java, java-application, junit, logback, micronaut-build, netty-server, readme, shade, views-thymeleaf, yaml]
+features: [annotation-api, app-name, data, data-jpa, gradle, h2, http-client, jackson-databind, java, java-application, jdbc-tomcat, junit, logback, management, micronaut-build, netty-server, openapi, problem-json, readme, security-annotations, security-jwt, security-oauth2, shade, yaml]

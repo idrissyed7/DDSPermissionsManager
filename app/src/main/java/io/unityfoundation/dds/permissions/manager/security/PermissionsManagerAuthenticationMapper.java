@@ -35,14 +35,18 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
                                                                OpenIdTokenResponse tokenResponse,
                                                                OpenIdClaims openIdClaims,
                                                                State state) {
-        return Optional.ofNullable(openIdClaims.getEmail())
+        return getAuthenticationResponse(openIdClaims.getEmail());
+    }
+
+    public AuthenticationResponse getAuthenticationResponse(String userEmail) {
+        return Optional.ofNullable(userEmail)
                 .flatMap(userService::getUserByEmail)
                 .map(user -> isNonAdminAndNotAMemberOfAnyGroups(user) ?
                         AuthenticationResponse.failure(AuthenticationFailureReason.USER_DISABLED) :
                         AuthenticationResponse.success(
-                                openIdClaims.getEmail(),
+                                userEmail,
                                 rolesByUser(user),
-                                userAttributes(openIdClaims, user)
+                                userAttributes(userEmail, user)
                         ))
                 .orElseGet(() -> AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND));
     }
@@ -55,10 +59,10 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
         return user.isAdmin() ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList();
     }
 
-    private HashMap<String, Object> userAttributes(OpenIdClaims openIdClaims, User user) {
+    private HashMap<String, Object> userAttributes(String userEmail, User user) {
         HashMap<String, Object> attributes = new HashMap<>();
         List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.getId());
-        attributes.put("name", openIdClaims.getName());
+        attributes.put("name", userEmail);
         attributes.put("permissionsByGroup", permissions);
         return attributes;
     }

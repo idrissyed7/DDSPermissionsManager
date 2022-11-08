@@ -676,7 +676,9 @@ public class GroupMembershipApiTest {
             assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
             GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
-            assertTrue(userRepository.findByEmail("bob.builder@test.test").isPresent());
+            request = HttpRequest.GET("/group_membership/user-exists/"+groupUser.getPermissionsUser());
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
 
             loginAsNonAdmin();
 
@@ -685,7 +687,12 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            assertTrue(userRepository.findByEmail("bob.builder@test.test").isEmpty());
+            request = HttpRequest.GET("/group_membership/"+groupUser.getPermissionsUser());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(NOT_FOUND, exception.getStatus());
         }
 
         @Test

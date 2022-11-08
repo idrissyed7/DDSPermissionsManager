@@ -9,7 +9,6 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,7 +19,6 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicService;
 
 import javax.validation.Valid;
-import java.net.URI;
 
 @Controller("/api/topics")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -52,14 +50,8 @@ public class TopicController {
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> save(@Body TopicDTO topic) {
-        try {
-            return topicService.save(topic);
-        } catch (AuthenticationException ae) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+    HttpResponse<?> save(@Body @Valid TopicDTO topic) {
+        return topicService.save(topic);
     }
 
     @Get("/show/{id}")
@@ -69,13 +61,7 @@ public class TopicController {
     )
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse show(Long id) {
-        try {
-            return topicService.show(id);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        }  catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return topicService.show(id);
     }
 
     @Post("/delete/{id}")
@@ -84,13 +70,6 @@ public class TopicController {
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
-        try {
-            topicService.deleteById(id);
-        } catch (AuthenticationException ae) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            HttpResponse.badRequest(e.getMessage());
-        }
-        return HttpResponse.seeOther(URI.create("/api/topics"));
+        return topicService.deleteById(id);
     }
 }

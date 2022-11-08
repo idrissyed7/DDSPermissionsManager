@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.user.AdminDTO;
-import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
 import javax.validation.Valid;
@@ -32,7 +31,7 @@ public class AdminController {
 
     @Get("{?filter}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<User> index(@Valid Pageable pageable, @Nullable String filter) {
+    public Page<AdminDTO> index(@Valid Pageable pageable, @Nullable String filter) {
         return userService.findAll(pageable, filter);
     }
 
@@ -44,12 +43,8 @@ public class AdminController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminDTO.class))
     )
     @ApiResponse(responseCode = "400", description = "Bad Request")
-    HttpResponse<?> save(@Body AdminDTO adminDTO) {
-        try {
-            return HttpResponse.ok(userService.save(adminDTO));
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+    HttpResponse<?> save(@Body @Valid AdminDTO adminDTO) {
+        return userService.save(adminDTO);
     }
 
     @Put("/remove-admin/{id}")

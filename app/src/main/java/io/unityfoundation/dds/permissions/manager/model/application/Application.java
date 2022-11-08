@@ -6,6 +6,7 @@ import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table(name = "permissions_application")
@@ -17,6 +18,7 @@ public class Application {
 
     @NonNull
     @NotBlank
+    @Size(min = 3)
     private String name;
 
     @Nullable

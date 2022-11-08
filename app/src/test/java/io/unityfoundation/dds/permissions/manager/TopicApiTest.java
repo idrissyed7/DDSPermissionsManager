@@ -81,7 +81,7 @@ public class TopicApiTest {
             TopicDTO topicDTO = new TopicDTO();
             topicDTO.setName("testTopic1");
             topicDTO.setKind(TopicKind.B);
-            HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);;
+            HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
@@ -133,7 +133,7 @@ public class TopicApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
 
             topicDTO.setName("     ");
             request = HttpRequest.POST("/topics/save", topicDTO);
@@ -145,7 +145,33 @@ public class TopicApiTest {
         }
 
         @Test
-        public void createShouldTrimWhitespace() {
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("A");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+        }
+
+        @Test
+        public void createShouldTrimNameWhitespaces() {
             Group theta = new Group("Theta");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
             HttpResponse<?> response = blockingClient.exchange(request, Group.class);

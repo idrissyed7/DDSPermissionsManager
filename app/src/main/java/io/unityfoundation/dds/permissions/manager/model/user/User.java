@@ -14,6 +14,7 @@ public class User {
 
     @NonNull
     @Email
+    @Column(unique = true)
     private String email;
 
     private boolean admin = false;

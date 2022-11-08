@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import freemarker.template.TemplateException;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
@@ -10,7 +11,6 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.authentication.AuthenticationException;
 import io.micronaut.security.rules.SecurityRule;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,9 +18,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import org.bouncycastle.mail.smime.SMIMEException;
+import org.bouncycastle.operator.OperatorCreationException;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
-import java.net.URI;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+
+import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
 
 @Controller("/api/applications")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -45,13 +52,7 @@ public class ApplicationController {
     )
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse show(Long id) {
-        try {
-            return applicationService.show(id);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return applicationService.show(id);
     }
 
     @Post("/save")
@@ -64,14 +65,8 @@ public class ApplicationController {
     @ApiResponse(responseCode = "400", description = "Bad Request.")
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse<?> save(@Body ApplicationDTO application) {
-        try {
-            return applicationService.save(application);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+    HttpResponse<?> save(@Body @Valid ApplicationDTO application) {
+        return applicationService.save(application);
     }
 
     @Post("/delete/{id}")
@@ -80,15 +75,7 @@ public class ApplicationController {
     @ApiResponse(responseCode = "401", description = "Unauthorized.")
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
-        try {
-            applicationService.deleteById(id);
-        } catch (AuthenticationException authenticationException) {
-            return HttpResponse.unauthorized();
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
-
-        return HttpResponse.seeOther(URI.create("/api/applications"));
+        return applicationService.deleteById(id);
     }
 
     @Get("/search{?filter}")
@@ -100,31 +87,54 @@ public class ApplicationController {
     @Get("/generate-passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
-        try {
-            return applicationService.generateCleartextPassphrase(application);
-        } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
-        }
+        return applicationService.generateCleartextPassphrase(application);
     }
 
     @Get("/identity_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getIdentityCACertificate() {
-        return applicationService.getIdentityCACertificate();
+    public HttpResponse<?> getIdentityCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getIdentityCACertificate(etag);
     }
 
     @Get("/permissions_ca.pem")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsCACertificate() {
-        return applicationService.getPermissionsCACertificate();
+    public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getPermissionsCACertificate(etag);
     }
 
     @Get("/governance.xml.p7s")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getGovernanceFile() {
-        return applicationService.getGovernanceFile();
+    public HttpResponse<?> getGovernanceFile(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
+        return applicationService.getGovernanceFile(etag);
+    }
+
+    @Get("/key-pair{?nonce}")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
+        if (nonce == null) {
+            return HttpResponse.badRequest();
+        }
+        return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
+    }
+
+    @Get("/permissions.xml.p7s{?nonce}")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
+        if (nonce == null) {
+            return HttpResponse.badRequest();
+        }
+        return applicationService.getPermissionsFile(nonce);
+    }
+
+    @Get("/permissions.json")
+    @Secured("APPLICATION")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<?> getPermissionsJson(@Nullable @Header(E_TAG_HEADER_NAME) String etag) throws NoSuchAlgorithmException {
+        return applicationService.getPermissionJson(etag);
     }
 }
