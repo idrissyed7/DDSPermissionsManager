@@ -589,6 +589,13 @@
 							<input type="checkbox" name="groupAdmin" bind:checked={selectedIsGroupAdmin} />
 							<label for="groupAdmin">Group Admin</label>
 						</div>
+
+						<div class="add-item">
+							<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
+
+							<label for="topicAdmin">Topic Admin</label>
+						</div>
+
 						<div class="add-item">
 							<input
 								type="checkbox"
@@ -597,11 +604,7 @@
 							/>
 							<label for="applicationAdmin">Application Admin</label>
 						</div>
-						<div class="add-item">
-							<input type="checkbox" name="topicAdmin" bind:checked={selectedIsTopicAdmin} />
 
-							<label for="topicAdmin">Topic Admin</label>
-						</div>
 						<div class="add-item">
 							<button
 								class:button={!invalidEmail}
