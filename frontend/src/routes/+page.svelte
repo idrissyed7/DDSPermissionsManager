@@ -1,6 +1,11 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
 	import urlparameters from '../stores/urlparameters';
+	import wavesSVG from '../icons/waves.svg';
+	import googleSVG from '../icons/google.svg';
+
+	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
+
 	export let data, errors;
 </script>
 
@@ -36,10 +41,39 @@
 {:else}
 	<h1>DDS Permissions Manager</h1>
 	<br />
-	<h2 style="font-size: 1.4rem">Please Login to get started</h2>
+	<div class="container-box" style="width: 55%; scale:80%">
+		<img
+			src={wavesSVG}
+			alt="Login"
+			class="icon"
+			style="margin: 1rem 0 1rem 1.5rem; filter: contrast(60%);"
+		/>
+		<span style="margin-left: 1rem; vertical-align: middle; filter: contrast(60%);">Login</span>
+		<hr />
+		<center>
+			<div class="login-button">
+				<img
+					src={googleSVG}
+					alt="Login"
+					class="icon"
+					style="scale: 55%; margin: 0.1rem 0 0.1rem 0;"
+				/>
+				<span style="margin-left: 0; font-size: 1.4rem"
+					><a rel="external" href={`${URL_PREFIX}/oauth/login/google`}>Login with Google</a></span
+				>
+			</div>
+		</center>
+	</div>
 {/if}
 
 <style>
+	span {
+		font-weight: 500;
+		margin-left: 0.5rem;
+		font-size: 1.5rem;
+		vertical-align: middle;
+	}
+
 	section {
 		display: flex;
 		flex-direction: column;
@@ -49,8 +83,10 @@
 	}
 
 	h1 {
-		font-size: 2rem;
-		width: 100%;
+		font-size: 3.2rem;
+		font-weight: 450;
+		font-stretch: 110%;
+		color: black;
 	}
 
 	h2 {
@@ -66,5 +102,34 @@
 	p {
 		text-align: center;
 		font-size: 0.9rem;
+	}
+
+	hr {
+		margin: 1.5rem 1.3rem 1.8rem 1.3rem;
+		border-color: rgba(0, 0, 0, 0.15);
+		border-style: solid;
+		border-width: 0.05rem;
+	}
+
+	.login-button {
+		scale: 90%;
+		cursor: pointer;
+		vertical-align: middle;
+		background-color: rgba(0, 0, 0, 0);
+		border-color: rgb(237, 237, 237);
+		border-radius: 50px;
+		border-width: 1px;
+		border-style: solid;
+		margin-bottom: 1rem;
+		text-align: center;
+		box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+	}
+
+	.login-button a {
+		color: #6751a4;
+	}
+
+	a:hover {
+		text-decoration: none;
 	}
 </style>

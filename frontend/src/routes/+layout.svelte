@@ -6,7 +6,8 @@
 	import '../app.css';
 
 	export let data;
-	const userValidityInterval = 180000; // 3 minutes
+	const userValidityInterval = 10000; // 3 minutes
+	// const userValidityInterval = 180000; // 3 minutes
 	let expirationTime, nowTime, remindTime;
 
 	onMount(async () => {
@@ -24,7 +25,11 @@
 
 	const checkValidity = async () => {
 		try {
-			const res = await httpAdapter.get(`/group_membership/user-validity`);
+			const verify = await httpAdapter.get(`/group_membership/user-validity`);
+			console.log('verify', verify);
+			// Update user's token
+			const res = await httpAdapter.get(`/token_info`);
+			onLoggedIn(res.data);
 		} catch (err) {
 			if (err.response.status === 404) {
 				// Logout User

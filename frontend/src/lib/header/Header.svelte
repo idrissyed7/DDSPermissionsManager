@@ -49,25 +49,6 @@
 			{/if}
 		</nav>
 	</div>
-	<div class="corner">
-		<nav>
-			<svg viewBox="0 0 2 3" aria-hidden="true">
-				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-			</svg>
-			<ul>
-				<!-- svelte-ignore a11y-positive-tabindex -->
-				<li tabindex="7" class:active={$page.url.pathname === '/login'}>
-					<a
-						rel="external"
-						href={isAuthenticated === true
-							? `${URL_PREFIX}/logout`
-							: `${URL_PREFIX}/oauth/login/google`}
-						>{isAuthenticated === true ? 'Logout' : 'Login'}</a
-					>
-				</li>
-			</ul>
-		</nav>
-	</div>
 </header>
 
 <style>
