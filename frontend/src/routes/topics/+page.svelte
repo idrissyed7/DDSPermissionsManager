@@ -206,26 +206,25 @@
 
 	<div class="content">
 		<h1>Topics</h1>
-		{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-			<center>
-				<!-- svelte-ignore a11y-positive-tabindex -->
-				<input
-					tabindex="8"
-					style="border-width: 1px; width: 20rem; text-align: center; height: 1.7rem"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
+		<center>
+			<!-- svelte-ignore a11y-positive-tabindex -->
+			<input
+				tabindex="8"
+				style="border-width: 1px; width: 20rem; text-align: center; height: 1.7rem"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === 13) {
+						document.activeElement.blur();
 						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === 13) {
-							document.activeElement.blur();
-							searchString = searchString?.trim();
-						}
-					}}
-				/>&nbsp; &#x1F50E;
-			</center>
-
+					}
+				}}
+			/>&nbsp; &#x1F50E;
+		</center>
+		{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 			<table align="center" style="margin-top: 2rem">
 				<tr style="border-width: 0px">
 					<th><strong>Topic</strong></th>
