@@ -12,6 +12,7 @@
 
 	// Constants
 	const minNameLength = 3;
+	const fiveSeconds = 3000;
 
 	// Authentication
 	let isApplicationAdmin = false;
@@ -53,6 +54,7 @@
 	// Forms
 	let groupsDropdownSuggestion = 7;
 	let generateCredentialsVisible = false;
+	let showCopyNotificationVisible = false;
 
 	// Timer
 	let timer;
@@ -332,6 +334,13 @@
 		} catch (err) {
 			errorMessage('Error Generating Passphrase', err.message);
 		}
+	};
+
+	const showCopyNotification = () => {
+		showCopyNotificationVisible = true;
+		setTimeout(() => {
+			showCopyNotificationVisible = false;
+		}, fiveSeconds);
 	};
 </script>
 
@@ -639,10 +648,22 @@
 						<div style="display:flex; width: 13rem; margin-top: 2rem">
 							<button
 								style=" background-color: rgba(0,0,0,0); border-width: 0px; cursor: pointer; font-size:larger"
-								on:click={() => copyPassword(selectedAppId)}>&#128203;</button
+								on:click={() => {
+									copyPassword(selectedAppId);
+									showCopyNotification();
+								}}>&#128203;</button
 							>
+							{#if showCopyNotificationVisible}
+								<div class="bubble">Password Copied!</div>
+							{/if}
 							<section>
-								<p style="cursor: pointer;" on:click={() => copyPassword(selectedAppId)}>
+								<p
+									style="cursor: pointer;"
+									on:click={() => {
+										copyPassword(selectedAppId);
+										showCopyNotification();
+									}}
+								>
 									{password}
 								</p>
 							</section>
@@ -695,5 +716,34 @@
 
 	.name input:focus {
 		outline: none;
+	}
+
+	.bubble {
+		position: absolute;
+		background: rgb(0, 0, 0);
+		color: #ffffff;
+		font-family: Arial;
+		font-size: 15px;
+		vertical-align: middle;
+		text-align: center;
+		width: 150px;
+		height: 25px;
+		border-radius: 10px;
+		padding-top: 8px;
+		top: 23.2rem;
+		left: 31.5rem;
+	}
+	.bubble:after {
+		content: '';
+		position: absolute;
+		display: block;
+		width: 0;
+		z-index: 1;
+		border-style: solid;
+		border-color: #000000 transparent;
+		border-width: 0 10px 10px;
+		top: -10px;
+		left: 26%;
+		margin-left: -20px;
 	}
 </style>
