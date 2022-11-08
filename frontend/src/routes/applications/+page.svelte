@@ -565,11 +565,20 @@
 					readonly={!editAppName}
 					class:name-as-label={!editAppName}
 					class:name-edit={editAppName}
+					class:invalid={selectedAppName.length < minNameLength}
 					style="text-align: center"
 					on:keydown={(event) => {
-						if (event.which === returnKey) {
+						if (event.which === returnKey && selectedAppName.length >= minNameLength) {
 							selectedAppName = selectedAppName.trim();
 							if (previousAppName !== selectedAppName) saveNewAppName();
+							document.querySelector('#name').blur();
+							editAppName = false;
+						} else if (event.which === returnKey && selectedAppName.length < minNameLength) {
+							selectedAppName = previousAppName;
+							errorMessage(
+								'Error Saving New Application Name',
+								'3 Characters are required at least.'
+							);
 							document.querySelector('#name').blur();
 							editAppName = false;
 						}
@@ -577,7 +586,7 @@
 				/>
 				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 					<span
-						style="position: absolute; font-size: medium; left: 65.5rem; top:4.9rem; cursor: pointer"
+						style="position: absolute; font-size: medium; left: 50rem; top:4.9rem; cursor: pointer"
 						on:click={() => {
 							if (editSaveLabel === 'edit') {
 								previousAppName = selectedAppName;
@@ -585,8 +594,19 @@
 							}
 							if (editSaveLabel === 'save') {
 								selectedAppName = selectedAppName.trim();
+								if (selectedAppName.length < minNameLength) {
+									selectedAppName = previousAppName;
+									errorMessage(
+										'Error Saving New Application Name',
+										'3 Characters are required at least.'
+									);
+									document.querySelector('#name').blur();
+									editAppName = false;
+								}
 								if (previousAppName !== selectedAppName) {
 									saveNewAppName();
+									document.querySelector('#name').blur();
+									editAppName = false;
 								} else {
 									editAppName = false;
 								}
