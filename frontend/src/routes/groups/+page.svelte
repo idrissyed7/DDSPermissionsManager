@@ -345,6 +345,15 @@
 			{/if}
 		{:else}
 			<p><center>No Groups Found</center></p>
+			<center>
+				<button
+					class:hidden={!$isAdmin}
+					class="button"
+					style="margin: 1rem 0 2rem 0"
+					on:click={() => addGroupModal()}
+					>Add Group
+				</button></center
+			>
 		{/if}
 	</div>
 {:else}
