@@ -8,6 +8,14 @@
 	import Modal from '../../lib/Modal.svelte';
 	import TopicDetails from './TopicDetails.svelte';
 	import AddTopic from './AddTopic.svelte';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
+
+	// Redirects the User to the Login screen if not authenticated
+	$: if (!$isAuthenticated && browser) {
+		console.log('redirect');
+		goto(`/`, true);
+	}
 
 	export let data, errors;
 
