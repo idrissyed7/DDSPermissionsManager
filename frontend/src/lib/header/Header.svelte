@@ -23,12 +23,12 @@
 					{#if $isAdmin}
 						<!-- svelte-ignore a11y-positive-tabindex -->
 						<li tabindex="2" class:active={$page.url.pathname === '/superadmin'}>
-							<a sveltekit:prefetch href="/superadmin">Super Admin</a>
+							<a sveltekit:prefetch href="/superadmin">Super Admins</a>
 						</li>
 					{/if}
 					<!-- svelte-ignore a11y-positive-tabindex -->
 					<li tabindex="3" class:active={$page.url.pathname === '/group_membership'}>
-						<a sveltekit:prefetch href="/group_membership">Group Membership</a>
+						<a sveltekit:prefetch href="/group_membership">Group Memberships</a>
 					</li>
 					<!-- svelte-ignore a11y-positive-tabindex -->
 					<li tabindex="4" class:active={$page.url.pathname === '/topics'}>

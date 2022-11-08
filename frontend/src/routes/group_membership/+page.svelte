@@ -94,6 +94,7 @@
 		selectedIsGroupAdmin = false;
 		selectedIsApplicationAdmin = false;
 		selectedIsTopicAdmin = false;
+		searchGroupResults = '';
 	}
 
 	// Selection
@@ -199,12 +200,12 @@
 
 	const addGroupMembership = async () => {
 		if (!selectedGroup) {
-			const groupId = await httpAdapter.get(`/applications?page=0&size=1&filter=${searchGroups}`);
+			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
 			if (
 				groupId.data.content &&
-				groupId.data.content[0]?.groupName.toUpperCase() === searchGroups.toUpperCase()
+				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
 			) {
-				selectedGroup = groupId.data.content[0]?.group;
+				selectedGroup = groupId.data.content[0]?.id;
 				searchGroupActive = false;
 			}
 		}
@@ -213,15 +214,15 @@
 			.post(`/group_membership`, {
 				email: emailValue,
 				permissionsGroup: selectedGroup,
-				isGroupAdmin: selectedIsGroupAdmin,
-				isTopicAdmin: selectedIsTopicAdmin,
-				isApplicationAdmin: selectedIsTopicAdmin
+				groupAdmin: selectedIsGroupAdmin,
+				topicAdmin: selectedIsTopicAdmin,
+				applicationAdmin: selectedIsTopicAdmin
 			})
 			.catch((err) => {
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
 				} else if (err.response.status === 400 || 401) {
-					err.message = 'Group Membership already exists.';
+					// err.message = 'Group Membership already exists.';
 					errorMessage('Error Adding Group Membership', err.message);
 				}
 			});
@@ -303,8 +304,8 @@
 </script>
 
 <svelte:head>
-	<title>Group Membership | DDS Permissions Manager</title>
-	<meta name="description" content="Permissions Manager Group Membership" />
+	<title>Group Memberships | DDS Permissions Manager</title>
+	<meta name="description" content="Permissions Manager Group Memberships" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -408,7 +409,7 @@
 	{/if}
 
 	<div class="content">
-		<h1>Group Membership</h1>
+		<h1>Group Memberships</h1>
 		<center>
 			<!-- svelte-ignore a11y-positive-tabindex -->
 			<input
@@ -554,6 +555,7 @@
 								on:focus={async () => {
 									searchGroupResults = [];
 									searchGroupActive = true;
+									selectedGroup = '';
 									if (searchGroups?.length >= searchStringLength) {
 										searchGroup(searchGroups);
 									}
@@ -561,6 +563,7 @@
 								on:click={async () => {
 									searchGroupResults = [];
 									searchGroupActive = true;
+									selectedGroup = '';
 									if (searchGroups?.length >= searchStringLength) {
 										searchGroup(searchGroups);
 									}
@@ -603,7 +606,7 @@
 							<button
 								class:button={!invalidEmail}
 								style="margin-left: 1rem; width: 3.5rem"
-								disabled={invalidEmail || searchGroups === ''}
+								disabled={invalidEmail || searchGroups.length < 3}
 								on:click={() => addGroupMembership()}><span>Add</span></button
 							>
 							<button

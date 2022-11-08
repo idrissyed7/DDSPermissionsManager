@@ -1,7 +1,6 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import io.micronaut.core.annotation.NonNull;
-import io.micronaut.data.annotation.Query;
 import io.micronaut.data.annotation.Repository;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;

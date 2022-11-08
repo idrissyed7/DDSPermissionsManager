@@ -69,10 +69,6 @@ public class GroupUserService {
         }
     }
 
-    public Optional<GroupUser> findById(Long id) {
-        return groupUserRepository.findById(id);
-    }
-
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void removeUserFromAllGroups(Long userId) {
         groupUserRepository.deleteAllByPermissionsUserId(userId);
@@ -126,6 +122,10 @@ public class GroupUserService {
 
     @Transactional
     public MutableHttpResponse<?> addMember(@Body GroupUserDTO groupUserDTO) {
+        if (!isAdminOrGroupAdmin(groupUserDTO.getPermissionsGroup())) {
+            return HttpResponse.unauthorized();
+        }
+
         Optional<Group> groupOptional = groupRepository.findById(groupUserDTO.getPermissionsGroup());
         if (groupOptional.isEmpty()) {
             return HttpResponse.notFound("Specified group not found");
@@ -179,14 +179,21 @@ public class GroupUserService {
         return groupUserRepository.update(groupUser);
     }
 
-    public boolean removeMember(Long id) {
+    public HttpResponse removeMember(Long id) {
         Optional<GroupUser> groupUserOptional = groupUserRepository.findById(id);
 
         if (groupUserOptional.isEmpty()) {
-            return true;
+            return HttpResponse.ok();
         }
 
-        User user = groupUserOptional.get().getPermissionsUser();
+        GroupUser groupUser = groupUserOptional.get();
+
+        Long groupId = groupUser.getPermissionsGroup().getId();
+        if (!isAdminOrGroupAdmin(groupId)) {
+            return HttpResponse.unauthorized();
+        }
+
+        User user = groupUser.getPermissionsUser();
         groupUserRepository.deleteById(id);
 
         int countByPermissionsUser = groupUserRepository.countByPermissionsUserId(user.getId());
@@ -194,7 +201,7 @@ public class GroupUserService {
             userRepository.delete(user);
         }
 
-        return true;
+        return HttpResponse.ok();
     }
 
     public List<Map<String, Object>> getAllPermissionsPerGroupUserIsMemberOf(Long id) {
@@ -264,5 +271,13 @@ public class GroupUserService {
                 userRepository.delete(user);
             }
         });
+    }
+
+    public HttpResponse checkUserExists(Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            return HttpResponse.ok();
+        }
+        return HttpResponse.notFound();
     }
 }

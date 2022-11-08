@@ -13,9 +13,14 @@ import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
@@ -23,11 +28,13 @@ import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
+import java.text.Collator;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
+import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest(environments={"app-api-test-data"})
@@ -41,6 +48,9 @@ public class ApplicationApiTest {
 
     @Inject
     MockAuthenticationFetcher mockAuthenticationFetcher;
+
+    @Inject
+    MockApplicationSecretsClient mockApplicationSecretsClient;
 
     @Inject
     GroupRepository groupRepository;
@@ -162,13 +172,29 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication(null, primaryGroup.getId());
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
 
             // space
             exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication("     ", primaryGroup.getId());
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
+        }
+
+        @Test
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+            HttpResponse<?> response;
+
+            response = createGroup("Theta");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("a", theta.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -341,13 +367,15 @@ public class ApplicationApiTest {
             List<String> appNames = applications.stream()
                     .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(appNames.stream().sorted().collect(Collectors.toList()), appNames);
+            Collator collator = Collator.getInstance();
+            collator.setStrength(Collator.PRIMARY);
+            assertEquals(appNames.stream().sorted(collator).collect(Collectors.toList()), appNames);
 
             List<String> xyzApplications = applications.stream().filter(map -> {
                 String appName = (String) map.get("name");
                 return appName.equals("Xyz789");
             }).flatMap(map -> Stream.of((String) map.get("groupName"))).collect(Collectors.toList());
-            assertEquals(xyzApplications.stream().sorted().collect(Collectors.toList()), xyzApplications);
+            assertEquals(xyzApplications.stream().sorted(collator).collect(Collectors.toList()), xyzApplications);
         }
 
         @Test
@@ -390,10 +418,12 @@ public class ApplicationApiTest {
             assertTrue(applicationsOptional.isPresent());
             List<Map> applications = applicationsOptional.get().getContent();
 
+            Collator collator = Collator.getInstance();
+            collator.setStrength(Collator.PRIMARY);
             List<String> appNames = applications.stream()
                     .flatMap(map -> Stream.of((String) map.get("name")))
                     .collect(Collectors.toList());
-            assertEquals(appNames.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList()), appNames);
+            assertEquals(appNames.stream().sorted(collator.reversed()).collect(Collectors.toList()), appNames);
         }
 
         @Test
@@ -457,7 +487,7 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -910,7 +940,7 @@ public class ApplicationApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
             });
-            assertEquals(BAD_REQUEST, exception.getStatus());;
+            assertEquals(BAD_REQUEST, exception.getStatus());
         }
 
         @Test
@@ -1239,6 +1269,12 @@ public class ApplicationApiTest {
             userRepository.save(new User("montesm@test.test", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+            setETagPropsForMockApplicationSecretsClient("abc", false);
+        }
+
+        void setETagPropsForMockApplicationSecretsClient(String etag, boolean hasCachedFileBeenUpdated) {
+            mockApplicationSecretsClient.setEtag(etag);
+            mockApplicationSecretsClient.setHasCachedFileBeenUpdated(hasCachedFileBeenUpdated);
         }
 
         void loginAsApplication(Long applicationId) {
@@ -1308,23 +1344,456 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications/identity_ca.pem");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
+            assertEquals("abc", response.header(E_TAG_HEADER_NAME));
             Optional<String> body = response.getBody(String.class);
             assertTrue(body.isPresent());
-            assertEquals("identityCACert", body.get());
+            assertEquals("-----BEGIN CERTIFICATE-----\n" +
+                    "MIICgTCCAiagAwIBAgIJAKQ0JTu6DZZdMAoGCCqGSM49BAMCMIGSMQswCQYDVQQG\n" +
+                    "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                    "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRQwEgYDVQQDDAtJZGVudGl0eSBD\n" +
+                    "QTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wHhcNMjIx\n" +
+                    "MDIwMTYwMjU3WhcNMjIxMTE5MTYwMjU3WjCBkjELMAkGA1UEBhMCVVMxCzAJBgNV\n" +
+                    "BAgMAk1PMRQwEgYDVQQHDAtTYWludCBMb3VpczEOMAwGA1UECgwFVU5JVFkxEjAQ\n" +
+                    "BgNVBAsMCUNvbW1VTklUWTEUMBIGA1UEAwwLSWRlbnRpdHkgQ0ExJjAkBgkqhkiG\n" +
+                    "9w0BCQEWF2luZm9AdW5pdHlmb3VuZGF0aW9uLmlvMFkwEwYHKoZIzj0CAQYIKoZI\n" +
+                    "zj0DAQcDQgAEMotkUz0ZUGv8lYvglXI5l6ArVs5PyWfz3civhogC4UuTZB9JyQOM\n" +
+                    "Xcvef04VJuhlvUJ4apUB2pW/exETApYKYqNjMGEwHQYDVR0OBBYEFAADg6XL4V94\n" +
+                    "czckFXsfuvBy1sJOMB8GA1UdIwQYMBaAFAADg6XL4V94czckFXsfuvBy1sJOMA8G\n" +
+                    "A1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMAoGCCqGSM49BAMCA0kAMEYC\n" +
+                    "IQCtNp2FjbRmmpjAruZIu6L+zc+udvFS626HSugfxYGT0QIhAKKIZD0Q1OLbeFuf\n" +
+                    "9lAUsvd7k+g3XVrE1DJ3zoUh+NfQ\n" +
+                    "-----END CERTIFICATE-----",
+                    body.get());
 
             request = HttpRequest.GET("/applications/permissions_ca.pem");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             body = response.getBody(String.class);
             assertTrue(body.isPresent());
-            assertEquals("permissionsCACert", body.get());
+            assertEquals("-----BEGIN CERTIFICATE-----\n" +
+                            "MIIChzCCAiygAwIBAgIJALs53aA9RNgXMAoGCCqGSM49BAMCMIGVMQswCQYDVQQG\n" +
+                            "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                            "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRcwFQYDVQQDDA5QZXJtaXNzaW9u\n" +
+                            "cyBDQTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wHhcN\n" +
+                            "MjIxMDIwMTYwMzQ3WhcNMjIxMTE5MTYwMzQ3WjCBlTELMAkGA1UEBhMCVVMxCzAJ\n" +
+                            "BgNVBAgMAk1PMRQwEgYDVQQHDAtTYWludCBMb3VpczEOMAwGA1UECgwFVU5JVFkx\n" +
+                            "EjAQBgNVBAsMCUNvbW1VTklUWTEXMBUGA1UEAwwOUGVybWlzc2lvbnMgQ0ExJjAk\n" +
+                            "BgkqhkiG9w0BCQEWF2luZm9AdW5pdHlmb3VuZGF0aW9uLmlvMFkwEwYHKoZIzj0C\n" +
+                            "AQYIKoZIzj0DAQcDQgAETpQ3PmzztDkjocQ4jDXDmJSLKNTywfhBj+TaMRMj1llR\n" +
+                            "zzyyg84CAxvOo6aXurB7DP2mOLd3e+JcCnxyIYIjzaNjMGEwHQYDVR0OBBYEFMYW\n" +
+                            "gviUzxL5RbpFMYDY4TgcSVQXMB8GA1UdIwQYMBaAFMYWgviUzxL5RbpFMYDY4Tgc\n" +
+                            "SVQXMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMAoGCCqGSM49BAMC\n" +
+                            "A0kAMEYCIQCzNAsDtL2g3M91hl5i4EUmFtpL4KFnoQ6XrxuatOo63wIhALZhDjMy\n" +
+                            "TsRZo3Lrd0CARNDlnrUNQwgblVJCtmjCK5V4\n" +
+                            "-----END CERTIFICATE-----",
+                    body.get());
 
             request = HttpRequest.GET("/applications/governance.xml.p7s");
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             body = response.getBody(String.class);
             assertTrue(body.isPresent());
-            assertEquals("governanceFile", body.get());
+            assertEquals("MIME-Version: 1.0\n" +
+                    "Content-Type: multipart/signed; protocol=\"application/x-pkcs7-signature\"; micalg=\"sha1\"; boundary=\"----E7CBBA7468B3989AB3841DB52EB8FBDC\"\n" +
+                    "\n" +
+                    "This is an S/MIME signed message\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC\n" +
+                    "Content-Type: text/plain\n" +
+                    "\n" +
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<!--\n" +
+                    "  Illustrates DDS Security can be used to protect access to a DDS Domain.\n" +
+                    "  Only applications that can authenticate and have the proper permissions can\n" +
+                    "  join the Domain. Others cannot publish nor subscribe.\n" +
+                    "-->\n" +
+                    "<dds xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.omg.org/spec/DDS-SECURITY/20170901/omg_shared_ca_permissions.xsd\">\n" +
+                    "  <domain_access_rules>\n" +
+                    "    <!--\n" +
+                    "      Domain 0 is a \"protected domain.\" That is, only applications that\n" +
+                    "      can authenticate and have proper permissions can join it.\n" +
+                    "    -->\n" +
+                    "    <domain_rule>\n" +
+                    "      <domains>\n" +
+                    "        <id>0</id>\n" +
+                    "      </domains>\n" +
+                    "      <allow_unauthenticated_participants>false</allow_unauthenticated_participants>\n" +
+                    "      <enable_join_access_control>true</enable_join_access_control>\n" +
+                    "      <discovery_protection_kind>ENCRYPT</discovery_protection_kind>\n" +
+                    "      <liveliness_protection_kind>ENCRYPT</liveliness_protection_kind>\n" +
+                    "      <rtps_protection_kind>ENCRYPT</rtps_protection_kind>\n" +
+                    "      <topic_access_rules>\n" +
+                    "        <topic_rule>\n" +
+                    "          <topic_expression>B*</topic_expression>\n" +
+                    "          <enable_discovery_protection>true</enable_discovery_protection>\n" +
+                    "          <enable_liveliness_protection>true</enable_liveliness_protection>\n" +
+                    "          <enable_read_access_control>false</enable_read_access_control>\n" +
+                    "          <enable_write_access_control>true</enable_write_access_control>\n" +
+                    "          <metadata_protection_kind>ENCRYPT</metadata_protection_kind>\n" +
+                    "          <data_protection_kind>NONE</data_protection_kind>\n" +
+                    "        </topic_rule>\n" +
+                    "        <topic_rule>\n" +
+                    "          <topic_expression>C*</topic_expression>\n" +
+                    "          <enable_discovery_protection>true</enable_discovery_protection>\n" +
+                    "          <enable_liveliness_protection>true</enable_liveliness_protection>\n" +
+                    "          <enable_read_access_control>true</enable_read_access_control>\n" +
+                    "          <enable_write_access_control>true</enable_write_access_control>\n" +
+                    "          <metadata_protection_kind>ENCRYPT</metadata_protection_kind>\n" +
+                    "          <data_protection_kind>NONE</data_protection_kind>\n" +
+                    "        </topic_rule>\n" +
+                    "      </topic_access_rules>\n" +
+                    "    </domain_rule>\n" +
+                    "  </domain_access_rules>\n" +
+                    "</dds>\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC\n" +
+                    "Content-Type: application/x-pkcs7-signature; name=\"smime.p7s\"\n" +
+                    "Content-Transfer-Encoding: base64\n" +
+                    "Content-Disposition: attachment; filename=\"smime.p7s\"\n" +
+                    "\n" +
+                    "MIIE2gYJKoZIhvcNAQcCoIIEyzCCBMcCAQExCzAJBgUrDgMCGgUAMAsGCSqGSIb3\n" +
+                    "DQEHAaCCAoswggKHMIICLKADAgECAgkAuzndoD1E2BcwCgYIKoZIzj0EAwIwgZUx\n" +
+                    "CzAJBgNVBAYTAlVTMQswCQYDVQQIDAJNTzEUMBIGA1UEBwwLU2FpbnQgTG91aXMx\n" +
+                    "DjAMBgNVBAoMBVVOSVRZMRIwEAYDVQQLDAlDb21tVU5JVFkxFzAVBgNVBAMMDlBl\n" +
+                    "cm1pc3Npb25zIENBMSYwJAYJKoZIhvcNAQkBFhdpbmZvQHVuaXR5Zm91bmRhdGlv\n" +
+                    "bi5pbzAeFw0yMjEwMjAxNjAzNDdaFw0yMjExMTkxNjAzNDdaMIGVMQswCQYDVQQG\n" +
+                    "EwJVUzELMAkGA1UECAwCTU8xFDASBgNVBAcMC1NhaW50IExvdWlzMQ4wDAYDVQQK\n" +
+                    "DAVVTklUWTESMBAGA1UECwwJQ29tbVVOSVRZMRcwFQYDVQQDDA5QZXJtaXNzaW9u\n" +
+                    "cyBDQTEmMCQGCSqGSIb3DQEJARYXaW5mb0B1bml0eWZvdW5kYXRpb24uaW8wWTAT\n" +
+                    "BgcqhkjOPQIBBggqhkjOPQMBBwNCAAROlDc+bPO0OSOhxDiMNcOYlIso1PLB+EGP\n" +
+                    "5NoxEyPWWVHPPLKDzgIDG86jppe6sHsM/aY4t3d74lwKfHIhgiPNo2MwYTAdBgNV\n" +
+                    "HQ4EFgQUxhaC+JTPEvlFukUxgNjhOBxJVBcwHwYDVR0jBBgwFoAUxhaC+JTPEvlF\n" +
+                    "ukUxgNjhOBxJVBcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwCgYI\n" +
+                    "KoZIzj0EAwIDSQAwRgIhALM0CwO0vaDcz3WGXmLgRSYW2kvgoWehDpevG5q06jrf\n" +
+                    "AiEAtmEOMzJOxFmjcut3QIBE0OWetQ1DCBuVUkK2aMIrlXgxggIXMIICEwIBATCB\n" +
+                    "ozCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk1PMRQwEgYDVQQHDAtTYWludCBM\n" +
+                    "b3VpczEOMAwGA1UECgwFVU5JVFkxEjAQBgNVBAsMCUNvbW1VTklUWTEXMBUGA1UE\n" +
+                    "AwwOUGVybWlzc2lvbnMgQ0ExJjAkBgkqhkiG9w0BCQEWF2luZm9AdW5pdHlmb3Vu\n" +
+                    "ZGF0aW9uLmlvAgkAuzndoD1E2BcwCQYFKw4DAhoFAKCCAQcwGAYJKoZIhvcNAQkD\n" +
+                    "MQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjIxMDIwMTYwNDE5WjAjBgkq\n" +
+                    "hkiG9w0BCQQxFgQUJPFYFIoOlpQ91q+BZSPGJZdoCq8wgacGCSqGSIb3DQEJDzGB\n" +
+                    "mTCBljALBglghkgBZQMEASowCAYGKoUDAgIJMAoGCCqFAwcBAQICMAoGCCqFAwcB\n" +
+                    "AQIDMAgGBiqFAwICFTALBglghkgBZQMEARYwCwYJYIZIAWUDBAECMAoGCCqGSIb3\n" +
+                    "DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggq\n" +
+                    "hkiG9w0DAgIBKDAJBgcqhkjOPQQBBEcwRQIgFusiTtqdVhanba5ezc++SFT4VQY7\n" +
+                    "v1bEzsC03JCRauYCIQCKqjWLJDrJpwd7ruWSFpQ6w/iyqN13BlWdnrn2KywpEw==\n" +
+                    "\n" +
+                    "------E7CBBA7468B3989AB3841DB52EB8FBDC--\n" +
+                    "\n",
+                    body.get());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnNotModifiedIfRequestEtagIsTheSameAsCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(E_TAG_HEADER_NAME, "abc");
+            response = blockingClient.exchange(request);
+            assertEquals(NOT_MODIFIED, response.getStatus());
+        }
+
+        @Test
+        void downloadFileRequestShouldReturnUpdatedFileIfRequestEtagIsDifferentThanCachedFileETag() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+
+            // The micronaut client follow redirects by default. Disabling it allows us the capture the existence
+            // of the JWT cookie and prevent an exception being thrown due to port 8080 connection being refused.
+            // JUnit test run on a random port and the application.yml failed/success auth paths are hard-coded
+            // to port 8080. In addition, the redirect response's JWT cookie is not populated.
+            // failed login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", "FailedLogin"
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            assertTrue(response.getCookie("JWT").isEmpty());
+
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+            setETagPropsForMockApplicationSecretsClient("xyz", true);
+
+            String originalFileEtag = "abc";
+            request = HttpRequest.GET("/applications/identity_ca.pem").header(E_TAG_HEADER_NAME, originalFileEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            assertFalse(originalFileEtag.contentEquals(response.header(E_TAG_HEADER_NAME)));
+            assertEquals("xyz", response.header(E_TAG_HEADER_NAME));
+        }
+
+        @Test
+        void canRetrievePermissionsJson() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // create app permission
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            // successful login
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/permissions.json");
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            String originalEtag = response.header(E_TAG_HEADER_NAME);
+            assertNotNull(originalEtag);
+
+            // send originalEtag and expect a 304
+            request = HttpRequest.GET("/applications/permissions.json").header(E_TAG_HEADER_NAME, originalEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(NOT_MODIFIED, response.getStatus());
+
+            // switch back to admin to add new permission...
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // add a new permission
+            response = createTopic("Topic789", TopicKind.B, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic789", topicOptional.get().getName());
+
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ_WRITE);
+            assertEquals(CREATED, response.getStatus());
+            permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            // send originalEtag and expect etag not equal to original and expect defined etag
+            request = HttpRequest.GET("/applications/permissions.json").header(E_TAG_HEADER_NAME, originalEtag);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+            String updatedEtag = response.header(E_TAG_HEADER_NAME);
+            assertNotEquals(originalEtag, updatedEtag);
+            assertNotNull(updatedEtag);
+        }
+
+        @Test
+        void canRetrieveClientCertAndPrivateKey() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOne.getId().toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOne.getId());
+
+            request = HttpRequest.GET("/applications/key-pair?nonce=unity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Map> bodyOptional = response.getBody(Map.class);
+            assertTrue(bodyOptional.isPresent());
+            Map map = bodyOptional.get();
+            assertTrue(map.containsKey("public"));
+            assertTrue(map.containsKey("private"));
+        }
+
+        @Test
+        void canRetrievePermissions() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            Long applicationOneId = applicationOne.getId();
+            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOneId);
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+
+            Map credentials;
+            credentials = Map.of(
+                    "username", applicationOneId.toString(),
+                    "password", optional.get()
+            );
+            request = HttpRequest.POST("/login", credentials);
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(SEE_OTHER, response.getStatus());
+            Optional<Cookie> jwtOptional = response.getCookie("JWT");
+            assertTrue(jwtOptional.isPresent());
+
+            loginAsApplication(applicationOneId);
+
+            request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=unity");
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> bodyOptional = response.getBody(String.class);
+            assertTrue(bodyOptional.isPresent());
+            String body = bodyOptional.get();
+            assertTrue(body.contains("CN="+ applicationOneId +"_unity,GIVENNAME="+applicationOneId+",SURNAME="+primaryGroup.getId()));
         }
     }
     @Test
@@ -1335,7 +1804,7 @@ public class ApplicationApiTest {
         HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
         List<Map> results = blockingClient.retrieve(request, List.class);
 
-        List<String> expectedApplicationNames = Arrays.asList("Go", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
+        List<String> expectedApplicationNames = Arrays.asList("GoLang", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
         assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
 
         request = HttpRequest.GET("/applications/search?filter=Group&size=7");
@@ -1385,5 +1854,20 @@ public class ApplicationApiTest {
 
         HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
         return blockingClient.exchange(request, ApplicationDTO.class);
+    }
+
+    private HttpResponse<?> createTopic(String topicName, TopicKind topicKind, Long groupId) {
+        TopicDTO topicDTO = new TopicDTO();
+        topicDTO.setName(topicName);
+        topicDTO.setGroup(groupId);
+        topicDTO.setKind(topicKind);
+
+        HttpRequest<?> request = HttpRequest.POST("/topics/save", topicDTO);
+        return blockingClient.exchange(request, TopicDTO.class);
+    }
+
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+        return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }

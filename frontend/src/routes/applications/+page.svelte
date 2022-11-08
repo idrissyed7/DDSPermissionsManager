@@ -10,6 +10,9 @@
 
 	export let data, errors;
 
+	// Constants
+	const minNameLength = 3;
+
 	// Authentication
 	let isApplicationAdmin = false;
 
@@ -59,7 +62,7 @@
 	let applicationListVisible = true;
 	let appName;
 	let editAppName;
-	let selectedGroup;
+	let selectedGroup = '';
 
 	// Selection
 	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
@@ -275,6 +278,7 @@
 		selectedAppName = appDetail.data.name;
 		selectedAppGroupName = appDetail.data.groupName;
 		await getAppPermissions(appId);
+		await getCanonicalTopicName();
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -283,6 +287,25 @@
 		);
 
 		applicationPermission.set(appPermissionData.data.content);
+	};
+
+	const getCanonicalTopicName = async () => {
+		if ($applicationPermission) {
+			$applicationPermission.forEach(async (topic) => {
+				const topicDetails = await httpAdapter.get(`/topics/show/${topic.topicId}`);
+				$applicationPermission.find((permissionTopic) => {
+					if (permissionTopic.topicId === topic.topicId) {
+						permissionTopic.topicName =
+							permissionTopic.topicName + ' ' + '(' + topicDetails.data.canonicalName + ')';
+						permissionTopic.topicGroup = topicDetails.data.groupName;
+					}
+				});
+
+				applicationPermission.update((appPermission) => {
+					return [...appPermission];
+				});
+			});
+		}
 	};
 
 	const returnToApplicationsList = () => {
@@ -407,6 +430,7 @@
 					{/if}
 				</div>
 				<button
+					disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
 					class="button"
 					style="margin-left: 1rem; width: 4.8rem"
 					on:click={() => {
@@ -586,35 +610,24 @@
 					<th><strong>Topic</strong></th>
 					<th><strong>Access</strong></th>
 				</tr>
-				<tr>
-					<td>{selectedAppGroupName}</td>
-					<td>
-						{#if $applicationPermission}
-							<ul>
-								{#each $applicationPermission as appPermission}
-									<li>
-										{appPermission.permissionsTopic.name}
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</td>
-					<td>
-						{#if $applicationPermission}
-							<ul style="list-style-type: none;">
-								{#each $applicationPermission as appPermission}
-									<li>
-										{appPermission.accessType}
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</td>
-				</tr>
+				{#if $applicationPermission}
+					{#each $applicationPermission as appPermission}
+						<tr>
+							<td>
+								{appPermission.topicGroup}
+							</td><td>
+								{appPermission.topicName}
+							</td>
+							<td>
+								{appPermission.accessType}
+							</td>
+						</tr>
+					{/each}
+				{/if}
 			</table>
 			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 				<center>
-					<span style="">ID: {selectedAppId} &nbsp;</span>
+					<span style="">Username: {selectedAppId} &nbsp;</span>
 					<button
 						class="button"
 						style="width: 11rem; margin-top: 2rem;"
@@ -662,11 +675,6 @@
 		border: 1px dashed #1c1cc9;
 		align-items: center;
 		justify-content: center;
-	}
-
-	ul {
-		margin: 0;
-		padding: 0.25rem 0 0.25rem 0.85rem;
 	}
 
 	tr {

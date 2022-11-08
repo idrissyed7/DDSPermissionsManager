@@ -15,6 +15,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,14 +65,7 @@ public class TopicService {
         }
     }
 
-    public MutableHttpResponse<?> save(TopicDTO topicDTO) throws Exception {
-        if (topicDTO.getId() != null) {
-            throw new Exception("Update of Topics are not allowed.");
-        } else if (topicDTO.getGroup() == null) {
-            throw new Exception("Topic must be associated to a group.");
-        } else if (topicDTO.getName() == null) {
-            throw new Exception("Name cannot be empty.");
-        }
+    public MutableHttpResponse<?> save(TopicDTO topicDTO) {
 
         Optional<Group> groupOptional = groupRepository.findById(topicDTO.getGroup());
 
@@ -84,7 +78,7 @@ public class TopicService {
         topic.setPermissionsGroup(group);
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
@@ -93,24 +87,27 @@ public class TopicService {
         if (searchTopicByNameAndGroup.isPresent()) {
             return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));
         }
-
-        return HttpResponse.ok(new TopicDTO(topicRepository.save(topic)));
+        TopicDTO responseTopicDTO = new TopicDTO(topicRepository.save(topic));
+        responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));
+        return HttpResponse.ok(responseTopicDTO);
     }
 
-    public void deleteById(Long id) throws Exception {
+    public HttpResponse deleteById(Long id) throws AuthenticationException {
         Optional<Topic> optionalTopic = topicRepository.findById(id);
         if (optionalTopic.isEmpty()) {
-            throw new Exception("Topic not found");
+            return HttpResponse.notFound("Topic not found");
         }
+
         Topic topic = optionalTopic.get();
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         // TODO - Need to investigate cascade management to eliminate this
         applicationPermissionService.deleteAllByTopic(topic);
 
         topicRepository.deleteById(id);
+        return HttpResponse.seeOther(URI.create("/api/topics"));
     }
 
     public HttpResponse show(Long id) {
@@ -121,8 +118,9 @@ public class TopicService {
 
         Topic topic = topicOptional.get();
         TopicDTO topicResponseDTO = new TopicDTO(topic);
+        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
         if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
-            throw new AuthenticationException("Not authorized");
+            return HttpResponse.unauthorized();
         }
 
         return HttpResponse.ok(topicResponseDTO);
@@ -135,6 +133,18 @@ public class TopicService {
     private boolean isUserTopicAdminOfGroup(Topic topic) {
         User user = securityUtil.getCurrentlyAuthenticatedUser().get();
         return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
+    }
+
+    private String computeCanonicalName(Topic topic) {
+        return buildCanonicalName(topic.getKind(), topic.getPermissionsGroup().getId(), topic.getName());
+    }
+
+    private String computeCanonicalName(TopicDTO topicDTO) {
+        return buildCanonicalName(topicDTO.getKind(), topicDTO.getGroup(), topicDTO.getName());
+    }
+
+    private String buildCanonicalName(TopicKind kind, Long groupId, String name) {
+        return kind + "." + groupId + "." + name;
     }
 
     public Optional<Topic> findById(Long topicId) {

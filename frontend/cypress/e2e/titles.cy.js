@@ -1,12 +1,13 @@
 describe('title should say DDS Permissions Manager', () => {
     beforeEach(() => {
-        cy.visit('http://localhost:8080/', {
-            auth: {
-              username: 'unity-admin',
-              password: 'password',
-            },
-        });
-        cy.wait(1000);
+        cy.login('unity-admin', 'password');
+        cy.intercept('http://localhost:8080/api/token_info').as('tokenInfo');
+        cy.visit('http://localhost:8080/');
+        cy.wait('@tokenInfo');
+    });
+
+    afterEach(() => {
+        cy.visit('http://localhost:8080/api/logout')
     });
 
     it('should have correct title', () => {
@@ -19,6 +20,5 @@ describe('title should say DDS Permissions Manager', () => {
         cy.get('h1')
         .invoke('text')
         .should('equal', 'Welcome to the DDS Permissions Manager!');
-    })
-    
+    });
 });

@@ -8,10 +8,12 @@ import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface ApplicationPermissionRepository extends PageableRepository<ApplicationPermission, Long> {
     Page<ApplicationPermission> findByPermissionsApplicationId(Long applicationId, Pageable pageable);
+    List<ApplicationPermission> findByPermissionsApplication(Application permissionsApplication);
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicId(Long applicationId, Long topicId, Pageable pageable);
     void deleteByPermissionsTopicEquals(Topic permissionsTopic);

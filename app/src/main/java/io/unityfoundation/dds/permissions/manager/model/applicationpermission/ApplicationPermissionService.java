@@ -13,6 +13,7 @@ import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @Singleton
@@ -148,5 +149,9 @@ public class ApplicationPermissionService {
     }
     public void deleteAllByApplication(Application application) {
         applicationPermissionRepository.deleteByPermissionsApplicationEquals(application);
+    }
+
+    public List<ApplicationPermission> findAllByApplication(Application application) {
+        return applicationPermissionRepository.findByPermissionsApplication(application);
     }
 }

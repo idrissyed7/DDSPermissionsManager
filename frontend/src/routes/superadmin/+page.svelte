@@ -149,8 +149,8 @@
 </script>
 
 <svelte:head>
-	<title>Super Admin | DDS Permissions Manager</title>
-	<meta name="description" content="DDS Permissions Manager Super Admin" />
+	<title>Super Admins | DDS Permissions Manager</title>
+	<meta name="description" content="DDS Permissions Manager Super Admins" />
 </svelte:head>
 
 {#if $isAuthenticated}
@@ -186,7 +186,7 @@
 	{/if}
 
 	<div class="content">
-		<h1>Super Admin</h1>
+		<h1>Super Admins</h1>
 		<center>
 			<input
 				style="border-width: 1px; width: 20rem; text-align: center"
@@ -228,7 +228,9 @@
 			<table align="center">
 				<tr>
 					<td style="width: 23rem">
+						<!-- svelte-ignore a11y-autofocus -->
 						<input
+							autofocus
 							placeholder="Email Address"
 							class:invalid={invalidEmail && emailValue.length >= 1}
 							style="display: inline-flex; width:12rem"

@@ -15,26 +15,6 @@
 			const res = await httpAdapter.get(`/token_info`);
 			onLoggedIn(res.data);
 
-			// For Testing purposes only it's loading a Token in a JSON file
-			// The user is logged in as a Super Admin
-			// Remove this for Production //
-			// if (!res.data) onLoggedIn(token);
-			// if (!res.data) {
-			// const res = await httpAdapter.post(`/login`, {
-			// 	username: 'admin-unity',
-			// 	password: 'password'
-			// });
-			// onLoggedIn(res.data);
-			// }
-
-			// remindTime = 60 * 1000 * 5; // 5 minutes
-			// expirationTime = new Date(res.data.exp * 1000);
-			// nowTime = new Date();
-
-			// console.log('exp:', expirationTime);
-			// console.log('now:', nowTime);
-			// console.log('Remind in:', expirationTime - nowTime - remindTime);
-			// console.log(expirationTime - nowTime);
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
 			setInterval(checkValidity, userValidityInterval);

@@ -156,6 +156,14 @@ public class GroupApiTest {
             assertEquals("Theta", theta.getName());
         }
 
+        @Test
+        public void cannotCreateWithNameLessThanThreeCharacters() {
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup("g");
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+        }
+
         // update
         @Test
         void canUpdateGroup(){
