@@ -12,10 +12,13 @@ import java.util.Random;
 public class PassphraseGenerator {
 
     @Property(name = "permissions-manager.application.passphrase.length")
-    protected Optional<Integer> lengthOptional;
+    protected Integer passphraseLength;
 
     public String generatePassphrase(){
-        int length = lengthOptional.orElse(16);
+        int length = 16;
+        if (passphraseLength != null) {
+            length = passphraseLength;
+        }
 
         // see https://www.baeldung.com/java-random-string#java8-alphanumeric
         int leftLimit = 48; // numeral '0'
