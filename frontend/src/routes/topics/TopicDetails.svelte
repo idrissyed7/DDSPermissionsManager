@@ -13,6 +13,7 @@
 		selectedTopicGroupName,
 		selectedTopicGroupId;
 
+	let selectedTopicCanonicalName;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
 
@@ -81,6 +82,7 @@
 			loadApplicationPermissions(selectedTopicId);
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
+			selectedTopicCanonicalName = $topicDetails.canonicalName;
 			selectedTopicGroupName = $topicDetails.groupName;
 			selectedTopicGroupId = $topicDetails.group;
 
@@ -184,7 +186,7 @@
 	<table align="center" class="topics-details">
 		<tr>
 			<td><strong>Name:</strong></td>
-			<td>{selectedTopicName}</td>
+			<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
 		</tr>
 		<tr>
 			<td><strong>Group:</strong></td>
