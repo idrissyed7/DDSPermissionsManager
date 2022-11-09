@@ -13,7 +13,6 @@ import io.micronaut.http.cookie.Cookie;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
-import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -1737,6 +1736,14 @@ public class ApplicationApiTest {
 
             loginAsApplication(applicationOne.getId());
 
+            // invalid nonce
+            request = HttpRequest.GET("/applications/key-pair?nonce=uni_ty");
+            HttpRequest finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, Map.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+
             request = HttpRequest.GET("/applications/key-pair?nonce=unity");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
@@ -1786,6 +1793,14 @@ public class ApplicationApiTest {
             assertTrue(jwtOptional.isPresent());
 
             loginAsApplication(applicationOneId);
+
+            // invalid nonce
+            request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=uni_ty");
+            HttpRequest finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, Map.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
 
             request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=unity");
             response = blockingClient.exchange(request, String.class);
