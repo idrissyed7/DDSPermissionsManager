@@ -50,6 +50,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.Store;
@@ -571,10 +572,18 @@ public class ApplicationService {
         return nameBuilder.build().toString();
     }
 
-    public String objectToPEMString(Object certificate) throws IOException {
+    public String objectToPEMString(X509Certificate certificate) throws IOException {
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
         pemWriter.writeObject(certificate);
+        pemWriter.close();
+        return sWrt.toString();
+    }
+
+    public String objectToPEMString(PrivateKey key) throws IOException {
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
+        pemWriter.writeObject(new JcaPKCS8Generator(key, null));
         pemWriter.close();
         return sWrt.toString();
     }
