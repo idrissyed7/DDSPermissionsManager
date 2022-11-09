@@ -472,8 +472,13 @@ public class ApplicationService {
     }
 
     private Map<String, Object> buildTemplateDataModel(String nonce, Application application) {
+        HashMap<String, String> oidMap = new HashMap<>();
+        oidMap.put("2.5.4.4", "SN");
+        oidMap.put("2.5.4.42", "GN");
+
         HashMap<String, Object> dataModel = new HashMap<>();
-        dataModel.put("subject", buildSubject(application, nonce));
+        String sn = (new X500Principal(buildSubject(application, nonce))).getName(X500Principal.RFC2253, oidMap);
+        dataModel.put("subject", sn);
         dataModel.put("applicationId", application.getId());
 
         Long expiry = permissionExpiry != null ? permissionExpiry: 30;
