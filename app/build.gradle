@@ -43,7 +43,10 @@ dependencies {
 
     String databaseSelection = System.getenv("DPM_DATABASE_DEPENDENCY")
     if (databaseSelection != null) {
-        runtimeOnly(databaseSelection)
+        String[] parts = databaseSelection.split(',')
+        for (String part : parts) {
+            runtimeOnly(part)
+        }
     } else {
         runtimeOnly("com.h2database:h2")
     }
