@@ -275,11 +275,15 @@ public class TopicApiTest {
             // confirm it is topic with kind B and not C
             topicDTO.setKind(TopicKind.C);
             request = HttpRequest.POST("/topics/save", topicDTO);
-            response = blockingClient.exchange(request, TopicDTO.class);
-            assertEquals(SEE_OTHER, response.getStatus());
-            topic = response.getBody(TopicDTO.class);
-            assertTrue(topic.isPresent());
-            assertEquals(TopicKind.B, topic.get().getKind());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, TopicDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.TOPIC_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         //show

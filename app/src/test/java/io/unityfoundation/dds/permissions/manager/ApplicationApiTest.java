@@ -126,11 +126,14 @@ public class ApplicationApiTest {
             Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
             assertTrue(applicationOptional.isPresent());
 
-            response = createApplication("TestApplication", primaryGroup.getId());
-            assertEquals(SEE_OTHER, response.getStatus());
-            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(applicationOptional.get().getId(), application.getId());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("TestApplication", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         @Test
@@ -251,11 +254,14 @@ public class ApplicationApiTest {
             assertEquals("Abc123", applicationOptional.get().getName());
 
             // duplicate create attempt
-            response = createApplication("Abc123", primaryGroup.getId());
-            assertEquals(SEE_OTHER, response.getStatus());
-            Optional<ApplicationDTO> applicationOptionalAttempt = response.getBody(ApplicationDTO.class);
-            assertTrue(applicationOptionalAttempt.isPresent());
-            assertEquals(applicationOptional.get().getId(), applicationOptionalAttempt.get().getId());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplication("Abc123", primaryGroup.getId());
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         @Test
@@ -537,11 +543,14 @@ public class ApplicationApiTest {
             // update attempt
             applicationTwo.setName(applicationOne.getName());
             request = HttpRequest.POST("/applications/save", applicationTwo);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            assertEquals(SEE_OTHER, response.getStatus());
-            ApplicationDTO application = response.getBody(ApplicationDTO.class).get();
-
-            assertEquals(applicationOne.getId(), application.getId());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request, ApplicationDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         @Test

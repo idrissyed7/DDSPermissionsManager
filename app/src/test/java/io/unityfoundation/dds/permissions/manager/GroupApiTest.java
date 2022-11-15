@@ -126,11 +126,14 @@ public class GroupApiTest {
             assertTrue(thetaOptional.isPresent());
             Group theta = thetaOptional.get();
 
-            response = createGroup("Theta");
-            assertEquals(SEE_OTHER, response.getStatus());
-            Optional<Group> groupDuplicate = response.getBody(Group.class);
-            assertTrue(groupDuplicate.isPresent());
-            assertEquals(theta.getId(), groupDuplicate.get().getId());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createGroup("Theta");
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.GROUP_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         @Test

@@ -87,7 +87,7 @@ public class TopicService {
                 topic.getName().trim(), topic.getPermissionsGroup());
 
         if (searchTopicByNameAndGroup.isPresent()) {
-            return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));
+            throw new DPMException(ResponseStatusCodes.TOPIC_ALREADY_EXISTS);
         }
         TopicDTO responseTopicDTO = new TopicDTO(topicRepository.save(topic));
         responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));

@@ -177,7 +177,7 @@ public class ApplicationService {
             } else if (searchApplicationByNameAndGroup.isPresent() &&
                     searchApplicationByNameAndGroup.get().getId() != applicationOptional.get().getId()) {
                 // attempt to update an existing application with same name/group combo as another
-                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new ApplicationDTO(searchApplicationByNameAndGroup.get()));
+                throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
             application = applicationOptional.get();
@@ -187,7 +187,7 @@ public class ApplicationService {
         } else { // new
 
             if (searchApplicationByNameAndGroup.isPresent()) {
-                return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new ApplicationDTO(searchApplicationByNameAndGroup.get()));
+                throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
             application = new Application(applicationDTO.getName());
