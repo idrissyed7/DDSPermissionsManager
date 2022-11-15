@@ -44,8 +44,14 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
         String code = violation.getPropertyPath().toString();
         ConstraintDescriptor descriptor = violation.getConstraintDescriptor();
 
-        // group
-        if (code.contains(".group.")) {
+        if (code.endsWith(".email")) {
+            if (descriptor.getAnnotation() instanceof Email) {
+                code = ResponseStatusCodes.INVALID_EMAIL_FORMAT;
+            } else if (descriptor.getAnnotation() instanceof NotBlank) {
+                code = ResponseStatusCodes.EMAIL_CANNOT_BE_BLANK_OR_NULL;
+            }
+        } else if (code.contains(".group.")) {
+            // group
             if (code.endsWith(".name")) {
                 if (descriptor.getAnnotation() instanceof NotBlank) {
                     code = ResponseStatusCodes.GROUP_NAME_CANNOT_BE_BLANK_OR_NULL;
@@ -79,14 +85,6 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
             } else if (code.endsWith(".group")) {
                 if (descriptor.getAnnotation() instanceof NotNull) {
                     code = ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION;
-                }
-            }
-        } else if (code.contains(".adminDTO.")) {
-            if (code.endsWith(".email")) {
-                if (descriptor.getAnnotation() instanceof Email) {
-                    code = ResponseStatusCodes.INVALID_EMAIL_FORMAT;
-                } else if (descriptor.getAnnotation() instanceof NotBlank) {
-                    code = ResponseStatusCodes.EMAIL_CANNOT_BE_BLANK_OR_NULL;
                 }
             }
         }

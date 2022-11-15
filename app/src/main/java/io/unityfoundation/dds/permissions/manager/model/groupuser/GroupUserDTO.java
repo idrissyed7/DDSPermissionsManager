@@ -2,10 +2,16 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
 import io.micronaut.core.annotation.Introspected;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+
 @Introspected
 public class GroupUserDTO {
 
     private Long id;
+
+    @NotBlank
+    @Email
     private String email;
     private long permissionsGroup;
     private boolean isGroupAdmin = false;

@@ -117,6 +117,31 @@ public class GroupMembershipApiTest {
         }
 
         @Test
+        public void cannotCreateWithInvalidEmailFormat() {
+            // group creation
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            // perform test
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("pparker@.test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, thrown.getStatus());
+            Optional<List> bodyOptional = thrown.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.INVALID_EMAIL_FORMAT.equals(map.get("code"))));
+        }
+
+        @Test
         public void cannotCreateWithSameEmailAndGroupAsExisting() {
             // group creation
             Group primaryGroup = new Group("PrimaryGroup");
