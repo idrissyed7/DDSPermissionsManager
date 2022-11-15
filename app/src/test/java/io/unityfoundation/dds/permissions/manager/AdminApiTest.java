@@ -115,6 +115,10 @@ public class AdminApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(BAD_REQUEST, thrown.getStatus());
+            Optional<List> bodyOptional = thrown.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.INVALID_EMAIL_FORMAT.equals(map.get("code"))));
         }
 
         // update
@@ -250,6 +254,4 @@ public class AdminApiTest {
             assertEquals(FORBIDDEN, thrown.getStatus());
         }
     }
-
-
 }

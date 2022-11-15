@@ -85,6 +85,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_REQUIRES_GROUP_ASSOCIATION.equals(group.get("code"))));
         }
 
         @Test
@@ -172,12 +176,20 @@ public class ApplicationApiTest {
                 createApplication(null, primaryGroup.getId());
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL.equals(group.get("code"))));
 
             // space
             exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createApplication("     ", primaryGroup.getId());
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL.equals(group.get("code"))));
         }
 
         @Test
@@ -194,6 +206,10 @@ public class ApplicationApiTest {
                 createApplication("a", theta.getId());
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS.equals(group.get("code"))));
         }
 
         @Test
@@ -487,6 +503,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(request);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_CANNOT_UPDATE_GROUP_ASSOCIATION.equals(group.get("code"))));
         }
 
         @Test
@@ -629,6 +649,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_REQUIRES_GROUP_ASSOCIATION.equals(group.get("code"))));
         }
 
         @Test
@@ -650,6 +674,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -720,6 +748,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
 
@@ -940,6 +972,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_CANNOT_UPDATE_GROUP_ASSOCIATION.equals(group.get("code"))));
         }
 
         @Test
@@ -993,6 +1029,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1059,6 +1099,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_REQUIRES_GROUP_ASSOCIATION.equals(group.get("code"))));
         }
 
         @Test
@@ -1082,6 +1126,10 @@ public class ApplicationApiTest {
                 createApplication("TestApplication", primaryGroup.getId());
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1115,8 +1163,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<ApplicationDTO> application = exception.getResponse().getBody(ApplicationDTO.class);
-            assertTrue(application.isEmpty());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1150,8 +1200,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
-            assertTrue(applicationUpdateAttempt.isEmpty());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1184,8 +1236,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
-            assertTrue(applicationUpdateAttempt.isEmpty());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1224,8 +1278,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
-            Optional<ApplicationDTO> applicationUpdateAttempt = exception.getResponse().getBody(ApplicationDTO.class);
-            assertTrue(applicationUpdateAttempt.isEmpty());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
 
         @Test
@@ -1257,6 +1313,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
         }
     }
 
@@ -1743,6 +1803,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest, Map.class);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.INVALID_NONCE_FORMAT.equals(group.get("code"))));
 
             request = HttpRequest.GET("/applications/key-pair?nonce=unity");
             response = blockingClient.exchange(request, Map.class);
@@ -1801,6 +1865,10 @@ public class ApplicationApiTest {
                 blockingClient.exchange(finalRequest, Map.class);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.INVALID_NONCE_FORMAT.equals(map.get("code"))));
 
             request = HttpRequest.GET("/applications/permissions.xml.p7s?nonce=unity");
             response = blockingClient.exchange(request, String.class);

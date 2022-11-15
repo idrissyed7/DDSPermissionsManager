@@ -138,6 +138,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_MEMBERSHIP_ALREADY_EXISTS.equals(map.get("code"))));
         }
 
         @Test
@@ -151,6 +155,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(request);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -165,6 +173,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(request);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         // list
@@ -385,14 +397,20 @@ public class GroupMembershipApiTest {
 
             User justin = userRepository.findByEmail("jjones@test.test").get();
 
-            GroupUser groupUser = new GroupUser(primaryGroup, justin);
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
 
-            request = HttpRequest.PUT("/group_membership", groupUser);
+            request = HttpRequest.PUT("/group_membership", dto);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_MEMBERSHIP_CANNOT_CREATE_WITH_UPDATE.equals(map.get("code"))));
         }
 
         // delete
@@ -505,6 +523,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -541,6 +563,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -609,6 +635,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -692,12 +722,16 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership/"+groupUser.getPermissionsUser());
+            request = HttpRequest.GET("/group_membership/user-exists/"+groupUser.getPermissionsUser());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(NOT_FOUND, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.USER_NOT_FOUND.equals(map.get("code"))));
         }
 
         @Test
@@ -732,6 +766,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -775,6 +813,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
     }
 
@@ -1151,6 +1193,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -1182,6 +1228,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
         @Test
@@ -1214,6 +1264,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
         @Test
         public void shouldBeConsideredInvalid() {
@@ -1224,6 +1278,10 @@ public class GroupMembershipApiTest {
                 blockingClient.exchange(finalRequest);
             });
             assertEquals(NOT_FOUND, exception.getStatus());
+            Optional<List> listOptional = exception.getResponse().getBody(List.class);
+            assertTrue(listOptional.isPresent());
+            List<Map> list = listOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.USER_IS_NOT_VALID.equals(map.get("code"))));
         }
     }
 }

@@ -9,6 +9,8 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationResponse;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
+import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
@@ -153,11 +155,11 @@ public class ApplicationService {
         Optional<Group> groupOptional = groupRepository.findById(applicationDTO.getGroup());
 
         if (groupOptional.isEmpty()) {
-            return HttpResponse.notFound("Specified group does not exist");
+            throw new DPMException(ResponseStatusCodes.APPLICATION_REQUIRES_GROUP_ASSOCIATION, HttpStatus.NOT_FOUND);
         }
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(groupOptional.get())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         // check if application with same name exists in group
@@ -169,9 +171,9 @@ public class ApplicationService {
 
             Optional<Application> applicationOptional = applicationRepository.findById(applicationDTO.getId());
             if (applicationOptional.isEmpty()) {
-                return HttpResponse.notFound("Specified application does not exist");
+                throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
             } else if (!Objects.equals(applicationOptional.get().getPermissionsGroup().getId(), applicationDTO.getGroup())) {
-                return HttpResponse.badRequest("Cannot change application's group association");
+                throw new DPMException(ResponseStatusCodes.APPLICATION_CANNOT_UPDATE_GROUP_ASSOCIATION);
             } else if (searchApplicationByNameAndGroup.isPresent() &&
                     searchApplicationByNameAndGroup.get().getId() != applicationOptional.get().getId()) {
                 // attempt to update an existing application with same name/group combo as another
@@ -206,18 +208,18 @@ public class ApplicationService {
 
         Optional<Application> applicationOptional = applicationRepository.findById(id);
         if (applicationOptional.isEmpty()) {
-            return HttpResponse.notFound("Application not found");
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Application application = applicationOptional.get();
 
         Optional<Group> groupOptional = groupRepository.findById(application.getPermissionsGroup().getId());
         if (groupOptional.isEmpty()) {
-            return HttpResponse.notFound("Group does not exist");
+            throw new DPMException(ResponseStatusCodes.GROUP_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         // TODO - Need to investigate cascade management to eliminate this
@@ -238,7 +240,7 @@ public class ApplicationService {
                         applicationOptional.get().getPermissionsGroup().getId(),
                         securityUtil.getCurrentlyAuthenticatedUser().get().getId())
         ){
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
         Application application = applicationOptional.get();
         ApplicationDTO applicationDTO = new ApplicationDTO(application);
@@ -264,18 +266,18 @@ public class ApplicationService {
     public MutableHttpResponse<Object> generateCleartextPassphrase(Long applicationId) {
         Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
-            return HttpResponse.notFound("Application not found");
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Application application = applicationOptional.get();
 
         Optional<Group> groupOptional = groupRepository.findById(application.getPermissionsGroup().getId());
         if (groupOptional.isEmpty()) {
-            return HttpResponse.notFound("Group does not exist");
+            throw new DPMException(ResponseStatusCodes.GROUP_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         String clearTextPassphrase = passphraseGenerator.generatePassphrase();
@@ -289,7 +291,7 @@ public class ApplicationService {
     public AuthenticationResponse passwordMatches(Long applicationId, String rawPassword) {
         Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
-            return AuthenticationResponse.failure("Application not found.");
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         Application application = applicationOptional.get();
 
@@ -315,7 +317,8 @@ public class ApplicationService {
 
             return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
-        return HttpResponse.notFound();
+
+        throw new DPMException(ResponseStatusCodes.IDENTITY_CERT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     public HttpResponse<?> getPermissionsCACertificate(String requestEtag) {
@@ -333,7 +336,8 @@ public class ApplicationService {
 
             return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
-        return HttpResponse.notFound();
+
+        throw new DPMException(ResponseStatusCodes.PERMISSIONS_CERT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     public HttpResponse<?> getGovernanceFile(String requestEtag) {
@@ -351,7 +355,8 @@ public class ApplicationService {
 
             return HttpResponse.ok(cert).header(E_TAG_HEADER_NAME, etag);
         }
-        return HttpResponse.notFound();
+
+        throw new DPMException(ResponseStatusCodes.GOVERNANCE_FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
     public HttpResponse<?> getApplicationPrivateKeyAndClientCertificate(String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {

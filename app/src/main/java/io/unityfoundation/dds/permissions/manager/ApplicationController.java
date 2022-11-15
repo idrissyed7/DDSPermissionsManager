@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
 import org.bouncycastle.mail.smime.SMIMEException;
@@ -115,9 +116,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
-        if (nonceIsNotValid(nonce)) {
-            return HttpResponse.badRequest();
-        }
+        checkNonceValidFormat(nonce);
         return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
     }
 
@@ -125,9 +124,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
-        if (nonceIsNotValid(nonce)) {
-            return HttpResponse.badRequest();
-        }
+        checkNonceValidFormat(nonce);
         return applicationService.getPermissionsFile(nonce);
     }
 
@@ -138,10 +135,9 @@ public class ApplicationController {
         return applicationService.getPermissionJson(etag);
     }
 
-    private boolean nonceIsNotValid(String nonce) {
-        if (nonce == null) {
-            return true;
+    private void checkNonceValidFormat(String nonce) {
+        if (nonce == null || !nonce.matches("^[a-zA-Z0-9]*$")) {
+            throw new DPMException(ResponseStatusCodes.INVALID_NONCE_FORMAT);
         }
-        return !nonce.matches("^[a-zA-Z0-9]*$");
     }
 }

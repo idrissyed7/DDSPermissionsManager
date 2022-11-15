@@ -4,6 +4,7 @@ import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.user.AdminDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
 
@@ -52,7 +54,7 @@ public class AdminController {
     @ApiResponse(responseCode = "404", description = "User cannot be found.")
     HttpResponse<?> removeAdminPrivilege(Long id) {
         if (!userService.removeAdminPrivilegeById(id)) {
-            return HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         return HttpResponse.ok();
     }

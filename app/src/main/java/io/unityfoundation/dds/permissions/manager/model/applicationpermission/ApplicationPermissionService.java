@@ -3,6 +3,9 @@ package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
+import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -59,18 +62,18 @@ public class ApplicationPermissionService {
 
         Optional<Application> applicationById = applicationRepository.findById(applicationId);
         if (applicationById.isEmpty()) {
-            response = HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
         } else {
             Optional<Topic> topicById = topicRepository.findById(topicId);
             if (topicById.isEmpty()) {
-                response = HttpResponse.notFound();
+                throw new DPMException(ResponseStatusCodes.TOPIC_NOT_FOUND, HttpStatus.NOT_FOUND);
             } else {
                 Topic topic = topicById.get();
 
                 User user = securityUtil.getCurrentlyAuthenticatedUser().get();
                 if (!securityUtil.isCurrentUserAdmin() &&
                         !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
-                    response = HttpResponse.unauthorized();
+                    throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
                 } else {
                     Application application = applicationById.get();
                     response = addAccess(application, topic, access);
@@ -106,13 +109,13 @@ public class ApplicationPermissionService {
         Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
 
         if (applicationPermissionOptional.isEmpty()) {
-            return HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_NOT_FOUND, HttpStatus.NOT_FOUND);
         } else {
             Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
 
             if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
-                return HttpResponse.unauthorized();
+                throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
             }
         }
 
@@ -128,13 +131,13 @@ public class ApplicationPermissionService {
         Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
 
         if (applicationPermissionOptional.isEmpty()) {
-            return HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_NOT_FOUND, HttpStatus.NOT_FOUND);
         } else {
             Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
 
             if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
-                return HttpResponse.unauthorized();
+                throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
             }
         }
 

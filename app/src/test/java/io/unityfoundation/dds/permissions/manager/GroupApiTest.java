@@ -139,11 +139,19 @@ public class GroupApiTest {
                 createGroup(null);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NAME_CANNOT_BE_BLANK_OR_NULL.equals(map.get("code"))));
 
             HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 createGroup("   ");
             });
             assertEquals(BAD_REQUEST, exception1.getStatus());
+            bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NAME_CANNOT_BE_BLANK_OR_NULL.equals(map.get("code"))));
         }
 
         @Test
@@ -162,6 +170,10 @@ public class GroupApiTest {
                 createGroup("g");
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS.equals(map.get("code"))));
         }
 
         // update
