@@ -9,10 +9,12 @@ import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMErrorResponse;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
@@ -40,7 +42,9 @@ public class GroupMembershipController {
 
     @Get("/user-validity")
     @ApiResponse(responseCode = "200", description = "Valid User")
-    @ApiResponse(responseCode = "404", description = "Invalid User")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse checkIfUserIsValid() {
         return groupUserService.checkUserValidity();
@@ -52,8 +56,9 @@ public class GroupMembershipController {
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupUser.class))
     )
-    @ApiResponse(responseCode = "400", description = "Bad Request")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     HttpResponse addMember(@Valid @Body GroupUserDTO dto) {
         return groupUserService.addMember(dto);
     }
@@ -67,7 +72,9 @@ public class GroupMembershipController {
     @Delete
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "200", description = "Ok")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     HttpResponse removeMember(@Body Map payload) {
         Long id = Long.valueOf((Integer) payload.get("id"));
         return groupUserService.removeMember(id);
@@ -76,7 +83,9 @@ public class GroupMembershipController {
     @Get("/user-exists/{id}")
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "200", description = "Ok")
-    @ApiResponse(responseCode = "404", description = "Not found")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     HttpResponse checkUserExists(Long id) {
         return groupUserService.checkUserExists(id);
     }

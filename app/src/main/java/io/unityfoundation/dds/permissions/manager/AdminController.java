@@ -10,10 +10,12 @@ import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMErrorResponse;
 import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.user.AdminDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.UserService;
@@ -44,14 +46,18 @@ public class AdminController {
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminDTO.class))
     )
-    @ApiResponse(responseCode = "400", description = "Bad Request")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     HttpResponse<?> save(@Body @Valid AdminDTO adminDTO) {
         return userService.save(adminDTO);
     }
 
     @Put("/remove-admin/{id}")
     @ExecuteOn(TaskExecutors.IO)
-    @ApiResponse(responseCode = "404", description = "User cannot be found.")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     HttpResponse<?> removeAdminPrivilege(Long id) {
         if (!userService.removeAdminPrivilegeById(id)) {
             throw new DPMException(ResponseStatusCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);

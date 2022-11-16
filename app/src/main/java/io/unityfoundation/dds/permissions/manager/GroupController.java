@@ -11,10 +11,12 @@ import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMErrorResponse;
 import io.unityfoundation.dds.permissions.manager.model.group.*;
 
 import javax.validation.Valid;
@@ -48,9 +50,9 @@ public class GroupController {
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Group.class))
     )
-    @ApiResponse(responseCode = "303", description = "Group already exists. Response body contains original.")
-    @ApiResponse(responseCode = "400", description = "Bad Request")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> save(@Body @Valid SimpleGroupDTO group) {
         return groupService.save(group);
@@ -59,7 +61,9 @@ public class GroupController {
 
     @Post("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /groups")
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
         return groupService.deleteById(id);
