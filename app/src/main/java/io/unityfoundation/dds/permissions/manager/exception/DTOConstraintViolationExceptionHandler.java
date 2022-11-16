@@ -8,6 +8,7 @@ import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Produces;
 import io.micronaut.http.server.exceptions.ExceptionHandler;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
+import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +29,19 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
 
     private static final Logger LOG = LoggerFactory.getLogger(DTOConstraintViolationExceptionHandler.class);
 
+    private final PassphraseGenerator passphraseGenerator;
+
+    public DTOConstraintViolationExceptionHandler(PassphraseGenerator passphraseGenerator) {
+        this.passphraseGenerator = passphraseGenerator;
+    }
+
     @Override
     public HttpResponse<?> handle(HttpRequest request, ConstraintViolationException exception) {
         Set<ConstraintViolation<?>> constraintViolations = exception.getConstraintViolations();
         MutableHttpResponse<?> response = HttpResponse.badRequest();
-
-        return response.body(buildBody(constraintViolations));
+        response.body(buildBody(constraintViolations));
+        exception.printStackTrace();
+        return response;
     }
 
     private List<DPMErrorResponse> buildBody(Set<ConstraintViolation<?>> errorContext) {
@@ -93,9 +101,13 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
             }
         }
 
-        LOG.error("Code: " + code + ". Violation: " + violation.getMessage());
+        String errorId = passphraseGenerator.generatePassphrase();
+        LOG.error("Id: " + errorId +
+                " Code: " + code +
+                " Violation: " + violation.getMessage() +
+                ". See exception below:");
 
-        return new DPMErrorResponse(code);
+        return new DPMErrorResponse(errorId, code);
     }
 
 }

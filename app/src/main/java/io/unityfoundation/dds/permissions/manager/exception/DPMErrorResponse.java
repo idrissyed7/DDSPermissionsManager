@@ -5,13 +5,23 @@ import io.micronaut.core.annotation.Introspected;
 @Introspected
 public class DPMErrorResponse {
 
+    private String id;
     private String code;
 
     public DPMErrorResponse() {
     }
 
-    public DPMErrorResponse(String code) {
+    public DPMErrorResponse(String id, String code) {
+        this.id = id;
         this.code = code;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getCode() {

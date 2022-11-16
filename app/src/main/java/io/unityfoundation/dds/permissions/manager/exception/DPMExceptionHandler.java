@@ -7,6 +7,7 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Produces;
 import io.micronaut.http.server.exceptions.ExceptionHandler;
+import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,12 @@ public class DPMExceptionHandler implements ExceptionHandler<DPMException, HttpR
 
     private static final Logger LOG = LoggerFactory.getLogger(DPMExceptionHandler.class);
 
+    private final PassphraseGenerator passphraseGenerator;
+
+    public DPMExceptionHandler(PassphraseGenerator passphraseGenerator) {
+        this.passphraseGenerator = passphraseGenerator;
+    }
+
     @Override
     public HttpResponse<?> handle(HttpRequest request, DPMException exception) {
         HttpStatus httpStatus = exception.getHttpStatus();
@@ -30,9 +37,16 @@ public class DPMExceptionHandler implements ExceptionHandler<DPMException, HttpR
             response = HttpResponse.badRequest();
         }
 
+        String errorId = passphraseGenerator.generatePassphrase();
         String code = exception.getResponseStatusCode();
-        LOG.error("Code: " + code + ". Violation: " + exception.getMessage());
+        response.body(List.of(new DPMErrorResponse(errorId, code)));
 
-        return response.body(List.of(new DPMErrorResponse(code)));
+        LOG.error("Id: " + errorId +
+                " Code: " + code +
+                ". See exception below:");
+
+        exception.printStackTrace();
+
+        return response;
     }
 }
