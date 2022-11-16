@@ -54,13 +54,13 @@ public class GroupMembershipController {
     )
     @ApiResponse(responseCode = "400", description = "Bad Request")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
-    HttpResponse addMember(@Body GroupUserDTO dto) {
+    HttpResponse addMember(@Valid @Body GroupUserDTO dto) {
         return groupUserService.addMember(dto);
     }
 
     @Put
     @ExecuteOn(TaskExecutors.IO)
-    HttpResponse updateMember(@Body GroupUserDTO groupUser) {
+    HttpResponse updateMember(@Valid @Body GroupUserDTO groupUser) {
         return groupUserService.updateMember(groupUser);
     }
 

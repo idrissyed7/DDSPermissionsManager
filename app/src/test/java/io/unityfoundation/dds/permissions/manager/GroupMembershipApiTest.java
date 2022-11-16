@@ -13,7 +13,6 @@ import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
@@ -197,11 +196,11 @@ public class GroupMembershipApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
+            assertEquals(BAD_REQUEST, exception.getStatus());
             Optional<List> listOptional = exception.getResponse().getBody(List.class);
             assertTrue(listOptional.isPresent());
             List<Map> list = listOptional.get();
-            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_MEMBERSHIP_REQUIRES_GROUP_ASSOCIATION.equals(map.get("code"))));
         }
 
         // list
@@ -402,9 +401,10 @@ public class GroupMembershipApiTest {
             assertEquals(OK, response.getStatus());
             GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
-            groupUser.setGroupAdmin(true);
-            groupUser.setTopicAdmin(true);
-            request = HttpRequest.PUT("/group_membership", groupUser);
+            dto.setId(groupUser.getId());
+            dto.setGroupAdmin(true);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", dto);
             response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
             groupUser = response.getBody(GroupUserResponseDTO.class).get();
@@ -618,9 +618,10 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            groupUser.setGroupAdmin(true);
-            groupUser.setTopicAdmin(true);
-            request = HttpRequest.PUT("/group_membership", groupUser);
+            dto.setId(groupUser.getId());
+            dto.setGroupAdmin(true);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", dto);
             response = blockingClient.exchange(request, GroupUserResponseDTO.class);
             assertEquals(OK, response.getStatus());
             groupUser = response.getBody(GroupUserResponseDTO.class).get();
@@ -652,9 +653,10 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            groupUser.setGroupAdmin(true);
-            groupUser.setTopicAdmin(true);
-            request = HttpRequest.PUT("/group_membership", groupUser);
+            dto.setId(groupUser.getId());
+            dto.setGroupAdmin(true);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", dto);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -1245,9 +1247,10 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            groupUser.setGroupAdmin(true);
-            groupUser.setTopicAdmin(true);
-            request = HttpRequest.PUT("/group_membership", groupUser);
+            dto.setId(groupUser.getId());
+            dto.setGroupAdmin(true);
+            dto.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", dto);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);

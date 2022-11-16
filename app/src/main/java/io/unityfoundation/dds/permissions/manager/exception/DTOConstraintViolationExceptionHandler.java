@@ -87,6 +87,10 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
                     code = ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION;
                 }
             }
+        } else if (code.endsWith("dto.permissionsGroup")) {
+            if (descriptor.getAnnotation() instanceof NotNull) {
+                code = ResponseStatusCodes.GROUP_MEMBERSHIP_REQUIRES_GROUP_ASSOCIATION;
+            }
         }
 
         LOG.error("Code: " + code + ". Violation: " + violation.getMessage());

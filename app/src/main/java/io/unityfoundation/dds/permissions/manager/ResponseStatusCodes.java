@@ -42,10 +42,10 @@ public interface ResponseStatusCodes {
     String TOPIC_ALREADY_EXISTS = "topic.exists";
 
     // group member
-
     String GROUP_MEMBERSHIP_NOT_FOUND = "user.group-membership.not-found";
     String GROUP_MEMBERSHIP_ALREADY_EXISTS = "user.group-membership.exists";
     String GROUP_MEMBERSHIP_CANNOT_CREATE_WITH_UPDATE = "user.group-membership.cannot_create_with_update";
+    String GROUP_MEMBERSHIP_REQUIRES_GROUP_ASSOCIATION = "user.group-membership.requires-group-association";
 
     // application permission
     String APPLICATION_PERMISSION_NOT_FOUND = "application.permission.not-found";
