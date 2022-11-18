@@ -20,7 +20,6 @@
 	let selectedTopicCanonicalName;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
-	let groupList = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -301,7 +300,6 @@
 							searchApplications = result.name;
 							searchApplicationsId = result.id;
 
-							groupList.push({ applicationName: result.name, groupName: result.groupName });
 							searchApplicationActive = false;
 
 							selectedApplicationList = {
