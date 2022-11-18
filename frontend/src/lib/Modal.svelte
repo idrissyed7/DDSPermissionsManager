@@ -59,6 +59,7 @@
 	let invalidGroup = false;
 	let invalidApplication = false;
 	let invalidEmail = false;
+	let errorMessage = '';
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
@@ -85,6 +86,7 @@
 		}, waitTime);
 	} else {
 		searchGroupsResultsVisible = false;
+		errorMessage = '';
 	}
 
 	// Search Groups Dropdown Visibility
@@ -150,11 +152,24 @@
 		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
 	};
 
+	const validateGroupName = async () => {
+		const res = await httpAdapter.get(
+			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroups}`
+		);
+		if (
+			res.data.content?.some((group) => group.name.toUpperCase() === searchGroups.toUpperCase())
+		) {
+			return true;
+		} else {
+			return false;
+		}
+	};
+
 	function closeModal() {
 		dispatch('cancel');
 	}
 
-	const actionAddUserEvent = () => {
+	const actionAddUserEvent = async () => {
 		let newGroupMembership = {
 			selectedIsGroupAdmin: selectedIsGroupAdmin,
 			selectedIsTopicAdmin: selectedIsTopicAdmin,
@@ -163,6 +178,12 @@
 			searchGroups: searchGroups,
 			emailValue: emailValue
 		};
+
+		const validGroupName = await validateGroupName(searchGroups);
+		if (!validGroupName) {
+			errorMessage = 'Invalid Group';
+			return;
+		}
 
 		if (!invalidEmail || searchGroups?.length >= minNameLength)
 			dispatch('addGroupMembership', newGroupMembership);
@@ -176,7 +197,7 @@
 		}
 	};
 
-	const actionAddTopicEvent = () => {
+	const actionAddTopicEvent = async () => {
 		let newTopic = {
 			newTopicName: newTopicName,
 			searchGroups: searchGroups,
@@ -184,26 +205,54 @@
 			anyApplicationCanRead: anyApplicationCanRead,
 			selectedApplicationList: selectedApplicationList
 		};
+
+		const validGroupName = await validateGroupName(searchGroups);
+		if (!validGroupName) {
+			errorMessage = 'Invalid Group';
+			return;
+		}
+
 		dispatch('addTopic', newTopic);
 		closeModal();
 	};
 
-	const actionAddApplicationEvent = () => {
+	const actionAddApplicationEvent = async () => {
 		let newApplication = {
 			appName: appName,
 			searchGroups: searchGroups,
 			selectedGroup: selectedGroup
 		};
+
+		const validGroupName = await validateGroupName(searchGroups);
+		if (!validGroupName) {
+			errorMessage = 'Invalid Group';
+			return;
+		}
+
 		dispatch('addApplication', newApplication);
 		closeModal();
 	};
 
-	const actionAddGroupEvent = () => {
+	const actionAddGroupEvent = async () => {
 		let returnGroupName = {
 			newGroupName: newGroupName
 		};
-		dispatch('addGroup', returnGroupName);
-		closeModal();
+
+		const res = await httpAdapter.get(
+			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${newGroupName}`
+		);
+
+		if (res.data.content) {
+			if (
+				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
+			) {
+				errorMessage = 'Group already exists';
+				return;
+			} else {
+				dispatch('addGroup', returnGroupName);
+				closeModal();
+			}
+		}
 	};
 </script>
 
@@ -308,12 +357,20 @@
 					newGroupName?.length < minNameLength ? (invalidGroup = true) : (invalidGroup = false);
 				}}
 				on:keydown={(event) => {
+					errorMessage = '';
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
 						if (newGroupName?.length >= minNameLength) actionAddGroupEvent();
 					}
 				}}
 			/>
+			<span
+				class="error-message"
+				style="	top: 9.7rem; right: 2.2rem"
+				class:hidden={errorMessage?.length === 0}
+			>
+				Error: {errorMessage}
+			</span>
 		{/if}
 
 		{#if actionEditApplicationName}
@@ -405,6 +462,13 @@
 					}}
 				/>
 			</form>
+			<span
+				class="error-message"
+				style="	top: 12.9rem; right: 2.2rem"
+				class:hidden={errorMessage?.length === 0}
+			>
+				Error: {errorMessage}
+			</span>
 
 			{#if searchGroupsResultsVisible}
 				<table
@@ -418,7 +482,7 @@
 						}, waitTime);
 					}}
 				>
-					{#each searchGroupResults.data.content as result}
+					{#each searchGroupResults.data?.content as result}
 						<tr>
 							<td
 								on:click={() => {
@@ -440,8 +504,8 @@
 		{/if}
 
 		{#if topicName}
-			<div style="display:flex; align-items: center;">
-				<span style="font-size:0.9rem; width: 9rem; margin-right: 0.5rem">
+			<div style="display:flex; align-items: center; margin-top: 1rem">
+				<span style="font-size:0.9rem; width: 9rem; margin-right: 0.5rem; ">
 					Any application can read topic:
 				</span>
 				<Switch bind:checked={anyApplicationCanRead} />

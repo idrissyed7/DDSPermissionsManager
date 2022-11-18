@@ -253,6 +253,18 @@ select:focus {
 
 }
 
+.error-message {
+	position: absolute;
+	color: rgb(205, 0, 0);
+	float: right;
+	font-size: 0.8rem;
+	margin-top: -0.3rem;
+}
+
+.hidden {
+	display: none;
+}
+
 .search-results {
 	width: 15rem;
 }
