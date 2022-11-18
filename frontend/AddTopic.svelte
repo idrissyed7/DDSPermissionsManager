@@ -15,6 +15,7 @@
 	const dispatch = createEventDispatcher();
 
 	// Constants
+	const applicationsResult = 7;
 	const minNameLength = 3;
 
 	// Group Name
@@ -34,7 +35,6 @@
 
 	// Forms
 	let selectedGroup;
-	const applicationsResult = 7;
 	let anyApplicationCanRead = false;
 
 	// Error Handling
@@ -47,7 +47,6 @@
 	// Selection
 	let selectedApplicationList = [];
 
-	// onMount /////////////////////
 	onMount(() => {
 		if (topicName !== '') {
 			newTopicName = topicName;
@@ -58,8 +57,6 @@
 			searchGroupActive = false;
 		}
 	});
-
-	// Reactive Variables /////////////////////
 
 	// Search Groups Feature
 	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
@@ -88,8 +85,6 @@
 	} else {
 		searchApplicationsResultsVisible = false;
 	}
-
-	// Functions /////////////////////
 
 	const searchGroup = async (searchString) => {
 		setTimeout(async () => {
@@ -284,7 +279,7 @@
 					</td>
 
 					{#if searchGroupsResultsVisible}
-						<table class="searchGroup" style="position: absolute;">
+						<table class="search-group" style="position: absolute;">
 							{#each searchGroupResults as result}
 								<tr>
 									<td
@@ -406,7 +401,7 @@
 					</td>
 
 					{#if searchApplicationsResultsVisible}
-						<table class="searchApplication" style="position: absolute;">
+						<table class="search-application" style="position: absolute;">
 							{#each searchApplicationResults.data as result}
 								<tr style="border-width: 0px;">
 									<td
