@@ -242,6 +242,7 @@
 			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${newGroupName}`
 		);
 
+		console.log('res', res);
 		if (res.data.content) {
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
@@ -252,6 +253,9 @@
 				dispatch('addGroup', returnGroupName);
 				closeModal();
 			}
+		} else {
+			dispatch('addGroup', returnGroupName);
+			closeModal();
 		}
 	};
 </script>
