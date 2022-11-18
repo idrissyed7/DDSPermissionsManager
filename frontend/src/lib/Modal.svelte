@@ -153,6 +153,58 @@
 	function closeModal() {
 		dispatch('cancel');
 	}
+
+	const actionAddUserEvent = () => {
+		let newGroupMembership = {
+			selectedIsGroupAdmin: selectedIsGroupAdmin,
+			selectedIsTopicAdmin: selectedIsTopicAdmin,
+			selectedIsApplicationAdmin: selectedIsApplicationAdmin,
+			selectedGroup: selectedGroup,
+			searchGroups: searchGroups,
+			emailValue: emailValue
+		};
+
+		if (!invalidEmail || searchGroups?.length >= minNameLength)
+			dispatch('addGroupMembership', newGroupMembership);
+	};
+
+	const actionAddSuperUserEvent = () => {
+		validateEmail(emailValue);
+		if (!invalidEmail) {
+			dispatch('addSuperUser', emailValue);
+			closeModal();
+		}
+	};
+
+	const actionAddTopicEvent = () => {
+		let newTopic = {
+			newTopicName: newTopicName,
+			searchGroups: searchGroups,
+			selectedGroup: selectedGroup,
+			anyApplicationCanRead: anyApplicationCanRead,
+			selectedApplicationList: selectedApplicationList
+		};
+		dispatch('addTopic', newTopic);
+		closeModal();
+	};
+
+	const actionAddApplicationEvent = () => {
+		let newApplication = {
+			appName: appName,
+			searchGroups: searchGroups,
+			selectedGroup: selectedGroup
+		};
+		dispatch('addApplication', newApplication);
+		closeModal();
+	};
+
+	const actionAddGroupEvent = () => {
+		let returnGroupName = {
+			newGroupName: newGroupName
+		};
+		dispatch('addGroup', returnGroupName);
+		closeModal();
+	};
 </script>
 
 <div class="modal-backdrop" on:click={closeModal} transition:fade />
@@ -173,7 +225,13 @@
 				on:blur={() => validateEmail(emailValue)}
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
-						validateEmail(emailValue);
+						if (actionAddUser) {
+							validateEmail(emailValue);
+							if (!invalidEmail && emailValue.length >= minNameLength && searchGroups?.length > 3) {
+								actionAddUserEvent();
+							}
+						}
+						if (actionAddSuperUser && emailValue.length >= 10) actionAddSuperUserEvent();
 					}
 				}}
 			/>
@@ -200,7 +258,12 @@
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
 						newTopicName = newTopicName.trim();
-						// newTopicName?.length < minNameLength ? (invalidTopic = true) : (invalidTopic = false);
+						if (
+							newTopicName?.length >= minNameLength &&
+							searchGroups?.length >= searchStringLength
+						) {
+							actionAddTopicEvent();
+						}
 					}
 				}}
 			/>
@@ -223,6 +286,10 @@
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
 						appName = appName.trim();
+
+						if (appName?.length >= minNameLength && searchGroups?.length >= searchStringLength) {
+							actionAddApplicationEvent();
+						}
 					}
 				}}
 			/>
@@ -243,6 +310,7 @@
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
+						if (newGroupName?.length >= minNameLength) actionAddGroupEvent();
 					}
 				}}
 			/>
@@ -277,6 +345,35 @@
 						if (event.which === returnKey) {
 							document.activeElement.blur();
 							searchString = searchString?.trim();
+
+							if (actionAddUser) {
+								validateEmail(emailValue);
+								if (
+									!invalidEmail &&
+									emailValue.length >= minNameLength &&
+									searchGroups?.length >= searchStringLength
+								) {
+									actionAddUserEvent();
+								}
+							}
+
+							if (actionAddTopic) {
+								if (
+									newTopicName?.length >= minNameLength &&
+									searchGroups?.length >= searchStringLength
+								) {
+									actionAddTopicEvent();
+								}
+							}
+
+							if (actionAddApplication) {
+								if (
+									appName?.length >= minNameLength &&
+									searchGroups?.length >= searchStringLength
+								) {
+									actionAddApplicationEvent();
+								}
+							}
 						}
 					}}
 					on:blur={() => {
@@ -540,18 +637,11 @@
 		<button
 			class="action-button"
 			class:action-button-invalid={invalidEmail || searchGroups?.length < 3}
-			on:click={() => {
-				let newGroupMembership = {
-					selectedIsGroupAdmin: selectedIsGroupAdmin,
-					selectedIsTopicAdmin: selectedIsTopicAdmin,
-					selectedIsApplicationAdmin: selectedIsApplicationAdmin,
-					selectedGroup: selectedGroup,
-					searchGroups: searchGroups,
-					emailValue: emailValue
-				};
-
-				if (!invalidEmail || searchGroups?.length >= minNameLength)
-					dispatch('addGroupMembership', newGroupMembership);
+			on:click={() => actionAddUserEvent()}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAddUserEvent();
+				}
 			}}
 			>Add User
 		</button>
@@ -563,10 +653,7 @@
 			class="action-button"
 			class:action-button-invalid={invalidEmail || emailValue.length < 10}
 			on:click={() => {
-				if (!invalidEmail) {
-					dispatch('addSuperUser', emailValue);
-					closeModal();
-				}
+				actionAddSuperUserEvent();
 			}}
 			>Add User
 		</button>
@@ -579,15 +666,7 @@
 			class:action-button-invalid={newTopicName.length < minNameLength ||
 				searchGroups?.length < minNameLength}
 			on:click={() => {
-				let newTopic = {
-					newTopicName: newTopicName,
-					searchGroups: searchGroups,
-					selectedGroup: selectedGroup,
-					anyApplicationCanRead: anyApplicationCanRead,
-					selectedApplicationList: selectedApplicationList
-				};
-				dispatch('addTopic', newTopic);
-				closeModal();
+				actionAddTopicEvent();
 			}}
 			>Add Topic
 		</button>
@@ -621,13 +700,7 @@
 			class:action-button-invalid={appName.length < minNameLength ||
 				searchGroups?.length < minNameLength}
 			on:click={() => {
-				let newApplication = {
-					appName: appName,
-					searchGroups: searchGroups,
-					selectedGroup: selectedGroup
-				};
-				dispatch('addApplication', newApplication);
-				closeModal();
+				actionAddApplicationEvent();
 			}}
 			>Add Topic
 		</button>
@@ -639,11 +712,7 @@
 			class="action-button"
 			class:action-button-invalid={newGroupName.length < minNameLength}
 			on:click={() => {
-				let returnGroupName = {
-					newGroupName: newGroupName
-				};
-				dispatch('addGroup', returnGroupName);
-				closeModal();
+				actionAddGroupEvent();
 			}}
 			>Add Group
 		</button>
