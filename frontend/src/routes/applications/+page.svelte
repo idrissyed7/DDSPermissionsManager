@@ -9,10 +9,21 @@
 	import applications from '../../stores/applications';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
+	import headerTitle from '../../stores/headerTitle';
+	import detailView from '../../stores/detailView';
+	import deleteSVG from '../../icons/delete.svg';
+	import editSVG from '../../icons/edit.svg';
+	import addSVG from '../../icons/add.svg';
+	import pageforwardSVG from '../../icons/pageforward.svg';
+	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
+	import pagefirstSVG from '../../icons/pagefirst.svg';
+	import pagelastSVG from '../../icons/pagelast.svg';
+	import threedotsSVG from '../../icons/threedots.svg';
+	import lockSVG from '../../icons/lock.svg';
+	import copySVG from '../../icons/copy.svg';
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (!$isAuthenticated && browser) {
-		console.log('redirect');
 		goto(`/`, true);
 	}
 
@@ -21,6 +32,9 @@
 	// Constants
 	const minNameLength = 3;
 	const fiveSeconds = 5000;
+	const returnKey = 13;
+	const searchStringLength = 3;
+	const waitTime = 500;
 
 	// Authentication
 	let isApplicationAdmin = false;
@@ -28,36 +42,39 @@
 	// Error Handling
 	let errorMsg, errorObject;
 
-	// Keys
-	const returnKey = 13;
-
 	// Password
 	let password;
 
 	// Modals
 	let errorMessageVisible = false;
 	let addApplicationVisible = false;
-	let confirmDeleteVisible = false;
+	let deleteApplicationVisible = false;
 	let applicationDetailVisible = false;
+	let editApplicationNameVisible = false;
 
-	// Application Name
-	let editSaveLabel = 'edit';
+	// Tables
+	let applicationsRowsSelected = [];
+	let applicationsRowsSelectedTrue = false;
+	let applicationsAllRowsSelectedTrue = false;
+	let applicationsPerPage = 10;
 
 	//Pagination
-	const applicationsPerPage = 10;
-	let applicationsTotalPages;
+	let applicationsTotalPages, applicationsTotalSize;
 	let applicationsCurrentPage = 0;
+
+	// DropDowns
+	let applicationsDropDownVisible = false;
+	let applicationsDropDownMouseEnter = false;
 
 	// Applications SearchBox
 	let searchString;
-	const searchStringLength = 3;
 	let searchAppResults;
 
 	// Groups SearchBox
 	let searchGroups;
 	let searchGroupResults;
-	let searchGroupsResultsVisible = false;
-	let searchGroupActive = false;
+	// let searchGroupsResultsVisible = false;
+	// let searchGroupActive = false;
 
 	// Forms
 	let groupsDropdownSuggestion = 7;
@@ -66,7 +83,6 @@
 
 	// Timer
 	let timer;
-	const waitTime = 500;
 
 	// App
 	let applicationListVisible = true;
@@ -80,8 +96,12 @@
 	// Validation
 	let previousAppName;
 
-	// Edit Name Label Reactive Statement
-	$: editAppName === true ? (editSaveLabel = 'save') : (editSaveLabel = 'edit');
+	// Return to List view
+	$: if (!$detailView) {
+		headerTitle.set('Applications');
+		reloadAllApps();
+		returnToApplicationsList();
+	}
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -98,22 +118,22 @@
 		}, waitTime);
 	}
 
-	// Search Groups Feature///
-	$: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			searchGroup(searchGroups.trim());
-		}, waitTime);
-	} else {
-		searchGroupsResultsVisible = false;
-	}
+	// // Search Groups Feature///
+	// $: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
+	// 	clearTimeout(timer);
+	// 	timer = setTimeout(() => {
+	// 		searchGroup(searchGroups.trim());
+	// 	}, waitTime);
+	// } else {
+	// 	searchGroupsResultsVisible = false;
+	// }
 
-	// Search Groups Dropdown Visibility
-	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
-		searchGroupsResultsVisible = true;
-	} else {
-		searchGroupsResultsVisible = false;
-	}
+	// // Search Groups Dropdown Visibility
+	// $: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+	// 	searchGroupsResultsVisible = true;
+	// } else {
+	// 	searchGroupsResultsVisible = false;
+	// }
 
 	// Reset add group form once closed
 	$: if (addApplicationVisible === false) {
@@ -122,6 +142,9 @@
 	}
 
 	onMount(async () => {
+		headerTitle.set('Applications');
+		detailView.set();
+
 		try {
 			reloadAllApps();
 			const res = await httpAdapter.get(`/token_info`);
@@ -152,11 +175,12 @@
 			urlparameters.set([]);
 		}
 	});
+
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
 		errorObject = errObj;
 		addApplicationVisible = false;
-		confirmDeleteVisible = false;
+		deleteApplicationVisible = false;
 		errorMessageVisible = true;
 	};
 
@@ -174,13 +198,6 @@
 		}, 1000);
 	};
 
-	const selectedSearchGroup = (groupName, groupId) => {
-		selectedGroup = groupId;
-		searchGroups = groupName;
-		searchGroupsResultsVisible = false;
-		searchGroupActive = false;
-	};
-
 	const searchApp = async (searchString) => {
 		searchAppResults = await httpAdapter.get(
 			`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
@@ -191,28 +208,34 @@
 			applications.set([]);
 		}
 		applicationsTotalPages = searchAppResults.data.totalPages;
+		if (searchAppResults.data.totalSize !== undefined)
+			applicationsTotalSize = searchAppResults.data.totalSize;
 		applicationsCurrentPage = 0;
 	};
 
-	const addApplication = async () => {
-		if (!selectedGroup) {
+	const addApplication = async (
+		forwardedAppName,
+		forwardedSearchGroups,
+		forwardedSelectedGroup
+	) => {
+		if (!forwardedSelectedGroup) {
 			const groupId = await httpAdapter.get(
-				`/groups?page=0&size=${applicationsPerPage}&filter=${searchGroups}`
+				`/groups?page=0&size=${applicationsPerPage}&filter=${forwardedSearchGroups}`
 			);
 
 			if (
 				groupId.data.content &&
-				groupId.data.content[0]?.name.toUpperCase() === searchGroups.toUpperCase()
+				groupId.data.content[0]?.name.toUpperCase() === forwardedSearchGroups.toUpperCase()
 			) {
-				selectedGroup = groupId.data.content[0]?.id;
-				searchGroupActive = false;
+				forwardedSelectedGroup = groupId.data.content[0]?.id;
+				// searchGroupActive = false;
 			}
 		}
 
 		try {
 			await httpAdapter.post(`/applications/save`, {
-				name: appName,
-				group: selectedGroup
+				name: forwardedAppName,
+				group: forwardedSelectedGroup
 			});
 			addApplicationVisible = false;
 		} catch (err) {
@@ -227,21 +250,21 @@
 		await reloadAllApps();
 	};
 
-	const appDelete = async () => {
-		await httpAdapter
-			.post(`/applications/delete/${selectedAppId}`, {
-				id: selectedAppId
-			})
-			.catch((err) => {
-				errorMessage('Error Deleting Application', err.message);
-			});
+	const deleteSelectedApplications = async () => {
+		try {
+			for (const app of applicationsRowsSelected) {
+				await httpAdapter.post(`/applications/delete/${app.id}`, {
+					id: app.id
+				});
+			}
+		} catch (err) {
+			errorMessage('Error Deleting Application', err.message);
+		}
 
-		confirmDeleteVisible = false;
 		selectedAppId = '';
 		selectedAppName = '';
 
 		returnToAppsList();
-		await reloadAllApps();
 	};
 
 	const reloadAllApps = async (page = 0) => {
@@ -254,8 +277,12 @@
 			} else {
 				res = await httpAdapter.get(`/applications?page=${page}&size=${applicationsPerPage}`);
 			}
+
+			if (res.data) {
+				applicationsTotalPages = res.data.totalPages;
+				applicationsTotalSize = res.data.totalSize;
+			}
 			applications.set(res.data.content);
-			applicationsTotalPages = res.data.totalPages;
 			applicationsCurrentPage = page;
 		} catch (err) {
 			applications.set();
@@ -263,11 +290,11 @@
 		}
 	};
 
-	const saveNewAppName = async () => {
+	const saveNewAppName = async (newAppName) => {
 		await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
-				name: selectedAppName,
+				name: newAppName,
 				group: selectedAppGroupId
 			})
 			.catch((err) => {
@@ -350,6 +377,14 @@
 			showCopyNotificationVisible = false;
 		}, fiveSeconds);
 	};
+
+	const deselectAllApplicationsCheckboxes = () => {
+		applicationsAllRowsSelectedTrue = false;
+		applicationsRowsSelectedTrue = false;
+		applicationsRowsSelected = [];
+		let checkboxes = document.querySelectorAll('.apps-checkbox');
+		checkboxes.forEach((checkbox) => (checkbox.checked = false));
+	};
 </script>
 
 <svelte:head>
@@ -358,117 +393,54 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if errorMessageVisible}
+	{#if deleteApplicationVisible && !errorMessageVisible}
 		<Modal
-			title={errorMsg}
-			description={errorObject}
-			on:cancel={() => {
-				errorMessageVisible = false;
-				errorMessageClear();
+			actionDeleteApplications={true}
+			title="Delete {applicationsRowsSelected.length > 1 ? 'Applications' : 'Application'}"
+			on:cancel={() => (deleteApplicationVisible = false)}
+			on:deleteApplications={async () => {
+				await deleteSelectedApplications();
+				reloadAllApps();
+				deselectAllApplicationsCheckboxes();
+				deleteApplicationVisible = false;
 			}}
-			><br /><br />
-			<div class="confirm">
-				<button
-					class="button-delete"
-					on:click={() => {
-						errorMessageVisible = false;
-						errorMessageClear();
-					}}>Ok</button
-				>
-			</div>
-		</Modal>
-	{/if}
-
-	{#if confirmDeleteVisible && !errorMessageVisible}
-		<Modal title="Delete {selectedAppName}?" on:cancel={() => (confirmDeleteVisible = false)}>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>&nbsp;
-				<button class="button-delete" on:click={() => appDelete()}><span>Delete</span></button>
-			</div>
-		</Modal>
+		/>
 	{/if}
 
 	{#if addApplicationVisible && !errorMessageVisible}
-		<div class="add">
-			<Modal
-				title="Add Application"
-				on:cancel={() => {
-					addApplicationVisible = false;
-				}}
-			>
-				<label for="name">Name:</label>
-				<input type="text" placeholder="Application Name" bind:value={appName} />
-				&nbsp;
-				<label for="groups">Group:</label>
-				<div style="display: inline-block">
-					<input
-						placeholder="Group Name"
-						style="
-                    display: inline-flex;       
-                    height: 1.7rem;
-                    text-align: left;
-                    font-size: small;
-                    min-width: 9rem;"
-						bind:value={searchGroups}
-						on:blur={() => {
-							setTimeout(() => {
-								searchGroupsResultsVisible = false;
-							}, waitTime);
-						}}
-						on:focus={() => {
-							searchGroupResults = [];
-							searchGroupActive = true;
-							if (searchGroups?.length >= searchStringLength) {
-								searchGroup(searchGroups);
-							}
-						}}
-						on:click={async () => {
-							searchGroupResults = [];
-							searchGroupActive = true;
-							if (searchGroups?.length >= searchStringLength) {
-								searchGroup(searchGroups);
-							}
-						}}
-					/>
+		<Modal
+			title="Add Application"
+			applicationName={true}
+			group={true}
+			actionAddApplication={true}
+			on:cancel={() => (addApplicationVisible = false)}
+			on:addApplication={(e) => {
+				addApplication(e.detail.appName, e.detail.searchGroups, e.detail.selectedGroup);
+			}}
+		/>
+	{/if}
 
-					{#if searchGroupsResultsVisible}
-						<table class="searchGroup" style="position: absolute; margin-left: 1rem; width: 9.5rem">
-							{#each searchGroupResults.data.content as result}
-								<tr
-									><td
-										on:click={() => {
-											selectedSearchGroup(result.name, result.id);
-										}}>{result.name}</td
-									></tr
-								>
-							{/each}
-						</table>
-					{/if}
-				</div>
-				<button
-					disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
-					class="button"
-					style="margin-left: 1rem; width: 4.8rem"
-					on:click={() => {
-						addApplication();
-					}}
-				>
-					<span>Add</span></button
-				>
-				<br /><br />
-			</Modal>
-		</div>
+	{#if editApplicationNameVisible}
+		<Modal
+			title="Edit Application"
+			actionEditApplicationName={true}
+			{previousAppName}
+			on:cancel={() => (editApplicationNameVisible = false)}
+			on:saveNewAppName={(e) => {
+				saveNewAppName(e.detail.newAppName);
+				editApplicationNameVisible = false;
+			}}
+		/>
 	{/if}
 
 	<div class="content">
 		{#if !applicationDetailVisible}
 			<h1>Applications</h1>
-			<center>
-				<!-- svelte-ignore a11y-positive-tabindex -->
+
+			<form class="searchbox">
 				<input
-					tabindex="8"
-					style="border-width: 1px; width: 20rem; text-align: center"
+					class="searchbox"
+					type="search"
 					placeholder="Search"
 					bind:value={searchString}
 					on:blur={() => {
@@ -480,261 +452,388 @@
 							searchString = searchString?.trim();
 						}
 					}}
-				/>&nbsp; &#x1F50E;
-			</center>
-		{/if}
-		{#if $applications && applicationListVisible && !applicationDetailVisible}
-			<table align="center" style="margin-top: 2rem; width: 60%">
-				<tr style="border-width: 0px">
-					<th><strong>Application</strong></th>
-					<th><strong>Group</strong></th>
-				</tr>
-				{#if $applications}
-					{#if $applications.length > 0}
-						{#each $applications as app, i}
-							<tr>
+				/>
+			</form>
+
+			{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
+				<div
+					class="dot"
+					on:mouseleave={() => {
+						setTimeout(() => {
+							if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
+						}, waitTime);
+					}}
+					on:click={() => {
+						if (!deleteApplicationVisible && !addApplicationVisible)
+							applicationsDropDownVisible = !applicationsDropDownVisible;
+					}}
+				>
+					<img src={threedotsSVG} alt="options" style="scale:50%" />
+
+					{#if applicationsDropDownVisible}
+						<table
+							class="dropdown"
+							on:mouseenter={() => (applicationsDropDownMouseEnter = true)}
+							on:mouseleave={() => {
+								setTimeout(() => {
+									applicationsDropDownVisible = !applicationsDropDownVisible;
+									applicationsDropDownMouseEnter = false;
+								}, waitTime);
+							}}
+						>
+							<tr
+								disabled={!$isAdmin}
+								class:disabled={!$isAdmin || applicationsRowsSelected.length === 0}
+								on:click={async () => {
+									applicationsDropDownVisible = false;
+									if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
+								}}
+							>
 								<td
-									tabindex={i + 9}
-									style="cursor: pointer"
-									on:click={() => {
-										loadApplicationDetail(app.id, app.group);
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											loadApplicationDetail(app.id, app.group);
+									>Delete Selected {applicationsRowsSelected.length > 1
+										? 'Applications'
+										: 'Application'}
+								</td>
+								<td style="width: 0.1rem; padding-left: 0; vertical-align: middle">
+									<img
+										src={deleteSVG}
+										alt="delete application"
+										height="35rem"
+										style="vertical-align: -0.8rem"
+										class:disabled-img={!$isAdmin || applicationsRowsSelected.length === 0}
+									/>
+								</td>
+							</tr>
+
+							<tr
+								on:click={() => {
+									applicationsDropDownVisible = false;
+									addApplicationVisible = true;
+								}}
+								class:hidden={addApplicationVisible}
+							>
+								<td style="border-bottom-color: transparent">Add New Application</td>
+								<td
+									style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
+								>
+									<img
+										src={addSVG}
+										alt="add application"
+										height="27rem"
+										style="vertical-align: middle; margin-left: 0.25rem"
+									/>
+								</td>
+							</tr>
+						</table>
+					{/if}
+				</div>
+			{/if}
+		{/if}
+
+		{#if $applications && applicationListVisible && !applicationDetailVisible}
+			<table style="margin-top: 0.5rem">
+				<tr style="border-top: 1px solid black">
+					<td>
+						<input
+							type="checkbox"
+							class="apps-checkbox"
+							style="margin-right: 0.5rem"
+							bind:indeterminate={applicationsRowsSelectedTrue}
+							on:click={(e) => {
+								applicationsDropDownVisible = false;
+								if (e.target.checked) {
+									applicationsRowsSelected = $applications;
+									applicationsRowsSelectedTrue = false;
+									applicationsAllRowsSelectedTrue = true;
+								} else {
+									applicationsAllRowsSelectedTrue = false;
+									applicationsRowsSelectedTrue = false;
+									applicationsRowsSelected = [];
+								}
+							}}
+							checked={applicationsAllRowsSelectedTrue}
+						/>
+					</td>
+					<td>Application</td>
+					<td>Group</td>
+					<td /> <td />
+				</tr>
+
+				{#if $applications.length > 0}
+					{#each $applications as app, i}
+						<tr>
+							<td style="width: 2rem">
+								<input
+									type="checkbox"
+									class="apps-checkbox"
+									checked={applicationsAllRowsSelectedTrue}
+									on:change={(e) => {
+										applicationsDropDownVisible = false;
+										if (e.target.checked === true) {
+											applicationsRowsSelected.push(app);
+											applicationsRowsSelectedTrue = true;
+										} else {
+											applicationsRowsSelected = applicationsRowsSelected.filter(
+												(selection) => selection !== app
+											);
+											if (applicationsRowsSelected.length === 0) {
+												applicationsRowsSelectedTrue = false;
+											}
 										}
 									}}
-									>{app.name}
-								</td>
-								<td>{app.groupName}</td>
+								/>
+							</td>
+							<td
+								tabindex={i + 9}
+								style="cursor: pointer; width: 25.5rem"
+								on:click={() => {
+									loadApplicationDetail(app.id, app.group);
+									headerTitle.set(app.name);
+									detailView.set(true);
+								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										loadApplicationDetail(app.id, app.group);
+									}
+								}}
+								>{app.name}
+							</td>
+							<td style="width: 10rem">{app.groupName}</td>
 
-								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
-									<td>
-										<button
-											tabindex="-1"
-											class="button-delete"
-											on:click={() => {
-												selectedAppId = app.id;
-												selectedAppName = app.name;
-												confirmDeleteVisible = true;
-											}}
-											><span>Delete</span>
-										</button>
-									</td>
-								{:else}
-									<td />
-								{/if}
-							</tr>
-						{/each}
-					{/if}
+							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
+								<td
+									style="cursor: pointer"
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											editApplicationNameVisible = true;
+										}
+									}}
+								>
+									<img
+										src={editSVG}
+										height="17rem"
+										width="17rem"
+										alt="edit user"
+										on:click={() => {
+											previousAppName = app.name;
+											selectedAppGroupId = app.group;
+											selectedAppId = app.id;
+											editApplicationNameVisible = true;
+										}}
+									/>
+								</td>
+
+								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+									<img
+										src={deleteSVG}
+										alt="delete application"
+										width="27rem"
+										style="cursor: pointer"
+										on:click={() => {
+											selectedAppId = app.id;
+											selectedAppName = app.name;
+											deleteApplicationVisible = true;
+										}}
+										on:click={() => {
+											if (!applicationsRowsSelected.some((application) => application === app))
+												applicationsRowsSelected.push(app);
+											deleteApplicationVisible = true;
+										}}
+									/>
+								</td>
+							{:else}
+								<td />
+							{/if}
+						</tr>
+					{/each}
 				{/if}
 			</table>
-			<br /> <br />
 
-			{#if $applications}
-				<center>
-					<button
-						on:click={async () => {
-							if (applicationsCurrentPage > 0) applicationsCurrentPage--;
-							reloadAllApps(applicationsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={applicationsCurrentPage === 0}>Previous</button
-					>
-					{#if applicationsTotalPages > 2}
-						{#each Array.apply( null, { length: applicationsTotalPages } ).map(Number.call, Number) as page}
-							<button
-								on:click={() => {
-									applicationsCurrentPage = page;
-									reloadAllApps(page);
-								}}
-								class="button-pagination"
-								class:button-pagination-selected={page === applicationsCurrentPage}
-								>{page + 1}</button
-							>
-						{/each}
+			<div class="pagination">
+				<span>Rows per page</span>
+				<select
+					on:change={(e) => {
+						applicationsPerPage = e.target.value;
+						reloadAllApps();
+					}}
+					name="RowsPerPage"
+				>
+					<option value="10">10</option>
+					<option value="25">25</option>
+					<option value="50">50</option>
+					<option value="75">75</option>
+					<option value="100">100&nbsp;</option>
+				</select>
+				<span style="margin: 0 2rem 0 2rem">
+					{#if applicationsTotalSize > 0}
+						{1 + applicationsCurrentPage * applicationsPerPage}
+					{:else}
+						0
 					{/if}
-
-					<button
-						on:click={async () => {
-							if (applicationsCurrentPage + 1 < applicationsTotalPages) applicationsCurrentPage++;
-							reloadAllApps(applicationsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={applicationsCurrentPage === applicationsTotalPages - 1 ||
-							applicationsTotalPages === 0}>Next</button
-					>
-				</center>
-			{/if}
-			<br /><br />
-		{:else if !$applications && !applicationDetailVisible && applicationListVisible}
-			<center><p>No Applications Found</p></center>
-		{/if}
-
-		{#if $applications && applicationDetailVisible && !applicationListVisible}
-			<div class="name">
-				<input
-					tabindex="-1"
-					id="name"
-					bind:value={selectedAppName}
-					readonly={!editAppName}
-					class:name-as-label={!editAppName}
-					class:name-edit={editAppName}
-					class:invalid={selectedAppName.length < minNameLength}
-					style="text-align: center"
-					on:keydown={(event) => {
-						if (event.which === returnKey && selectedAppName.length >= minNameLength) {
-							selectedAppName = selectedAppName.trim();
-							if (previousAppName !== selectedAppName) saveNewAppName();
-							document.querySelector('#name').blur();
-							editAppName = false;
-						} else if (event.which === returnKey && selectedAppName.length < minNameLength) {
-							selectedAppName = previousAppName;
-							errorMessage(
-								'Error Saving New Application Name',
-								'3 Characters are required at least.'
-							);
-							document.querySelector('#name').blur();
-							editAppName = false;
+					-{Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+					{applicationsTotalSize}
+				</span>
+				<img
+					src={pagefirstSVG}
+					alt="first page"
+					class="pagination-image"
+					class:disabled-img={applicationsCurrentPage === 0}
+					on:click={() => {
+						deselectAllApplicationsCheckboxes();
+						if (applicationsCurrentPage > 0) {
+							applicationsCurrentPage = 0;
+							reloadAllApps();
 						}
 					}}
 				/>
-				{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
-					<span
-						style="position: absolute; font-size: medium; left: 50rem; top:4.9rem; cursor: pointer"
-						on:click={() => {
-							if (editSaveLabel === 'edit') {
-								previousAppName = selectedAppName;
-								editAppName = true;
-							}
-							if (editSaveLabel === 'save') {
-								selectedAppName = selectedAppName.trim();
-								if (selectedAppName.length < minNameLength) {
-									selectedAppName = previousAppName;
-									errorMessage(
-										'Error Saving New Application Name',
-										'3 Characters are required at least.'
-									);
-									document.querySelector('#name').blur();
-									editAppName = false;
-								}
-								if (previousAppName !== selectedAppName) {
-									saveNewAppName();
-									document.querySelector('#name').blur();
-									editAppName = false;
-								} else {
-									editAppName = false;
-								}
-							}
-						}}
-					>
-						&raquo; &nbsp; {editSaveLabel}
-					</span>
-				{/if}
+				<img
+					src={pagebackwardsSVG}
+					alt="previous page"
+					class="pagination-image"
+					class:disabled-img={applicationsCurrentPage === 0}
+					on:click={() => {
+						deselectAllApplicationsCheckboxes();
+						if (applicationsCurrentPage > 0) {
+							applicationsCurrentPage--;
+							reloadAllApps(applicationsCurrentPage);
+						}
+					}}
+				/>
+				<img
+					src={pageforwardSVG}
+					alt="next page"
+					class="pagination-image"
+					class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+					on:click={() => {
+						deselectAllApplicationsCheckboxes();
+						if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+							applicationsCurrentPage++;
+							reloadAllApps(applicationsCurrentPage);
+						}
+					}}
+				/>
+				<img
+					src={pagelastSVG}
+					alt="last page"
+					class="pagination-image"
+					class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+					on:click={() => {
+						deselectAllApplicationsCheckboxes();
+						if (applicationsCurrentPage < applicationsTotalPages) {
+							applicationsCurrentPage = applicationsTotalPages - 1;
+							reloadAllApps(applicationsCurrentPage);
+						}
+					}}
+				/>
 			</div>
-			<br />
-			<span
-				style="font-size: medium; margin-left: 11rem; cursor: pointer"
-				on:click={() => returnToApplicationsList()}
-				>&laquo; &nbsp; Back
-			</span>
-			<br /><br />
-			<table align="center" style="width: 60%">
+		{:else if !$applications && !applicationDetailVisible && applicationListVisible}
+			<p>No Applications Found</p>
+		{/if}
+
+		{#if $applications && applicationDetailVisible && !applicationListVisible}
+			<table style="width: 35rem; margin-top: 2rem">
 				<tr style="border-width: 0px">
-					<th><strong>Group</strong></th>
-					<th><strong>Topic</strong></th>
-					<th><strong>Access</strong></th>
+					<td style="width: 10rem">Group</td>
+					<td style="width: 20rem">Topic</td>
+					<td style="width: 5rem">Access</td>
 				</tr>
 				{#if $applicationPermission}
 					{#each $applicationPermission as appPermission}
-						<tr>
+						<tr style="line-height: 2rem">
 							<td>
 								{appPermission.topicGroup}
 							</td><td>
 								{appPermission.topicName}
 							</td>
 							<td>
-								{appPermission.accessType}
+								{appPermission.accessType === 'READ_WRITE'
+									? 'READ & WRITE'
+									: appPermission.accessType}
 							</td>
 						</tr>
 					{/each}
+				{:else}
+					<p>No Topics Associated</p>
 				{/if}
 			</table>
-			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
-				<center>
-					<span style="">Username: {selectedAppId} &nbsp;</span>
-					<button
-						class="button"
-						style="width: 11rem; margin-top: 2rem;"
-						on:click={() => generatePassword(selectedAppId)}>Generate Credentials</button
-					>
+			<div
+				style="font-size: 0.7rem; width:37.5rem; text-align:right; float: right; margin-top: 1rem"
+			>
+				{#if $applicationPermission}
+					{$applicationPermission.length} of {$applicationPermission.length}
+				{:else}
+					0 of 0
+				{/if}
+			</div>
 
-					{#if generateCredentialsVisible}
-						<br />
-						<div style="display:flex; width: 13rem; margin-top: 2rem">
-							<button
-								style=" background-color: rgba(0,0,0,0); border-width: 0px; cursor: pointer; font-size:larger"
-								on:click={() => {
-									copyPassword(selectedAppId);
-									showCopyNotification();
-								}}>&#128203;</button
-							>
-							{#if showCopyNotificationVisible}
-								<div class="bubble">Password Copied!</div>
-							{/if}
-							<section>
-								<p
-									style="cursor: pointer;"
-									on:click={() => {
-										copyPassword(selectedAppId);
-										showCopyNotification();
-									}}
-								>
-									{password}
-								</p>
-							</section>
-						</div>
-					{/if}
-				</center>
-			{/if}
-		{/if}
-		<br /><br />
-		{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
-			<center>
-				<!-- svelte-ignore a11y-positive-tabindex -->
+			{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
 				<button
-					tabindex="19"
-					class="button"
-					style="width: 9rem"
-					on:click={() => (addApplicationVisible = true)}>Add Application</button
+					style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem 0 1rem;"
+					class="button-blue"
+					on:click={() => generatePassword(selectedAppId)}
 				>
-			</center>
+					<img
+						src={lockSVG}
+						alt="generate password"
+						height="20rem"
+						style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+					/>
+					<span style="vertical-align: middle">Generate Password</span>
+				</button>
+
+				<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">Username</div>
+				<div style="margin-top: 0.3rem;  font-weight: 300;">{selectedAppId}</div>
+
+				{#if generateCredentialsVisible}
+					<div style="margin-top: 1.5rem; font-weight: 500; font-size: 0.9rem">Password</div>
+					<div
+						style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
+						on:click={() => {
+							copyPassword(selectedAppId);
+							showCopyNotification();
+						}}
+					>
+						<span style="vertical-align: middle">{password}</span>
+						<img
+							src={copySVG}
+							alt="copy password"
+							height="29rem"
+							style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+							on:click={() => {
+								copyPassword(selectedAppId);
+								showCopyNotification();
+							}}
+						/>
+					</div>
+
+					{#if showCopyNotificationVisible}
+						<div class="bubble">Password Copied!</div>
+					{/if}
+				{/if}
+			{/if}
 		{/if}
 	</div>
 {/if}
 
 <style>
-	section {
-		display: flex;
-		height: 1rem;
-		padding: 0.5rem;
-		border-radius: 10px;
-		border: 1px dashed #1c1cc9;
-		align-items: center;
-		justify-content: center;
+	.content {
+		width: 34rem;
 	}
 
-	tr {
-		line-height: 1.7rem;
+	.dot {
+		float: right;
 	}
 
-	input {
-		text-align: left;
-		z-index: 1;
-		background-color: rgba(0, 0, 0, 0);
-		padding-left: 0.3rem;
+	.dropdown {
+		margin-top: 8.5rem;
+		margin-right: 9.5rem;
+		width: 14rem;
+		height: 5rem;
+	}
+
+	table {
+		width: 34rem;
+		line-height: 1rem;
 	}
 
 	span {
@@ -742,25 +841,22 @@
 		left: 0;
 	}
 
-	.name input:focus {
-		outline: none;
-	}
-
 	.bubble {
-		position: absolute;
+		position: relative;
 		background: rgb(0, 0, 0);
 		color: #ffffff;
 		font-family: Arial;
 		font-size: 15px;
 		vertical-align: middle;
 		text-align: center;
-		width: 150px;
+		width: 10.2rem;
 		height: 25px;
 		border-radius: 10px;
 		padding-top: 8px;
-		top: 23.2rem;
-		left: 31.5rem;
+		top: 1rem;
+		left: 0.75rem;
 	}
+
 	.bubble:after {
 		content: '';
 		position: absolute;
