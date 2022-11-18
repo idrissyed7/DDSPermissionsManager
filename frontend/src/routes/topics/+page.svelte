@@ -276,27 +276,6 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if errorMessageVisible}
-		<Modal
-			title={errorMsg}
-			description={errorObject}
-			on:cancel={() => {
-				errorMessageVisible = false;
-				errorMessageClear();
-			}}
-			><br /><br />
-			<div class="confirm">
-				<button
-					class="button-delete"
-					on:click={() => {
-						errorMessageVisible = false;
-						errorMessageClear();
-					}}>Ok</button
-				>
-			</div>
-		</Modal>
-	{/if}
-
 	{#if addTopicVisible}
 		<Modal
 			title="Add Topic"

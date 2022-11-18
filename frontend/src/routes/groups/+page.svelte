@@ -136,17 +136,15 @@
 	};
 
 	const addGroup = async (newGroupName) => {
-		const res = await httpAdapter
+		await httpAdapter
 			.post(`/groups/save/`, {
 				name: newGroupName
 			})
 			.catch((err) => {
-				if (err.response.status === 303) {
-					err.message = 'Group already exists. Please choose a unique group name.';
-				}
 				addGroupVisible = false;
 				errorMessage('Error Adding Group', err.message);
 			});
+
 		searchString = '';
 		addGroupVisible = false;
 		groupsCurrentPage = 0;
