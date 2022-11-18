@@ -532,7 +532,7 @@
 
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table style="margin-top: 0.5rem">
-				<tr style="border-top: 1px solid black">
+				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 					<td>
 						<input
 							type="checkbox"
