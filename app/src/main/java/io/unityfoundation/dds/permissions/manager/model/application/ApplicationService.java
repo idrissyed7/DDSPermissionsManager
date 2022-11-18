@@ -50,6 +50,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.Store;
@@ -471,8 +472,13 @@ public class ApplicationService {
     }
 
     private Map<String, Object> buildTemplateDataModel(String nonce, Application application) {
+        HashMap<String, String> oidMap = new HashMap<>();
+        oidMap.put("2.5.4.4", "SN");
+        oidMap.put("2.5.4.42", "GN");
+
         HashMap<String, Object> dataModel = new HashMap<>();
-        dataModel.put("subject", buildSubject(application, nonce));
+        String sn = (new X500Principal(buildSubject(application, nonce))).getName(X500Principal.RFC2253, oidMap);
+        dataModel.put("subject", sn);
         dataModel.put("applicationId", application.getId());
 
         Long expiry = permissionExpiry != null ? permissionExpiry: 30;
@@ -571,10 +577,18 @@ public class ApplicationService {
         return nameBuilder.build().toString();
     }
 
-    public String objectToPEMString(Object certificate) throws IOException {
+    public String objectToPEMString(X509Certificate certificate) throws IOException {
         StringWriter sWrt = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
         pemWriter.writeObject(certificate);
+        pemWriter.close();
+        return sWrt.toString();
+    }
+
+    public String objectToPEMString(PrivateKey key) throws IOException {
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pemWriter = new JcaPEMWriter(sWrt);
+        pemWriter.writeObject(new JcaPKCS8Generator(key, null));
         pemWriter.close();
         return sWrt.toString();
     }

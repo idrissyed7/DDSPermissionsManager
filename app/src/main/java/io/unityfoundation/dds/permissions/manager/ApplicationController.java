@@ -115,7 +115,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
-        if (nonce == null) {
+        if (nonceIsNotValid(nonce)) {
             return HttpResponse.badRequest();
         }
         return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
@@ -125,7 +125,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
-        if (nonce == null) {
+        if (nonceIsNotValid(nonce)) {
             return HttpResponse.badRequest();
         }
         return applicationService.getPermissionsFile(nonce);
@@ -136,5 +136,12 @@ public class ApplicationController {
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsJson(@Nullable @Header(E_TAG_HEADER_NAME) String etag) throws NoSuchAlgorithmException {
         return applicationService.getPermissionJson(etag);
+    }
+
+    private boolean nonceIsNotValid(String nonce) {
+        if (nonce == null) {
+            return true;
+        }
+        return !nonce.matches("^[a-zA-Z0-9]*$");
     }
 }

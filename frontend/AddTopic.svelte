@@ -153,22 +153,21 @@
 				searchGroupActive = false;
 			}
 		}
-		const res = await httpAdapter
-			.post(`/topics/save/`, {
+
+		try {
+			const res = await httpAdapter.post(`/topics/save/`, {
 				name: newTopicName,
 				kind: anyApplicationCanRead ? 'B' : 'C',
 				group: selectedGroup,
 				groupName: searchGroups
-			})
-			.catch((err) => {
-				addTopicVisible = false;
-				if (err.response.status) err.message = 'Topic already exists. Topic name should be unique.';
-				errorMessage('Error Adding Topic', err.message);
 			});
-
-		if (res) {
-			const createdTopicId = res.data.id;
-			addTopicApplicationAssociation(createdTopicId);
+			if (res) {
+				const createdTopicId = res.data.id;
+				addTopicApplicationAssociation(createdTopicId);
+			}
+		} catch (err) {
+			addTopicVisible = false;
+			errorMessage('Error Adding Topic', err.message);
 		}
 
 		if (isCopyTopic) {
