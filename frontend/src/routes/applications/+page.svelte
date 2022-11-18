@@ -781,8 +781,12 @@
 					<span style="vertical-align: middle">Generate Password</span>
 				</button>
 
-				<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">Username</div>
-				<div style="margin-top: 0.3rem;  font-weight: 300;">{selectedAppId}</div>
+				<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
+					Username: <span style="font-weight: 300">{selectedAppId}</span>
+				</div>
+				<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
+					Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
+				</div>
 
 				{#if generateCredentialsVisible}
 					<div style="margin-top: 1.5rem; font-weight: 500; font-size: 0.9rem">Password</div>
