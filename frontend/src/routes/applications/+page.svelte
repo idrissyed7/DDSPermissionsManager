@@ -23,8 +23,10 @@
 	import copySVG from '../../icons/copy.svg';
 
 	// Redirects the User to the Login screen if not authenticated
-	$: if (!$isAuthenticated && browser) {
-		goto(`/`, true);
+	$: if (browser) {
+		setTimeout(() => {
+			if (!$isAuthenticated) goto(`/`, true);
+		}, waitTime);
 	}
 
 	export let data, errors;
