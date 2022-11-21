@@ -5,7 +5,6 @@
 	import { httpAdapter } from '../appconfig';
 	import Header from '$lib/Header.svelte';
 	import Navigation from '$lib//Navigation.svelte';
-	import tokenInfoStore from '../stores/tokenInfoStore';
 	import '../app.css';
 
 	export let data;
@@ -18,16 +17,14 @@
 	onMount(async () => {
 		try {
 			const res = await httpAdapter.get(`/token_info`);
-			tokenInfoStore.set(res.data);
 
-			onLoggedIn($tokenInfoStore);
-			// onLoggedIn(res.data);
+			onLoggedIn(res.data);
 
 			avatarName = res.data.username.slice(0, 1).toUpperCase();
 
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
-			setInterval(checkValidity, userValidityInterval);
+			// setInterval(checkValidity, userValidityInterval);
 		} catch (err) {
 			console.error(err);
 		}
