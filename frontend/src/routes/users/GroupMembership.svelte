@@ -489,62 +489,66 @@
 		{/if}
 
 		{#if $groupMembershipList && $groupMembershipList.length > 0}
-			<table style="margin-top:0.5rem; width:50rem">
+			<table style="margin-top:0.5rem; width:55rem">
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-					<td>
-						<input
-							tabindex="-1"
-							type="checkbox"
-							class="group-membership-checkbox"
-							style="margin-right: 0.5rem"
-							bind:indeterminate={usersRowsSelectedTrue}
-							on:click={(e) => {
-								usersDropDownVisible = false;
-								if (e.target.checked) {
-									usersRowsSelected = $groupMembershipList;
-									usersRowsSelectedTrue = false;
-									usersAllRowsSelectedTrue = true;
-								} else {
-									usersAllRowsSelectedTrue = false;
-									usersRowsSelectedTrue = false;
-									usersRowsSelected = [];
-								}
-							}}
-							checked={usersAllRowsSelectedTrue}
-						/>
-					</td>
+					{#if $isAdmin || isGroupAdmin}
+						<td>
+							<input
+								tabindex="-1"
+								type="checkbox"
+								class="group-membership-checkbox"
+								style="margin-right: 0.5rem"
+								bind:indeterminate={usersRowsSelectedTrue}
+								on:click={(e) => {
+									usersDropDownVisible = false;
+									if (e.target.checked) {
+										usersRowsSelected = $groupMembershipList;
+										usersRowsSelectedTrue = false;
+										usersAllRowsSelectedTrue = true;
+									} else {
+										usersAllRowsSelectedTrue = false;
+										usersRowsSelectedTrue = false;
+										usersRowsSelected = [];
+									}
+								}}
+								checked={usersAllRowsSelectedTrue}
+							/>
+						</td>
+					{/if}
 					<td>E-mail</td>
 					<td>Group</td>
-					<td><center>Group Admin</center></td>
-					<td><center>Topic Admin</center></td>
-					<td><center>Application Admin</center></td>
+					<td style="width: 9rem"><center>Group Admin</center></td>
+					<td style="width: 9rem"><center>Topic Admin</center></td>
+					<td style="width: 9rem"><center>Application Admin</center></td>
 					<td /><td />
 				</tr>
 				{#each $groupMembershipList as groupMembership, i}
 					<tr>
-						<td style="width: 2rem">
-							<input
-								tabindex="-1"
-								type="checkbox"
-								style="margin-right: 0.5rem"
-								class="group-membership-checkbox"
-								checked={usersAllRowsSelectedTrue}
-								on:change={(e) => {
-									usersDropDownVisible = false;
-									if (e.target.checked === true) {
-										usersRowsSelected.push(groupMembership);
-										usersRowsSelectedTrue = true;
-									} else {
-										usersRowsSelected = usersRowsSelected.filter(
-											(selection) => selection !== groupMembership
-										);
-										if (usersRowsSelected.length === 0) {
-											usersRowsSelectedTrue = false;
+						{#if $isAdmin || isGroupAdmin}
+							<td style="width: 2rem">
+								<input
+									tabindex="-1"
+									type="checkbox"
+									style="margin-right: 0.5rem"
+									class="group-membership-checkbox"
+									checked={usersAllRowsSelectedTrue}
+									on:change={(e) => {
+										usersDropDownVisible = false;
+										if (e.target.checked === true) {
+											usersRowsSelected.push(groupMembership);
+											usersRowsSelectedTrue = true;
+										} else {
+											usersRowsSelected = usersRowsSelected.filter(
+												(selection) => selection !== groupMembership
+											);
+											if (usersRowsSelected.length === 0) {
+												usersRowsSelectedTrue = false;
+											}
 										}
-									}
-								}}
-							/>
-						</td>
+									}}
+								/>
+							</td>
+						{/if}
 						<td style="width: 19rem">{groupMembership.userEmail}</td>
 						<td style="width: 6rem">{groupMembership.groupName}</td>
 						<td style="width: 5rem">
@@ -698,7 +702,7 @@
 
 <style>
 	.content {
-		width: 50rem;
+		width: 55rem;
 	}
 
 	.dropdown {
@@ -711,15 +715,15 @@
 		float: right;
 	}
 
-	.hidden {
-		display: none;
-	}
-
 	input {
 		vertical-align: middle;
 	}
 
 	table {
 		width: 90%;
+	}
+
+	tr {
+		line-height: 2.2rem;
 	}
 </style>

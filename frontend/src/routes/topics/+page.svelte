@@ -454,60 +454,63 @@
 			{/if}
 
 			{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-				<table style="margin-top: 0.5rem">
+				<table class="main" style="margin-top: 0.5rem">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						<td>
-							<input
-								tabindex="-1"
-								type="checkbox"
-								class="topics-checkbox"
-								style="margin-right: 0.5rem"
-								bind:indeterminate={topicsRowsSelectedTrue}
-								on:click={(e) => {
-									topicsDropDownVisible = false;
-									if (e.target.checked) {
-										topicsRowsSelected = $topics;
-										topicsRowsSelectedTrue = false;
-										topicsAllRowsSelectedTrue = true;
-									} else {
-										topicsAllRowsSelectedTrue = false;
-										topicsRowsSelectedTrue = false;
-										topicsRowsSelected = [];
-									}
-								}}
-								checked={topicsAllRowsSelectedTrue}
-							/>
-						</td>
-						<td>Topic</td>
-						<td>Group</td>
-						<td />
-					</tr>
-					{#each $topics as topic, i}
-						<tr>
-							<td style="width: 2rem">
+						{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+							<td>
 								<input
 									tabindex="-1"
 									type="checkbox"
 									class="topics-checkbox"
-									checked={topicsAllRowsSelectedTrue}
-									on:change={(e) => {
+									style="margin-right: 0.5rem"
+									bind:indeterminate={topicsRowsSelectedTrue}
+									on:click={(e) => {
 										topicsDropDownVisible = false;
-										if (e.target.checked === true) {
-											topicsRowsSelected.push(topic);
-											topicsRowsSelectedTrue = true;
+										if (e.target.checked) {
+											topicsRowsSelected = $topics;
+											topicsRowsSelectedTrue = false;
+											topicsAllRowsSelectedTrue = true;
 										} else {
-											topicsRowsSelected = topicsRowsSelected.filter(
-												(selection) => selection !== topic
-											);
-											if (topicsRowsSelected.length === 0) {
-												topicsRowsSelectedTrue = false;
-											}
+											topicsAllRowsSelectedTrue = false;
+											topicsRowsSelectedTrue = false;
+											topicsRowsSelected = [];
 										}
 									}}
+									checked={topicsAllRowsSelectedTrue}
 								/>
 							</td>
+						{/if}
+						<td style="line-height: 2.2rem">Topic</td>
+						<td>Group</td>
+					</tr>
+					{#each $topics as topic, i}
+						<tr>
+							{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+								<td style="width: 2rem">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="topics-checkbox"
+										checked={topicsAllRowsSelectedTrue}
+										on:change={(e) => {
+											topicsDropDownVisible = false;
+											if (e.target.checked === true) {
+												topicsRowsSelected.push(topic);
+												topicsRowsSelectedTrue = true;
+											} else {
+												topicsRowsSelected = topicsRowsSelected.filter(
+													(selection) => selection !== topic
+												);
+												if (topicsRowsSelected.length === 0) {
+													topicsRowsSelectedTrue = false;
+												}
+											}
+										}}
+									/>
+								</td>
+							{/if}
 							<td
-								style="line-height: 1.7rem; cursor: pointer; width: 20.8rem"
+								style="line-height: 2.2rem; cursor: pointer; width: 20.8rem"
 								on:click={() => {
 									loadTopic(topic.id);
 									selectedTopicId = topic.id;
@@ -520,13 +523,14 @@
 								}}
 								>{topic.name}
 							</td>
-							<td style="width: 10rem">{topic.groupName}</td>
+							<td style="width: fit-content">{topic.groupName}</td>
 							{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 									<img
 										src={deleteSVG}
 										width="27rem"
 										alt="delete user"
+										style="vertical-align: -0.5rem; margin-left: 2rem"
 										on:click={() => {
 											if (!topicsRowsSelected.some((tpc) => tpc === topic))
 												topicsRowsSelected.push(topic);
@@ -534,8 +538,6 @@
 										}}
 									/>
 								</td>
-							{:else}
-								<td />
 							{/if}
 						</tr>
 					{/each}
@@ -627,12 +629,13 @@
 {/if}
 
 <style>
-	table {
-		width: 30rem;
+	table.main {
+		min-width: 25rem;
+		width: fit-content;
 	}
 
 	tr {
-		line-height: 1rem;
+		height: 2.2rem;
 	}
 
 	.dot {
@@ -646,6 +649,7 @@
 	}
 
 	.content {
-		width: 30rem;
+		min-width: 25rem;
+		width: fit-content;
 	}
 </style>

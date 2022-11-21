@@ -135,14 +135,16 @@
 	};
 
 	const getApplicationGroupNames = async (applicationsList) => {
-		for (const application of applicationsList) {
-			const res = await httpAdapter.get(`/applications/show/${application.applicationId}`);
-			const appendApp = applicationsList.find(
-				(app) => app.applicationName === application.applicationName
-			);
-			appendApp.applicationGroup = res.data.groupName;
+		if (applicationsList) {
+			for (const application of applicationsList) {
+				const res = await httpAdapter.get(`/applications/show/${application.applicationId}`);
+				const appendApp = applicationsList.find(
+					(app) => app.applicationName === application.applicationName
+				);
+				appendApp.applicationGroup = res.data.groupName;
+			}
+			selectedTopicApplications = selectedTopicApplications;
 		}
-		selectedTopicApplications = selectedTopicApplications;
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -264,27 +266,29 @@
 			<td style="border-bottom-color: transparent;">
 				<span style="margin-right: 1rem">Applications:</span>
 			</td>
-			<td style="border-bottom-color: transparent;">
-				<input
-					style="margin-top: 0.5rem; margin-bottom: 0.5rem"
-					class="searchbox"
-					type="search"
-					placeholder="Search Application"
-					bind:value={searchApplications}
-					on:blur={() => {
-						setTimeout(() => {
-							searchApplicationsResultsVisible = false;
-						}, 500);
-					}}
-					on:click={async () => {
-						searchApplicationResults = [];
-						searchApplicationActive = true;
-						if (searchApplications?.length >= 3) {
-							searchApplication(searchApplications);
-						}
-					}}
-				/>
-			</td>
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				<td style="border-bottom-color: transparent;">
+					<input
+						style="margin-top: 0.5rem; margin-bottom: 0.5rem"
+						class="searchbox"
+						type="search"
+						placeholder="Search Application"
+						bind:value={searchApplications}
+						on:blur={() => {
+							setTimeout(() => {
+								searchApplicationsResultsVisible = false;
+							}, 500);
+						}}
+						on:click={async () => {
+							searchApplicationResults = [];
+							searchApplicationActive = true;
+							if (searchApplications?.length >= 3) {
+								searchApplication(searchApplications);
+							}
+						}}
+					/>
+				</td>
+			{/if}
 		</tr>
 	</table>
 
