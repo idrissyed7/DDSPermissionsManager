@@ -179,7 +179,7 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if deleteGroupVisible && !errorMessageVisible}
+	{#if deleteGroupVisible}
 		<Modal
 			title="Delete {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'}"
 			actionDeleteGroups={true}
@@ -193,14 +193,12 @@
 		/>
 	{/if}
 
-	{#if addGroupVisible && !errorMessageVisible}
+	{#if addGroupVisible}
 		<Modal
 			title="Add New Group"
 			actionAddGroup={true}
 			groupNewName={true}
-			on:addGroup={(e) => {
-				addGroup(e.detail.newGroupName);
-			}}
+			on:addGroup={(e) => addGroup(e.detail.newGroupName)}
 			on:cancel={() => (addGroupVisible = false)}
 		/>
 	{/if}
@@ -228,6 +226,7 @@
 
 		{#if $isAdmin}
 			<div
+				tabindex="0"
 				class="dot"
 				on:mouseleave={() => {
 					setTimeout(() => {
@@ -237,6 +236,17 @@
 				on:click={() => {
 					if (!deleteGroupVisible && !addGroupVisible)
 						groupsDropDownVisible = !groupsDropDownVisible;
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						if (!deleteGroupVisible && !addGroupVisible)
+							groupsDropDownVisible = !groupsDropDownVisible;
+					}
+				}}
+				on:focusout={() => {
+					setTimeout(() => {
+						if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
+					}, waitTime);
 				}}
 			>
 				<img src={threedotsSVG} alt="options" style="scale:50%" />
@@ -253,11 +263,19 @@
 						}}
 					>
 						<tr
+							tabindex="0"
+							on:focus={() => (groupsDropDownMouseEnter = true)}
 							disabled={!$isAdmin}
 							class:disabled={!$isAdmin || groupsRowsSelected.length === 0}
 							on:click={async () => {
 								groupsDropDownVisible = false;
 								if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									groupsDropDownVisible = false;
+									if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+								}
 							}}
 						>
 							<td>Delete Selected {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'} </td>
@@ -273,10 +291,18 @@
 						</tr>
 
 						<tr
+							tabindex="0"
 							on:click={() => {
 								groupsDropDownVisible = false;
 								addGroupVisible = true;
 							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									groupsDropDownVisible = false;
+									addGroupVisible = true;
+								}
+							}}
+							on:focusout={() => (groupsDropDownMouseEnter = false)}
 							class:hidden={addGroupVisible}
 						>
 							<td style="border-bottom-color: transparent">Add New Group</td>
@@ -303,6 +329,7 @@
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						<td>
 							<input
+								tabindex="-1"
 								type="checkbox"
 								class="groups-checkbox"
 								style="margin-right: 0.5rem; vertical-align: middle;"
@@ -332,6 +359,7 @@
 						<tr>
 							<td style="width: 2rem">
 								<input
+									tabindex="-1"
 									type="checkbox"
 									class="groups-checkbox"
 									style="vertical-align: middle;"
@@ -356,6 +384,7 @@
 							<td style="width: 5rem">
 								<center>
 									<a
+										tabindex="-1"
 										style="vertical-align: middle"
 										href="/users"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
@@ -366,6 +395,7 @@
 							<td style="width: 5rem">
 								<center>
 									<a
+										tabindex="-1"
 										style="vertical-align: middle"
 										href="/topics"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
@@ -376,6 +406,7 @@
 							<td style="width: 5rem">
 								<center>
 									<a
+										tabindex="-1"
 										style="vertical-align: middle"
 										href="/applications"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
@@ -412,6 +443,7 @@
 	<div class="pagination">
 		<span>Rows per page</span>
 		<select
+			tabindex="-1"
 			on:change={(e) => {
 				groupsPerPage = e.target.value;
 				reloadAllGroups();

@@ -356,6 +356,7 @@
 			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
 				<div
 					class="dot"
+					tabindex="0"
 					on:mouseleave={() => {
 						setTimeout(() => {
 							if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
@@ -364,6 +365,17 @@
 					on:click={() => {
 						if (!deleteTopicVisible && !addTopicVisible)
 							topicsDropDownVisible = !topicsDropDownVisible;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							if (!deleteTopicVisible && !addTopicVisible)
+								topicsDropDownVisible = !topicsDropDownVisible;
+						}
+					}}
+					on:focusout={() => {
+						setTimeout(() => {
+							if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+						}, waitTime);
 					}}
 				>
 					<img src={threedotsSVG} alt="options" style="scale:50%" />
@@ -380,13 +392,20 @@
 							}}
 						>
 							<tr
+								tabindex="0"
 								disabled={!$isAdmin}
 								class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
-								on:click={async () => {
+								on:click={() => {
 									topicsDropDownVisible = false;
-
 									if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										topicsDropDownVisible = false;
+										if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+									}
+								}}
+								on:focus={() => (topicsDropDownMouseEnter = true)}
 							>
 								<td>Delete Selected {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'} </td>
 								<td>
@@ -401,10 +420,18 @@
 							</tr>
 
 							<tr
+								tabindex="0"
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										topicsDropDownVisible = false;
+										addTopicVisible = true;
+									}
+								}}
 								on:click={() => {
 									topicsDropDownVisible = false;
 									addTopicVisible = true;
 								}}
+								on:focusout={() => (topicsDropDownMouseEnter = false)}
 								class:hidden={addTopicVisible}
 							>
 								<td style="border-bottom-color: transparent">Add New Topic</td>
@@ -429,6 +456,7 @@
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						<td>
 							<input
+								tabindex="-1"
 								type="checkbox"
 								class="topics-checkbox"
 								style="margin-right: 0.5rem"
@@ -456,6 +484,7 @@
 						<tr>
 							<td style="width: 2rem">
 								<input
+									tabindex="-1"
 									type="checkbox"
 									class="topics-checkbox"
 									checked={topicsAllRowsSelectedTrue}
@@ -476,7 +505,6 @@
 								/>
 							</td>
 							<td
-								tabindex={i + 9}
 								style="line-height: 1.7rem; cursor: pointer; width: 20.8rem"
 								on:click={() => {
 									loadTopic(topic.id);
@@ -518,6 +546,7 @@
 		<div class="pagination">
 			<span>Rows per page</span>
 			<select
+				tabindex="-1"
 				on:change={(e) => {
 					topicsPerPage = e.target.value;
 					reloadAllTopics();

@@ -6,12 +6,11 @@
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
-	// import { page } from '$app/stores';
 
 	export let avatarName;
 
-	// const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 	const waitTime = 500;
+	const returnKey = 13;
 
 	let avatarDropdownMouseEnter = false;
 	let avatarDropdownVisible = false;
@@ -32,6 +31,7 @@
 		{/if}
 		<div class="header-title">{$headerTitle}</div>
 		<div
+			tabindex="0"
 			class="dot"
 			align="right"
 			on:mouseleave={() => {
@@ -40,6 +40,11 @@
 				}, waitTime);
 			}}
 			on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					avatarDropdownVisible = !avatarDropdownVisible;
+				}
+			}}
 		>
 			{avatarName}
 		</div>
@@ -53,6 +58,12 @@
 					}, waitTime);
 				}}
 				on:click={() => goto('/api/logout', true)}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						goto('/api/logout', true);
+					}
+				}}
+				on:focusout={() => (avatarDropdownVisible = false)}
 			>
 				<a href="/api/logout">
 					Logout
@@ -82,6 +93,7 @@
 
 	.avatar-dropdown {
 		position: absolute;
+		width: fit-content;
 		right: 0;
 		top: 3rem;
 		background-color: #f3edf7;
@@ -113,6 +125,10 @@
 
 	.dot:hover {
 		cursor: pointer;
+	}
+
+	div.dot:focus {
+		background-color: #7b61c4;
 	}
 
 	.logo {
