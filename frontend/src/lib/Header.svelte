@@ -9,7 +9,7 @@
 
 	export let avatarName;
 
-	const waitTime = 500;
+	const waitTime = 250;
 	const returnKey = 13;
 
 	let avatarDropdownMouseEnter = false;

@@ -45,7 +45,7 @@
 	const minNameLength = 3;
 	const applicationsResult = 7;
 	const searchStringLength = 3;
-	const waitTime = 500;
+	const waitTime = 250;
 
 	// Forms
 	let selectedIsGroupAdmin = false;

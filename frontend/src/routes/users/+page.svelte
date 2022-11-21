@@ -52,7 +52,7 @@
 	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
-	const waitTime = 500;
+	const waitTime = 250;
 
 	// Forms
 	let emailValue = '';

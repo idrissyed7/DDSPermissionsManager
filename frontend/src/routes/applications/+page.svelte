@@ -36,7 +36,7 @@
 	const fiveSeconds = 5000;
 	const returnKey = 13;
 	const searchStringLength = 3;
-	const waitTime = 500;
+	const waitTime = 250;
 
 	// Authentication
 	let isApplicationAdmin = false;
