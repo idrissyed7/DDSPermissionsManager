@@ -29,7 +29,7 @@
 	// Constants
 	const minNameLength = 3;
 	const returnKey = 13;
-	const waitTime = 500;
+	const waitTime = 250;
 	const searchStringLength = 3;
 
 	// Error Handling

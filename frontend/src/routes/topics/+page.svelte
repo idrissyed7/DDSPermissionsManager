@@ -30,7 +30,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 500;
+	const waitTime = 250;
 	const searchStringLength = 3;
 
 	// DropDowns

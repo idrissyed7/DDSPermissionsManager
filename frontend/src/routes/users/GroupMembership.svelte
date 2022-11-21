@@ -17,7 +17,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 500;
+	const waitTime = 250;
 
 	// DropDowns
 	let usersDropDownVisible = false;
