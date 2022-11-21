@@ -252,7 +252,13 @@
 
 			<div
 				class="dot"
+				tabindex="0"
 				on:mouseleave={() => {
+					setTimeout(() => {
+						if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
+					}, waitTime);
+				}}
+				on:focusout={() => {
 					setTimeout(() => {
 						if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
 					}, waitTime);
@@ -260,6 +266,12 @@
 				on:click={() => {
 					if (!deleteSuperUserVisible && !addSuperUserVisible)
 						superUsersDropDownVisible = !superUsersDropDownVisible;
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						if (!deleteSuperUserVisible && !addSuperUserVisible)
+							superUsersDropDownVisible = !superUsersDropDownVisible;
+					}
 				}}
 			>
 				<img src={threedotsSVG} alt="options" style="scale:50%" />
@@ -277,11 +289,19 @@
 						}}
 					>
 						<tr
+							tabindex="0"
 							class:disabled={superUsersRowsSelected.length === 0}
 							on:click={async () => {
 								superUsersDropDownVisible = false;
 								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									superUsersDropDownVisible = false;
+									if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
+								}
+							}}
+							on:focus={() => (superUsersDropDownMouseEnter = true)}
 						>
 							<td>
 								Delete Selected {superUsersRowsSelected.length > 1 ? 'Users' : 'User'}
@@ -297,16 +317,21 @@
 							</td>
 						</tr>
 
-						<tr>
-							<td
-								style="border-bottom-color: transparent"
-								on:click={() => {
+						<tr
+							tabindex="0"
+							on:click={() => {
+								superUsersDropDownVisible = false;
+								addSuperUserVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
 									superUsersDropDownVisible = false;
 									addSuperUserVisible = true;
-								}}
-							>
-								Add New Super User
-							</td>
+								}
+							}}
+							on:focusout={() => (superUsersDropDownMouseEnter = false)}
+						>
+							<td style="border-bottom-color: transparent"> Add New Super User </td>
 							<td
 								style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
 							>
@@ -327,6 +352,7 @@
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						<td>
 							<input
+								tabindex="-1"
 								type="checkbox"
 								class="super-user-checkbox"
 								style="margin-right: 0.5rem"
@@ -353,6 +379,7 @@
 						<tr>
 							<td style="width: 2rem">
 								<input
+									tabindex="-1"
 									type="checkbox"
 									class="super-user-checkbox"
 									checked={superUsersAllRowsSelectedTrue}
@@ -396,6 +423,7 @@
 		<div class="pagination">
 			<span>Rows per page</span>
 			<select
+				tabindex="-1"
 				on:change={(e) => {
 					superUsersPerPage = e.target.value;
 					reloadAllSuperUsers();

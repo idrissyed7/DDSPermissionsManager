@@ -391,7 +391,13 @@
 		{#if $isAdmin || isGroupAdmin}
 			<div
 				class="dot"
+				tabindex="0"
 				on:mouseleave={() => {
+					setTimeout(() => {
+						if (!usersDropDownMouseEnter) usersDropDownVisible = false;
+					}, waitTime);
+				}}
+				on:focusout={() => {
 					setTimeout(() => {
 						if (!usersDropDownMouseEnter) usersDropDownVisible = false;
 					}, waitTime);
@@ -399,6 +405,12 @@
 				on:click={() => {
 					if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
 						usersDropDownVisible = !usersDropDownVisible;
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
+							usersDropDownVisible = !usersDropDownVisible;
+					}
 				}}
 			>
 				<img src={threedotsSVG} alt="options" style="scale:50%" />
@@ -416,11 +428,19 @@
 						}}
 					>
 						<tr
+							tabindex="0"
 							class:disabled={usersRowsSelected.length === 0}
 							on:click={() => {
 								usersDropDownVisible = false;
 								if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
 							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									usersDropDownVisible = false;
+									if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
+								}
+							}}
+							on:focus={() => (usersDropDownMouseEnter = true)}
 						>
 							<td>
 								Delete Selected {usersRowsSelected.length > 1 ? 'Users' : 'User'}
@@ -437,16 +457,21 @@
 							</td>
 						</tr>
 
-						<tr>
-							<td
-								style="border-bottom-color: transparent"
-								on:click={() => {
+						<tr
+							tabindex="0"
+							on:click={() => {
+								usersDropDownVisible = false;
+								addGroupMembershipVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
 									usersDropDownVisible = false;
 									addGroupMembershipVisible = true;
-								}}
-							>
-								Add New User
-							</td>
+								}
+							}}
+							on:focusout={() => (usersDropDownMouseEnter = false)}
+						>
+							<td style="border-bottom-color: transparent"> Add New User </td>
 							<td
 								style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
 							>
@@ -468,6 +493,7 @@
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 					<td>
 						<input
+							tabindex="-1"
 							type="checkbox"
 							class="group-membership-checkbox"
 							style="margin-right: 0.5rem"
@@ -498,6 +524,7 @@
 					<tr>
 						<td style="width: 2rem">
 							<input
+								tabindex="-1"
 								type="checkbox"
 								style="margin-right: 0.5rem"
 								class="group-membership-checkbox"
@@ -548,7 +575,6 @@
 						{#if $isAdmin || groupAdminGroups.some((group) => group.groupName === groupMembership.groupName)}
 							<td
 								style="cursor: pointer; text-align: right"
-								tabindex={i + 9}
 								on:keydown={(event) => {
 									if (event.which === returnKey) {
 										updateGroupMembershipSelection(groupMembership);
@@ -589,6 +615,7 @@
 		<div class="pagination">
 			<span>Rows per page</span>
 			<select
+				tabindex="-1"
 				on:change={(e) => {
 					groupMembershipsPerPage = e.target.value;
 					reloadGroupMemberships();

@@ -9,36 +9,31 @@
 
 <nav>
 	<ul>
-		<!-- svelte-ignore a11y-positive-tabindex -->
-		<li tabindex="1" class:active={$page.url.pathname === '/'}>
+		<li class:active={$page.url.pathname === '/'}>
 			<a sveltekit:prefetch href="/">
 				<img src={homeSVG} alt="home" class="menu-icon" />Home
 			</a>
 		</li>
 
-		<!-- svelte-ignore a11y-positive-tabindex -->
-		<li tabindex="2" class:active={$page.url.pathname === '/users/'}>
+		<li class:active={$page.url.pathname === '/users/'}>
 			<a sveltekit:prefetch href="/users">
 				<img src={usersSVG} alt="users" class="menu-icon" />Users
 			</a>
 		</li>
 
-		<!-- svelte-ignore a11y-positive-tabindex -->
-		<li tabindex="4" class:active={$page.url.pathname === '/topics/'}>
+		<li class:active={$page.url.pathname === '/topics/'}>
 			<a sveltekit:prefetch href="/topics">
 				<img src={topicsSVG} alt="topics" class="menu-icon" />Topics
 			</a>
 		</li>
 
-		<!-- svelte-ignore a11y-positive-tabindex -->
-		<li tabindex="5" class:active={$page.url.pathname === '/applications/'}>
+		<li class:active={$page.url.pathname === '/applications/'}>
 			<a sveltekit:prefetch href="/applications">
 				<img src={appsSVG} alt="applications" class="menu-icon" />Applications
 			</a>
 		</li>
 
-		<!-- svelte-ignore a11y-positive-tabindex -->
-		<li tabindex="6" class:active={$page.url.pathname === '/groups/'}>
+		<li class:active={$page.url.pathname === '/groups/'}>
 			<a sveltekit:prefetch href="/groups">
 				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
 			</a>

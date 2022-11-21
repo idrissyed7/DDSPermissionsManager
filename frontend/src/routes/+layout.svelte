@@ -42,9 +42,9 @@
 				const tokenData = { roles: ['ADMIN'], sub: verify.name };
 				Object.assign(verify, tokenData);
 			}
-			console.log('verify', verify);
-			console.log('is authenticated?', $isAuthenticated);
-			console.log('is Admin? ', $isAdmin);
+			// console.log('verify', verify);
+			// console.log('is authenticated?', $isAuthenticated);
+			// console.log('is Admin? ', $isAdmin);
 
 			// Update user's token
 			onLoggedIn(verify);

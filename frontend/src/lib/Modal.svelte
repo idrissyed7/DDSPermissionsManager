@@ -252,7 +252,30 @@
 				dispatch('addGroup', returnGroupName);
 				closeModal();
 			}
+		} else {
+			dispatch('addGroup', returnGroupName);
+			closeModal();
 		}
+	};
+
+	const actionEditUserEvent = () => {
+		dispatch('updateGroupMembership', {
+			groupAdmin: selectedGroupMembership.groupAdmin,
+			topicAdmin: selectedGroupMembership.topicAdmin,
+			applicationAdmin: selectedGroupMembership.applicationAdmin
+		});
+	};
+
+	const actionDuplicateTopicEvent = () => {
+		let newTopic = {
+			newTopicName: newTopicName,
+			searchGroups: searchGroups,
+			selectedGroup: selectedGroup,
+			anyApplicationCanRead: anyApplicationCanRead,
+			selectedApplicationList: selectedApplicationList
+		};
+		dispatch('duplicateTopic', newTopic);
+		closeModal();
 	};
 </script>
 
@@ -271,10 +294,14 @@
 				class:invalid={invalidEmail && emailValue?.length >= 1}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={emailValue}
-				on:blur={() => validateEmail(emailValue)}
+				on:blur={() => {
+					emailValue = emailValue.trim();
+					validateEmail(emailValue);
+				}}
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
 						if (actionAddUser) {
+							emailValue = emailValue.trim();
 							validateEmail(emailValue);
 							if (!invalidEmail && emailValue.length >= minNameLength && searchGroups?.length > 3) {
 								actionAddUserEvent();
@@ -286,7 +313,7 @@
 			/>
 			{#if noneditable}
 				<span
-					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -1.1rem; left: -15.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
+					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
 					>Email
 				</span>
 			{/if}
@@ -366,7 +393,7 @@
 			/>
 			<span
 				class="error-message"
-				style="	top: 9.7rem; right: 2.2rem"
+				style="	top: 9.7rem; right: 4.2rem"
 				class:hidden={errorMessage?.length === 0}
 			>
 				Error: {errorMessage}
@@ -464,7 +491,7 @@
 			</form>
 			<span
 				class="error-message"
-				style="	top: 12.9rem; right: 2.2rem"
+				style="	top: 12.9rem; right: 4.2rem"
 				class:hidden={errorMessage?.length === 0}
 			>
 				Error: {errorMessage}
@@ -480,6 +507,10 @@
 							searchGroupsResultsVisible = !searchGroupsResultsVisible;
 							searchGroupsResultsMouseEnter = false;
 						}, waitTime);
+					}}
+					on:focusout={() => {
+						searchGroupsResultsVisible = !searchGroupsResultsVisible;
+						searchGroupsResultsMouseEnter = false;
 					}}
 				>
 					{#each searchGroupResults.data?.content as result}
@@ -497,7 +528,7 @@
 
 			{#if noneditable}
 				<span
-					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -1.1rem; left: -13.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
+					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3.6rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
 					>Group
 				</span>
 			{/if}
@@ -674,7 +705,6 @@
 				{:else}
 					<Switch bind:checked={selectedIsGroupAdmin} />
 				{/if}
-
 				<h3>Group Admin</h3>
 			</div>
 			<div class="admin-roles">
@@ -719,6 +749,11 @@
 			on:click={() => {
 				actionAddSuperUserEvent();
 			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAddSuperUserEvent();
+				}
+			}}
 			>Add User
 		</button>
 	{/if}
@@ -732,6 +767,11 @@
 			on:click={() => {
 				actionAddTopicEvent();
 			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAddTopicEvent();
+				}
+			}}
 			>Add Topic
 		</button>
 	{/if}
@@ -743,15 +783,12 @@
 			class:action-button-invalid={newTopicName.length < minNameLength ||
 				searchGroups?.length < minNameLength}
 			on:click={() => {
-				let newTopic = {
-					newTopicName: newTopicName,
-					searchGroups: searchGroups,
-					selectedGroup: selectedGroup,
-					anyApplicationCanRead: anyApplicationCanRead,
-					selectedApplicationList: selectedApplicationList
-				};
-				dispatch('duplicateTopic', newTopic);
-				closeModal();
+				actionDuplicateTopicEvent();
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionDuplicateTopicEvent();
+				}
 			}}
 			>Add Topic
 		</button>
@@ -766,6 +803,11 @@
 			on:click={() => {
 				actionAddApplicationEvent();
 			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAddApplicationEvent();
+				}
+			}}
 			>Add Topic
 		</button>
 	{/if}
@@ -776,7 +818,12 @@
 			class="action-button"
 			class:action-button-invalid={newGroupName.length < minNameLength}
 			on:click={() => {
-				actionAddGroupEvent();
+				if (!newGroupName.length <= minNameLength) actionAddGroupEvent();
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					if (!newGroupName.length <= minNameLength) actionAddGroupEvent();
+				}
 			}}
 			>Add Group
 		</button>
@@ -787,12 +834,12 @@
 		<button
 			class="action-button"
 			on:click={() => {
-				let groupMembershipUpdate = {};
-				dispatch('updateGroupMembership', {
-					groupAdmin: selectedGroupMembership.groupAdmin,
-					topicAdmin: selectedGroupMembership.topicAdmin,
-					applicationAdmin: selectedGroupMembership.applicationAdmin
-				});
+				actionEditUserEvent();
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionEditUserEvent();
+				}
 			}}
 			>Save Changes
 		</button>
@@ -807,6 +854,11 @@
 			on:click={() => {
 				dispatch('saveNewAppName', { newAppName: previousAppName });
 			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('saveNewAppName', { newAppName: previousAppName });
+				}
+			}}
 			>Save Changes
 		</button>
 	{/if}
@@ -815,8 +867,16 @@
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
 		</p>
-		<button class="action-button" on:click={() => dispatch('deleteGroupMemberships')}
-			>{title}</button
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteGroupMemberships')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteGroupMemberships');
+				}
+			}}>{title}</button
 		>
 	{/if}
 
@@ -824,28 +884,68 @@
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
 		</p>
-		<button class="action-button" on:click={() => dispatch('deleteSuperUsers')}>{title}</button>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteSuperUsers')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteSuperUsers');
+				}
+			}}>{title}</button
+		>
 	{/if}
 
 	{#if actionDeleteTopics}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
 		</p>
-		<button class="action-button" on:click={() => dispatch('deleteTopics')}>{title}</button>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteTopics')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteTopics');
+				}
+			}}>{title}</button
+		>
 	{/if}
 
 	{#if actionDeleteApplications}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
 		</p>
-		<button class="action-button" on:click={() => dispatch('deleteApplications')}>{title}</button>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteApplications')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteApplications');
+				}
+			}}>{title}</button
+		>
 	{/if}
 
 	{#if actionDeleteGroups}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
 		</p>
-		<button class="action-button" on:click={() => dispatch('deleteGroups')}>{title}</button>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteGroups')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteGroups');
+				}
+			}}>{title}</button
+		>
 	{/if}
 
 	<button
@@ -853,6 +953,12 @@
 		on:click={() => {
 			emailValue = '';
 			closeModal();
+		}}
+		on:keydown={(event) => {
+			if (event.which === returnKey) {
+				emailValue = '';
+				closeModal();
+			}
 		}}
 		>Cancel
 	</button>
@@ -916,8 +1022,8 @@
 		position: fixed;
 		top: 10vh;
 		left: 50%;
-		margin-left: -9.25rem;
-		width: 18.5rem;
+		margin-left: -10.25rem;
+		width: 20.5rem;
 		max-height: fit-content;
 		background: rgb(246, 246, 246);
 		border-radius: 15px;

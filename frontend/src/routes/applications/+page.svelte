@@ -457,8 +457,14 @@
 
 			{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
 				<div
+					tabindex="0"
 					class="dot"
 					on:mouseleave={() => {
+						setTimeout(() => {
+							if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
+						}, waitTime);
+					}}
+					on:focusout={() => {
 						setTimeout(() => {
 							if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
 						}, waitTime);
@@ -466,6 +472,12 @@
 					on:click={() => {
 						if (!deleteApplicationVisible && !addApplicationVisible)
 							applicationsDropDownVisible = !applicationsDropDownVisible;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							if (!deleteApplicationVisible && !addApplicationVisible)
+								applicationsDropDownVisible = !applicationsDropDownVisible;
+						}
 					}}
 				>
 					<img src={threedotsSVG} alt="options" style="scale:50%" />
@@ -482,12 +494,20 @@
 							}}
 						>
 							<tr
+								tabindex="0"
 								disabled={!$isAdmin}
 								class:disabled={!$isAdmin || applicationsRowsSelected.length === 0}
 								on:click={async () => {
 									applicationsDropDownVisible = false;
 									if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
 								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										applicationsDropDownVisible = false;
+										if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
+									}
+								}}
+								on:focus={() => (applicationsDropDownMouseEnter = true)}
 							>
 								<td
 									>Delete Selected {applicationsRowsSelected.length > 1
@@ -506,10 +526,18 @@
 							</tr>
 
 							<tr
+								tabindex="0"
 								on:click={() => {
 									applicationsDropDownVisible = false;
 									addApplicationVisible = true;
 								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										applicationsDropDownVisible = false;
+										addApplicationVisible = true;
+									}
+								}}
+								on:focusout={() => (applicationsDropDownMouseEnter = false)}
 								class:hidden={addApplicationVisible}
 							>
 								<td style="border-bottom-color: transparent">Add New Application</td>
@@ -535,6 +563,7 @@
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 					<td>
 						<input
+							tabindex="-1"
 							type="checkbox"
 							class="apps-checkbox"
 							style="margin-right: 0.5rem"
@@ -564,6 +593,7 @@
 						<tr>
 							<td style="width: 2rem">
 								<input
+									tabindex="-1"
 									type="checkbox"
 									class="apps-checkbox"
 									checked={applicationsAllRowsSelectedTrue}
@@ -584,7 +614,6 @@
 								/>
 							</td>
 							<td
-								tabindex={i + 9}
 								style="cursor: pointer; width: 25.5rem"
 								on:click={() => {
 									loadApplicationDetail(app.id, app.group);
@@ -652,6 +681,7 @@
 			<div class="pagination">
 				<span>Rows per page</span>
 				<select
+					tabindex="-1"
 					on:change={(e) => {
 						applicationsPerPage = e.target.value;
 						reloadAllApps();
