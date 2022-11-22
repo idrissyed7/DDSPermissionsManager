@@ -28,9 +28,9 @@
 		}, waitTime);
 	}
 
-	$: if (addTopicVisible || deleteTopicVisible || errorMessageVisible) {
+	$: if (browser && (addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
 		document.body.classList.add('modal-open');
-	} else {
+	} else if (browser && !(addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
 		document.body.classList.remove('modal-open');
 	}
 

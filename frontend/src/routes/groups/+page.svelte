@@ -26,9 +26,9 @@
 		}, waitTime);
 	}
 
-	$: if (addGroupVisible || deleteGroupVisible || errorMessageVisible) {
+	$: if (browser && (addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
 		document.body.classList.add('modal-open');
-	} else {
+	} else if (browser && !(addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
 		document.body.classList.remove('modal-open');
 	}
 

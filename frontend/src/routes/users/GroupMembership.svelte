@@ -2,6 +2,7 @@
 	import { isAuthenticated, isAdmin, onLoggedIn } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import { browser } from '$app/env';
 	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupMembershipList from '../../stores/groupMembershipList';
@@ -65,6 +66,24 @@
 
 	// Group Membership List
 	let groupMembershipListArray = [];
+
+	$: if (
+		browser &&
+		(addGroupMembershipVisible ||
+			deleteSelectedGroupMembershipsVisible ||
+			updateGroupMembershipVisible)
+	) {
+		document.body.classList.add('modal-open');
+	} else if (
+		browser &&
+		!(
+			addGroupMembershipVisible ||
+			deleteSelectedGroupMembershipsVisible ||
+			updateGroupMembershipVisible
+		)
+	) {
+		document.body.classList.remove('modal-open');
+	}
 
 	// Search Group Membership Feature
 	$: if (searchString?.trim().length >= searchStringLength) {

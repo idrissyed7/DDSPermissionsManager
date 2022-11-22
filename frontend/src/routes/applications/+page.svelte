@@ -31,9 +31,12 @@
 		}, waitTime);
 	}
 
-	$: if (addApplicationVisible || deleteApplicationVisible || errorMessageVisible) {
+	$: if (browser && (addApplicationVisible || deleteApplicationVisible || errorMessageVisible)) {
 		document.body.classList.add('modal-open');
-	} else {
+	} else if (
+		browser &&
+		!(addApplicationVisible || deleteApplicationVisible || errorMessageVisible)
+	) {
 		document.body.classList.remove('modal-open');
 	}
 
@@ -125,23 +128,6 @@
 			reloadAllApps();
 		}, waitTime);
 	}
-
-	// // Search Groups Feature///
-	// $: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
-	// 	clearTimeout(timer);
-	// 	timer = setTimeout(() => {
-	// 		searchGroup(searchGroups.trim());
-	// 	}, waitTime);
-	// } else {
-	// 	searchGroupsResultsVisible = false;
-	// }
-
-	// // Search Groups Dropdown Visibility
-	// $: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
-	// 	searchGroupsResultsVisible = true;
-	// } else {
-	// 	searchGroupsResultsVisible = false;
-	// }
 
 	// Reset add group form once closed
 	$: if (addApplicationVisible === false) {

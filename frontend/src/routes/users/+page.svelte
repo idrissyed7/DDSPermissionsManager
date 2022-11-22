@@ -20,17 +20,17 @@
 
 	export let data, errors;
 
-	$: if (addSuperUserVisible || deleteSuperUserVisible) {
-		document.body.classList.add('modal-open');
-	} else {
-		document.body.classList.remove('modal-open');
-	}
-
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
 		setTimeout(() => {
 			if (!$isAuthenticated) goto(`/`, true);
 		}, waitTime);
+	}
+
+	$: if (browser && (addSuperUserVisible || deleteSuperUserVisible)) {
+		document.body.classList.add('modal-open');
+	} else if (browser && !(addSuperUserVisible || deleteSuperUserVisible)) {
+		document.body.classList.remove('modal-open');
 	}
 
 	// Constants
