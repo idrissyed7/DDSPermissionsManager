@@ -184,6 +184,10 @@ select:focus {
 	}
 }
 
+.modal-open {
+	overflow-y: hidden;
+}
+
 .dot {
 	height: 2.1rem;
 	width: 2.1rem;

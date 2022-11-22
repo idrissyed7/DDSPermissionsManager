@@ -17,6 +17,8 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 
+	export let data, errors;
+
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
 		setTimeout(() => {
@@ -24,7 +26,11 @@
 		}, waitTime);
 	}
 
-	export let data, errors;
+	$: if (browser && (addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
+		document.body.classList.add('modal-open');
+	} else if (browser && !(addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
+		document.body.classList.remove('modal-open');
+	}
 
 	// Constants
 	const minNameLength = 3;
