@@ -36,6 +36,9 @@
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
 	export let selectedApplicationList = [];
+	export let errorDescription = '';
+	export let errorMsg = false;
+	export let closeModalText = 'Cancel';
 
 	const dispatch = createEventDispatcher();
 
@@ -322,6 +325,10 @@
 	<h2>{title}</h2>
 	<hr />
 	<div class="content">
+		{#if errorMsg}
+			<p>{errorDescription}</p>
+		{/if}
+
 		{#if email}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
@@ -375,7 +382,7 @@
 							newTopicName?.length >= minNameLength &&
 							searchGroups?.length >= searchStringLength
 						) {
-							actionAddTopicEvent();
+							actionDuplicateTopicEvent();
 						}
 					}
 				}}
@@ -1018,7 +1025,7 @@
 				closeModal();
 			}
 		}}
-		>Cancel
+		>{closeModalText}
 	</button>
 </div>
 

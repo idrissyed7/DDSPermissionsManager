@@ -515,11 +515,13 @@
 							/>
 						</td>
 					{/if}
-					<td>E-mail</td>
-					<td>Group</td>
-					<td style="width: 9rem"><center>Group Admin</center></td>
-					<td style="width: 9rem"><center>Topic Admin</center></td>
-					<td style="width: 9rem"><center>Application Admin</center></td>
+					<td style="width: 19rem; font-stretch:ultra-condensed">E-mail</td>
+					<td style="width: 14rem; font-stretch:ultra-condensed">Group</td>
+					<td style="width: 7.5rem; font-stretch:ultra-condensed"><center>Group Admin</center></td>
+					<td style="width: 7.5rem; font-stretch:ultra-condensed"><center>Topic Admin</center></td>
+					<td style="width: 9.3rem; font-stretch:ultra-condensed"
+						><center>Application Admin</center></td
+					>
 					<td /><td />
 				</tr>
 				{#each $groupMembershipList as groupMembership, i}
