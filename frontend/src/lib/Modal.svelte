@@ -90,7 +90,11 @@
 	}
 
 	// Search Groups Dropdown Visibility
-	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+	$: if (
+		searchGroupResults?.data?.content?.length >= 1 &&
+		searchGroupActive &&
+		searchGroups?.trim().length >= searchStringLength
+	) {
 		searchGroupsResultsVisible = true;
 	} else {
 		searchGroupsResultsVisible = false;
@@ -464,6 +468,7 @@
 						searchString = searchString?.trim();
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
+							searchGroupActive = false;
 						}, waitTime);
 					}}
 					on:focus={async () => {
@@ -504,12 +509,12 @@
 					on:mouseenter={() => (searchGroupsResultsMouseEnter = true)}
 					on:mouseleave={() => {
 						setTimeout(() => {
-							searchGroupsResultsVisible = !searchGroupsResultsVisible;
+							searchGroupsResultsVisible = false;
 							searchGroupsResultsMouseEnter = false;
 						}, waitTime);
 					}}
 					on:focusout={() => {
-						searchGroupsResultsVisible = !searchGroupsResultsVisible;
+						searchGroupsResultsVisible = false;
 						searchGroupsResultsMouseEnter = false;
 					}}
 				>
