@@ -243,12 +243,12 @@
 			const createdTopicId = res.data.id;
 			addTopicApplicationAssociation(createdTopicId);
 		}
+		if (res === undefined) {
+			errorMessage('Error Adding Topic', 'Topic already exists.');
+		}
 
-		// if (isCopyTopic) {
-		// 	dispatch('backtolist');
-		// } else {
 		addTopicVisible = false;
-		reloadAllTopics();
+		await reloadAllTopics();
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -284,6 +284,18 @@
 </svelte:head>
 
 {#if $isAuthenticated}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMsg}
+			errorMsg={true}
+			errorDescription={errorObject}
+			closeModalText={'Close'}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				errorMessageClear();
+			}}
+		/>
+	{/if}
 	{#if addTopicVisible}
 		<Modal
 			title="Add Topic"

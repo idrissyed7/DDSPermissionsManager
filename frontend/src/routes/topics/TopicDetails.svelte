@@ -178,6 +178,7 @@
 		<Modal
 			title={errorMsg}
 			description={errorObject}
+			closeModalText={'Close'}
 			on:cancel={() => {
 				errorMessageVisible = false;
 				errorMessageClear();
@@ -232,8 +233,8 @@
 					anyApplicationCanRead={selectedTopicKind === 'B' ? true : false}
 					on:cancel={() => (duplicateTopicVisible = false)}
 					on:duplicateTopic={(e) => {
-						dispatch('addTopic', e.detail);
 						duplicateTopicVisible = false;
+						dispatch('addTopic', e.detail);
 					}}
 				/>
 			{/if}

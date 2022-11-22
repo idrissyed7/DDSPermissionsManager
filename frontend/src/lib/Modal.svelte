@@ -36,6 +36,9 @@
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
 	export let selectedApplicationList = [];
+	export let errorDescription = '';
+	export let errorMsg = false;
+	export let closeModalText = 'Cancel';
 
 	const dispatch = createEventDispatcher();
 
@@ -59,7 +62,8 @@
 	let invalidGroup = false;
 	let invalidApplication = false;
 	let invalidEmail = false;
-	let errorMessage = '';
+	let errorMessageGroup = '';
+	let errorMessageApplication = '';
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
@@ -86,25 +90,32 @@
 		}, waitTime);
 	} else {
 		searchGroupsResultsVisible = false;
-		errorMessage = '';
 	}
 
 	// Search Groups Dropdown Visibility
-	$: if (searchGroupResults?.data?.content?.length >= 1 && searchGroupActive) {
+	$: if (
+		searchGroupResults?.data?.content?.length >= 1 &&
+		searchGroupActive &&
+		searchGroups?.trim().length >= searchStringLength
+	) {
 		searchGroupsResultsVisible = true;
 	} else {
 		searchGroupsResultsVisible = false;
 	}
 
 	// Search Applications Feature
-	$: if (searchApplications?.trim().length >= 3 && searchApplicationActive) {
+	$: if (searchApplications?.trim().length >= searchStringLength && searchApplicationActive) {
 		searchApplication(searchApplications.trim());
 	} else {
 		searchApplicationsResultsVisible = false;
 	}
 
 	// Search Applications Dropdown Visibility
-	$: if (searchApplicationResults?.data?.length >= 1 && searchApplicationActive) {
+	$: if (
+		searchApplicationResults?.data?.length >= 1 &&
+		searchApplicationActive &&
+		searchApplications?.trim().length >= searchStringLength
+	) {
 		searchApplicationsResultsVisible = true;
 	} else {
 		searchApplicationsResultsVisible = false;
@@ -165,6 +176,27 @@
 		}
 	};
 
+	const validateApplicationName = async () => {
+		// if there is data in the applications input field, we verify it's validity
+		if (searchApplications?.length > 0) {
+			const res = await httpAdapter.get(
+				`/applications/search?page=0&size=1&filter=${searchApplications}`
+			);
+
+			if (
+				res.data.length > 0 &&
+				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
+			) {
+				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return true;
+		}
+	};
+
 	function closeModal() {
 		dispatch('cancel');
 	}
@@ -179,9 +211,9 @@
 			emailValue: emailValue
 		};
 
-		const validGroupName = await validateGroupName(searchGroups);
+		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessage = 'Invalid Group';
+			errorMessageGroup = 'Invalid Group';
 			return;
 		}
 
@@ -206,14 +238,22 @@
 			selectedApplicationList: selectedApplicationList
 		};
 
-		const validGroupName = await validateGroupName(searchGroups);
+		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessage = 'Invalid Group';
+			errorMessageGroup = 'Invalid Group';
 			return;
 		}
 
-		dispatch('addTopic', newTopic);
-		closeModal();
+		const validApplicationName = await validateApplicationName();
+		if (!validApplicationName) {
+			errorMessageApplication = 'Invalid Application';
+			return;
+		}
+
+		if (newTopicName?.length >= minNameLength && validGroupName && validApplicationName) {
+			dispatch('addTopic', newTopic);
+			closeModal();
+		}
 	};
 
 	const actionAddApplicationEvent = async () => {
@@ -223,9 +263,9 @@
 			selectedGroup: selectedGroup
 		};
 
-		const validGroupName = await validateGroupName(searchGroups);
+		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessage = 'Invalid Group';
+			errorMessageGroup = 'Invalid Group';
 			return;
 		}
 
@@ -246,7 +286,7 @@
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
-				errorMessage = 'Group already exists';
+				errorMessageGroup = 'Group already exists';
 				return;
 			} else {
 				dispatch('addGroup', returnGroupName);
@@ -285,6 +325,10 @@
 	<h2>{title}</h2>
 	<hr />
 	<div class="content">
+		{#if errorMsg}
+			<p>{errorDescription}</p>
+		{/if}
+
 		{#if email}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
@@ -338,7 +382,7 @@
 							newTopicName?.length >= minNameLength &&
 							searchGroups?.length >= searchStringLength
 						) {
-							actionAddTopicEvent();
+							actionDuplicateTopicEvent();
 						}
 					}
 				}}
@@ -384,7 +428,7 @@
 					newGroupName?.length < minNameLength ? (invalidGroup = true) : (invalidGroup = false);
 				}}
 				on:keydown={(event) => {
-					errorMessage = '';
+					errorMessageGroup = '';
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
 						if (newGroupName?.length >= minNameLength) actionAddGroupEvent();
@@ -394,9 +438,9 @@
 			<span
 				class="error-message"
 				style="	top: 9.7rem; right: 4.2rem"
-				class:hidden={errorMessage?.length === 0}
+				class:hidden={errorMessageGroup?.length === 0}
 			>
-				Error: {errorMessage}
+				Error: {errorMessageGroup}
 			</span>
 		{/if}
 
@@ -464,11 +508,13 @@
 						searchString = searchString?.trim();
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
+							searchGroupActive = false;
 						}, waitTime);
 					}}
 					on:focus={async () => {
 						searchGroupResults = [];
 						searchGroupActive = true;
+						errorMessageGroup = '';
 						selectedGroup = '';
 						if (searchGroups?.length >= searchStringLength) {
 							searchGroup(searchGroups);
@@ -492,9 +538,9 @@
 			<span
 				class="error-message"
 				style="	top: 12.9rem; right: 4.2rem"
-				class:hidden={errorMessage?.length === 0}
+				class:hidden={errorMessageGroup?.length === 0}
 			>
-				Error: {errorMessage}
+				Error: {errorMessageGroup}
 			</span>
 
 			{#if searchGroupsResultsVisible}
@@ -504,12 +550,12 @@
 					on:mouseenter={() => (searchGroupsResultsMouseEnter = true)}
 					on:mouseleave={() => {
 						setTimeout(() => {
-							searchGroupsResultsVisible = !searchGroupsResultsVisible;
+							searchGroupsResultsVisible = false;
 							searchGroupsResultsMouseEnter = false;
 						}, waitTime);
 					}}
 					on:focusout={() => {
-						searchGroupsResultsVisible = !searchGroupsResultsVisible;
+						searchGroupsResultsVisible = false;
 						searchGroupsResultsMouseEnter = false;
 					}}
 				>
@@ -550,15 +596,25 @@
 					type="search"
 					placeholder="Application"
 					bind:value={searchApplications}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							document.activeElement.blur();
+							newTopicName = newTopicName?.trim();
+							searchGroups = searchGroups?.trim();
+
+							actionAddTopicEvent();
+						}
+					}}
 					on:blur={() => {
 						setTimeout(() => {
 							searchApplicationsResultsVisible = false;
-						}, 500);
+						}, waitTime);
 					}}
 					on:focus={() => {
 						async () => {
 							searchApplicationResults = [];
 							searchApplicationActive = true;
+							errorMessageApplication = '';
 							if (searchApplications?.length >= 3) {
 								searchApplication(searchApplications);
 							}
@@ -567,6 +623,8 @@
 					on:click={async () => {
 						searchApplicationResults = [];
 						searchApplicationActive = true;
+						errorMessageApplication = '';
+
 						if (searchApplications?.length >= 3) {
 							searchApplication(searchApplications);
 						}
@@ -578,6 +636,13 @@
 					}}
 				/>
 			</form>
+			<span
+				class="error-message"
+				style="	top: 20.1rem; right: 4.2rem"
+				class:hidden={errorMessageApplication?.length === 0}
+			>
+				Error: {errorMessageApplication}
+			</span>
 		{/if}
 
 		{#if searchApplicationsResultsVisible}
@@ -960,7 +1025,7 @@
 				closeModal();
 			}
 		}}
-		>Cancel
+		>{closeModalText}
 	</button>
 </div>
 
