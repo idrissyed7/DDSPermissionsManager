@@ -20,6 +20,12 @@
 
 	export let data, errors;
 
+	$: if (addSuperUserVisible || deleteSuperUserVisible) {
+		document.body.classList.add('modal-open');
+	} else {
+		document.body.classList.remove('modal-open');
+	}
+
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
 		setTimeout(() => {
@@ -61,8 +67,8 @@
 	$: if (addSuperUserVisible === false) emailValue = '';
 	$: if (deleteSuperUserVisible === true) addSuperUserVisible = false;
 
-	// Selection
-	let selectedUserId;
+	// // Selection
+	// let selectedUserId;
 
 	// Pagination
 	let superUsersPerPage = 10;
@@ -182,27 +188,6 @@
 	<GroupMembership />
 
 	{#if $isAdmin}
-		{#if errorMessageVisible}
-			<Modal
-				title={errorMsg}
-				description={errorObject}
-				on:cancel={() => {
-					errorMessageVisible = false;
-					errorMessageClear();
-				}}
-				><br /><br />
-				<div class="confirm">
-					<button
-						class="button-delete"
-						on:click={() => {
-							errorMessageVisible = false;
-							errorMessageClear();
-						}}>Ok</button
-					>
-				</div>
-			</Modal>
-		{/if}
-
 		{#if addSuperUserVisible}
 			<Modal
 				title="Add Super User"

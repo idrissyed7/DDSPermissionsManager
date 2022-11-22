@@ -19,6 +19,8 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import threedotsSVG from '../../icons/threedots.svg';
 
+	export let data, errors;
+
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
 		setTimeout(() => {
@@ -26,7 +28,11 @@
 		}, waitTime);
 	}
 
-	export let data, errors;
+	$: if (addTopicVisible || deleteTopicVisible || errorMessageVisible) {
+		document.body.classList.add('modal-open');
+	} else {
+		document.body.classList.remove('modal-open');
+	}
 
 	// Constants
 	const returnKey = 13;
