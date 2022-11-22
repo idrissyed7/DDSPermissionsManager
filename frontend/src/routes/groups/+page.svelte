@@ -329,28 +329,30 @@
 			{#if $groups.length > 0}
 				<table style="margin-top: 0.5rem; width: 35rem">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						<td>
-							<input
-								tabindex="-1"
-								type="checkbox"
-								class="groups-checkbox"
-								style="margin-right: 0.5rem; vertical-align: middle;"
-								bind:indeterminate={groupsRowsSelectedTrue}
-								on:click={(e) => {
-									groupsDropDownVisible = false;
-									if (e.target.checked) {
-										groupsRowsSelected = $groups;
-										groupsRowsSelectedTrue = false;
-										groupsAllRowsSelectedTrue = true;
-									} else {
-										groupsAllRowsSelectedTrue = false;
-										groupsRowsSelectedTrue = false;
-										groupsRowsSelected = [];
-									}
-								}}
-								checked={groupsAllRowsSelectedTrue}
-							/>
-						</td>
+						{#if $isAdmin}
+							<td>
+								<input
+									tabindex="-1"
+									type="checkbox"
+									class="groups-checkbox"
+									style="margin-right: 0.5rem; vertical-align: middle;"
+									bind:indeterminate={groupsRowsSelectedTrue}
+									on:click={(e) => {
+										groupsDropDownVisible = false;
+										if (e.target.checked) {
+											groupsRowsSelected = $groups;
+											groupsRowsSelectedTrue = false;
+											groupsAllRowsSelectedTrue = true;
+										} else {
+											groupsAllRowsSelectedTrue = false;
+											groupsRowsSelectedTrue = false;
+											groupsRowsSelected = [];
+										}
+									}}
+									checked={groupsAllRowsSelectedTrue}
+								/>
+							</td>
+						{/if}
 						<td style="width: 7rem;">Group</td>
 						<td style="width: 7rem;"><center>Memberships</center></td>
 						<td style="width: 7rem;"><center>Topics</center></td>
@@ -359,29 +361,31 @@
 					</tr>
 					{#each $groups as group}
 						<tr>
-							<td style="width: 2rem">
-								<input
-									tabindex="-1"
-									type="checkbox"
-									class="groups-checkbox"
-									style="vertical-align: middle;"
-									checked={groupsAllRowsSelectedTrue}
-									on:change={(e) => {
-										groupsDropDownVisible = false;
-										if (e.target.checked === true) {
-											groupsRowsSelected.push(group);
-											groupsRowsSelectedTrue = true;
-										} else {
-											groupsRowsSelected = groupsRowsSelected.filter(
-												(selection) => selection !== group
-											);
-											if (groupsRowsSelected.length === 0) {
-												groupsRowsSelectedTrue = false;
+							{#if $isAdmin}
+								<td style="width: 2rem">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="groups-checkbox"
+										style="vertical-align: middle;"
+										checked={groupsAllRowsSelectedTrue}
+										on:change={(e) => {
+											groupsDropDownVisible = false;
+											if (e.target.checked === true) {
+												groupsRowsSelected.push(group);
+												groupsRowsSelectedTrue = true;
+											} else {
+												groupsRowsSelected = groupsRowsSelected.filter(
+													(selection) => selection !== group
+												);
+												if (groupsRowsSelected.length === 0) {
+													groupsRowsSelectedTrue = false;
+												}
 											}
-										}
-									}}
-								/>
-							</td>
+										}}
+									/>
+								</td>
+							{/if}
 							<td class="group-td" style="width: 12rem">{group.name} </td>
 							<td style="width: 5rem">
 								<center>
@@ -539,5 +543,6 @@
 
 	tr {
 		align-items: center;
+		line-height: 2.2rem;
 	}
 </style>

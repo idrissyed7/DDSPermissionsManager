@@ -242,7 +242,6 @@
 			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${newGroupName}`
 		);
 
-		console.log('res', res);
 		if (res.data.content) {
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
@@ -465,7 +464,7 @@
 						searchString = searchString?.trim();
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
-						}, 500);
+						}, waitTime);
 					}}
 					on:focus={async () => {
 						searchGroupResults = [];

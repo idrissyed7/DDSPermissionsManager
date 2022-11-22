@@ -561,62 +561,70 @@
 		{/if}
 
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
-			<table style="margin-top: 0.5rem">
+			<table
+				style="margin-top: 0.5rem"
+				class:application-table-admin={($permissionsByGroup &&
+					$permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) ||
+					$isAdmin}
+			>
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-					<td>
-						<input
-							tabindex="-1"
-							type="checkbox"
-							class="apps-checkbox"
-							style="margin-right: 0.5rem"
-							bind:indeterminate={applicationsRowsSelectedTrue}
-							on:click={(e) => {
-								applicationsDropDownVisible = false;
-								if (e.target.checked) {
-									applicationsRowsSelected = $applications;
-									applicationsRowsSelectedTrue = false;
-									applicationsAllRowsSelectedTrue = true;
-								} else {
-									applicationsAllRowsSelectedTrue = false;
-									applicationsRowsSelectedTrue = false;
-									applicationsRowsSelected = [];
-								}
-							}}
-							checked={applicationsAllRowsSelectedTrue}
-						/>
-					</td>
-					<td>Application</td>
+					{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
+						<td>
+							<input
+								tabindex="-1"
+								type="checkbox"
+								class="apps-checkbox"
+								style="margin-right: 0.5rem"
+								bind:indeterminate={applicationsRowsSelectedTrue}
+								on:click={(e) => {
+									applicationsDropDownVisible = false;
+									if (e.target.checked) {
+										applicationsRowsSelected = $applications;
+										applicationsRowsSelectedTrue = false;
+										applicationsAllRowsSelectedTrue = true;
+									} else {
+										applicationsAllRowsSelectedTrue = false;
+										applicationsRowsSelectedTrue = false;
+										applicationsRowsSelected = [];
+									}
+								}}
+								checked={applicationsAllRowsSelectedTrue}
+							/>
+						</td>
+					{/if}
+					<td style="line-height: 2.2rem">Application</td>
 					<td>Group</td>
-					<td /> <td />
 				</tr>
 
 				{#if $applications.length > 0}
 					{#each $applications as app, i}
 						<tr>
-							<td style="width: 2rem">
-								<input
-									tabindex="-1"
-									type="checkbox"
-									class="apps-checkbox"
-									checked={applicationsAllRowsSelectedTrue}
-									on:change={(e) => {
-										applicationsDropDownVisible = false;
-										if (e.target.checked === true) {
-											applicationsRowsSelected.push(app);
-											applicationsRowsSelectedTrue = true;
-										} else {
-											applicationsRowsSelected = applicationsRowsSelected.filter(
-												(selection) => selection !== app
-											);
-											if (applicationsRowsSelected.length === 0) {
-												applicationsRowsSelectedTrue = false;
+							{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
+								<td style="width: 2rem">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="apps-checkbox"
+										checked={applicationsAllRowsSelectedTrue}
+										on:change={(e) => {
+											applicationsDropDownVisible = false;
+											if (e.target.checked === true) {
+												applicationsRowsSelected.push(app);
+												applicationsRowsSelectedTrue = true;
+											} else {
+												applicationsRowsSelected = applicationsRowsSelected.filter(
+													(selection) => selection !== app
+												);
+												if (applicationsRowsSelected.length === 0) {
+													applicationsRowsSelectedTrue = false;
+												}
 											}
-										}
-									}}
-								/>
-							</td>
+										}}
+									/>
+								</td>
+							{/if}
 							<td
-								style="cursor: pointer; width: 25.5rem"
+								style="cursor: pointer; width: 20.8rem; line-height: 2.2rem"
 								on:click={() => {
 									loadApplicationDetail(app.id, app.group);
 									headerTitle.set(app.name);
@@ -629,7 +637,7 @@
 								}}
 								>{app.name}
 							</td>
-							<td style="width: 10rem">{app.groupName}</td>
+							<td style="width: fit-content">{app.groupName}</td>
 
 							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 								<td
@@ -644,6 +652,7 @@
 										src={editSVG}
 										height="17rem"
 										width="17rem"
+										style="margin-left: 2rem"
 										alt="edit user"
 										on:click={() => {
 											previousAppName = app.name;
@@ -672,92 +681,11 @@
 										}}
 									/>
 								</td>
-							{:else}
-								<td />
 							{/if}
 						</tr>
 					{/each}
 				{/if}
 			</table>
-
-			<div class="pagination">
-				<span>Rows per page</span>
-				<select
-					tabindex="-1"
-					on:change={(e) => {
-						applicationsPerPage = e.target.value;
-						reloadAllApps();
-					}}
-					name="RowsPerPage"
-				>
-					<option value="10">10</option>
-					<option value="25">25</option>
-					<option value="50">50</option>
-					<option value="75">75</option>
-					<option value="100">100&nbsp;</option>
-				</select>
-				<span style="margin: 0 2rem 0 2rem">
-					{#if applicationsTotalSize > 0}
-						{1 + applicationsCurrentPage * applicationsPerPage}
-					{:else}
-						0
-					{/if}
-					-{Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
-					{applicationsTotalSize}
-				</span>
-				<img
-					src={pagefirstSVG}
-					alt="first page"
-					class="pagination-image"
-					class:disabled-img={applicationsCurrentPage === 0}
-					on:click={() => {
-						deselectAllApplicationsCheckboxes();
-						if (applicationsCurrentPage > 0) {
-							applicationsCurrentPage = 0;
-							reloadAllApps();
-						}
-					}}
-				/>
-				<img
-					src={pagebackwardsSVG}
-					alt="previous page"
-					class="pagination-image"
-					class:disabled-img={applicationsCurrentPage === 0}
-					on:click={() => {
-						deselectAllApplicationsCheckboxes();
-						if (applicationsCurrentPage > 0) {
-							applicationsCurrentPage--;
-							reloadAllApps(applicationsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pageforwardSVG}
-					alt="next page"
-					class="pagination-image"
-					class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
-					on:click={() => {
-						deselectAllApplicationsCheckboxes();
-						if (applicationsCurrentPage + 1 < applicationsTotalPages) {
-							applicationsCurrentPage++;
-							reloadAllApps(applicationsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pagelastSVG}
-					alt="last page"
-					class="pagination-image"
-					class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
-					on:click={() => {
-						deselectAllApplicationsCheckboxes();
-						if (applicationsCurrentPage < applicationsTotalPages) {
-							applicationsCurrentPage = applicationsTotalPages - 1;
-							reloadAllApps(applicationsCurrentPage);
-						}
-					}}
-				/>
-			</div>
 		{:else if !$applications && !applicationDetailVisible && applicationListVisible}
 			<p>No Applications Found</p>
 		{/if}
@@ -849,11 +777,90 @@
 			{/if}
 		{/if}
 	</div>
+	<div class="pagination">
+		<span>Rows per page</span>
+		<select
+			tabindex="-1"
+			on:change={(e) => {
+				applicationsPerPage = e.target.value;
+				reloadAllApps();
+			}}
+			name="RowsPerPage"
+		>
+			<option value="10">10</option>
+			<option value="25">25</option>
+			<option value="50">50</option>
+			<option value="75">75</option>
+			<option value="100">100&nbsp;</option>
+		</select>
+		<span style="margin: 0 2rem 0 2rem">
+			{#if applicationsTotalSize > 0}
+				{1 + applicationsCurrentPage * applicationsPerPage}
+			{:else}
+				0
+			{/if}
+			-{Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+			{applicationsTotalSize}
+		</span>
+		<img
+			src={pagefirstSVG}
+			alt="first page"
+			class="pagination-image"
+			class:disabled-img={applicationsCurrentPage === 0}
+			on:click={() => {
+				deselectAllApplicationsCheckboxes();
+				if (applicationsCurrentPage > 0) {
+					applicationsCurrentPage = 0;
+					reloadAllApps();
+				}
+			}}
+		/>
+		<img
+			src={pagebackwardsSVG}
+			alt="previous page"
+			class="pagination-image"
+			class:disabled-img={applicationsCurrentPage === 0}
+			on:click={() => {
+				deselectAllApplicationsCheckboxes();
+				if (applicationsCurrentPage > 0) {
+					applicationsCurrentPage--;
+					reloadAllApps(applicationsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pageforwardSVG}
+			alt="next page"
+			class="pagination-image"
+			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+			on:click={() => {
+				deselectAllApplicationsCheckboxes();
+				if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+					applicationsCurrentPage++;
+					reloadAllApps(applicationsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pagelastSVG}
+			alt="last page"
+			class="pagination-image"
+			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+			on:click={() => {
+				deselectAllApplicationsCheckboxes();
+				if (applicationsCurrentPage < applicationsTotalPages) {
+					applicationsCurrentPage = applicationsTotalPages - 1;
+					reloadAllApps(applicationsCurrentPage);
+				}
+			}}
+		/>
+	</div>
 {/if}
 
 <style>
 	.content {
-		width: 34rem;
+		min-width: 25rem;
+		width: fit-content;
 	}
 
 	.dot {
@@ -867,9 +874,17 @@
 		height: 5rem;
 	}
 
-	table {
+	table.application-table-admin {
 		width: 34rem;
 		line-height: 1rem;
+	}
+
+	table {
+		width: 25rem;
+	}
+
+	tr {
+		height: 2rem;
 	}
 
 	span {

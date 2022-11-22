@@ -512,10 +512,6 @@
 		width: 25rem;
 	}
 
-	.hidden {
-		display: none;
-	}
-
 	.dot {
 		float: right;
 	}
