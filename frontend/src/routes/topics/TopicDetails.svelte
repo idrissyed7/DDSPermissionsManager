@@ -5,7 +5,11 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
-	import AddTopic from './AddTopic.svelte';
+	// import AddTopic from './AddTopic.svelte';
+	import headerTitle from '../../stores/headerTitle';
+	import detailView from '../../stores/detailView';
+	import deleteSVG from '../../icons/delete.svg';
+	import duplicateSVG from '../../icons/duplicate.svg';
 
 	export let selectedTopicName,
 		selectedTopicId,
@@ -22,10 +26,10 @@
 	// Modals
 	let errorMessageVisible = false;
 	let addTopicVisible = false;
-	let copyTopicVisible = false;
+	let duplicateTopicVisible = false;
 
 	// Forms
-	const applicationsResult = 7;
+	const applicationsResult = 17;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -37,12 +41,10 @@
 	let searchGroupActive = true;
 
 	// Search Applications
-	let searchApplications, searchApplicationsId;
+	let searchApplications, searchApplicationsId, searchApplicationsGroup;
 	let searchApplicationActive = true;
 	let searchApplicationResults;
 	let searchApplicationsResultsVisible = false;
-
-	// Reactive Variables /////////////////////////////////
 
 	// Search Groups Feature
 	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
@@ -72,8 +74,6 @@
 		searchApplicationsResultsVisible = false;
 	}
 
-	// OnMount /////////////////////////////////
-
 	onMount(async () => {
 		try {
 			const res = await httpAdapter.get(`/topics/show/${selectedTopicId}`);
@@ -87,12 +87,13 @@
 			selectedTopicGroupId = $topicDetails.group;
 
 			selectedTopicKind = $topicDetails.kind;
+
+			headerTitle.set(selectedTopicName);
+			detailView.set(true);
 		} catch (err) {
 			errorMessage('Error Loading Topic Details', err.message);
 		}
 	});
-
-	// Functions /////////////////////////////////
 
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -114,6 +115,7 @@
 			const applicationPermissions = await httpAdapter.get(
 				`/application_permissions/?topic=${selectedTopicId}`
 			);
+
 			searchApplicationResults.data.forEach((app) => {
 				applicationPermissions.data.content?.forEach((appPermission) => {
 					if (app.name === appPermission.applicationName) {
@@ -128,7 +130,21 @@
 
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
+		if (selectedTopicApplications) await getApplicationGroupNames(resApps.data.content);
 		selectedTopicApplications = resApps.data.content;
+	};
+
+	const getApplicationGroupNames = async (applicationsList) => {
+		if (applicationsList) {
+			for (const application of applicationsList) {
+				const res = await httpAdapter.get(`/applications/show/${application.applicationId}`);
+				const appendApp = applicationsList.find(
+					(app) => app.applicationName === application.applicationName
+				);
+				appendApp.applicationGroup = res.data.groupName;
+			}
+			selectedTopicApplications = selectedTopicApplications;
+		}
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -162,6 +178,7 @@
 		<Modal
 			title={errorMsg}
 			description={errorObject}
+			closeModalText={'Close'}
 			on:cancel={() => {
 				errorMessageVisible = false;
 				errorMessageClear();
@@ -178,22 +195,65 @@
 			</div>
 		</Modal>
 	{/if}
-	<span
-		style="font-size: medium; margin-left: 9.5rem; cursor: pointer"
-		on:click={() => dispatch('back')}
-		>&laquo; &nbsp; Back
-	</span>
-	<table align="center" class="topics-details">
+
+	{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
+		<div>
+			<button
+				class="button-blue"
+				style="width:9.2rem; height: 2.2rem; cursor:pointer"
+				on:click={async () => {
+					duplicateTopicVisible = true;
+					addTopicVisible = true;
+				}}
+			>
+				<img
+					src={duplicateSVG}
+					alt="duplicate topic"
+					width="20rem"
+					style="vertical-align: middle; filter: invert(); margin-left: -0.5rem; margin-right: 0.2rem "
+					on:click={async () => {
+						duplicateTopicVisible = true;
+						addTopicVisible = true;
+					}}
+				/>
+
+				<span style="vertical-align: middle; font-size: 0.8rem">Duplicate Topic</span>
+			</button>
+
+			{#if duplicateTopicVisible}
+				<Modal
+					title="Duplicate Topic"
+					actionDuplicateTopic={true}
+					topicName={true}
+					newTopicName={selectedTopicName}
+					group={true}
+					searchGroups={selectedTopicGroupName}
+					application={true}
+					selectedApplicationList={selectedTopicApplications}
+					anyApplicationCanRead={selectedTopicKind === 'B' ? true : false}
+					on:cancel={() => (duplicateTopicVisible = false)}
+					on:duplicateTopic={(e) => {
+						duplicateTopicVisible = false;
+						dispatch('addTopic', e.detail);
+					}}
+				/>
+			{/if}
+		</div>
+	{/if}
+
+	<table class="topics-details">
 		<tr>
-			<td><strong>Name:</strong></td>
+			<td>Name:</td>
 			<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
 		</tr>
+
 		<tr>
-			<td><strong>Group:</strong></td>
+			<td>Group:</td>
 			<td>{selectedTopicGroupName}</td>
 		</tr>
+
 		<tr>
-			<td><strong>Any application can read:</strong></td>
+			<td>Any application can read:</td>
 			<td
 				>{#if selectedTopicKind === 'B'}
 					Yes
@@ -202,65 +262,18 @@
 				{/if}
 			</td>
 		</tr>
-		<tr style="border-width: 0px;">
-			<td><strong>Applications:</strong></td>
-			<td>
-				<table class="associated-apps">
-					{#if selectedTopicApplications}
-						{#each selectedTopicApplications as application}
-							<tr style="height:unset">
-								<td>{application.applicationName}</td>
-								<td style="padding: 0 0.5rem 0 3rem"><strong>Access Type:</strong></td>
-								<td>
-									<select
-										bind:value={application.accessType}
-										on:change={() =>
-											updateTopicApplicationAssociation(
-												application.id,
-												application.accessType,
-												application.topicId
-											)}
-										readonly={!isAdmin ||
-											!(
-												$permissionsByGroup &&
-												$permissionsByGroup.some(
-													(groupPermission) => groupPermission.isTopicAdmin === true
-												)
-											)}
-									>
-										<option value="READ">Read</option>
-										<option value="WRITE">Write</option>
-										<option value="READ_WRITE">Read/Write</option>
-									</select>
-								</td>
-								<td>
-									<button
-										class="remove-button"
-										style="margin-left: 0.7rem; height: 1.2rem; width: 1.2rem; margin-top: 0.1rem"
-										on:click={async () => {
-											deleteTopicApplicationAssociation(application.id, application.topicId);
-										}}
-										>x
-									</button>
-								</td>
-							</tr>
-						{/each}
-					{:else}
-						<td style="width: 24.3rem; " />
-					{/if}
-				</table>
-			</td>
-		</tr>
-	</table>
 
-	<br /><br />
-	{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
-		<div class="add-item">
-			<center>
-				{#if !copyTopicVisible}
+		<tr style="border-width: 0px;">
+			<td style="border-bottom-color: transparent;">
+				<span style="margin-right: 1rem">Applications:</span>
+			</td>
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				<td style="border-bottom-color: transparent;">
 					<input
+						style="margin-top: 0.5rem; margin-bottom: 0.5rem"
+						class="searchbox"
+						type="search"
 						placeholder="Search Application"
-						style="width: 8.5rem; padding-left: 0.3rem"
 						bind:value={searchApplications}
 						on:blur={() => {
 							setTimeout(() => {
@@ -275,107 +288,167 @@
 							}
 						}}
 					/>
+				</td>
+			{/if}
+		</tr>
+	</table>
 
-					{#if searchApplicationsResultsVisible}
-						<table
-							class="searchApplication"
-							style="position:absolute; margin-left: 11rem; margin-top: -0.05rem; width: 9rem"
-						>
-							{#each searchApplicationResults.data as result}
-								<tr style="border-width: 0px;">
-									<td
-										on:click={() => {
-											searchApplications = result.name;
-											searchApplicationsId = result.id;
-											searchApplicationActive = false;
-										}}>{result.name} ({result.groupName})</td
-									>
-								</tr>
-							{/each}
-						</table>
-					{/if}
+	{#if searchApplicationsResultsVisible}
+		<table
+			class="search-application"
+			style="position:absolute; margin-left: 18rem; margin-top: -0.8rem; width: 12rem"
+		>
+			{#each searchApplicationResults.data as result}
+				<tr style="border-width: 0px">
+					<td
+						on:click={() => {
+							searchApplications = result.name;
+							searchApplicationsId = result.id;
 
-					<button
-						class="button"
-						style="width:8rem; height: 1.9rem; margin-left: 1rem"
-						disabled={searchApplications?.length < 3 || searchApplications === undefined}
-						on:click={async () => {
-							selectedApplicationList = { id: searchApplicationsId, accessType: 'READ' };
+							searchApplicationActive = false;
+
+							selectedApplicationList = {
+								id: searchApplicationsId,
+								accessType: 'READ'
+							};
+
 							addTopicApplicationAssociation(selectedTopicId, true);
 							searchApplications = '';
 							selectedApplicationList = '';
-						}}
-						>Add Application
-					</button>
-
-					<button
-						class="button"
-						style="width:5.5rem; height: 1.9rem; margin-left: 16rem"
-						on:click={() => {
-							copyTopicVisible = true;
-							addTopicVisible = true;
-						}}>Copy Topic</button
+						}}>{result.name} ({result.groupName})</td
 					>
-				{/if}
-			</center>
+				</tr>
+			{/each}
+		</table>
+	{/if}
 
-			{#if addTopicVisible && !errorMessageVisible}
-				<h2>Copy Topic</h2>
-				<AddTopic
-					on:closecreate={() => {
-						addTopicVisible = false;
-						copyTopicVisible = false;
-					}}
-					on:backtolist={() => {
-						addTopicVisible = false;
-						dispatch('back');
-					}}
-					topicName={selectedTopicName}
-					groupName={selectedTopicGroupName}
-					groupId={selectedTopicGroupId}
-					anyAppCanRead={selectedTopicKind === 'B' ? true : false}
-					applications={selectedTopicApplications}
-					isCopyTopic={true}
-				/>
-			{/if}
+	{#if selectedTopicApplications}
+		<div>
+			{#each selectedTopicApplications as application}
+				<div style="display: flex; font-size: 0.8rem; margin-left: 16.5rem; margin-bottom: -0.2rem">
+					<span style="width: 10.5rem">
+						{application.applicationName} ({application.applicationGroup})
+					</span>
+					<span style="border-bottom-color: transparent; padding-left: 0.5rem">Access Type:</span>
+
+					<span style="border-bottom-color: transparent; margin-right: -1.5rem; margin-top: -2rem">
+						<ul
+							style="list-style-type: none; margin-left: -2.3rem; margin-right: -2rem; top: -2rem"
+						>
+							<li>
+								<span style="font-size: 0.6rem">Read</span>
+							</li>
+							<li style="margin-top: -0.25rem;">
+								<input
+									type="checkbox"
+									style="width:unset; height: 1.5rem"
+									bind:value={application.accessType}
+									checked={application.accessType.includes('READ')}
+									readonly={!isAdmin ||
+										!(
+											$permissionsByGroup &&
+											$permissionsByGroup.some(
+												(groupPermission) => groupPermission.isTopicAdmin === true
+											)
+										)}
+									on:change={(e) => {
+										if (e.target.checked) {
+											if (application.accessType === 'WRITE') {
+												application.accessType = 'READ_WRITE';
+											} else {
+												application.accessType = 'READ';
+											}
+										} else {
+											if (application.accessType === 'READ_WRITE') {
+												application.accessType = 'WRITE';
+											} else {
+												application.accessType = 'READ';
+												e.target.checked = true;
+											}
+										}
+										updateTopicApplicationAssociation(
+											application.id,
+											application.accessType,
+											application.topicId
+										);
+									}}
+								/>
+							</li>
+						</ul>
+
+						<ul style="list-style-type: none; margin-right: -2.4rem; margin-top: -3.35rem">
+							<li>
+								<span style="font-size: 0.6rem">Write</span>
+							</li>
+							<li style="margin-top: -0.25rem">
+								<input
+									type="checkbox"
+									bind:value={application.accessType}
+									checked={application.accessType.includes('WRITE')}
+									style="width:unset; height: 1.5rem"
+									readonly={!isAdmin ||
+										!(
+											$permissionsByGroup &&
+											$permissionsByGroup.some(
+												(groupPermission) => groupPermission.isTopicAdmin === true
+											)
+										)}
+									on:change={(e) => {
+										if (e.target.checked) {
+											if (application.accessType === 'READ') {
+												application.accessType = 'READ_WRITE';
+											} else {
+												application.accessType = 'WRITE';
+											}
+										} else {
+											if (application.accessType === 'READ_WRITE') {
+												application.accessType = 'READ';
+											} else {
+												application.accessType = 'READ';
+												e.target.checked = true;
+											}
+										}
+										updateTopicApplicationAssociation(
+											application.id,
+											application.accessType,
+											application.topicId
+										);
+									}}
+								/>
+							</li>
+						</ul>
+
+						<ul
+							style="list-style-type: none; margin-top: 0.55rem; margin-left: 1rem; margin-top: -3.28rem"
+						>
+							<li>
+								<img
+									src={deleteSVG}
+									alt="remove application"
+									style="background-color: transparent; cursor: pointer; scale: 50%; align-content:center"
+									on:click={async () => {
+										deleteTopicApplicationAssociation(application.id, application.topicId);
+									}}
+								/>
+							</li>
+						</ul>
+					</span>
+				</div>
+			{/each}
+			<div style="font-size: 0.7rem; width:37.5rem; text-align:right; margin-top: -1rem">
+				{selectedTopicApplications.length} of {selectedTopicApplications.length}
+			</div>
 		</div>
 	{/if}
-{:else}
-	<center><h2>Please Log In to Continue...</h2></center>
 {/if}
 
 <style>
-	input {
-		vertical-align: middle;
-		height: 1.2rem;
-		text-align: left;
-		height: 1.5rem;
-	}
-
 	.topics-details {
-		margin-top: 2rem;
 		font-size: 12pt;
-		width: 40rem;
+		width: 38rem;
 	}
 
-	.topics-details tr {
-		height: 2.8rem;
-	}
-
-	.associated-apps tr {
-		border-width: 0px;
-	}
-
-	.associated-apps tr:nth-child(even) {
-		background-color: rgba(0, 0, 0, 0);
-	}
-
-	.associated-apps td {
-		font-size: 11pt;
-	}
-
-	.add-item {
-		text-align: left;
-		font-size: small;
+	.topics-details td {
+		height: 2.2rem;
 	}
 </style>

@@ -7,59 +7,69 @@
 	import Modal from '../../lib/Modal.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
-
-	// Redirects the User to the Login screen if not authenticated
-	$: if (!$isAuthenticated && browser) {
-		console.log('redirect');
-		goto(`/`, true);
-	}
+	import deleteSVG from '../../icons/delete.svg';
+	import threedotsSVG from '../../icons/threedots.svg';
+	import addSVG from '../../icons/add.svg';
+	import pageforwardSVG from '../../icons/pageforward.svg';
+	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
+	import pagefirstSVG from '../../icons/pagefirst.svg';
+	import pagelastSVG from '../../icons/pagelast.svg';
+	import headerTitle from '../../stores/headerTitle';
+	import detailView from '../../stores/detailView';
 
 	export let data, errors;
 
+	// Redirects the User to the Login screen if not authenticated
+	$: if (browser) {
+		setTimeout(() => {
+			if (!$isAuthenticated) goto(`/`, true);
+		}, waitTime);
+	}
+
+	$: if (browser && (addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
+		document.body.classList.add('modal-open');
+	} else if (browser && !(addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
+		document.body.classList.remove('modal-open');
+	}
+
 	// Constants
 	const minNameLength = 3;
+	const returnKey = 13;
+	const waitTime = 250;
+	const searchStringLength = 3;
 
 	// Error Handling
 	let errorMsg, errorObject;
 
 	// Search
 	let searchString;
-	const searchStringLength = 3;
 	let timer;
-	const waitTime = 500;
-
-	// Keys
-	const returnKey = 13;
 
 	// Modals
 	let errorMessageVisible = false;
 	let addGroupVisible = false;
-	let confirmRemoveUserVisible = false;
-	let confirmAddUserVisible = false;
-	let confirmDeleteVisible = false;
+	let deleteGroupVisible = false;
+
+	// Tables
+	let groupsRowsSelected = [];
+	let groupsRowsSelectedTrue = false;
+	let groupsAllRowsSelectedTrue = false;
+
+	// Pagination
+	let groupsPerPage = 10;
+	let groupsTotalPages, groupsTotalSize;
+	let groupsCurrentPage = 0;
 
 	// Validation
 	let disabled = false;
 
-	// Group Name
-	let newGroupName;
-	let editGroupName;
-
 	// Selection
-	let selectedUserFirstName;
-	let selectedUserLastName;
-	let selectedUserEmail;
-	let selectedUserId;
 	let selectedGroupId;
 	let selectedGroupName;
 
-	// Pagination
-	const groupsPerPage = 10;
-	let groupsTotalPages;
-	let groupsCurrentPage = 0;
-
-	// Check the Add Group has more than 0 non-whitespace characters
-	$: newGroupName?.length === 0 ? (disabled = true) : (disabled = false);
+	// DropDowns
+	let groupsDropDownVisible = false;
+	let groupsDropDownMouseEnter = false;
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -77,6 +87,9 @@
 	}
 
 	onMount(async () => {
+		headerTitle.set('Groups');
+		detailView.set();
+
 		try {
 			reloadAllGroups();
 		} catch (err) {
@@ -92,6 +105,7 @@
 			groups.set([]);
 		}
 		groupsTotalPages = res.data.totalPages;
+		if (res.data.totalSize !== undefined) groupsTotalSize = res.data.totalSize;
 		groupsCurrentPage = 0;
 	};
 
@@ -117,6 +131,10 @@
 			} else {
 				res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
 			}
+			if (res.data) {
+				groupsTotalPages = res.data.totalPages;
+				groupsTotalSize = res.data.totalSize;
+			}
 			groups.set(res.data.content);
 			groupsTotalPages = res.data.totalPages;
 			groupsCurrentPage = page;
@@ -125,23 +143,16 @@
 		}
 	};
 
-	const addGroupModal = () => {
-		newGroupName = '';
-		addGroupVisible = true;
-	};
-
-	const addGroup = async () => {
-		const res = await httpAdapter
+	const addGroup = async (newGroupName) => {
+		await httpAdapter
 			.post(`/groups/save/`, {
 				name: newGroupName
 			})
 			.catch((err) => {
-				if (err.response.status === 303) {
-					err.message = 'Group already exists. Please choose a unique group name.';
-				}
 				addGroupVisible = false;
 				errorMessage('Error Adding Group', err.message);
 			});
+
 		searchString = '';
 		addGroupVisible = false;
 		groupsCurrentPage = 0;
@@ -149,22 +160,24 @@
 		await reloadAllGroups();
 	};
 
-	const deleteGroup = async () => {
-		confirmDeleteVisible = false;
-
-		const res = await httpAdapter
-			.post(`/groups/delete/${selectedGroupId}`, {
-				id: selectedGroupId
-			})
-			.catch((err) => {
-				errorMessage('Error Deleting Group', err.message);
-			});
-
-		await reloadAllGroups();
+	const deleteSelectedGroups = async () => {
+		try {
+			for (const group of groupsRowsSelected) {
+				await httpAdapter.post(`/groups/delete/${group.id}`, {
+					id: group.id
+				});
+			}
+		} catch (err) {
+			errorMessage('Error Deleting Group', err.message);
+		}
 	};
 
-	const callFocus = (input) => {
-		input.focus();
+	const deselectAllGroupsCheckboxes = () => {
+		groupsAllRowsSelectedTrue = false;
+		groupsRowsSelectedTrue = false;
+		groupsRowsSelected = [];
+		let checkboxes = document.querySelectorAll('.groups-checkbox');
+		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
 </script>
 
@@ -174,69 +187,37 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	{#if errorMessageVisible}
+	{#if deleteGroupVisible}
 		<Modal
-			title={errorMsg}
-			description={errorObject}
-			on:cancel={() => {
-				errorMessageVisible = false;
-				errorMessageClear();
+			title="Delete {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'}"
+			actionDeleteGroups={true}
+			on:deleteGroups={async () => {
+				await deleteSelectedGroups();
+				reloadAllGroups();
+				deselectAllGroupsCheckboxes();
+				deleteGroupVisible = false;
 			}}
-			><br /><br />
-			<div class="confirm">
-				<button
-					class="button-delete"
-					on:click={() => {
-						errorMessageVisible = false;
-						errorMessageClear();
-					}}>Ok</button
-				>
-			</div>
-		</Modal>
+			on:cancel={() => (deleteGroupVisible = false)}
+		/>
 	{/if}
 
-	{#if confirmDeleteVisible && !errorMessageVisible}
+	{#if addGroupVisible}
 		<Modal
-			title="Delete Group {selectedGroupName}?"
-			on:cancel={() => (confirmDeleteVisible = false)}
-		>
-			<div class="confirm">
-				<button class="button-cancel" on:click={() => (confirmDeleteVisible = false)}>Cancel</button
-				>&nbsp;
-				<button class="button-delete" disabled={!$isAdmin} on:click={() => deleteGroup()}
-					><span>Delete</span></button
-				>
-			</div>
-		</Modal>
-	{/if}
-
-	{#if addGroupVisible && !errorMessageVisible}
-		<Modal title="Add New Group" on:cancel={() => (addGroupVisible = false)}>
-			<div class="confirm">
-				<input
-					type="text"
-					placeholder="Group Name"
-					bind:value={newGroupName}
-					on:blur={() => (newGroupName = newGroupName.trim())}
-					use:callFocus
-					style="border-width: 1px; vertical-align: middle; text-align: left; width: 13rem"
-				/>
-				<button
-					class:button={!disabled}
-					class:button-disabled={disabled}
-					style="margin-left: 1rem; width: 6.5rem; height: 2rem;"
-					disabled={disabled || newGroupName?.length < minNameLength}
-					on:click={() => addGroup()}><span>Add Group</span></button
-				>
-			</div>
-		</Modal>
+			title="Add New Group"
+			actionAddGroup={true}
+			groupNewName={true}
+			on:addGroup={(e) => addGroup(e.detail.newGroupName)}
+			on:cancel={() => (addGroupVisible = false)}
+		/>
 	{/if}
 
 	<div class="content">
 		<h1>Groups</h1>
-		<center>
+
+		<form class="searchbox">
 			<input
-				style="border-width: 1px;"
+				class="searchbox"
+				type="search"
 				placeholder="Search"
 				bind:value={searchString}
 				on:blur={() => {
@@ -248,41 +229,197 @@
 						searchString = searchString?.trim();
 					}
 				}}
-			/>&nbsp; &#x1F50E;
-		</center>
+			/>
+		</form>
+
+		{#if $isAdmin}
+			<div
+				tabindex="0"
+				class="dot"
+				on:mouseleave={() => {
+					setTimeout(() => {
+						if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
+					}, waitTime);
+				}}
+				on:click={() => {
+					if (!deleteGroupVisible && !addGroupVisible)
+						groupsDropDownVisible = !groupsDropDownVisible;
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						if (!deleteGroupVisible && !addGroupVisible)
+							groupsDropDownVisible = !groupsDropDownVisible;
+					}
+				}}
+				on:focusout={() => {
+					setTimeout(() => {
+						if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
+					}, waitTime);
+				}}
+			>
+				<img src={threedotsSVG} alt="options" style="scale:50%" />
+
+				{#if groupsDropDownVisible}
+					<table
+						class="dropdown"
+						on:mouseenter={() => (groupsDropDownMouseEnter = true)}
+						on:mouseleave={() => {
+							setTimeout(() => {
+								groupsDropDownVisible = !groupsDropDownVisible;
+								groupsDropDownMouseEnter = false;
+							}, waitTime);
+						}}
+					>
+						<tr
+							tabindex="0"
+							on:focus={() => (groupsDropDownMouseEnter = true)}
+							disabled={!$isAdmin}
+							class:disabled={!$isAdmin || groupsRowsSelected.length === 0}
+							on:click={async () => {
+								groupsDropDownVisible = false;
+								if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									groupsDropDownVisible = false;
+									if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+								}
+							}}
+						>
+							<td>Delete Selected {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'} </td>
+							<td style="width: 0.1rem; padding-left: 0; vertical-align: middle">
+								<img
+									src={deleteSVG}
+									alt="delete group"
+									height="35rem"
+									style="vertical-align: -0.8rem"
+									class:disabled-img={!$isAdmin || groupsRowsSelected.length === 0}
+								/>
+							</td>
+						</tr>
+
+						<tr
+							tabindex="0"
+							on:click={() => {
+								groupsDropDownVisible = false;
+								addGroupVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									groupsDropDownVisible = false;
+									addGroupVisible = true;
+								}
+							}}
+							on:focusout={() => (groupsDropDownMouseEnter = false)}
+							class:hidden={addGroupVisible}
+						>
+							<td style="border-bottom-color: transparent">Add New Group</td>
+							<td
+								on:click={() => (addGroupVisible = true)}
+								style="width: 0.1rem; height: 2.2rem;padding-left: 0; vertical-align: middle; border-bottom-color: transparent"
+							>
+								<img
+									src={addSVG}
+									alt="add group"
+									height="27rem"
+									style="vertical-align: middle; margin-left: 0.2rem"
+								/>
+							</td>
+						</tr>
+					</table>
+				{/if}
+			</div>
+		{/if}
+
 		{#if $groups}
 			{#if $groups.length > 0}
-				<table align="center" style="margin-top: 2rem">
-					<tr style="border-width: 0px">
-						<th><strong>Group</strong></th>
-						<th><strong><center>Memberships:</center></strong></th>
-						<th><strong><center>Topics:</center></strong></th>
-						<th><strong><center>Applications:</center></strong></th>
+				<table style="margin-top: 0.5rem; width: 35rem">
+					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+						{#if $isAdmin}
+							<td>
+								<input
+									tabindex="-1"
+									type="checkbox"
+									class="groups-checkbox"
+									style="margin-right: 0.5rem; vertical-align: middle;"
+									bind:indeterminate={groupsRowsSelectedTrue}
+									on:click={(e) => {
+										groupsDropDownVisible = false;
+										if (e.target.checked) {
+											groupsRowsSelected = $groups;
+											groupsRowsSelectedTrue = false;
+											groupsAllRowsSelectedTrue = true;
+										} else {
+											groupsAllRowsSelectedTrue = false;
+											groupsRowsSelectedTrue = false;
+											groupsRowsSelected = [];
+										}
+									}}
+									checked={groupsAllRowsSelectedTrue}
+								/>
+							</td>
+						{/if}
+						<td style="width: 7rem;">Group</td>
+						<td style="width: 7rem;"><center>Memberships</center></td>
+						<td style="width: 7rem;"><center>Topics</center></td>
+						<td style="width: 7rem;"><center>Applications</center></td>
+						<td />
 					</tr>
 					{#each $groups as group}
 						<tr>
-							<td class="group-td">{group.name} </td>
-							<td>
+							{#if $isAdmin}
+								<td style="width: 2rem">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="groups-checkbox"
+										style="vertical-align: middle;"
+										checked={groupsAllRowsSelectedTrue}
+										on:change={(e) => {
+											groupsDropDownVisible = false;
+											if (e.target.checked === true) {
+												groupsRowsSelected.push(group);
+												groupsRowsSelectedTrue = true;
+											} else {
+												groupsRowsSelected = groupsRowsSelected.filter(
+													(selection) => selection !== group
+												);
+												if (groupsRowsSelected.length === 0) {
+													groupsRowsSelectedTrue = false;
+												}
+											}
+										}}
+									/>
+								</td>
+							{/if}
+							<td class="group-td" style="width: 12rem">{group.name} </td>
+							<td style="width: 5rem">
 								<center>
 									<a
-										href="/group_membership"
+										tabindex="-1"
+										style="vertical-align: middle"
+										href="/users"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.membershipCount}</a
 									>
 								</center>
 							</td>
-							<td>
+							<td style="width: 5rem">
 								<center>
 									<a
+										tabindex="-1"
+										style="vertical-align: middle"
 										href="/topics"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.topicCount}</a
 									>
 								</center>
 							</td>
-							<td>
+							<td style="width: 5rem">
 								<center>
 									<a
+										tabindex="-1"
+										style="vertical-align: middle"
 										href="/applications"
 										on:click={() => urlparameters.set({ type: 'prepopulate', data: group.name })}
 										>{group.applicationCount}</a
@@ -290,15 +427,18 @@
 								</center>
 							</td>
 							{#if $isAdmin}
-								<td style="float: right">
-									<button
-										class="button-delete"
+								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+									<img
+										src={deleteSVG}
+										alt="delete group"
+										style="cursor: pointer; vertical-align: -0.5rem"
+										height="27rem"
 										on:click={() => {
-											selectedGroupId = group.id;
-											selectedGroupName = group.name;
-											confirmDeleteVisible = true;
-										}}><span>Delete</span></button
-									>
+											if (!groupsRowsSelected.some((grp) => grp === group))
+												groupsRowsSelected.push(group);
+											deleteGroupVisible = true;
+										}}
+									/>
 								</td>
 							{:else}
 								<td />
@@ -306,83 +446,109 @@
 						</tr>
 					{/each}
 				</table>
-				<br />
-				<center>
-					<button
-						class:hidden={!$isAdmin}
-						class="button"
-						style="margin: 1rem 0 2rem 0"
-						on:click={() => addGroupModal()}
-						>Add Group
-					</button></center
-				>
-				<br />
-				<center
-					><button
-						on:click={async () => {
-							if (groupsCurrentPage > 0) groupsCurrentPage--;
-							reloadAllGroups(groupsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 4.8rem; border-bottom-left-radius:9px; border-top-left-radius:9px;"
-						disabled={groupsCurrentPage === 0}>Previous</button
-					>
-					{#if groupsTotalPages > 2}
-						{#each Array.apply(null, { length: groupsTotalPages }).map(Number.call, Number) as page}
-							<button
-								on:click={() => {
-									groupsCurrentPage = page;
-									reloadAllGroups(page);
-								}}
-								class="button-pagination"
-								class:button-pagination-selected={page === groupsCurrentPage}>{page + 1}</button
-							>
-						{/each}
-					{/if}
-					<button
-						on:click={async () => {
-							if (groupsCurrentPage + 1 < groupsTotalPages) groupsCurrentPage++;
-							reloadAllGroups(groupsCurrentPage);
-						}}
-						class="button-pagination"
-						style="width: 3.1rem; border-bottom-right-radius:9px; border-top-right-radius:9px;"
-						disabled={groupsCurrentPage === groupsTotalPages - 1 || groupsTotalPages === 0}
-						>Next</button
-					></center
-				>
 			{/if}
 		{:else}
-			<p><center>No Groups Found</center></p>
-			<center>
-				<button
-					class:hidden={!$isAdmin}
-					class="button"
-					style="margin: 1rem 0 2rem 0"
-					on:click={() => addGroupModal()}
-					>Add Group
-				</button></center
-			>
+			<p>No Groups Found</p>
 		{/if}
 	</div>
-{:else}
-	<center><h2>Please Log In to Continue...</h2></center>
+
+	<div class="pagination">
+		<span>Rows per page</span>
+		<select
+			tabindex="-1"
+			on:change={(e) => {
+				groupsPerPage = e.target.value;
+				reloadAllGroups();
+			}}
+			name="RowsPerPage"
+		>
+			<option value="10">10</option>
+			<option value="25">25</option>
+			<option value="50">50</option>
+			<option value="75">75</option>
+			<option value="100">100&nbsp;</option>
+		</select>
+		<span style="margin: 0 2rem 0 2rem">
+			{#if groupsTotalSize > 0}
+				{1 + groupsCurrentPage * groupsPerPage}
+			{:else}
+				0
+			{/if}
+			-{Math.min(groupsPerPage * (groupsCurrentPage + 1), groupsTotalSize)} of
+			{groupsTotalSize}
+		</span>
+		<img
+			src={pagefirstSVG}
+			alt="first page"
+			class="pagination-image"
+			class:disabled-img={groupsCurrentPage === 0}
+			on:click={() => {
+				deselectAllGroupsCheckboxes();
+				if (groupsCurrentPage > 0) {
+					groupsCurrentPage = 0;
+					reloadAllGroups();
+				}
+			}}
+		/>
+		<img
+			src={pagebackwardsSVG}
+			alt="previous page"
+			class="pagination-image"
+			class:disabled-img={groupsCurrentPage === 0}
+			on:click={() => {
+				deselectAllGroupsCheckboxes();
+				if (groupsCurrentPage > 0) {
+					groupsCurrentPage--;
+					reloadAllGroups(groupsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pageforwardSVG}
+			alt="next page"
+			class="pagination-image"
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			on:click={() => {
+				deselectAllGroupsCheckboxes();
+				if (groupsCurrentPage + 1 < groupsTotalPages) {
+					groupsCurrentPage++;
+					reloadAllGroups(groupsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pagelastSVG}
+			alt="last page"
+			class="pagination-image"
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			on:click={() => {
+				deselectAllGroupsCheckboxes();
+				if (groupsCurrentPage < groupsTotalPages) {
+					groupsCurrentPage = groupsTotalPages - 1;
+					reloadAllGroups(groupsCurrentPage);
+				}
+			}}
+		/>
+	</div>
 {/if}
 
 <style>
-	button {
-		margin-left: auto;
+	.content {
+		width: 35rem;
+	}
+
+	.dot {
+		float: right;
+	}
+
+	.dropdown {
+		margin-top: 8.5rem;
+		margin-right: 8rem;
+		width: 12rem;
 	}
 
 	tr {
-		line-height: 1.7rem;
 		align-items: center;
-	}
-
-	input {
-		text-align: center;
-		width: 20rem;
-		z-index: 1;
-		background-color: rgba(0, 0, 0, 0);
-		padding-left: 0.3rem;
+		line-height: 2.2rem;
 	}
 </style>
