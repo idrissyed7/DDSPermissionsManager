@@ -791,7 +791,7 @@
 			{:else}
 				0
 			{/if}
-			-{Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+			- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
 			{applicationsTotalSize}
 		</span>
 		<img
