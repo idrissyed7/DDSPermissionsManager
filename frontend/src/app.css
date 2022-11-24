@@ -296,7 +296,7 @@ select:focus {
 }
 
 .search-group tr {
-	height: 2rem;
+	height: 1.9rem;
 	border-bottom-color: rgba(0,0,0,0.01);
 }
 

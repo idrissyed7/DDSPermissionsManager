@@ -2,6 +2,7 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
+	import { inview } from 'svelte-inview';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -28,11 +29,16 @@
 	let addTopicVisible = false;
 	let duplicateTopicVisible = false;
 
-	// Forms
-	const applicationsResult = 17;
+	// Constants
+	const applicationsResult = 7;
+	const waitTime = 250;
+	const returnKey = 13;
+	const searchStringLength = 3;
+	const applicationsDropdownSuggestion = 7;
 
 	// Error Handling
 	let errorMsg, errorObject;
+	let errorMessageApplication = '';
 
 	// Search Groups
 	let searchGroups;
@@ -45,6 +51,11 @@
 	let searchApplicationActive = true;
 	let searchApplicationResults;
 	let searchApplicationsResultsVisible = false;
+	let applicationResultPage = 0;
+	let hasMoreApps = true;
+	let stopSearchingApps = false;
+	let searchApplicationsResultsMouseEnter = false;
+	let timer;
 
 	// Search Groups Feature
 	$: if (searchGroups?.trim().length >= 3 && searchGroupActive) {
@@ -61,14 +72,25 @@
 	}
 
 	// Search Applications Feature
-	$: if (searchApplications?.trim().length >= 3 && searchApplicationActive) {
-		searchApplication(searchApplications.trim());
-	} else {
-		searchApplicationsResultsVisible = false;
+	$: if (
+		searchApplications?.trim().length >= searchStringLength &&
+		searchApplicationActive &&
+		!stopSearchingApps
+	) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchApplications = searchApplications.trim();
+			searchApplication(searchApplications);
+			stopSearchingApps = true;
+		}, waitTime);
 	}
 
 	// Search Applications Dropdown Visibility
-	$: if (searchApplicationResults?.data?.length >= 1 && searchApplicationActive) {
+	$: if (
+		searchApplicationResults?.length >= 1 &&
+		searchApplicationActive &&
+		searchApplications?.trim().length >= searchStringLength
+	) {
 		searchApplicationsResultsVisible = true;
 	} else {
 		searchApplicationsResultsVisible = false;
@@ -108,24 +130,79 @@
 	};
 
 	const searchApplication = async (searchString) => {
-		setTimeout(async () => {
-			searchApplicationResults = await httpAdapter.get(
-				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
-			);
-			const applicationPermissions = await httpAdapter.get(
-				`/application_permissions/?topic=${selectedTopicId}`
+		let res = await httpAdapter.get(
+			`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
+		);
+
+		if (res.data.length < applicationsDropdownSuggestion) {
+			hasMoreApps = false;
+		}
+		const applicationPermissions = await httpAdapter.get(
+			`/application_permissions/?topic=${selectedTopicId}`
+		);
+
+		if (res.data?.length > 0) {
+			if (selectedTopicApplications?.length > 0)
+				for (const selectedApp of selectedTopicApplications) {
+					res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
+				}
+
+			searchApplicationResults = [...searchApplicationResults, ...res.data];
+		}
+
+		searchApplicationResults.forEach((app) => {
+			applicationPermissions.data.content?.forEach((appPermission) => {
+				if (app.name === appPermission.applicationName) {
+					searchApplicationResults.data = searchApplicationResults.filter(
+						(result) => result.name !== appPermission.applicationName
+					);
+				}
+			});
+		});
+	};
+
+	const validateApplicationName = async () => {
+		// if there is data in the applications input field, we verify it's validity
+		if (searchApplications?.length > 0) {
+			const res = await httpAdapter.get(
+				`/applications/search?page=0&size=1&filter=${searchApplications}`
 			);
 
-			searchApplicationResults.data.forEach((app) => {
-				applicationPermissions.data.content?.forEach((appPermission) => {
-					if (app.name === appPermission.applicationName) {
-						searchApplicationResults.data = searchApplicationResults.data.filter(
-							(result) => result.name !== appPermission.applicationName
-						);
-					}
-				});
-			});
-		}, 1000);
+			console.log('search string', searchApplications);
+			console.log('res', res.data);
+
+			if (
+				res.data.length > 0 &&
+				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
+			) {
+				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return true;
+		}
+	};
+
+	const selectedSearchApplication = (appName, appId, groupName) => {
+		searchApplicationResults = [];
+		applicationResultPage = 0;
+
+		selectedTopicApplications.push({
+			applicationId: appId,
+			applicationName: appName,
+			applicationGroup: groupName,
+			accessType: 'READ'
+		});
+
+		// This statement is used to trigger Svelte reactivity and re-render the component
+		selectedTopicApplications = selectedTopicApplications;
+		searchApplications = appName;
+
+		searchApplicationsResultsVisible = false;
+		searchApplications = '';
+		searchApplicationActive = false;
 	};
 
 	const loadApplicationPermissions = async (topicId) => {
@@ -170,6 +247,20 @@
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
 		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
 		loadApplicationPermissions(topicId);
+	};
+
+	const actionAddApplicationToListEvent = () => {};
+
+	const loadMoreResultsApp = (e) => {
+		if (e.detail.inView && hasMoreApps) {
+			applicationResultPage++;
+			searchApplication(searchApplications);
+		}
+	};
+
+	const options = {
+		rootMargin: '20px',
+		unobserveOnEnter: true
 	};
 </script>
 
@@ -275,17 +366,45 @@
 						type="search"
 						placeholder="Search Application"
 						bind:value={searchApplications}
+						on:keydown={(event) => {
+							searchApplicationResults = [];
+							stopSearchingApps = false;
+							hasMoreApps = true;
+							applicationResultPage = 0;
+
+							if (event.which === returnKey) {
+								document.activeElement.blur();
+
+								// actionAddApplicationToListEvent();
+								validateApplicationName(); ///
+							}
+						}}
 						on:blur={() => {
+							searchApplications = searchApplications?.trim();
 							setTimeout(() => {
 								searchApplicationsResultsVisible = false;
-							}, 500);
+							}, waitTime);
+						}}
+						on:focus={() => {
+							searchApplicationActive = true;
+							errorMessageApplication = '';
+						}}
+						on:focusout={() => {
+							setTimeout(() => {
+								searchApplicationsResultsVisible = false;
+							}, waitTime);
 						}}
 						on:click={async () => {
-							searchApplicationResults = [];
 							searchApplicationActive = true;
-							if (searchApplications?.length >= 3) {
-								searchApplication(searchApplications);
+							errorMessageApplication = '';
+							if (searchApplicationResults?.length > 0) {
+								searchApplicationsResultsVisible = true;
 							}
+						}}
+						on:mouseleave={() => {
+							setTimeout(() => {
+								if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
+							}, waitTime);
 						}}
 					/>
 				</td>
@@ -296,11 +415,19 @@
 	{#if searchApplicationsResultsVisible}
 		<table
 			class="search-application"
-			style="position:absolute; margin-left: 18rem; margin-top: -0.8rem; width: 12rem"
+			style="position:absolute; margin-left: 18rem; margin-top: -0.8rem; width: 12rem; max-height: 13.3rem; display: block; overflow-y: scroll"
+			on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
+			on:mouseleave={() => {
+				setTimeout(() => {
+					searchApplicationsResultsVisible = false;
+					searchApplicationsResultsMouseEnter = false;
+				}, waitTime);
+			}}
 		>
-			{#each searchApplicationResults.data as result}
+			{#each searchApplicationResults as result}
 				<tr style="border-width: 0px">
 					<td
+						style="width: 14rem; padding-left: 0.5rem"
 						on:click={() => {
 							searchApplications = result.name;
 							searchApplicationsId = result.id;
@@ -315,10 +442,12 @@
 							addTopicApplicationAssociation(selectedTopicId, true);
 							searchApplications = '';
 							selectedApplicationList = '';
+							searchApplicationResults = [];
 						}}>{result.name} ({result.groupName})</td
 					>
 				</tr>
 			{/each}
+			<div use:inview={{ options }} on:change={loadMoreResultsApp} />
 		</table>
 	{/if}
 
