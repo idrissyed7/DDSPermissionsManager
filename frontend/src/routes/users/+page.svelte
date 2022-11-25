@@ -184,7 +184,7 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	<h1>Users</h1>
+	<h1 data-cy="users">Users</h1>
 	<GroupMembership />
 
 	{#if $isAdmin}
@@ -220,10 +220,11 @@
 		{/if}
 
 		<div class="content">
-			<h1>Super User</h1>
+			<h1 data-cy="super-users">Super Users</h1>
 
 			<form class="searchbox">
 				<input
+					data-cy="search-super-users-table"
 					class="searchbox"
 					type="search"
 					placeholder="Search"
@@ -241,6 +242,7 @@
 			</form>
 
 			<div
+				data-cy="dot-super-users"
 				class="dot"
 				tabindex="0"
 				on:mouseleave={() => {
@@ -338,7 +340,7 @@
 			</div>
 
 			{#if $users && $users.length > 0}
-				<table style="margin-top: 0.5rem">
+				<table data-cy="super-users-table" style="margin-top: 0.5rem">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						<td>
 							<input

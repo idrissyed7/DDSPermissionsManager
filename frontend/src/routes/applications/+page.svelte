@@ -432,10 +432,11 @@
 
 	<div class="content">
 		{#if !applicationDetailVisible}
-			<h1>Applications</h1>
+			<h1 data-cy="applications">Applications</h1>
 
 			<form class="searchbox">
 				<input
+					data-cy="search-applications-table"
 					class="searchbox"
 					type="search"
 					placeholder="Search"
@@ -557,6 +558,7 @@
 
 		{#if $applications && applicationListVisible && !applicationDetailVisible}
 			<table
+				data-cy="applications-table"
 				style="margin-top: 0.5rem"
 				class:application-table-admin={($permissionsByGroup &&
 					$permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) ||

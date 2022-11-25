@@ -432,6 +432,7 @@
 		{#if email}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
+				data-cy="email-input"
 				autofocus
 				disabled={noneditable}
 				placeholder="Email"
@@ -616,6 +617,7 @@
 		{#if group}
 			<form class="searchbox" style="margin-bottom: 0.7rem">
 				<input
+					data-cy="group-input"
 					class="searchbox"
 					type="search"
 					placeholder="Group"
@@ -962,6 +964,7 @@
 	{#if actionAddUser}
 		<hr />
 		<button
+			data-cy="button-add-user"
 			class="action-button"
 			class:action-button-invalid={invalidEmail || searchGroups?.length < 3}
 			disabled={invalidEmail || searchGroups?.length < 3}
