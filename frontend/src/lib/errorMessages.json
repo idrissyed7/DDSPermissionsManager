@@ -6,7 +6,7 @@
     
     "email": 
         {
-            "is_not_format": "Incorrect mail format", 
+            "is_not_format": "Invalid Email", 
             "cannot_be_blank_or_null":"Email cannot be blank"
         },
     
@@ -26,7 +26,7 @@
         {
             "not_found": "Group not found",
             "exists": "Group already exists",
-            "name.cannot_be_blank_or_null": "Group name cannot be blank",
+            "name.cannot_be_blank_or_null": "Group name cannot be blank or invalid",
             "name.cannot_be_less_than_three_characters": "Group name cannot be less than 3 characters"
         },
 
@@ -36,7 +36,7 @@
             "requires_group_association": "Application requires group association",
             "cannot_update_group_association": "Application cannot update group association",
             "exists": "Application already exists",
-            "name.cannot_be_blank_or_null": "Application name cannot be blank",
+            "name.cannot_be_blank_or_null": "Application name cannot be blank or invalid",
             "name.cannot_be_less_than_three_characters": "Application name cannot be less than 3 characters",
             "identity_ca_cert.not_found": "Application certificate not found",
             "permissions_ca_cert.not_found": "Application permissions certificate not found",
@@ -48,7 +48,7 @@
             "not_found": "Topic not found",
             "update_not_allowed": "Topic update not allowed",
             "requires_group_association": "Topic requires group association",
-            "name.cannot_be_blank_or_null": "Topic name cannot be blank",
+            "name.cannot_be_blank_or_null": "Topic name cannot be blank or invalid",
             "name.cannot_be_less_than_three_characters": "Topic name cannot be less than 3 characters",
             "exists": "Topic already exists"
         },
