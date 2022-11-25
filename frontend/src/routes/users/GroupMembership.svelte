@@ -659,7 +659,7 @@
 				{:else}
 					0
 				{/if}
-				-{Math.min(
+				- {Math.min(
 					groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
 					groupMembershipsTotalSize
 				)} of {groupMembershipsTotalSize}

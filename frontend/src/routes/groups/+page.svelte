@@ -474,7 +474,7 @@
 			{:else}
 				0
 			{/if}
-			-{Math.min(groupsPerPage * (groupsCurrentPage + 1), groupsTotalSize)} of
+			- {Math.min(groupsPerPage * (groupsCurrentPage + 1), groupsTotalSize)} of
 			{groupsTotalSize}
 		</span>
 		<img
