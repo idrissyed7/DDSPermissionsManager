@@ -220,7 +220,10 @@
 				deselectAllGroupsCheckboxes();
 				deleteGroupVisible = false;
 			}}
-			on:cancel={() => (deleteGroupVisible = false)}
+			on:cancel={() => {
+				groupsRowsSelected = [];
+				deleteGroupVisible = false;
+			}}
 		/>
 	{/if}
 

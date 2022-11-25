@@ -212,7 +212,10 @@
 					deselectAllSuperUsersCheckboxes();
 					deleteSuperUserVisible = false;
 				}}
-				on:cancel={() => (deleteSuperUserVisible = false)}
+				on:cancel={() => {
+					superUsersRowsSelected = [];
+					deleteSuperUserVisible = false;
+				}}
 			/>
 		{/if}
 

@@ -341,7 +341,10 @@
 		<Modal
 			actionDeleteTopics={true}
 			title="Delete {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'}"
-			on:cancel={() => (deleteTopicVisible = false)}
+			on:cancel={() => {
+				topicsRowsSelected = [];
+				deleteTopicVisible = false;
+			}}
 			on:deleteTopics={async () => {
 				await deleteSelectedTopics();
 				reloadAllTopics();
