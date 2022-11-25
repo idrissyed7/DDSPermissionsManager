@@ -587,7 +587,7 @@
 				{:else}
 					0
 				{/if}
-				-{Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
+				- {Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
 				{topicsTotalSize}
 			</span>
 			<img

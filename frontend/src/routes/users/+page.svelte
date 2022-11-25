@@ -429,7 +429,7 @@
 				{:else}
 					0
 				{/if}
-				-{Math.min(superUsersPerPage * (superUsersCurrentPage + 1), superUsersTotalSize)} of
+				- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), superUsersTotalSize)} of
 				{superUsersTotalSize}
 			</span>
 			<img

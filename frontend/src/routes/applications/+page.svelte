@@ -709,7 +709,7 @@
 				{/if}
 			</table>
 			<div
-				style="font-size: 0.7rem; width:37.5rem; text-align:right; float: right; margin-top: 1rem"
+				style="font-size: 0.7rem; width:17.5rem; text-align:right; float: right; margin-top: 1rem"
 			>
 				{#if $applicationPermission}
 					{$applicationPermission.length} of {$applicationPermission.length}
@@ -791,7 +791,7 @@
 			{:else}
 				0
 			{/if}
-			-{Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+			- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
 			{applicationsTotalSize}
 		</span>
 		<img

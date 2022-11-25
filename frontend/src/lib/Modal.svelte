@@ -5,6 +5,7 @@
 	import closeSVG from '../icons/close.svg';
 	import deleteSVG from '../icons/delete.svg';
 	import Switch from './Switch.svelte';
+	import { inview } from 'svelte-inview';
 	import errorMessages from '$lib/errorMessages.json';
 
 	export let title;
@@ -46,8 +47,8 @@
 	// Constants
 	const returnKey = 13;
 	const groupsDropdownSuggestion = 7;
+	const applicationsDropdownSuggestion = 7;
 	const minNameLength = 3;
-	const applicationsResult = 7;
 	const searchStringLength = 3;
 	const waitTime = 250;
 
@@ -72,9 +73,12 @@
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
 	// Search Applications
-	let searchApplicationActive = true;
-	let searchApplicationResults;
+	let searchApplicationActive = false;
+	let searchApplicationResults = [];
 	let searchApplicationsResultsVisible = false;
+	let applicationResultPage = 0;
+	let hasMoreApps = true;
+	let stopSearchingApps = false;
 
 	// SearchBox
 	let searchString;
@@ -83,22 +87,33 @@
 	let searchGroupsResultsVisible = false;
 	let searchGroupActive = false;
 	let selectedGroup;
+	let groupResultPage = 0;
+	let hasMoreGroups = true;
+	let stopSearchingGroups = false;
 	let timer;
 	let searchApplicationsResultsMouseEnter = false;
 
 	// Search Groups Feature
-	$: if (searchGroups?.trim().length >= searchStringLength && searchGroupActive) {
+	$: if (
+		searchGroups?.trim().length >= searchStringLength &&
+		searchGroupActive &&
+		!stopSearchingGroups
+	) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
-			searchGroup(searchGroups.trim());
+			searchGroups = searchGroups.trim();
+			searchGroup(searchGroups);
+			stopSearchingGroups = true;
 		}, waitTime);
-	} else {
-		searchGroupsResultsVisible = false;
 	}
+
+	// else {
+	// 	searchGroupsResultsVisible = false;
+	// }
 
 	// Search Groups Dropdown Visibility
 	$: if (
-		searchGroupResults?.data?.content?.length >= 1 &&
+		searchGroupResults?.length >= 1 &&
 		searchGroupActive &&
 		searchGroups?.trim().length >= searchStringLength
 	) {
@@ -108,15 +123,22 @@
 	}
 
 	// Search Applications Feature
-	$: if (searchApplications?.trim().length >= searchStringLength && searchApplicationActive) {
-		searchApplication(searchApplications.trim());
-	} else {
-		searchApplicationsResultsVisible = false;
+	$: if (
+		searchApplications?.trim().length >= searchStringLength &&
+		searchApplicationActive &&
+		!stopSearchingApps
+	) {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			searchApplications = searchApplications.trim();
+			searchApplication(searchApplications);
+			stopSearchingApps = true;
+		}, waitTime);
 	}
 
 	// Search Applications Dropdown Visibility
 	$: if (
-		searchApplicationResults?.data?.length >= 1 &&
+		searchApplicationResults?.length >= 1 &&
 		searchApplicationActive &&
 		searchApplications?.trim().length >= searchStringLength
 	) {
@@ -126,29 +148,51 @@
 	}
 
 	const searchGroup = async (searchGroupStr) => {
-		setTimeout(async () => {
-			searchGroupResults = await httpAdapter.get(
-				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-			);
-		}, 1000);
+		let res = await httpAdapter.get(
+			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+		);
+		if (res.data && res.data?.content?.length < groupsDropdownSuggestion) {
+			hasMoreGroups = false;
+		}
+
+		if (res.data?.content?.length > 0)
+			searchGroupResults = [...searchGroupResults, ...res.data.content];
 	};
 
 	const selectedSearchGroup = (groupName, groupId) => {
+		searchGroupResults = [];
+		groupResultPage = 0;
+
 		selectedGroup = groupId;
 		searchGroups = groupName;
+
 		searchGroupsResultsVisible = false;
 		searchGroupActive = false;
 	};
 
 	const searchApplication = async (searchString) => {
-		setTimeout(async () => {
-			searchApplicationResults = await httpAdapter.get(
-				`/applications/search?page=0&size=${applicationsResult}&filter=${searchString}`
-			);
-		}, 1000);
+		let res = await httpAdapter.get(
+			`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
+		);
+
+		if (res?.data?.length < applicationsDropdownSuggestion) {
+			hasMoreApps = false;
+		}
+
+		if (res.data.length > 0) {
+			if (selectedApplicationList?.length > 0)
+				for (const selectedApp of selectedApplicationList) {
+					res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
+				}
+
+			searchApplicationResults = [...searchApplicationResults, ...res.data];
+		}
 	};
 
 	const selectedSearchApplication = (appName, appId, groupName) => {
+		searchApplicationResults = [];
+		applicationResultPage = 0;
+
 		selectedApplicationList.push({
 			applicationId: appId,
 			applicationName: appName,
@@ -159,7 +203,9 @@
 		// This statement is used to trigger Svelte reactivity and re-render the component
 		selectedApplicationList = selectedApplicationList;
 		searchApplications = appName;
+
 		searchApplicationsResultsVisible = false;
+		searchApplications = '';
 		searchApplicationActive = false;
 	};
 
@@ -190,6 +236,9 @@
 			const res = await httpAdapter.get(
 				`/applications/search?page=0&size=1&filter=${searchApplications}`
 			);
+
+			console.log('search string', searchApplications);
+			console.log('res', res.data);
 
 			if (
 				res.data.length > 0 &&
@@ -348,6 +397,25 @@
 		const cat = errorObject.substring(0, errorObject.indexOf('.'));
 		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
 		return { category: cat, code: code };
+	};
+
+	const loadMoreResultsApp = (e) => {
+		if (e.detail.inView && hasMoreApps) {
+			applicationResultPage++;
+			searchApplication(searchApplications);
+		}
+	};
+
+	const loadMoreResultsGroups = (e) => {
+		if (e.detail.inView && hasMoreGroups) {
+			groupResultPage++;
+			searchGroup(searchGroups);
+		}
+	};
+
+	const options = {
+		rootMargin: '20px',
+		unobserveOnEnter: true
 	};
 </script>
 
@@ -555,6 +623,11 @@
 					class:invalid={errorMessageGroup?.length > 0}
 					bind:value={searchGroups}
 					on:keydown={(event) => {
+						searchGroupResults = [];
+						stopSearchingGroups = false;
+						hasMoreGroups = true;
+						groupResultPage = 0;
+
 						if (event.which === returnKey) {
 							document.activeElement.blur();
 							searchString = searchString?.trim();
@@ -593,24 +666,25 @@
 						searchString = searchString?.trim();
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
-							searchGroupActive = false;
 						}, waitTime);
 					}}
 					on:focus={async () => {
-						searchGroupResults = [];
 						searchGroupActive = true;
 						errorMessageGroup = '';
 						selectedGroup = '';
-						if (searchGroups?.length >= searchStringLength) {
-							searchGroup(searchGroups);
-						}
+					}}
+					on:focusout={() => {
+						setTimeout(() => {
+							searchGroupsResultsVisible = false;
+						}, waitTime);
 					}}
 					on:click={async () => {
-						searchGroupResults = [];
 						searchGroupActive = true;
 						selectedGroup = '';
-						if (searchGroups?.length >= searchStringLength) {
-							searchGroup(searchGroups);
+						stopSearchingGroups = false;
+
+						if (searchGroupResults?.length > 0) {
+							searchGroupsResultsVisible = true;
 						}
 					}}
 					on:mouseleave={() => {
@@ -631,7 +705,7 @@
 			{#if searchGroupsResultsVisible}
 				<table
 					class="search-group"
-					style="position: absolute; z-index: 100"
+					style="position: absolute; z-index: 100; display: block; overflow-y: scroll; max-height: 13.3rem"
 					on:mouseenter={() => (searchGroupsResultsMouseEnter = true)}
 					on:mouseleave={() => {
 						setTimeout(() => {
@@ -644,9 +718,10 @@
 						searchGroupsResultsMouseEnter = false;
 					}}
 				>
-					{#each searchGroupResults.data?.content as result}
+					{#each searchGroupResults as result}
 						<tr>
 							<td
+								style="width: 14rem; padding-left: 0.5rem"
 								on:click={() => {
 									selectedSearchGroup(result.name, result.id);
 								}}
@@ -654,6 +729,7 @@
 							</td>
 						</tr>
 					{/each}
+					<div use:inview={{ options }} on:change={loadMoreResultsGroups} />
 				</table>
 			{/if}
 
@@ -682,36 +758,39 @@
 					placeholder="Application"
 					bind:value={searchApplications}
 					on:keydown={(event) => {
+						searchApplicationResults = [];
+						stopSearchingApps = false;
+						hasMoreApps = true;
+						applicationResultPage = 0;
+
 						if (event.which === returnKey) {
 							document.activeElement.blur();
 							newTopicName = newTopicName?.trim();
 							searchGroups = searchGroups?.trim();
 
-							actionAddTopicEvent();
+							validateApplicationName();
 						}
 					}}
 					on:blur={() => {
+						searchApplications = searchApplications?.trim();
 						setTimeout(() => {
 							searchApplicationsResultsVisible = false;
 						}, waitTime);
 					}}
 					on:focus={() => {
-						async () => {
-							searchApplicationResults = [];
-							searchApplicationActive = true;
-							errorMessageApplication = '';
-							if (searchApplications?.length >= 3) {
-								searchApplication(searchApplications);
-							}
-						};
-					}}
-					on:click={async () => {
-						searchApplicationResults = [];
 						searchApplicationActive = true;
 						errorMessageApplication = '';
-
-						if (searchApplications?.length >= 3) {
-							searchApplication(searchApplications);
+					}}
+					on:focusout={() => {
+						setTimeout(() => {
+							searchApplicationsResultsVisible = false;
+						}, waitTime);
+					}}
+					on:click={async () => {
+						searchApplicationActive = true;
+						errorMessageApplication = '';
+						if (searchApplicationResults?.length > 0) {
+							searchApplicationsResultsVisible = true;
 						}
 					}}
 					on:mouseleave={() => {
@@ -733,25 +812,27 @@
 		{#if searchApplicationsResultsVisible}
 			<table
 				class="search-application"
-				style="position: absolute;"
+				style="position: absolute; display: block; overflow-y: scroll; max-height: 13.3rem"
 				on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
 				on:mouseleave={() => {
 					setTimeout(() => {
-						searchApplicationsResultsVisible = !searchApplicationsResultsVisible;
+						searchApplicationsResultsVisible = false;
 						searchApplicationsResultsMouseEnter = false;
 					}, waitTime);
 				}}
 			>
-				{#each searchApplicationResults.data as result}
+				{#each searchApplicationResults as result}
 					<tr style="border-width: 0px;">
 						<td
+							style="width: 14rem; padding-left: 0.5rem"
 							on:click={() => {
-								selectedSearchApplication(result.name, result.id, result.groupName);
-								searchApplications = '';
-							}}>{result.name} ({result.groupName})</td
-						>
+								selectedSearchApplication(result.name, result.id, result.groupName); ///
+							}}
+							>{result.name} ({result.groupName})
+						</td>
 					</tr>
 				{/each}
+				<div use:inview={{ options }} on:change={loadMoreResultsApp} />
 			</table>
 		{/if}
 
