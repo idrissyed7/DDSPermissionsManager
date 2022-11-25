@@ -25,9 +25,7 @@
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
 			// setInterval(checkValidity, userValidityInterval);
-		} catch (err) {
-			console.error(err);
-		}
+		} catch (err) {}
 	});
 
 	const checkValidity = async () => {
@@ -59,7 +57,7 @@
 	class:grid-container-not-authenticated={!$isAuthenticated}
 >
 	<div class="grid-item-horizontal">
-		<Header isAuthenticated={$isAuthenticated} {avatarName} />
+		<Header {avatarName} />
 	</div>
 	{#if $isAuthenticated}
 		<div class="grid-item-vertical-nav">
