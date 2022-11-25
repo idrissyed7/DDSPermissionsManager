@@ -127,7 +127,7 @@
 	}
 
 	.footer-margin {
-		margin-left: 4rem;
+		margin-left: 3rem;
 	}
 
 	p {
