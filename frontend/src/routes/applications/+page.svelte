@@ -391,7 +391,10 @@
 		<Modal
 			actionDeleteApplications={true}
 			title="Delete {applicationsRowsSelected.length > 1 ? 'Applications' : 'Application'}"
-			on:cancel={() => (deleteApplicationVisible = false)}
+			on:cancel={() => {
+				applicationsRowsSelected = [];
+				deleteApplicationVisible = false;
+			}}
 			on:deleteApplications={async () => {
 				await deleteSelectedApplications();
 				reloadAllApps();

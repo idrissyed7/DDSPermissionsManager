@@ -378,7 +378,10 @@
 		<Modal
 			title="Delete {usersRowsSelected.length > 1 ? 'Users' : 'User'}"
 			actionDeleteUsers={true}
-			on:cancel={() => (deleteSelectedGroupMembershipsVisible = false)}
+			on:cancel={() => {
+				usersRowsSelected = [];
+				deleteSelectedGroupMembershipsVisible = false;
+			}}
 			on:deleteGroupMemberships={async () => {
 				await deleteSelectedGroupMemberships();
 				reloadGroupMemberships();
