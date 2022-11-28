@@ -90,7 +90,7 @@ JWT_REFRESH_TOKEN is also provided to the client so that the end user can extend
 in for up to 1 day since initial login. To change the default expiration for the refresh token,
 `MICRONAUT_SECURITY_TOKEN_REFRESH_COOKIE_COOKIE_MAX_AGE=[number][m|h|d|w]` or application.yml can be modified accordingly.
 
-The refresh token mechanism requires extending Micronaut framework code, such code in the DDS Permissions Manager repository
+The refresh token mechanism requires extending framework code, such code in the DDS Permissions Manager repository
 can be found in files prefaced with 'RefreshToken' in `app/src/main/java/io/unityfoundation/dds/permissions/manager/security/`.
 
 
@@ -116,7 +116,7 @@ however, each service pulls in (or rather, injects) other services/repository in
 for accommodating a users request.
 
 ### API Layer
-DDS Permissions Manager is a Micronaut microservice that exposes endpoints which allows users to create, read, update,
+DDS Permissions Manager is a microservice that exposes endpoints which allows users to create, read, update,
 and delete (CRUD) the resources based on the above data models. In addition to managing resources via a CRUD API,
 DDS Permissions Manager includes endpoints that produces OpenDDS credentials for external applications (modeled as an
 Application in DDS Permissions Manager).
@@ -128,5 +128,5 @@ All HTTP request and response bodies are parsed then turned into Data Transfer O
 are based on are located in `app/src/main/java/io/unityfoundation/dds/permissions/manager/model` alongside their
 corresponding data models, are annotated with field-level validation annotations. With that in mind, a DTO can be
 declared in a controller's method parameter like so `HttpResponse<?> save(@Body @Valid ApplicationDTO applicationDTO)`
-and Micronaut will parse the request's body, turn it into an ApplicationDTO object, and validate the applicationDTO object
+and application will parse the request's body, turn it into an ApplicationDTO object, and validate the applicationDTO object
 fields according to the validation annotations in the ApplicationDTO class.
