@@ -359,7 +359,7 @@
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
-				errorMessageGroup = errorMessages['group']['exists'];
+				errorMessageName = errorMessages['group']['exists'];
 
 				return;
 			} else {
@@ -826,7 +826,7 @@
 						<td
 							style="width: 14rem; padding-left: 0.5rem"
 							on:click={() => {
-								selectedSearchApplication(result.name, result.id, result.groupName); ///
+								selectedSearchApplication(result.name, result.id, result.groupName);
 							}}
 							>{result.name} ({result.groupName})
 						</td>
