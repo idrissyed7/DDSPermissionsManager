@@ -41,7 +41,7 @@ java -jar build/libs/permissionsManager-0.1-all.jar
 ```
 
 ## External Service Dependencies
-DDS Permissions Manager, as of this writing, expects two external services offered by Google: OAuth/Identity Provision
+DDS Permissions Manager expects two external services offered by Google: OAuth/Identity Provision
 and Secrets Manager. OAuth/Identity Provision is covered in the Security section below. In the context of Permissions 
 Manager, Google Secrets Manager is used to store an installation's Certificate Authority and Server certificates/keys.
 The client code that interacts with the Secrets Manager service is a singleton object generated from the class
@@ -63,7 +63,7 @@ environment.  Please see relevant documentation:
 ### Security
 
 #### Authentication & Authorization
-As of the writing, DDS Permissions Manager provides two methods of authentication each of which applies to a different
+DDS Permissions Manager provides two methods of authentication each of which applies to a different
 type of 'user': a traditional User and an external Application.
 
 ##### Traditional User
