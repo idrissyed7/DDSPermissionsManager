@@ -64,38 +64,4 @@ describe('title should say DDS Permissions Manager', () => {
         .should('equal', 'Groups');
     });
 
-    // it('should add a new user', () => {
-    //     cy.visit('/users');
-
-    //     cy.get('[data-cy="dot-users"]')
-    //     .click();
-
-    //     cy.get('[data-cy="add-user"]')
-    //     .click();
-
-    //     cy.get('[data-cy="email-input"]')
-    //     .type("testuser@email.com");
-
-    //     cy.get('[data-cy="group-input"]')
-    //     .type("alpha");
-
-    //     cy.get('[data-cy="button-add-user"]')
-    //     .click();
-
-    //     // cy.get('td').should('have.attr', 'value', 'testuser@email.com');	
-
-    // })
-
-    // it('should delete the first user', () => {
-    //     cy.visit('/users');
-
-    //     cy.get(':nth-child(2) > [style="width: 2rem;"] > .group-membership-checkbox')
-    //     .click();
-
-    //     cy.get('[data-cy="dot-users"]')
-    //     .click();
-
-    //     cy.get('[data-cy="delete-user"]')
-    //     .click().type('{enter}');
-    // })
 });
