@@ -21,6 +21,7 @@ micronaut:
         cookie:
           cookie-path: /
           cookie-max-age: 1d
+          cookie-http-only: false
       jwt:
         signatures:
           secret:
