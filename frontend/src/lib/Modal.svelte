@@ -1115,6 +1115,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-user"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteGroupMemberships')}
@@ -1132,6 +1133,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-super-user"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteSuperUsers')}
@@ -1149,6 +1151,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-topic"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteTopics')}
@@ -1166,6 +1169,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-application"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteApplications')}

@@ -9,7 +9,7 @@ describe('title should say DDS Permissions Manager', () => {
     });
 
    
-        it('should add a new topic', () => {
+        it('should add a new topic to group Alpha', () => {
         cy.visit('/topics');
 
         cy.get('[data-cy="dot-topics"]')
@@ -19,7 +19,7 @@ describe('title should say DDS Permissions Manager', () => {
         .click();
 
         cy.get('[data-cy="topic-name"]')
-        .type("Test Topic");
+        .type("Test Topic Alpha");
 
         cy.get('[data-cy="group-input"]')
         .type("alpha");
@@ -27,7 +27,33 @@ describe('title should say DDS Permissions Manager', () => {
         cy.get('[data-cy="button-add-topic"]')
         .click();
 
-        cy.get('td').should('contain.text', 'Test Topic');	
+        cy.contains('td', 'Test Topic Alpha')   
+        .siblings()
+        .contains('td', 'Alpha');               
+      
+    })
+
+    it('should add a new topic to group Beta', () => {
+        cy.visit('/topics');
+
+        cy.get('[data-cy="dot-topics"]')
+        .click();
+
+        cy.get('[data-cy="add-topic"]')
+        .click();
+
+        cy.get('[data-cy="topic-name"]')
+        .type("Test Topic Beta");
+
+        cy.get('[data-cy="group-input"]')
+        .type("beta");
+
+        cy.get('[data-cy="button-add-topic"]')
+        .click();
+
+        cy.contains('td', 'Test Topic Beta')   
+        .siblings()
+        .contains('td', 'Beta'); 
 
     })
 

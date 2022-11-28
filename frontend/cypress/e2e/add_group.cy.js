@@ -9,7 +9,7 @@ describe('title should say DDS Permissions Manager', () => {
     });
 
    
-        it('should add a new topic', () => {
+        it('should add a new group', () => {
         cy.visit('/groups');
 
         cy.get('[data-cy="dot-groups"]')
