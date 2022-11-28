@@ -318,6 +318,7 @@
 						</tr>
 
 						<tr
+							data-cy="add-super-user"
 							tabindex="0"
 							on:click={() => {
 								superUsersDropDownVisible = false;

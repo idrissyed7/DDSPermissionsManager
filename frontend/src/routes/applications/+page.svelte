@@ -463,6 +463,7 @@
 
 			{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
 				<div
+					data-cy="dot-applications"
 					tabindex="0"
 					class="dot"
 					on:mouseleave={() => {
@@ -532,6 +533,7 @@
 							</tr>
 
 							<tr
+								data-cy="add-application"
 								tabindex="0"
 								on:click={() => {
 									applicationsDropDownVisible = false;

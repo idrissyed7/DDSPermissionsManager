@@ -269,6 +269,7 @@
 
 		{#if $isAdmin}
 			<div
+				data-cy="dot-groups"
 				tabindex="0"
 				class="dot"
 				on:mouseleave={() => {
@@ -334,6 +335,7 @@
 						</tr>
 
 						<tr
+							data-cy="add-group"
 							tabindex="0"
 							on:click={() => {
 								groupsDropDownVisible = false;

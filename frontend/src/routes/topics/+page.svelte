@@ -386,6 +386,7 @@
 
 			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
 				<div
+					data-cy="dot-topics"
 					class="dot"
 					tabindex="0"
 					on:mouseleave={() => {
@@ -451,6 +452,7 @@
 							</tr>
 
 							<tr
+								data-cy="add-topic"
 								tabindex="0"
 								on:keydown={(event) => {
 									if (event.which === returnKey) {
