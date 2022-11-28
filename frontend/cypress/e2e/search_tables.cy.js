@@ -8,24 +8,25 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-    afterEach(() => {
-        cy.visit('http://localhost:8080/api/logout')
-    });
+    // afterEach(() => {
+    //     cy.visit('http://localhost:8080/api/logout')
+    // });
 
     it('should filter Users correctly', () => {
         cy.visit('/users');
         cy.get('[data-cy="search-users-table"]').type('unity');
+        cy.wait(500);
 
         cy.get('[data-cy="users-table"] tr')
         .should('have.length', 3);
-    });
+    })
+       
 
     it('should filter Super Users correctly', () => {
         cy.visit('/users');
         cy.get('[data-cy="search-super-users-table"]').type('computing');
 
-        cy.get('[data-cy="super-users-table"] tr')
-        .should('have.length', 4);
+        cy.get('[data-cy="super-users-table"] tr').should('have.length', 4);
     });
 
     it('should filter Topics correctly', () => {
