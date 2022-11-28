@@ -6,6 +6,7 @@
 	import deleteSVG from '../icons/delete.svg';
 	import Switch from './Switch.svelte';
 	import { inview } from 'svelte-inview';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let title;
 	export let email = false;
@@ -62,9 +63,12 @@
 	let invalidTopic = false;
 	let invalidGroup = false;
 	let invalidApplication = false;
+	let invalidApplicationName = false;
 	let invalidEmail = false;
 	let errorMessageGroup = '';
 	let errorMessageApplication = '';
+	let errorMessageEmail = '';
+	let errorMessageName = '';
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
@@ -206,7 +210,11 @@
 	};
 
 	const validateEmail = (input) => {
-		input.match(validRegex) ? (invalidEmail = false) : (invalidEmail = true);
+		if (input.match(validRegex)) invalidEmail = false;
+		else {
+			invalidEmail = true;
+			errorMessageEmail = errorMessages['email']['is_not_format'];
+		}
 	};
 
 	const validateGroupName = async () => {
@@ -246,6 +254,16 @@
 		}
 	};
 
+	const validateNameLength = (name, category) => {
+		if (name?.length < minNameLength && category) {
+			errorMessageName = errorMessages[category]['name.cannot_be_less_than_three_characters'];
+			return false;
+		}
+		if (name?.length >= minNameLength) {
+			return true;
+		}
+	};
+
 	function closeModal() {
 		dispatch('cancel');
 	}
@@ -262,7 +280,7 @@
 
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessageGroup = 'Invalid Group';
+			errorMessageGroup = errorMessages['group']['not_found'];
 			return;
 		}
 
@@ -287,19 +305,25 @@
 			selectedApplicationList: selectedApplicationList
 		};
 
+		const validName = await validateNameLength(newTopicName, 'topic');
+		if (!validName) {
+			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
+			return;
+		}
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessageGroup = 'Invalid Group';
+			errorMessageGroup = errorMessages['group']['not_found'];
 			return;
 		}
 
 		const validApplicationName = await validateApplicationName();
 		if (!validApplicationName) {
-			errorMessageApplication = 'Invalid Application';
+			errorMessageApplication = errorMessages['application']['not_found'];
 			return;
 		}
 
-		if (newTopicName?.length >= minNameLength && validGroupName && validApplicationName) {
+		if (validName && validGroupName && validApplicationName) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -314,7 +338,7 @@
 
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
-			errorMessageGroup = 'Invalid Group';
+			errorMessageGroup = errorMessages['group']['not_found'];
 			return;
 		}
 
@@ -335,7 +359,8 @@
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
-				errorMessageGroup = 'Group already exists';
+				errorMessageGroup = errorMessages['group']['exists'];
+
 				return;
 			} else {
 				dispatch('addGroup', returnGroupName);
@@ -365,6 +390,13 @@
 		};
 		dispatch('duplicateTopic', newTopic);
 		closeModal();
+	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
 	};
 
 	const loadMoreResultsApp = (e) => {
@@ -410,7 +442,14 @@
 					emailValue = emailValue.trim();
 					validateEmail(emailValue);
 				}}
+				on:click={() => {
+					invalidEmail = false;
+					errorMessageEmail = '';
+				}}
 				on:keydown={(event) => {
+					invalidEmail = false;
+					errorMessageEmail = '';
+
 					if (event.which === returnKey) {
 						if (actionAddUser) {
 							emailValue = emailValue.trim();
@@ -423,6 +462,13 @@
 					}
 				}}
 			/>
+			<span
+				class="error-message"
+				style="	top: 9.6rem; right: 2.4rem"
+				class:hidden={errorMessageEmail?.length === 0}
+			>
+				{errorMessageEmail}
+			</span>
 			{#if noneditable}
 				<span
 					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
@@ -441,20 +487,34 @@
 				bind:value={newTopicName}
 				on:blur={() => {
 					newTopicName = newTopicName.trim();
-					newTopicName?.length < minNameLength ? (invalidTopic = true) : (invalidTopic = false);
+					invalidTopic = !validateNameLength(newTopicName, 'topic');
 				}}
 				on:keydown={(event) => {
+					errorMessageName = '';
+
 					if (event.which === returnKey) {
 						newTopicName = newTopicName.trim();
-						if (
-							newTopicName?.length >= minNameLength &&
-							searchGroups?.length >= searchStringLength
-						) {
+						invalidTopic = !validateNameLength(newTopicName);
+
+						if (!invalidTopic && searchGroups?.length >= searchStringLength) {
 							actionDuplicateTopicEvent();
 						}
 					}
 				}}
+				on:click={() => {
+					errorMessageName = '';
+				}}
 			/>
+		{/if}
+
+		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Topic' && errorMessageName?.length > 0}
+			<span
+				class="error-message"
+				style="	top: 9.6rem; right: 2.2rem"
+				class:hidden={errorMessageName?.length === 0}
+			>
+				{errorMessageName}
+			</span>
 		{/if}
 
 		{#if applicationName}
@@ -467,20 +527,31 @@
 				bind:value={appName}
 				on:blur={() => {
 					appName = appName.trim();
-					appName?.length < minNameLength
-						? (invalidApplication = true)
-						: (invalidApplication = false);
+					invalidApplication = !validateNameLength(appName, 'application');
 				}}
 				on:keydown={(event) => {
+					errorMessageName = '';
 					if (event.which === returnKey) {
 						appName = appName.trim();
+						invalidApplication = !validateNameLength(appName, 'application');
 
-						if (appName?.length >= minNameLength && searchGroups?.length >= searchStringLength) {
+						if (!invalidApplication && searchGroups?.length >= searchStringLength) {
 							actionAddApplicationEvent();
 						}
 					}
 				}}
+				on:click={() => (errorMessageName = '')}
 			/>
+		{/if}
+
+		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Application' && errorMessageName?.length > 0}
+			<span
+				class="error-message"
+				style="	top: 9.6rem; right: 1.4rem"
+				class:hidden={errorMessageName?.length === 0}
+			>
+				{errorMessageName}
+			</span>
 		{/if}
 
 		{#if groupNewName}
@@ -493,23 +564,28 @@
 				bind:value={newGroupName}
 				on:blur={() => {
 					newGroupName = newGroupName.trim();
-					newGroupName?.length < minNameLength ? (invalidGroup = true) : (invalidGroup = false);
+					invalidGroup = !validateNameLength(newGroupName, 'group');
 				}}
 				on:keydown={(event) => {
-					errorMessageGroup = '';
+					errorMessageName = '';
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
-						if (newGroupName?.length >= minNameLength) actionAddGroupEvent();
+						invalidGroup = !validateNameLength(newGroupName, 'group');
+						if (!invalidGroup) actionAddGroupEvent();
 					}
 				}}
+				on:click={() => (errorMessageName = '')}
 			/>
-			<span
-				class="error-message"
-				style="	top: 9.7rem; right: 4.2rem"
-				class:hidden={errorMessageGroup?.length === 0}
-			>
-				Error: {errorMessageGroup}
-			</span>
+
+			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
+				<span
+					class="error-message"
+					style="	top: 9.6rem; right: 2.1rem"
+					class:hidden={errorMessageName?.length === 0}
+				>
+					{errorMessageName}
+				</span>
+			{/if}
 		{/if}
 
 		{#if actionEditApplicationName}
@@ -517,15 +593,23 @@
 			<input
 				autofocus
 				placeholder="Application Name"
-				class:invalid={appName?.length < minNameLength}
+				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={previousAppName}
-				on:blur={() => (previousAppName = previousAppName.trim())}
+				on:blur={() => {
+					previousAppName = previousAppName.trim();
+					invalidApplicationName = !validateNameLength(previousAppName, 'application');
+				}}
 				on:keydown={(event) => {
+					errorMessageName = '';
 					if (event.which === returnKey) {
 						previousAppName = previousAppName.trim();
+						invalidApplicationName = !validateNameLength(previousAppName, 'application');
+						if (!invalidApplicationName)
+							dispatch('saveNewAppName', { newAppName: previousAppName });
 					}
 				}}
+				on:click={() => (errorMessageName = '')}
 			/>
 		{/if}
 
@@ -536,6 +620,7 @@
 					type="search"
 					placeholder="Group"
 					disabled={noneditable}
+					class:invalid={errorMessageGroup?.length > 0}
 					bind:value={searchGroups}
 					on:keydown={(event) => {
 						searchGroupResults = [];
@@ -611,10 +696,10 @@
 			</form>
 			<span
 				class="error-message"
-				style="	top: 12.9rem; right: 4.2rem"
+				style="	top: 12.7rem; right: 2.2rem"
 				class:hidden={errorMessageGroup?.length === 0}
 			>
-				Error: {errorMessageGroup}
+				{errorMessageGroup}
 			</span>
 
 			{#if searchGroupsResultsVisible}
@@ -717,10 +802,10 @@
 			</form>
 			<span
 				class="error-message"
-				style="	top: 20.1rem; right: 4.2rem"
+				style="	top: 19.9rem; right: 2.2rem"
 				class:hidden={errorMessageApplication?.length === 0}
 			>
-				Error: {errorMessageApplication}
+				{errorMessageApplication}
 			</span>
 		{/if}
 
@@ -752,96 +837,98 @@
 		{/if}
 
 		{#if selectedApplicationList?.length > 0}
-			{#each selectedApplicationList as app}
-				<div class="application-list">
-					<ul style="list-style-type: none; padding-left: 0; margin-right: -3rem">
-						<li style="width: 9rem">
-							{app.applicationName}
-						</li>
-						<li style="color: rgb(120,120,120)">
-							({app.applicationGroup})
-						</li>
-					</ul>
+			<div style="margin-bottom: 0.8rem">
+				{#each selectedApplicationList as app}
+					<div class="application-list">
+						<ul style="list-style-type: none; padding-left: 0; margin-right: -3rem">
+							<li style="width: 9rem">
+								{app.applicationName}
+							</li>
+							<li style="color: rgb(120,120,120)">
+								({app.applicationGroup})
+							</li>
+						</ul>
 
-					<ul style="list-style-type: none; margin-right: -2rem">
-						<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Read</span></li>
-						<li style="margin-top: -0.05rem">
-							<input
-								type="checkbox"
-								name="read"
-								style="width:unset;"
-								checked
-								on:change={(e) => {
-									const applicationIndex = selectedApplicationList.findIndex(
-										(application) => application.applicationName === app.applicationName
-									);
+						<ul style="list-style-type: none; margin-right: -2rem">
+							<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Read</span></li>
+							<li style="margin-top: -0.05rem">
+								<input
+									type="checkbox"
+									name="read"
+									style="width:unset;"
+									checked
+									on:change={(e) => {
+										const applicationIndex = selectedApplicationList.findIndex(
+											(application) => application.applicationName === app.applicationName
+										);
 
-									if (e.target.checked) {
-										if (selectedApplicationList[applicationIndex].accessType === 'WRITE') {
-											selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
+										if (e.target.checked) {
+											if (selectedApplicationList[applicationIndex].accessType === 'WRITE') {
+												selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
+											} else {
+												selectedApplicationList[applicationIndex].accessType = 'READ';
+											}
 										} else {
-											selectedApplicationList[applicationIndex].accessType = 'READ';
+											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
+												selectedApplicationList[applicationIndex].accessType = 'WRITE';
+											} else {
+												selectedApplicationList[applicationIndex].accessType = '';
+											}
 										}
-									} else {
-										if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
-											selectedApplicationList[applicationIndex].accessType = 'WRITE';
-										} else {
-											selectedApplicationList[applicationIndex].accessType = '';
-										}
-									}
-								}}
-							/>
-						</li>
-					</ul>
+									}}
+								/>
+							</li>
+						</ul>
 
-					<ul style="list-style-type: none; margin-right: -2.4rem">
-						<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Write</span></li>
-						<li style="margin-top: -0.05rem">
-							<input
-								type="checkbox"
-								name="write"
-								style="width:unset;"
-								on:change={(e) => {
-									const applicationIndex = selectedApplicationList.findIndex(
-										(application) => application.applicationName === app.applicationName
-									);
+						<ul style="list-style-type: none; margin-right: -2.4rem">
+							<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Write</span></li>
+							<li style="margin-top: -0.05rem">
+								<input
+									type="checkbox"
+									name="write"
+									style="width:unset;"
+									on:change={(e) => {
+										const applicationIndex = selectedApplicationList.findIndex(
+											(application) => application.applicationName === app.applicationName
+										);
 
-									if (e.target.checked) {
-										if (selectedApplicationList[applicationIndex].accessType === 'READ') {
-											selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
+										if (e.target.checked) {
+											if (selectedApplicationList[applicationIndex].accessType === 'READ') {
+												selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
+											} else {
+												selectedApplicationList[applicationIndex].accessType = 'WRITE';
+											}
 										} else {
-											selectedApplicationList[applicationIndex].accessType = 'WRITE';
+											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
+												selectedApplicationList[applicationIndex].accessType = 'READ';
+											} else {
+												selectedApplicationList[applicationIndex].accessType = '';
+											}
 										}
-									} else {
-										if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
-											selectedApplicationList[applicationIndex].accessType = 'READ';
-										} else {
-											selectedApplicationList[applicationIndex].accessType = '';
-										}
-									}
-								}}
-							/>
-						</li>
-					</ul>
+									}}
+								/>
+							</li>
+						</ul>
 
-					<ul style="list-style-type: none; margin-top: 0.35rem; margin-left: -0.5rem">
-						<li />
-						<li>
-							<img
-								src={deleteSVG}
-								alt="remove application"
-								style="background-color: transparent; cursor: pointer; scale: 50%;"
-								on:click={() => {
-									selectedApplicationList = selectedApplicationList.filter(
-										(selectedApplication) =>
-											selectedApplication.applicationName != app.applicationName
-									);
-								}}
-							/>
-						</li>
-					</ul>
-				</div>
-			{/each}
+						<ul style="list-style-type: none; margin-top: 0.35rem; margin-left: -0.5rem">
+							<li />
+							<li>
+								<img
+									src={deleteSVG}
+									alt="remove application"
+									style="background-color: transparent; cursor: pointer; scale: 50%;"
+									on:click={() => {
+										selectedApplicationList = selectedApplicationList.filter(
+											(selectedApplication) =>
+												selectedApplication.applicationName != app.applicationName
+										);
+									}}
+								/>
+							</li>
+						</ul>
+					</div>
+				{/each}
+			</div>
 		{/if}
 
 		{#if adminRoles}
@@ -877,6 +964,7 @@
 		<button
 			class="action-button"
 			class:action-button-invalid={invalidEmail || searchGroups?.length < 3}
+			disabled={invalidEmail || searchGroups?.length < 3}
 			on:click={() => actionAddUserEvent()}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
@@ -944,8 +1032,9 @@
 		<hr />
 		<button
 			class="action-button"
-			class:action-button-invalid={appName.length < minNameLength ||
+			class:action-button-invalid={appName?.length < minNameLength ||
 				searchGroups?.length < minNameLength}
+			disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
 			on:click={() => {
 				actionAddApplicationEvent();
 			}}
@@ -962,7 +1051,8 @@
 		<hr />
 		<button
 			class="action-button"
-			class:action-button-invalid={newGroupName.length < minNameLength}
+			class:action-button-invalid={newGroupName?.length < minNameLength}
+			disabled={newGroupName?.length < minNameLength}
 			on:click={() => {
 				if (!newGroupName.length <= minNameLength) actionAddGroupEvent();
 			}}
@@ -1169,7 +1259,7 @@
 		top: 10vh;
 		left: 50%;
 		margin-left: -10.25rem;
-		width: 20.5rem;
+		width: 18.6rem;
 		max-height: fit-content;
 		background: rgb(246, 246, 246);
 		border-radius: 15px;
@@ -1192,6 +1282,10 @@
 	input.searchbox {
 		margin-top: 1rem;
 		width: 14rem;
+	}
+
+	.error-message {
+		font-size: 0.7rem;
 	}
 
 	input.searchbox:disabled {

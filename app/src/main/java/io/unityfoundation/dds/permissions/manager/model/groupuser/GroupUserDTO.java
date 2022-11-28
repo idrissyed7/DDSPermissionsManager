@@ -2,12 +2,21 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 
 import io.micronaut.core.annotation.Introspected;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 @Introspected
 public class GroupUserDTO {
 
     private Long id;
+
+    @NotBlank
+    @Email
     private String email;
-    private long permissionsGroup;
+
+    @NotNull
+    private Long permissionsGroup;
     private boolean isGroupAdmin = false;
     private boolean isTopicAdmin = false;
     private boolean isApplicationAdmin = false;
@@ -40,11 +49,11 @@ public class GroupUserDTO {
         this.email = email;
     }
 
-    public long getPermissionsGroup() {
+    public Long getPermissionsGroup() {
         return permissionsGroup;
     }
 
-    public void setPermissionsGroup(long permissionsGroup) {
+    public void setPermissionsGroup(Long permissionsGroup) {
         this.permissionsGroup = permissionsGroup;
     }
 

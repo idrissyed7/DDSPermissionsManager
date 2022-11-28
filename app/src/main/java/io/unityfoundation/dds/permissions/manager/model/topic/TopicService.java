@@ -7,6 +7,8 @@ import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
+import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -70,7 +72,7 @@ public class TopicService {
         Optional<Group> groupOptional = groupRepository.findById(topicDTO.getGroup());
 
         if (groupOptional.isEmpty()) {
-            return HttpResponse.notFound("Specified group does not exist");
+            throw new DPMException(ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION, HttpStatus.NOT_FOUND);
         }
 
         Topic topic = new Topic(topicDTO.getName(), topicDTO.getKind());
@@ -78,14 +80,14 @@ public class TopicService {
         topic.setPermissionsGroup(group);
 
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
                 topic.getName().trim(), topic.getPermissionsGroup());
 
         if (searchTopicByNameAndGroup.isPresent()) {
-            return HttpResponseFactory.INSTANCE.status(HttpStatus.SEE_OTHER, new TopicDTO(searchTopicByNameAndGroup.get()));
+            throw new DPMException(ResponseStatusCodes.TOPIC_ALREADY_EXISTS);
         }
         TopicDTO responseTopicDTO = new TopicDTO(topicRepository.save(topic));
         responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));
@@ -95,12 +97,12 @@ public class TopicService {
     public HttpResponse deleteById(Long id) throws AuthenticationException {
         Optional<Topic> optionalTopic = topicRepository.findById(id);
         if (optionalTopic.isEmpty()) {
-            return HttpResponse.notFound("Topic not found");
+            throw new DPMException(ResponseStatusCodes.TOPIC_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Topic topic = optionalTopic.get();
         if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         // TODO - Need to investigate cascade management to eliminate this
@@ -113,14 +115,14 @@ public class TopicService {
     public HttpResponse show(Long id) {
         Optional<Topic> topicOptional = topicRepository.findById(id);
         if (topicOptional.isEmpty()) {
-            return HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.TOPIC_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Topic topic = topicOptional.get();
         TopicDTO topicResponseDTO = new TopicDTO(topic);
         topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
         if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         return HttpResponse.ok(topicResponseDTO);

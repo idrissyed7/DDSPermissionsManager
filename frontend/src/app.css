@@ -273,6 +273,10 @@ select:focus {
 	display: none;
 }
 
+.invalid {
+	border-color: red !important;
+}
+
 .search-results {
 	width: 15rem;
 }

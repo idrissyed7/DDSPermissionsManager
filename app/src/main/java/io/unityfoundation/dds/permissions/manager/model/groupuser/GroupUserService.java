@@ -3,8 +3,11 @@ package io.unityfoundation.dds.permissions.manager.model.groupuser;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
+import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -123,18 +126,18 @@ public class GroupUserService {
     @Transactional
     public MutableHttpResponse<?> addMember(@Body GroupUserDTO groupUserDTO) {
         if (!isAdminOrGroupAdmin(groupUserDTO.getPermissionsGroup())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         Optional<Group> groupOptional = groupRepository.findById(groupUserDTO.getPermissionsGroup());
         if (groupOptional.isEmpty()) {
-            return HttpResponse.notFound("Specified group not found");
+            throw new DPMException(ResponseStatusCodes.GROUP_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Optional<User> userOptional = userRepository.findByEmail(groupUserDTO.getEmail());
         if (userOptional.isPresent()) {
             if (isUserMemberOfGroup(groupUserDTO.getPermissionsGroup(), userOptional.get().getId())) {
-                return HttpResponse.badRequest("Please use update endpoint");
+                throw new DPMException(ResponseStatusCodes.GROUP_MEMBERSHIP_ALREADY_EXISTS);
             } else {
                 return HttpResponse.ok(new GroupUserResponseDTO(saveFromDTO(userOptional.get(), groupUserDTO)));
             }
@@ -147,16 +150,16 @@ public class GroupUserService {
     @Transactional
     public MutableHttpResponse<?> updateMember(@Body GroupUserDTO groupUser) {
         if (groupUser.getId() == null) {
-            return HttpResponse.badRequest("Please use save endpoint instead");
+            throw new DPMException(ResponseStatusCodes.GROUP_MEMBERSHIP_CANNOT_CREATE_WITH_UPDATE);
         }
 
         if (!isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         Optional<GroupUser> groupUserOptional = groupUserRepository.findById(groupUser.getId());
         if (groupUserOptional.isEmpty()) {
-            return HttpResponse.notFound("Member not found");
+            throw new DPMException(ResponseStatusCodes.GROUP_MEMBERSHIP_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         return HttpResponse.ok(new GroupUserResponseDTO(updateFromDTO(groupUserOptional.get(), groupUser)));
@@ -190,7 +193,7 @@ public class GroupUserService {
 
         Long groupId = groupUser.getPermissionsGroup().getId();
         if (!isAdminOrGroupAdmin(groupId)) {
-            return HttpResponse.unauthorized();
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
         User user = groupUser.getPermissionsUser();
@@ -252,7 +255,7 @@ public class GroupUserService {
         Optional<User> userOptional = securityUtil.getCurrentlyAuthenticatedUser();
         if (userOptional.isEmpty()
                 || (!userOptional.get().isAdmin() && countMembershipsByUserId(userOptional.get().getId()) == 0)) {
-            return HttpResponse.notFound();
+            throw new DPMException(ResponseStatusCodes.USER_IS_NOT_VALID, HttpStatus.NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -286,6 +289,6 @@ public class GroupUserService {
         if (optionalUser.isPresent()) {
             return HttpResponse.ok();
         }
-        return HttpResponse.notFound();
+        throw new DPMException(ResponseStatusCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 }

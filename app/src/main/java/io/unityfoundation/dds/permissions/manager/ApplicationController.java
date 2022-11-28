@@ -12,10 +12,13 @@ import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.unityfoundation.dds.permissions.manager.exception.DPMErrorResponse;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationService;
 import org.bouncycastle.mail.smime.SMIMEException;
@@ -61,9 +64,9 @@ public class ApplicationController {
             responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApplicationDTO.class))
     )
-    @ApiResponse(responseCode = "303", description = "Applications already exists. Response body contains original.")
-    @ApiResponse(responseCode = "400", description = "Bad Request.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized.")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> save(@Body @Valid ApplicationDTO application) {
         return applicationService.save(application);
@@ -71,8 +74,9 @@ public class ApplicationController {
 
     @Post("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /applications")
-    @ApiResponse(responseCode = "400", description = "Bad Request.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized.")
+    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
     @ExecuteOn(TaskExecutors.IO)
     HttpResponse<?> delete(Long id) {
         return applicationService.deleteById(id);
@@ -115,9 +119,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
-        if (nonceIsNotValid(nonce)) {
-            return HttpResponse.badRequest();
-        }
+        checkNonceValidFormat(nonce);
         return applicationService.getApplicationPrivateKeyAndClientCertificate(nonce);
     }
 
@@ -125,9 +127,7 @@ public class ApplicationController {
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
-        if (nonceIsNotValid(nonce)) {
-            return HttpResponse.badRequest();
-        }
+        checkNonceValidFormat(nonce);
         return applicationService.getPermissionsFile(nonce);
     }
 
@@ -138,10 +138,9 @@ public class ApplicationController {
         return applicationService.getPermissionJson(etag);
     }
 
-    private boolean nonceIsNotValid(String nonce) {
-        if (nonce == null) {
-            return true;
+    private void checkNonceValidFormat(String nonce) {
+        if (nonce == null || !nonce.matches("^[a-zA-Z0-9]*$")) {
+            throw new DPMException(ResponseStatusCodes.INVALID_NONCE_FORMAT);
         }
-        return !nonce.matches("^[a-zA-Z0-9]*$");
     }
 }

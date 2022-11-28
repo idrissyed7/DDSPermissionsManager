@@ -16,6 +16,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let data, errors;
 
@@ -150,7 +151,8 @@
 			})
 			.catch((err) => {
 				addGroupVisible = false;
-				errorMessage('Error Adding Group', err.message);
+				const decodedError = decodeError(Object.create(...err.response.data));
+				errorMessage('Error Adding Group', errorMessages[decodedError.category][decodedError.code]);
 			});
 
 		searchString = '';
@@ -168,6 +170,7 @@
 				});
 			}
 		} catch (err) {
+			deleteGroupVisible = false;
 			errorMessage('Error Deleting Group', err.message);
 		}
 	};
@@ -179,6 +182,13 @@
 		let checkboxes = document.querySelectorAll('.groups-checkbox');
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
 </script>
 
 <svelte:head>
@@ -187,6 +197,19 @@
 </svelte:head>
 
 {#if $isAuthenticated}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMsg}
+			errorMsg={true}
+			errorDescription={errorObject}
+			closeModalText={'Close'}
+			on:cancel={() => {
+				errorMessageVisible = false;
+				errorMessageClear();
+			}}
+		/>
+	{/if}
+
 	{#if deleteGroupVisible}
 		<Modal
 			title="Delete {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'}"
@@ -197,7 +220,10 @@
 				deselectAllGroupsCheckboxes();
 				deleteGroupVisible = false;
 			}}
-			on:cancel={() => (deleteGroupVisible = false)}
+			on:cancel={() => {
+				groupsRowsSelected = [];
+				deleteGroupVisible = false;
+			}}
 		/>
 	{/if}
 
