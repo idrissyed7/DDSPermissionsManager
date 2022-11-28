@@ -332,6 +332,12 @@
 		let checkboxes = document.querySelectorAll('.group-membership-checkbox');
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
+
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.group-membership-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
 </script>
 
 {#if $isAuthenticated}
@@ -379,7 +385,9 @@
 			title="Delete {usersRowsSelected.length > 1 ? 'Users' : 'User'}"
 			actionDeleteUsers={true}
 			on:cancel={() => {
-				usersRowsSelected = [];
+				if (usersRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+					usersRowsSelected = [];
+
 				deleteSelectedGroupMembershipsVisible = false;
 			}}
 			on:deleteGroupMemberships={async () => {

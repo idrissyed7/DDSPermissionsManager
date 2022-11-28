@@ -216,6 +216,12 @@
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
 
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.topics-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
+
 	const addTopic = async () => {
 		if (!selectedGroup) {
 			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
@@ -342,7 +348,8 @@
 			actionDeleteTopics={true}
 			title="Delete {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'}"
 			on:cancel={() => {
-				topicsRowsSelected = [];
+				if (topicsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+					topicsRowsSelected = [];
 				deleteTopicVisible = false;
 			}}
 			on:deleteTopics={async () => {

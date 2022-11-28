@@ -176,6 +176,12 @@
 		let checkboxes = document.querySelectorAll('.super-user-checkbox');
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
+
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.super-user-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
 </script>
 
 <svelte:head>
@@ -213,7 +219,9 @@
 					deleteSuperUserVisible = false;
 				}}
 				on:cancel={() => {
-					superUsersRowsSelected = [];
+					if (superUsersRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+						superUsersRowsSelected = [];
+
 					deleteSuperUserVisible = false;
 				}}
 			/>
