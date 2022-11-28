@@ -1043,7 +1043,7 @@
 					actionAddApplicationEvent();
 				}
 			}}
-			>Add Topic
+			>Add Application
 		</button>
 	{/if}
 
