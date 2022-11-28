@@ -183,6 +183,12 @@
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
 
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.groups-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
+
 	const decodeError = (errorObject) => {
 		errorObject = errorObject.code.replaceAll('-', '_');
 		const cat = errorObject.substring(0, errorObject.indexOf('.'));
@@ -221,7 +227,9 @@
 				deleteGroupVisible = false;
 			}}
 			on:cancel={() => {
-				groupsRowsSelected = [];
+				if (groupsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+					groupsRowsSelected = [];
+
 				deleteGroupVisible = false;
 			}}
 		/>

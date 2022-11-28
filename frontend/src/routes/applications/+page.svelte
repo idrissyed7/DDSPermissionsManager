@@ -379,6 +379,12 @@
 		let checkboxes = document.querySelectorAll('.apps-checkbox');
 		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
+
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.apps-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
 </script>
 
 <svelte:head>
@@ -392,7 +398,9 @@
 			actionDeleteApplications={true}
 			title="Delete {applicationsRowsSelected.length > 1 ? 'Applications' : 'Application'}"
 			on:cancel={() => {
-				applicationsRowsSelected = [];
+				if (applicationsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+					applicationsRowsSelected = [];
+
 				deleteApplicationVisible = false;
 			}}
 			on:deleteApplications={async () => {
