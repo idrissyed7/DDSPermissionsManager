@@ -1,10 +1,10 @@
 # DDS Permissions Manager
 
 DDS stands for [Data Distribution Service](https://www.omg.org/spec/DDS/).
-DDS applications communicate by  writing and reading samples which are just pieces of data.
+DDS applications communicate by writing and reading samples which are just pieces of data.
 For example, a weather station application may write temperature samples that a weather forecasting application reads.
 A topic is a named collection of related samples.
-Usually, topics are named to describe the data that is being shared.
+Topics are usually named to describe the data that is being shared.
 For example, the topic for temperature samples might be named "Temperature".
 
 A [secure DDS](https://www.omg.org/spec/DDS-SECURITY/) application uses a permissions file that controls its ability to write and read topics.
@@ -28,22 +28,23 @@ In this scenario, the organization can use the UI to enter information or use th
 The DDS Permissions Manager is built on the following concepts:
 * Application - An application represents a secure DDS application.
 * Topic - A topic represents a DDS topic.
-* Group Membership - A group membership grants a user (identified by their email address) the ability to administer a group, the topics in a group, and/or the applications in a group.
+* Group Membership - A group membership assigned a user (identified by their email address) zero or more roles in a Group.
 * Group - A collection of Applications, Topics, and Group Memberships.
-* Group Admin - A group admin can add other Group Admins and Topic and Application Admins to their group.
-* Application Admin - An application admin can create/delete applications and generate passwords for applications.
-* Topic Admin - A topic admin can create/delete topics and grant/revoke access to them.
+* Roles
+  * Group Admin - A group admin can add other Group Admins and Topic and Application Admins to their group.
+  * Application Admin - An application admin can create/delete applications and generate passwords for applications.
+  * Topic Admin - A topic admin can create/delete topics and grant/revoke access to them.
 * Super Admin - A super admin is a user that can perform any operation.
 
 ### Groups and Super Admins
 
-A Group is just a unique name associated that acts as a container for Group Memberships, Topics, and Applications.
+A Group is just a unique name that acts as a container for Group Memberships, Topics, and Applications.
 That is, a Group is associated with every Group Membership, Topic, and Application.
 Deleting a group deletes all of its associated Group Memberships, Topics, and Applications.
 
-A Super Admin has unrestrict access and can perform any operation.
+A Super Admin has unrestricted access and can perform any operation.
 Typically, a Super Admin comes from the organization *operating* the DDS Permissions Manager as opposed to an organization that is *using* the DDS Permissions Manager.
-The primary activity of a Super Admin is to onboard organizations that wish to use the DDS Permissions Manager.
+The primary activity of a Super Admin is to enroll organizations that wish to use the DDS Permissions Manager.
 In this capacity, a Super Admin creates a Group for the organization and adds at least one Group Admin to the Group.
 From there, the Group Admin can complete the onboarding process.
 To add the Group Admin, the Super Admin creates a Group Membership that includes the 1) email address of the Group Admin, 2) the Group to which the membership applies, and 3) a set of grants, specifically, the Group Admin grant. 
@@ -51,23 +52,24 @@ To add the Group Admin, the Super Admin creates a Group Membership that includes
 The activities that can only be performed by a Super Admin are:
 * Add/remove other super admins
 * Create/delete groups
-* Add the intial Group Admin to a Group
+* Add the initial Group Admin to a Group
 
-### Group Memberships and Group Admins
+### Group Memberships, Roles, and Group Admins
 
-A Group Membership defines the capabilities of a user with respect to a specific Group.
-The three possible grants are Group Admin, Topic Admin, and Application Admin.
+A Group Membership assigns zero or more roles to a user with reference to a specific Group.
+The roles define the capabilities of the user with respect to that particular Group.
+The three possible roles are Group Admin, Topic Admin, and Application Admin.
 A user can have multiple Group memberships; one for each Group to which they belong.
-Furthermore, a user can have different grants for each Group.
+Furthermore, a user can have different roles for each Group.
 For example, the same user could be a Group Admin in one Group while they are a Topic Admin in another.
-A user can be added to a group without any grants.
+A user can be added to a group without any roles selected.
 In this case, the user can see all of the information for a Group but cannot make any changes.
 
 A Group Admin has the responsibility of maintaining the Group Memberships for their Groups.
 A Group Admin can add/remove/edit Group Memberships for Groups for which they are Group Admin
 To complete the onboarding process, a Group Admin adds Topic Admins and Applications Admins to their group.
 The Group Admin can also add other Group Admins.
-To add a user to a group, a Group Admin creates/edits a Group Membership that include the user's email address, Group, and grants.
+To add a user to a group, a Group Admin creates/edits a Group Membership that include the user's email address, Group, and roles.
 
 ### Applications and Application Admins
 
@@ -75,7 +77,7 @@ An Application represents a secure DDS application.
 An Application has a name and belongs to a Group.
 An Application also has a password that allows it to authenticate to the API and download its DDS Security documents.
 Application Admins can edits the list of Applications in a Group and generate Application passwords.
-Generating a new password invalidates the existing one and there is no way show the content of the current password.
+Generating a new password invalidates the existing one and there is no way show the current password.
 Consequently, Application Admins should record and distribute the password in a secure way.
 
 ### Topics and Topic Admins
@@ -94,7 +96,7 @@ Topic Admins can edit the list of Topics for a Group and edit the access to a To
 This section describes how an Application authenticates with the DDS Permissions Manager and downloads its security documents.
 The process is illustrated using `curl` and assumes that `DPM_URL` is the URL of the DDS Permissions Manager.
 
-1. An Application Admin must generate a password by going to the Application detail screen and clickig "Generate Password."  The Application Admin should also note the "Username" on the same screen.
+1. An Application Admin must generate a password by going to the Application detail screen and clicking "Generate Password."  The Application Admin should also note the "Username" on the same screen.
 2. An application requests a JWT from the API.  For, example
 
         curl -c cookies.txt -H'Content-Type: application/json' -d'{"username":"${USERNAME}","password":"${PASSWORD}"}' ${DPM_URL}/api/login
@@ -138,7 +140,7 @@ To facilitate inter-organization interactions, the DDS Permissions Manager const
 Canonical topic names appear on the Topic Detail Screen and the Application Detail Screen.
 *DDS developers must use the canonical topic name when creating a topic.*
 
-TOPICKIND will be "B" if any Application and read the Topic and "C" if Applications must be explicitly added to read.
+TOPICKIND will be "B" if any Application can read the Topic and "C" if Applications must be explicitly added to read.
 The author of the governance file enforces these semantics by writing appropriate rules in the governance file.
 For example,
 
