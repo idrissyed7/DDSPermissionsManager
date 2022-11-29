@@ -62,7 +62,6 @@
 	// Error Handling
 	let invalidTopic = false;
 	let invalidGroup = false;
-	let invalidApplication = false;
 	let invalidApplicationName = false;
 	let invalidEmail = false;
 	let errorMessageGroup = '';
@@ -106,10 +105,6 @@
 			stopSearchingGroups = true;
 		}, waitTime);
 	}
-
-	// else {
-	// 	searchGroupsResultsVisible = false;
-	// }
 
 	// Search Groups Dropdown Visibility
 	$: if (
@@ -236,9 +231,6 @@
 			const res = await httpAdapter.get(
 				`/applications/search?page=0&size=1&filter=${searchApplications}`
 			);
-
-			console.log('search string', searchApplications);
-			console.log('res', res.data);
 
 			if (
 				res.data.length > 0 &&
@@ -392,13 +384,6 @@
 		closeModal();
 	};
 
-	const decodeError = (errorObject) => {
-		errorObject = errorObject.code.replaceAll('-', '_');
-		const cat = errorObject.substring(0, errorObject.indexOf('.'));
-		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
-		return { category: cat, code: code };
-	};
-
 	const loadMoreResultsApp = (e) => {
 		if (e.detail.inView && hasMoreApps) {
 			applicationResultPage++;
@@ -522,25 +507,29 @@
 			<input
 				autofocus
 				placeholder="Application Name"
-				class:invalid={invalidApplication}
+				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={appName}
 				on:blur={() => {
 					appName = appName.trim();
-					invalidApplication = !validateNameLength(appName, 'application');
+					invalidApplicationName = !validateNameLength(appName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
+					errorMessageApplication = '';
 					if (event.which === returnKey) {
 						appName = appName.trim();
-						invalidApplication = !validateNameLength(appName, 'application');
+						invalidApplicationName = !validateNameLength(appName, 'application');
 
-						if (!invalidApplication && searchGroups?.length >= searchStringLength) {
+						if (!invalidApplicationName && searchGroups?.length >= searchStringLength) {
 							actionAddApplicationEvent();
 						}
 					}
 				}}
-				on:click={() => (errorMessageName = '')}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageApplication = '';
+				}}
 			/>
 		{/if}
 
@@ -629,6 +618,7 @@
 						groupResultPage = 0;
 
 						if (event.which === returnKey) {
+							errorMessageApplication = '';
 							document.activeElement.blur();
 							searchString = searchString?.trim();
 
@@ -681,6 +671,7 @@
 					on:click={async () => {
 						searchGroupActive = true;
 						selectedGroup = '';
+						errorMessageApplication = '';
 						stopSearchingGroups = false;
 
 						if (searchGroupResults?.length > 0) {
@@ -702,7 +693,7 @@
 				{errorMessageGroup}
 			</span>
 
-			{#if searchGroupsResultsVisible}
+			{#if searchGroupsResultsVisible && errorMessageGroup?.length === 0 && errorMessageApplication?.length === 0}
 				<table
 					class="search-group"
 					style="position: absolute; z-index: 100; display: block; overflow-y: scroll; max-height: 13.3rem"
@@ -826,7 +817,7 @@
 						<td
 							style="width: 14rem; padding-left: 0.5rem"
 							on:click={() => {
-								selectedSearchApplication(result.name, result.id, result.groupName); ///
+								selectedSearchApplication(result.name, result.id, result.groupName);
 							}}
 							>{result.name} ({result.groupName})
 						</td>
@@ -1043,7 +1034,7 @@
 					actionAddApplicationEvent();
 				}
 			}}
-			>Add Topic
+			>Add Application
 		</button>
 	{/if}
 
@@ -1184,7 +1175,9 @@
 		>
 	{/if}
 
+	<!-- svelte-ignore a11y-autofocus -->
 	<button
+		autofocus={errorMsg}
 		class="action-button"
 		on:click={() => {
 			emailValue = '';
@@ -1223,6 +1216,10 @@
 		font-weight: 500;
 		color: #6750a4;
 		cursor: pointer;
+	}
+
+	.action-button:focus {
+		outline: 0;
 	}
 
 	.action-button-invalid {
