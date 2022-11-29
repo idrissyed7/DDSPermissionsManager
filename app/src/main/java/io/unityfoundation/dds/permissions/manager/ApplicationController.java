@@ -88,6 +88,12 @@ public class ApplicationController {
         return HttpResponse.ok(applicationService.search(filter, page));
     }
 
+    @Get("/check-exists{?application}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse checkApplicationExistence(@Nullable String application) {
+        return applicationService.existsByName(application);
+    }
+
     @Get("/generate-passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
