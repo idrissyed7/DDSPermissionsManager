@@ -541,7 +541,8 @@
 			src={pageforwardSVG}
 			alt="next page"
 			class="pagination-image"
-			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+				$groups?.length === undefined}
 			on:click={() => {
 				deselectAllGroupsCheckboxes();
 				if (groupsCurrentPage + 1 < groupsTotalPages) {
@@ -554,7 +555,8 @@
 			src={pagelastSVG}
 			alt="last page"
 			class="pagination-image"
-			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+				$groups?.length === undefined}
 			on:click={() => {
 				deselectAllGroupsCheckboxes();
 				if (groupsCurrentPage < groupsTotalPages) {
@@ -568,7 +570,7 @@
 
 <style>
 	.content {
-		width: 35rem;
+		width: fit-content;
 	}
 
 	.dot {

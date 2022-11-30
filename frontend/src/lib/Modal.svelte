@@ -107,10 +107,6 @@
 		}, waitTime);
 	}
 
-	// else {
-	// 	searchGroupsResultsVisible = false;
-	// }
-
 	// Search Groups Dropdown Visibility
 	$: if (
 		searchGroupResults?.length >= 1 &&

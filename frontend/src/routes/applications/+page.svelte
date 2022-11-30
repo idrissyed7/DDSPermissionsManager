@@ -627,7 +627,7 @@
 								</td>
 							{/if}
 							<td
-								style="cursor: pointer; width: 20.8rem; line-height: 2.2rem"
+								style="cursor: pointer; line-height: 2.2rem"
 								on:click={() => {
 									loadApplicationDetail(app.id, app.group);
 									headerTitle.set(app.name);
@@ -640,7 +640,7 @@
 								}}
 								>{app.name}
 							</td>
-							<td style="width: fit-content">{app.groupName}</td>
+							<td>{app.groupName}</td>
 
 							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 								<td
@@ -694,18 +694,19 @@
 		{/if}
 
 		{#if $applications && applicationDetailVisible && !applicationListVisible}
-			<table style="width: 35rem; margin-top: 2rem">
+			<table style="width: 35rem;margin-top: 2rem">
 				<tr style="border-width: 0px">
-					<td style="width: 10rem">Group</td>
-					<td style="width: 20rem">Topic</td>
-					<td style="width: 5rem">Access</td>
+					<td>Group</td>
+					<td>Topic</td>
+					<td>Access</td>
 				</tr>
 				{#if $applicationPermission}
 					{#each $applicationPermission as appPermission}
 						<tr style="line-height: 2rem">
 							<td>
 								{appPermission.topicGroup}
-							</td><td>
+							</td>
+							<td>
 								{appPermission.topicName}
 							</td>
 							<td>
@@ -835,7 +836,8 @@
 			src={pageforwardSVG}
 			alt="next page"
 			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+				$applications?.length === undefined}
 			on:click={() => {
 				deselectAllApplicationsCheckboxes();
 				if (applicationsCurrentPage + 1 < applicationsTotalPages) {
@@ -848,7 +850,8 @@
 			src={pagelastSVG}
 			alt="last page"
 			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+				$applications?.length === undefined}
 			on:click={() => {
 				deselectAllApplicationsCheckboxes();
 				if (applicationsCurrentPage < applicationsTotalPages) {
@@ -862,7 +865,6 @@
 
 <style>
 	.content {
-		min-width: 25rem;
 		width: fit-content;
 	}
 

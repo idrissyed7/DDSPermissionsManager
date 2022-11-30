@@ -551,6 +551,7 @@
 								}}
 								>{topic.name}
 							</td>
+
 							<td style="width: fit-content">{topic.groupName}</td>
 							{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
@@ -630,7 +631,8 @@
 				src={pageforwardSVG}
 				alt="next page"
 				class="pagination-image"
-				class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages}
+				class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+					$topics?.length === undefined}
 				on:click={() => {
 					deselectAllTopicsCheckboxes();
 					if (topicsCurrentPage + 1 < topicsTotalPages) {
@@ -643,7 +645,8 @@
 				src={pagelastSVG}
 				alt="last page"
 				class="pagination-image"
-				class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages}
+				class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+					$topics?.length === undefined}
 				on:click={() => {
 					deselectAllTopicsCheckboxes();
 					if (topicsCurrentPage < topicsTotalPages) {
@@ -658,7 +661,6 @@
 
 <style>
 	table.main {
-		min-width: 25rem;
 		width: fit-content;
 	}
 
@@ -677,7 +679,6 @@
 	}
 
 	.content {
-		min-width: 25rem;
 		width: fit-content;
 	}
 </style>
