@@ -161,7 +161,7 @@
 	const deleteSelectedSuperUsers = async () => {
 		try {
 			for (const superUser of superUsersRowsSelected) {
-				await httpAdapter.put(`/admins/remove-admin/${superUser.id}`, {});
+				await httpAdapter.put(`/admins/remove_admin/${superUser.id}`, {});
 			}
 		} catch (err) {
 			errorMessage('Error Deleting Super User', err.message);

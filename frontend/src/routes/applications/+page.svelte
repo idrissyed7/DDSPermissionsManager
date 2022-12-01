@@ -344,7 +344,7 @@
 
 	const generatePassword = async (applicationId) => {
 		try {
-			const res = await httpAdapter.get(`/applications/generate-passphrase/${applicationId}`);
+			const res = await httpAdapter.get(`/applications/generate_passphrase/${applicationId}`);
 			password = res.data;
 			generateCredentialsVisible = true;
 		} catch (err) {

@@ -40,7 +40,7 @@ public class GroupMembershipController {
         return groupUserService.findAll(pageable, filter);
     }
 
-    @Get("/user-validity")
+    @Get("/user_validity")
     @ApiResponse(responseCode = "200", description = "Valid User")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
@@ -80,7 +80,7 @@ public class GroupMembershipController {
         return groupUserService.removeMember(id);
     }
 
-    @Get("/user-exists/{id}")
+    @Get("/user_exists/{id}")
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "200", description = "Ok")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
