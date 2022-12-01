@@ -473,7 +473,8 @@
 				src={pageforwardSVG}
 				alt="next page"
 				class="pagination-image"
-				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages}
+				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+					$users?.length === undefined}
 				on:click={() => {
 					deselectAllSuperUsersCheckboxes();
 					if (superUsersCurrentPage + 1 < superUsersTotalPages) {
@@ -486,7 +487,8 @@
 				src={pagelastSVG}
 				alt="last page"
 				class="pagination-image"
-				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages}
+				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+					$users?.length === undefined}
 				on:click={() => {
 					deselectAllSuperUsersCheckboxes();
 					if (superUsersCurrentPage < superUsersTotalPages) {
@@ -501,7 +503,7 @@
 
 <style>
 	.content {
-		width: 25rem;
+		width: fit-content;
 	}
 
 	table {
