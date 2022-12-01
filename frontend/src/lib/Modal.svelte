@@ -707,6 +707,7 @@
 						}, waitTime);
 					}}
 					on:click={async () => {
+						searchGroupResults = [];
 						searchGroupActive = true;
 						selectedGroup = '';
 						errorMessageApplication = '';
@@ -885,7 +886,8 @@
 									type="checkbox"
 									name="read"
 									style="width:unset;"
-									checked
+									checked={!actionDuplicateTopic ||
+										(actionDuplicateTopic && app.accessType.includes('READ'))}
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(
 											(application) => application.applicationName === app.applicationName
@@ -915,6 +917,7 @@
 								<input
 									type="checkbox"
 									name="write"
+									checked={actionDuplicateTopic && app.accessType.includes('WRITE')}
 									style="width:unset;"
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(

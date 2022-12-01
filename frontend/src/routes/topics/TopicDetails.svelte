@@ -6,11 +6,11 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
-	// import AddTopic from './AddTopic.svelte';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
 	import duplicateSVG from '../../icons/duplicate.svg';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let selectedTopicName,
 		selectedTopicId,
@@ -101,7 +101,7 @@
 			const res = await httpAdapter.get(`/topics/show/${selectedTopicId}`);
 			topicDetails.set(res.data);
 
-			loadApplicationPermissions(selectedTopicId);
+			await loadApplicationPermissions(selectedTopicId);
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
 			selectedTopicCanonicalName = $topicDetails.canonicalName;
@@ -168,16 +168,26 @@
 				`/applications/search?page=0&size=1&filter=${searchApplications}`
 			);
 
-			console.log('search string', searchApplications);
-			console.log('res', res.data);
-
 			if (
 				res.data.length > 0 &&
 				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
 			) {
-				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
+				selectedApplicationList = {
+					id: res.data[0].id,
+					accessType: 'READ'
+				};
+
+				searchApplications = '';
+				await addTopicApplicationAssociation(selectedTopicId, true);
+
+				selectedApplicationList = '';
+				searchApplicationResults = [];
+
 				return true;
 			} else {
+				searchApplicationActive = false;
+				errorMessageApplication = errorMessages['application']['not_found'];
+
 				return false;
 			}
 		} else {
@@ -185,29 +195,9 @@
 		}
 	};
 
-	const selectedSearchApplication = (appName, appId, groupName) => {
-		searchApplicationResults = [];
-		applicationResultPage = 0;
-
-		selectedTopicApplications.push({
-			applicationId: appId,
-			applicationName: appName,
-			applicationGroup: groupName,
-			accessType: 'READ'
-		});
-
-		// This statement is used to trigger Svelte reactivity and re-render the component
-		selectedTopicApplications = selectedTopicApplications;
-		searchApplications = appName;
-
-		searchApplicationsResultsVisible = false;
-		searchApplications = '';
-		searchApplicationActive = false;
-	};
-
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
-		if (selectedTopicApplications) await getApplicationGroupNames(resApps.data.content);
+		await getApplicationGroupNames(resApps.data.content);
 		selectedTopicApplications = resApps.data.content;
 	};
 
@@ -235,21 +225,19 @@
 				.post(
 					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
 				)
-				.then(() => loadApplicationPermissions(topicId));
+				.then(async () => await loadApplicationPermissions(topicId));
 		}
 	};
 
 	const deleteTopicApplicationAssociation = async (permissionId, topicId) => {
 		await httpAdapter.delete(`/application_permissions/${permissionId}`);
-		loadApplicationPermissions(topicId);
+		await loadApplicationPermissions(topicId);
 	};
 
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
 		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
-		loadApplicationPermissions(topicId);
+		await loadApplicationPermissions(topicId);
 	};
-
-	const actionAddApplicationToListEvent = () => {};
 
 	const loadMoreResultsApp = (e) => {
 		if (e.detail.inView && hasMoreApps) {
@@ -375,8 +363,8 @@
 							if (event.which === returnKey) {
 								document.activeElement.blur();
 
-								// actionAddApplicationToListEvent();
-								validateApplicationName(); ///
+								validateApplicationName();
+								searchApplicationActive = false;
 							}
 						}}
 						on:blur={() => {
@@ -407,6 +395,11 @@
 							}, waitTime);
 						}}
 					/>
+					<div style="margin-left: 7.4rem">
+						<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
+							{errorMessageApplication}
+						</span>
+					</div>
 				</td>
 			{/if}
 		</tr>
@@ -428,7 +421,7 @@
 				<tr style="border-width: 0px">
 					<td
 						style="width: 14rem; padding-left: 0.5rem"
-						on:click={() => {
+						on:click={async () => {
 							searchApplications = result.name;
 							searchApplicationsId = result.id;
 
@@ -439,7 +432,7 @@
 								accessType: 'READ'
 							};
 
-							addTopicApplicationAssociation(selectedTopicId, true);
+							await addTopicApplicationAssociation(selectedTopicId, true);
 							searchApplications = '';
 							selectedApplicationList = '';
 							searchApplicationResults = [];
@@ -454,7 +447,9 @@
 	{#if selectedTopicApplications}
 		<div>
 			{#each selectedTopicApplications as application}
-				<div style="display: flex; font-size: 0.8rem; margin-left: 16.5rem; margin-bottom: -0.2rem">
+				<div
+					style="display: flex; font-size: 0.8rem; margin-left: 16.5rem; margin-top: 1rem; margin-bottom: -0.2rem"
+				>
 					<span style="width: 10.5rem">
 						{application.applicationName} ({application.applicationGroup})
 					</span>
