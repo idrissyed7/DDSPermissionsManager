@@ -420,7 +420,7 @@
 							</td>
 						{/if}
 						<td style="width: 7rem;">Group</td>
-						<td style="width: 7rem;"><center>Memberships</center></td>
+						<td style="width: 7rem;"><center>Users</center></td>
 						<td style="width: 7rem;"><center>Topics</center></td>
 						<td style="width: 7rem;"><center>Applications</center></td>
 						<td />
