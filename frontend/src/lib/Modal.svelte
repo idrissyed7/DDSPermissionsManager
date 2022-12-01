@@ -23,6 +23,7 @@
 	export let actionAddGroup = false;
 	export let actionEditUser = false;
 	export let actionEditApplicationName = false;
+	export let actionEditGroup = false;
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
 	export let actionDeleteTopics = false;
@@ -32,11 +33,13 @@
 	export let noneditable = false;
 	export let emailValue = '';
 	export let newTopicName = '';
+	export let groupId = '';
 	export let anyApplicationCanRead = false;
 	export let searchGroups = '';
 	export let searchApplications = '';
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
+	export let groupCurrentName = '';
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let errorMsg = false;
@@ -91,6 +94,8 @@
 	let stopSearchingGroups = false;
 	let timer;
 	let searchApplicationsResultsMouseEnter = false;
+
+	if (actionEditGroup) newGroupName = groupCurrentName;
 
 	// Search Groups Feature
 	$: if (
@@ -217,7 +222,13 @@
 			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroups}`
 		);
 		if (
+			searchGroups?.length > 0 &&
 			res.data.content?.some((group) => group.name.toUpperCase() === searchGroups.toUpperCase())
+		) {
+			return true;
+		} else if (
+			actionEditGroup &&
+			res.data.content?.some((group) => group.name.toUpperCase() !== newGroupName.toUpperCase())
 		) {
 			return true;
 		} else {
@@ -351,15 +362,23 @@
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
-				errorMessageName = errorMessages['group']['exists'];
-
+				errorMessageGroup = errorMessages['group']['exists'];
 				return;
 			} else {
-				dispatch('addGroup', returnGroupName);
+				if (actionEditGroup) {
+					dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+				} else {
+					dispatch('addGroup', returnGroupName);
+				}
+
 				closeModal();
 			}
 		} else {
-			dispatch('addGroup', returnGroupName);
+			if (actionEditGroup) {
+				dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+			} else {
+				dispatch('addGroup', returnGroupName);
+			}
 			closeModal();
 		}
 	};
@@ -548,7 +567,7 @@
 			<input
 				autofocus
 				placeholder="Group Name"
-				class:invalid={invalidGroup}
+				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newGroupName}
 				on:blur={() => {
@@ -557,13 +576,27 @@
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
+					errorMessageGroup = '';
+
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
 						invalidGroup = !validateNameLength(newGroupName, 'group');
-						if (!invalidGroup) actionAddGroupEvent();
+						if (actionAddGroup && !invalidGroup) {
+							actionAddGroupEvent();
+						}
+
+						if (actionEditGroup && !invalidGroup && newGroupName !== groupCurrentName) {
+							actionAddGroupEvent();
+						}
+						if (newGroupName === groupCurrentName) {
+							dispatch('cancel');
+						}
 					}
 				}}
-				on:click={() => (errorMessageName = '')}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+				}}
 			/>
 
 			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
@@ -573,6 +606,16 @@
 					class:hidden={errorMessageName?.length === 0}
 				>
 					{errorMessageName}
+				</span>
+			{/if}
+
+			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === 'Group' && errorMessageGroup?.length > 0}
+				<span
+					class="error-message"
+					style="	top: 9.6rem; right: 2.3rem"
+					class:hidden={errorMessageGroup?.length === 0}
+				>
+					{errorMessageGroup}
 				</span>
 			{/if}
 		{/if}
@@ -1084,6 +1127,26 @@
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('saveNewAppName', { newAppName: previousAppName });
+				}
+			}}
+			>Save Changes
+		</button>
+	{/if}
+
+	{#if actionEditGroup}
+		<hr style="z-index: 1" />
+		<button
+			class="action-button"
+			class:action-button-invalid={newGroupName?.length < minNameLength}
+			disabled={newGroupName?.length < minNameLength}
+			on:click={() => {
+				if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+				else dispatch('cancel');
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+					else dispatch('cancel');
 				}
 			}}
 			>Save Changes
