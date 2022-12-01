@@ -1951,7 +1951,7 @@ public class ApplicationApiTest {
         assertTrue(applicationOneOptional.isPresent());
 
         // found
-        request = HttpRequest.GET("/applications/check-exists/TestApplication");
+        request = HttpRequest.GET("/applications/check_exists/TestApplication");
         response = blockingClient.exchange(request, ApplicationDTO.class);
         assertEquals(OK, response.getStatus());
         Optional<ApplicationDTO> applicationDTO = response.getBody(ApplicationDTO.class);
@@ -1959,7 +1959,7 @@ public class ApplicationApiTest {
         assertEquals("TestApplication", applicationDTO.get().getName());
 
         // case insensitive
-        request = HttpRequest.GET("/applications/check-exists/testapplication");
+        request = HttpRequest.GET("/applications/check_exists/testapplication");
         response = blockingClient.exchange(request, ApplicationDTO.class);
         assertEquals(OK, response.getStatus());
         Optional<ApplicationDTO> applicationCaseInsensitiveDTO = response.getBody(ApplicationDTO.class);
@@ -1967,7 +1967,7 @@ public class ApplicationApiTest {
         assertEquals("TestApplication", applicationCaseInsensitiveDTO.get().getName());
 
         // not found
-        request = HttpRequest.GET("/applications/check-exists/Application");
+        request = HttpRequest.GET("/applications/check_exists/Application");
         HttpRequest<?> finalRequest = request;
         HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
             blockingClient.exchange(finalRequest, ApplicationDTO.class);
@@ -1979,7 +1979,7 @@ public class ApplicationApiTest {
         assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NOT_FOUND.equals(group.get("code"))));
 
         // application is empty string
-        request = HttpRequest.GET("/applications/check-exists/%20");
+        request = HttpRequest.GET("/applications/check_exists/%20");
         HttpRequest<?> finalRequest1 = request;
         HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
             blockingClient.exchange(finalRequest1, ApplicationDTO.class);
@@ -1991,7 +1991,7 @@ public class ApplicationApiTest {
         assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL.equals(group.get("code"))));
 
         // application is null
-        request = HttpRequest.GET("/applications/check-exists/");
+        request = HttpRequest.GET("/applications/check_exists/");
         HttpRequest<?> finalRequest2 = request;
         HttpClientResponseException exception2 = assertThrowsExactly(HttpClientResponseException.class, () -> {
             blockingClient.exchange(finalRequest2, ApplicationDTO.class);

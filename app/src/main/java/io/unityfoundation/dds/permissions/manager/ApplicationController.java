@@ -90,7 +90,7 @@ public class ApplicationController {
         return HttpResponse.ok(applicationService.search(filter, page));
     }
 
-    @Get("/check-exists/{application}")
+    @Get("/check_exists/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse checkApplicationExistence(@NotBlank @Size(min = 3) String application) {
         return applicationService.existsByName(application);
