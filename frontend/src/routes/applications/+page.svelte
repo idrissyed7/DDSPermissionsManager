@@ -780,84 +780,86 @@
 			{/if}
 		{/if}
 	</div>
-	<div class="pagination">
-		<span>Rows per page</span>
-		<select
-			tabindex="-1"
-			on:change={(e) => {
-				applicationsPerPage = e.target.value;
-				reloadAllApps();
-			}}
-			name="RowsPerPage"
-		>
-			<option value="10">10</option>
-			<option value="25">25</option>
-			<option value="50">50</option>
-			<option value="75">75</option>
-			<option value="100">100&nbsp;</option>
-		</select>
-		<span style="margin: 0 2rem 0 2rem">
-			{#if applicationsTotalSize > 0}
-				{1 + applicationsCurrentPage * applicationsPerPage}
-			{:else}
-				0
-			{/if}
-			- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
-			{applicationsTotalSize}
-		</span>
-		<img
-			src={pagefirstSVG}
-			alt="first page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage === 0}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage > 0) {
-					applicationsCurrentPage = 0;
+	{#if !applicationDetailVisible}
+		<div class="pagination">
+			<span>Rows per page</span>
+			<select
+				tabindex="-1"
+				on:change={(e) => {
+					applicationsPerPage = e.target.value;
 					reloadAllApps();
-				}
-			}}
-		/>
-		<img
-			src={pagebackwardsSVG}
-			alt="previous page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage === 0}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage > 0) {
-					applicationsCurrentPage--;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-		<img
-			src={pageforwardSVG}
-			alt="next page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage + 1 < applicationsTotalPages) {
-					applicationsCurrentPage++;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-		<img
-			src={pagelastSVG}
-			alt="last page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage < applicationsTotalPages) {
-					applicationsCurrentPage = applicationsTotalPages - 1;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-	</div>
+				}}
+				name="RowsPerPage"
+			>
+				<option value="10">10</option>
+				<option value="25">25</option>
+				<option value="50">50</option>
+				<option value="75">75</option>
+				<option value="100">100&nbsp;</option>
+			</select>
+			<span style="margin: 0 2rem 0 2rem">
+				{#if applicationsTotalSize > 0}
+					{1 + applicationsCurrentPage * applicationsPerPage}
+				{:else}
+					0
+				{/if}
+				- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+				{applicationsTotalSize}
+			</span>
+			<img
+				src={pagefirstSVG}
+				alt="first page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage === 0}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage > 0) {
+						applicationsCurrentPage = 0;
+						reloadAllApps();
+					}
+				}}
+			/>
+			<img
+				src={pagebackwardsSVG}
+				alt="previous page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage === 0}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage > 0) {
+						applicationsCurrentPage--;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+			<img
+				src={pageforwardSVG}
+				alt="next page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+						applicationsCurrentPage++;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+			<img
+				src={pagelastSVG}
+				alt="last page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage < applicationsTotalPages) {
+						applicationsCurrentPage = applicationsTotalPages - 1;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+		</div>
+	{/if}
 {/if}
 
 <style>
