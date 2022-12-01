@@ -7,6 +7,7 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.data.repository.PageableRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,8 @@ public interface ApplicationRepository extends PageableRepository<Application, L
                                                         @NotNull @NonNull Group group);
 
     Page<Application> findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application,String group, Pageable page);
+
+    Optional<Application> findByNameEquals(@NotBlank String name);
 
     Page<Application> findAllByPermissionsGroupIdIn(List<Long> groups, Pageable pageable);
 

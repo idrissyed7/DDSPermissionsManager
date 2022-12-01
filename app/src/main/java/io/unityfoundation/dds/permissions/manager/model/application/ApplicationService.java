@@ -253,6 +253,16 @@ public class ApplicationService {
         return toDtos(results);
     }
 
+    public HttpResponse existsByName(String name) {
+        Optional<Application> byNameEquals = applicationRepository.findByNameEquals(name.trim());
+
+        if (byNameEquals.isEmpty()) {
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        return HttpResponse.ok(new ApplicationDTO(byNameEquals.get()));
+    }
+
     public List<ApplicationDTO> toDtos(Iterable<Application> results) {
         return StreamSupport.stream(results.spliterator(), false)
                 .map(ApplicationDTO::new)
