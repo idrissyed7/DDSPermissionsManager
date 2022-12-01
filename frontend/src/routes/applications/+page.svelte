@@ -652,7 +652,7 @@
 
 							{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 								<td
-									style="cursor: pointer"
+									style="cursor: pointer; width:1rem"
 									on:keydown={(event) => {
 										if (event.which === returnKey) {
 											editApplicationNameVisible = true;
@@ -674,7 +674,7 @@
 									/>
 								</td>
 
-								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem">
 									<img
 										src={deleteSVG}
 										alt="delete application"
