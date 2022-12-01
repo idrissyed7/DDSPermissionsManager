@@ -571,7 +571,7 @@
 			{/if}
 		{/if}
 
-		{#if $applications && applicationListVisible && !applicationDetailVisible}
+		{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
 			<table
 				style="margin-top: 0.5rem"
 				class:application-table-admin={($permissionsByGroup &&
@@ -697,7 +697,7 @@
 					{/each}
 				{/if}
 			</table>
-		{:else if !$applications && !applicationDetailVisible && applicationListVisible}
+		{:else if !applicationDetailVisible && applicationListVisible}
 			<p>No Applications Found</p>
 		{/if}
 
