@@ -200,7 +200,7 @@ The DDS Permissions Manager consists of
 
 * A Web App UI that can either be served by the Web API or independently
 * A Web API that serves data to the UI and DDS Applications
-* A Secret Store for storing key and other things related to DDS Security
+* A Secret Store for storing keys and other things related to DDS Security
 * A Database for persistent storage
 * An Auth Provider for authenticating users
 
@@ -226,15 +226,6 @@ The governance file must contain certain rules.
 See [Canonical Topic Names](#canonical-topic-names) for more details.
 
 In addition to the documents necessary for DDS Security, the Secret Store is a good candidate for database credentials and the secrets for JWT generation.
-
-## Configuring GCP Secret Manager as a Secret Store
-
-The following environment variables should be set to enable GCP Secret Manager:
-
-* GCP_CREDENTIALS_ENABLED - true
-* GCP_PROJECT_ID - the GCP Project ID
-
-Beyond this, the service account used by the Web API will need access to the Secret Manager.
 
 ### Steps to produce necessary artifacts (Identity CA, Permissions CA, governance file)
 
@@ -266,6 +257,15 @@ The following shell script shows how to create an Identity CA and Permissions CA
     openssl smime -sign -in governance.xml -text -out governance.xml.p7s -signer permissions_ca.pem -inkey permissions_ca_key.pem
 
     echo "Signed governance file in governance.xml.p7s"
+
+### Configuring GCP Secret Manager as a Secret Store
+
+The following environment variables should be set to enable GCP Secret Manager:
+
+* GCP_CREDENTIALS_ENABLED - true
+* GCP_PROJECT_ID - the GCP Project ID
+
+Beyond this, the service account used by the Web API will need access to the Secret Manager.
 
 ### The Database
 
