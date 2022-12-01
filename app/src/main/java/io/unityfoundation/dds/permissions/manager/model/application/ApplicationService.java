@@ -577,7 +577,7 @@ public class ApplicationService {
     private String buildSubject(Application application, String nonce) {
         X500NameBuilder nameBuilder = new X500NameBuilder();
         nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
-        nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
+        nameBuilder.addRDN(BCStyle.GIVENNAME, application.getName());
         nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
         return nameBuilder.build().toString();
     }

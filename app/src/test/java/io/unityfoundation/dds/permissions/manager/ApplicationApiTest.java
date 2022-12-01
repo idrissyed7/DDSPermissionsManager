@@ -1886,7 +1886,7 @@ public class ApplicationApiTest {
             assertTrue(bodyOptional.isPresent());
             String body = bodyOptional.get();
             assertTrue(body.contains("CN="+ applicationOneId +"_unity"));
-            assertTrue(body.contains("GN="+applicationOneId));
+            assertTrue(body.contains("GN="+applicationOne.getName()));
             assertTrue(body.contains("SN="+primaryGroup.getId()));
         }
     }
