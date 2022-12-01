@@ -197,21 +197,7 @@
 
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
-		await getApplicationGroupNames(resApps.data.content);
 		selectedTopicApplications = resApps.data.content;
-	};
-
-	const getApplicationGroupNames = async (applicationsList) => {
-		if (applicationsList) {
-			for (const application of applicationsList) {
-				const res = await httpAdapter.get(`/applications/show/${application.applicationId}`);
-				const appendApp = applicationsList.find(
-					(app) => app.applicationName === application.applicationName
-				);
-				appendApp.applicationGroup = res.data.groupName;
-			}
-			selectedTopicApplications = selectedTopicApplications;
-		}
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -451,7 +437,7 @@
 					style="display: flex; font-size: 0.8rem; margin-left: 16.5rem; margin-top: 1rem; margin-bottom: -0.2rem"
 				>
 					<span style="width: 10.5rem">
-						{application.applicationName} ({application.applicationGroup})
+						{application.applicationName} ({application.applicationGroupName})
 					</span>
 					<span style="border-bottom-color: transparent; padding-left: 0.5rem">Access Type:</span>
 
