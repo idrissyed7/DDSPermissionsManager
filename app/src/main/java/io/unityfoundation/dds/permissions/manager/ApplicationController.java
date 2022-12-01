@@ -26,6 +26,8 @@ import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.mail.MessagingException;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -86,6 +88,12 @@ public class ApplicationController {
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse search(@Nullable String filter, @Valid Pageable page) {
         return HttpResponse.ok(applicationService.search(filter, page));
+    }
+
+    @Get("/check_exists/{application}")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse checkApplicationExistence(@NotBlank @Size(min = 3) String application) {
+        return applicationService.existsByName(application);
     }
 
     @Get("/generate_passphrase/{application}")

@@ -23,6 +23,7 @@
 	export let actionAddGroup = false;
 	export let actionEditUser = false;
 	export let actionEditApplicationName = false;
+	export let actionEditGroup = false;
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
 	export let actionDeleteTopics = false;
@@ -32,11 +33,13 @@
 	export let noneditable = false;
 	export let emailValue = '';
 	export let newTopicName = '';
+	export let groupId = '';
 	export let anyApplicationCanRead = false;
 	export let searchGroups = '';
 	export let searchApplications = '';
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
+	export let groupCurrentName = '';
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let errorMsg = false;
@@ -91,6 +94,8 @@
 	let stopSearchingGroups = false;
 	let timer;
 	let searchApplicationsResultsMouseEnter = false;
+
+	if (actionEditGroup) newGroupName = groupCurrentName;
 
 	// Search Groups Feature
 	$: if (
@@ -217,7 +222,13 @@
 			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroups}`
 		);
 		if (
+			searchGroups?.length > 0 &&
 			res.data.content?.some((group) => group.name.toUpperCase() === searchGroups.toUpperCase())
+		) {
+			return true;
+		} else if (
+			actionEditGroup &&
+			res.data.content?.some((group) => group.name.toUpperCase() !== newGroupName.toUpperCase())
 		) {
 			return true;
 		} else {
@@ -239,6 +250,9 @@
 				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
 				return true;
 			} else {
+				searchApplicationActive = false;
+				errorMessageApplication = errorMessages['application']['not_found'];
+
 				return false;
 			}
 		} else {
@@ -270,6 +284,8 @@
 			emailValue: emailValue
 		};
 
+		validateEmail(emailValue);
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -297,8 +313,8 @@
 			selectedApplicationList: selectedApplicationList
 		};
 
-		const validName = await validateNameLength(newTopicName, 'topic');
-		if (!validName) {
+		invalidTopic = !validateNameLength(newTopicName, 'topic');
+		if (invalidTopic) {
 			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
 			return;
 		}
@@ -315,7 +331,7 @@
 			return;
 		}
 
-		if (validName && validGroupName && validApplicationName) {
+		if (!invalidTopic && validGroupName && validApplicationName) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -328,6 +344,8 @@
 			selectedGroup: selectedGroup
 		};
 
+		invalidApplicationName = !validateNameLength(appName, 'application');
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -339,6 +357,8 @@
 	};
 
 	const actionAddGroupEvent = async () => {
+		invalidGroup = !validateNameLength(newGroupName, 'group');
+
 		let returnGroupName = {
 			newGroupName: newGroupName
 		};
@@ -351,15 +371,23 @@
 			if (
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
-				errorMessageName = errorMessages['group']['exists'];
-
+				errorMessageGroup = errorMessages['group']['exists'];
 				return;
 			} else {
-				dispatch('addGroup', returnGroupName);
+				if (actionEditGroup) {
+					dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+				} else {
+					dispatch('addGroup', returnGroupName);
+				}
+
 				closeModal();
 			}
 		} else {
-			dispatch('addGroup', returnGroupName);
+			if (actionEditGroup) {
+				dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+			} else {
+				dispatch('addGroup', returnGroupName);
+			}
 			closeModal();
 		}
 	};
@@ -425,7 +453,6 @@
 				bind:value={emailValue}
 				on:blur={() => {
 					emailValue = emailValue.trim();
-					validateEmail(emailValue);
 				}}
 				on:click={() => {
 					invalidEmail = false;
@@ -472,7 +499,6 @@
 				bind:value={newTopicName}
 				on:blur={() => {
 					newTopicName = newTopicName.trim();
-					invalidTopic = !validateNameLength(newTopicName, 'topic');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -512,7 +538,6 @@
 				bind:value={appName}
 				on:blur={() => {
 					appName = appName.trim();
-					invalidApplicationName = !validateNameLength(appName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -548,22 +573,35 @@
 			<input
 				autofocus
 				placeholder="Group Name"
-				class:invalid={invalidGroup}
+				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newGroupName}
 				on:blur={() => {
 					newGroupName = newGroupName.trim();
-					invalidGroup = !validateNameLength(newGroupName, 'group');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
+					errorMessageGroup = '';
+
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
 						invalidGroup = !validateNameLength(newGroupName, 'group');
-						if (!invalidGroup) actionAddGroupEvent();
+						if (actionAddGroup && !invalidGroup) {
+							actionAddGroupEvent();
+						}
+
+						if (actionEditGroup && !invalidGroup && newGroupName !== groupCurrentName) {
+							actionAddGroupEvent();
+						}
+						if (newGroupName === groupCurrentName) {
+							dispatch('cancel');
+						}
 					}
 				}}
-				on:click={() => (errorMessageName = '')}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+				}}
 			/>
 
 			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
@@ -573,6 +611,16 @@
 					class:hidden={errorMessageName?.length === 0}
 				>
 					{errorMessageName}
+				</span>
+			{/if}
+
+			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === 'Group' && errorMessageGroup?.length > 0}
+				<span
+					class="error-message"
+					style="	top: 9.6rem; right: 2.3rem"
+					class:hidden={errorMessageGroup?.length === 0}
+				>
+					{errorMessageGroup}
 				</span>
 			{/if}
 		{/if}
@@ -587,7 +635,6 @@
 				bind:value={previousAppName}
 				on:blur={() => {
 					previousAppName = previousAppName.trim();
-					invalidApplicationName = !validateNameLength(previousAppName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -630,15 +677,6 @@
 									searchGroups?.length >= searchStringLength
 								) {
 									actionAddUserEvent();
-								}
-							}
-
-							if (actionAddTopic) {
-								if (
-									newTopicName?.length >= minNameLength &&
-									searchGroups?.length >= searchStringLength
-								) {
-									actionAddTopicEvent();
 								}
 							}
 
@@ -1084,6 +1122,26 @@
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('saveNewAppName', { newAppName: previousAppName });
+				}
+			}}
+			>Save Changes
+		</button>
+	{/if}
+
+	{#if actionEditGroup}
+		<hr style="z-index: 1" />
+		<button
+			class="action-button"
+			class:action-button-invalid={newGroupName?.length < minNameLength}
+			disabled={newGroupName?.length < minNameLength}
+			on:click={() => {
+				if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+				else dispatch('cancel');
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+					else dispatch('cancel');
 				}
 			}}
 			>Save Changes
