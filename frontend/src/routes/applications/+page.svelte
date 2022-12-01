@@ -21,6 +21,7 @@
 	import threedotsSVG from '../../icons/threedots.svg';
 	import lockSVG from '../../icons/lock.svg';
 	import copySVG from '../../icons/copy.svg';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let data, errors;
 
@@ -41,7 +42,6 @@
 	}
 
 	// Constants
-	const minNameLength = 3;
 	const fiveSeconds = 5000;
 	const returnKey = 13;
 	const searchStringLength = 3;
@@ -83,12 +83,8 @@
 
 	// Groups SearchBox
 	let searchGroups;
-	let searchGroupResults;
-	// let searchGroupsResultsVisible = false;
-	// let searchGroupActive = false;
 
 	// Forms
-	let groupsDropdownSuggestion = 7;
 	let generateCredentialsVisible = false;
 	let showCopyNotificationVisible = false;
 
@@ -173,23 +169,7 @@
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
 		errorObject = errObj;
-		addApplicationVisible = false;
-		deleteApplicationVisible = false;
 		errorMessageVisible = true;
-	};
-
-	const errorMessageClear = () => {
-		errorMsg = '';
-		errorObject = '';
-		errorMessageVisible = false;
-	};
-
-	const searchGroup = async (searchGroupStr) => {
-		setTimeout(async () => {
-			searchGroupResults = await httpAdapter.get(
-				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-			);
-		}, 1000);
 	};
 
 	const searchApp = async (searchString) => {
@@ -222,7 +202,6 @@
 				groupId.data.content[0]?.name.toUpperCase() === forwardedSearchGroups.toUpperCase()
 			) {
 				forwardedSelectedGroup = groupId.data.content[0]?.id;
-				// searchGroupActive = false;
 			}
 		}
 
@@ -233,11 +212,13 @@
 			});
 			addApplicationVisible = false;
 		} catch (err) {
-			if (err.response.data && err.response.status === 303)
-				err.message = 'Application name already exists.';
-			if (err.response.data && err.response.status === 400) err.message = 'Group not found.';
-
-			errorMessage('Error Creating Application', err.message);
+			if (err.response.data && err.response.status === 400) {
+				const decodedError = decodeError(Object.create(...err.response.data));
+				errorMessage(
+					'Error Adding Application',
+					errorMessages[decodedError.category][decodedError.code]
+				);
+			}
 		}
 		selectedGroup = '';
 
@@ -292,7 +273,13 @@
 				group: selectedAppGroupId
 			})
 			.catch((err) => {
-				errorMessage('Error Saving New Application Name', err.message);
+				if (err.response.data && err.response.status === 400) {
+					const decodedError = decodeError(Object.create(...err.response.data));
+					errorMessage(
+						'Error Saving Application',
+						errorMessages[decodedError.category][decodedError.code]
+					);
+				}
 			});
 
 		reloadAllApps();
@@ -385,6 +372,13 @@
 		checkboxes = Array.from(checkboxes);
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
 </script>
 
 <svelte:head>
@@ -393,6 +387,20 @@
 </svelte:head>
 
 {#if $isAuthenticated}
+	{#if errorMessageVisible}
+		<Modal
+			title={errorMsg}
+			errorMsg={true}
+			errorDescription={errorObject}
+			closeModalText={'Close'}
+			on:cancel={() => (errorMessageVisible = false)}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					errorMessageVisible = false;
+				}
+			}}
+		/>
+	{/if}
 	{#if deleteApplicationVisible && !errorMessageVisible}
 		<Modal
 			actionDeleteApplications={true}
@@ -781,86 +789,89 @@
 			{/if}
 		{/if}
 	</div>
-	<div class="pagination">
-		<span>Rows per page</span>
-		<select
-			tabindex="-1"
-			on:change={(e) => {
-				applicationsPerPage = e.target.value;
-				reloadAllApps();
-			}}
-			name="RowsPerPage"
-		>
-			<option value="10">10</option>
-			<option value="25">25</option>
-			<option value="50">50</option>
-			<option value="75">75</option>
-			<option value="100">100&nbsp;</option>
-		</select>
-		<span style="margin: 0 2rem 0 2rem">
-			{#if applicationsTotalSize > 0}
-				{1 + applicationsCurrentPage * applicationsPerPage}
-			{:else}
-				0
-			{/if}
-			- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
-			{applicationsTotalSize}
-		</span>
-		<img
-			src={pagefirstSVG}
-			alt="first page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage === 0}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage > 0) {
-					applicationsCurrentPage = 0;
+
+	{#if !applicationDetailVisible}
+		<div class="pagination">
+			<span>Rows per page</span>
+			<select
+				tabindex="-1"
+				on:change={(e) => {
+					applicationsPerPage = e.target.value;
 					reloadAllApps();
-				}
-			}}
-		/>
-		<img
-			src={pagebackwardsSVG}
-			alt="previous page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage === 0}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage > 0) {
-					applicationsCurrentPage--;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-		<img
-			src={pageforwardSVG}
-			alt="next page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
-				$applications?.length === undefined}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage + 1 < applicationsTotalPages) {
-					applicationsCurrentPage++;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-		<img
-			src={pagelastSVG}
-			alt="last page"
-			class="pagination-image"
-			class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
-				$applications?.length === undefined}
-			on:click={() => {
-				deselectAllApplicationsCheckboxes();
-				if (applicationsCurrentPage < applicationsTotalPages) {
-					applicationsCurrentPage = applicationsTotalPages - 1;
-					reloadAllApps(applicationsCurrentPage);
-				}
-			}}
-		/>
-	</div>
+				}}
+				name="RowsPerPage"
+			>
+				<option value="10">10</option>
+				<option value="25">25</option>
+				<option value="50">50</option>
+				<option value="75">75</option>
+				<option value="100">100&nbsp;</option>
+			</select>
+			<span style="margin: 0 2rem 0 2rem">
+				{#if applicationsTotalSize > 0}
+					{1 + applicationsCurrentPage * applicationsPerPage}
+				{:else}
+					0
+				{/if}
+				- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)} of
+				{applicationsTotalSize}
+			</span>
+			<img
+				src={pagefirstSVG}
+				alt="first page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage === 0}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage > 0) {
+						applicationsCurrentPage = 0;
+						reloadAllApps();
+					}
+				}}
+			/>
+			<img
+				src={pagebackwardsSVG}
+				alt="previous page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage === 0}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage > 0) {
+						applicationsCurrentPage--;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+			<img
+				src={pageforwardSVG}
+				alt="next page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+					$applications?.length === undefined}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+						applicationsCurrentPage++;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+			<img
+				src={pagelastSVG}
+				alt="last page"
+				class="pagination-image"
+				class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+					$applications?.length === undefined}
+				on:click={() => {
+					deselectAllApplicationsCheckboxes();
+					if (applicationsCurrentPage < applicationsTotalPages) {
+						applicationsCurrentPage = applicationsTotalPages - 1;
+						reloadAllApps(applicationsCurrentPage);
+					}
+				}}
+			/>
+		</div>
+	{/if}
 {/if}
 
 <style>

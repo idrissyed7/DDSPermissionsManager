@@ -18,6 +18,7 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import threedotsSVG from '../../icons/threedots.svg';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let data, errors;
 
@@ -250,7 +251,7 @@
 			addTopicApplicationAssociation(createdTopicId);
 		}
 		if (res === undefined) {
-			errorMessage('Error Adding Topic', 'Topic already exists.');
+			errorMessage('Error Adding Topic', errorMessages['topic']['exists']);
 		}
 
 		addTopicVisible = false;
