@@ -281,6 +281,8 @@
 			emailValue: emailValue
 		};
 
+		validateEmail(emailValue);
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -308,8 +310,8 @@
 			selectedApplicationList: selectedApplicationList
 		};
 
-		const validName = await validateNameLength(newTopicName, 'topic');
-		if (!validName) {
+		invalidTopic = !validateNameLength(newTopicName, 'topic');
+		if (invalidTopic) {
 			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
 			return;
 		}
@@ -326,7 +328,7 @@
 			return;
 		}
 
-		if (validName && validGroupName && validApplicationName) {
+		if (!invalidTopic && validGroupName && validApplicationName) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -339,6 +341,8 @@
 			selectedGroup: selectedGroup
 		};
 
+		invalidApplicationName = !validateNameLength(appName, 'application');
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -350,6 +354,8 @@
 	};
 
 	const actionAddGroupEvent = async () => {
+		invalidGroup = !validateNameLength(newGroupName, 'group');
+
 		let returnGroupName = {
 			newGroupName: newGroupName
 		};
@@ -444,7 +450,6 @@
 				bind:value={emailValue}
 				on:blur={() => {
 					emailValue = emailValue.trim();
-					validateEmail(emailValue);
 				}}
 				on:click={() => {
 					invalidEmail = false;
@@ -491,7 +496,6 @@
 				bind:value={newTopicName}
 				on:blur={() => {
 					newTopicName = newTopicName.trim();
-					invalidTopic = !validateNameLength(newTopicName, 'topic');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -531,7 +535,6 @@
 				bind:value={appName}
 				on:blur={() => {
 					appName = appName.trim();
-					invalidApplicationName = !validateNameLength(appName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -572,7 +575,6 @@
 				bind:value={newGroupName}
 				on:blur={() => {
 					newGroupName = newGroupName.trim();
-					invalidGroup = !validateNameLength(newGroupName, 'group');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -630,7 +632,6 @@
 				bind:value={previousAppName}
 				on:blur={() => {
 					previousAppName = previousAppName.trim();
-					invalidApplicationName = !validateNameLength(previousAppName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
