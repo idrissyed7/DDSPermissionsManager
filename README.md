@@ -229,7 +229,8 @@ In addition to the documents necessary for DDS Security, the Secret Store is a g
 
 ### Steps to produce necessary artifacts (Identity CA, Permissions CA, governance file)
 
-The following shell script shows how to create an Identity CA and Permissions CA and how to sign a governance file:
+The following shell script shows how to create an Identity CA and Permissions CA and how to sign a governance file.
+The script assumes the existence of an `identity.cnf` and `permissions.cnf`.
 
     ####################################################################################################
     # The following steps are not performed in the DDS Permissions Manager but are here for reference. #
@@ -286,19 +287,13 @@ To connect to a database, the following environment variables must be set for th
 
 The following describes the options for DPM_AUTO_SCHEMA_GEN environment variable in detail:
 
-**none** - No action will be performed.
-
-**create-only** - Database creation will be generated.
-
-**drop** - Database dropping will be generated.
-
-**create** - Database dropping will be generated followed by database creation.
-
-**create-drop** - Drop the schema and recreate it on SessionFactory startup. Additionally, drop the schema on SessionFactory shutdown.
-
-**validate** - Validate the database schema.
-
-**update** - Update the database schema.
+* *none** - No action will be performed.
+* *create-only** - Database creation will be generated.
+* *drop** - Database dropping will be generated.
+* *create** - Database dropping will be generated followed by database creation.
+* *create-drop** - Drop the schema and recreate it on SessionFactory startup. Additionally, drop the schema on SessionFactory shutdown.
+* *validate** - Validate the database schema.
+* *update** - Update the database schema.
 
 The DPM_DATABASE_DEPENDENCY environment variable must be set when building the application to inject the correct driver.
 Examples include `mysql:mysql-connector-java:8.0.31` and `org.postgresql:postgresql:42.4.2`.
@@ -313,7 +308,7 @@ following SQL statement:
 
 ```sql
 INSERT INTO permissions_user (admin, email)
-VALUES (true, 'admin-email@GoogleAccount.com');
+VALUES (true, 'ADMIN_EMAIL_ADDRESS');
 ```
 
 ### Building the Web Application UI
