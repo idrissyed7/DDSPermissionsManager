@@ -280,7 +280,7 @@ Currently, the DDS Permissions Manager supports the following Databases:
 To connect to a database, the following environment variables must be set for the Web API:
 
 * DPM_JDBC_URL - The JDBC URL of the database
-* DPM_JDBC_DRIVER - The driver to use.  see Driver column for values.
+* DPM_JDBC_DRIVER - The driver to use. See Driver column for values.
 * DPM_JDBC_USER - The database user name.
 * DPM_JDBC_PASSWORD - The database user password.
 * DPM_AUTO_SCHEMA_GEN (Options include `none`, `create-only`, `drop`, `create`, `create-drop`, `validate`, and `update` (default value))
