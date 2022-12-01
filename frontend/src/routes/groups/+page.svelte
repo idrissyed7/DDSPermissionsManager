@@ -452,7 +452,7 @@
 									/>
 								</td>
 							{/if}
-							<td class="group-td" style="width: 12rem">{group.name}</td>
+							<td class="group-td" style="width: 23rem">{group.name}</td>
 							<td style="width: 5rem">
 								<center>
 									<a
