@@ -254,10 +254,6 @@ public class ApplicationService {
     }
 
     public HttpResponse existsByName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new DPMException(ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL, HttpStatus.BAD_REQUEST);
-        }
-
         Optional<Application> byNameEquals = applicationRepository.findByNameEquals(name.trim());
 
         if (byNameEquals.isEmpty()) {

@@ -67,7 +67,7 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
                     code = ResponseStatusCodes.GROUP_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS;
                 }
             }
-        } else if (code.contains(".application.")) {
+        } else if (code.contains(".application.") || code.contains("checkApplicationExistence.application")) {
             if (code.endsWith(".name")) {
                 if (descriptor.getAnnotation() instanceof NotBlank) {
                     code = ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL;
@@ -77,6 +77,12 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
             } else if (code.endsWith(".group")) {
                 if (descriptor.getAnnotation() instanceof NotNull) {
                     code = ResponseStatusCodes.APPLICATION_REQUIRES_GROUP_ASSOCIATION;
+                }
+            } else if (code.contains("checkApplicationExistence.application")) {
+                if (descriptor.getAnnotation() instanceof NotBlank) {
+                    code = ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL;
+                } else if (descriptor.getAnnotation() instanceof Size) {
+                    code = ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS;
                 }
             }
         } else if (code.contains(".topic.")) {
