@@ -239,6 +239,9 @@
 				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
 				return true;
 			} else {
+				searchApplicationActive = false;
+				errorMessageApplication = errorMessages['application']['not_found'];
+
 				return false;
 			}
 		} else {
@@ -630,15 +633,6 @@
 									searchGroups?.length >= searchStringLength
 								) {
 									actionAddUserEvent();
-								}
-							}
-
-							if (actionAddTopic) {
-								if (
-									newTopicName?.length >= minNameLength &&
-									searchGroups?.length >= searchStringLength
-								) {
-									actionAddTopicEvent();
 								}
 							}
 
