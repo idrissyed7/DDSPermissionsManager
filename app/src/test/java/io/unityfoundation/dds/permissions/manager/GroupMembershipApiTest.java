@@ -178,11 +178,11 @@ public class GroupMembershipApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
+            assertEquals(NOT_FOUND, exception.getStatus());
             Optional<List> listOptional = exception.getResponse().getBody(List.class);
             assertTrue(listOptional.isPresent());
             List<Map> list = listOptional.get();
-            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NOT_FOUND.equals(map.get("code"))));
         }
 
         @Test
