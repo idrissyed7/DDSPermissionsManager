@@ -45,7 +45,7 @@
 	const fiveSeconds = 5000;
 	const returnKey = 13;
 	const searchStringLength = 3;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// Authentication
 	let isApplicationAdmin = false;
@@ -501,9 +501,9 @@
 							on:mouseenter={() => (applicationsDropDownMouseEnter = true)}
 							on:mouseleave={() => {
 								setTimeout(() => {
-									applicationsDropDownVisible = !applicationsDropDownVisible;
-									applicationsDropDownMouseEnter = false;
+									if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
 								}, waitTime);
+								applicationsDropDownMouseEnter = false;
 							}}
 						>
 							<tr

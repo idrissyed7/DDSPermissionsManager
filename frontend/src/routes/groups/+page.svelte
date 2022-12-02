@@ -36,7 +36,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 	const searchStringLength = 3;
 
 	// Error Handling
@@ -325,9 +325,9 @@
 						on:mouseenter={() => (groupsDropDownMouseEnter = true)}
 						on:mouseleave={() => {
 							setTimeout(() => {
-								groupsDropDownVisible = !groupsDropDownVisible;
-								groupsDropDownMouseEnter = false;
+								if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
 							}, waitTime);
+							groupsDropDownMouseEnter = false;
 						}}
 					>
 						<tr

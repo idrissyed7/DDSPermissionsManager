@@ -37,7 +37,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 	const searchStringLength = 3;
 
 	// DropDowns
@@ -417,9 +417,9 @@
 							on:mouseenter={() => (topicsDropDownMouseEnter = true)}
 							on:mouseleave={() => {
 								setTimeout(() => {
-									topicsDropDownVisible = !topicsDropDownVisible;
-									topicsDropDownMouseEnter = false;
+									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
 								}, waitTime);
+								topicsDropDownMouseEnter = false;
 							}}
 						>
 							<tr

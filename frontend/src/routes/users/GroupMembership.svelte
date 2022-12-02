@@ -18,7 +18,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// DropDowns
 	let usersDropDownVisible = false;
@@ -449,12 +449,13 @@
 					<table
 						class="dropdown"
 						on:mouseenter={() => {
-							if (usersDropDownVisible) usersDropDownMouseEnter = true;
+							usersDropDownMouseEnter = true;
 						}}
 						on:mouseleave={() => {
 							setTimeout(() => {
-								usersDropDownVisible = false;
+								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
 							}, waitTime);
+							usersDropDownMouseEnter = false;
 						}}
 					>
 						<tr
