@@ -303,12 +303,12 @@ For example, `mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socke
 ### Initial User
 
 Permissions Manager requires an initial super administrator for the purpose of logging in and adding other super admins
-or regular users. To do so, please connect to the database which DDS Permissions Manager will connect to and execute the
-following SQL statement:
+or regular users. To add an initial super admin, connect to the database which DDS Permissions Manager will connect to and execute the
+following SQL statement where `$EMAIL` is the email address of the super admin:
 
 ```sql
 INSERT INTO permissions_user (admin, email)
-VALUES (true, 'ADMIN_EMAIL_ADDRESS');
+VALUES (true, '$EMAIL');
 ```
 
 ### Building the Web Application UI
