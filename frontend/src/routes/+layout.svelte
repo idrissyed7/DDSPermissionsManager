@@ -16,11 +16,12 @@
 
 	onMount(async () => {
 		try {
-			const res = await httpAdapter.get(`/token_info`);
-
-			onLoggedIn(res.data);
-
-			avatarName = res.data.username.slice(0, 1).toUpperCase();
+			const userLoggedCookie = document.cookie;
+			if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {
+				const res = await httpAdapter.get(`/token_info`);
+				onLoggedIn(res.data);
+				avatarName = res.data.username.slice(0, 1).toUpperCase();
+			}
 
 			console.log('is authenticated?', $isAuthenticated);
 			console.log('is Admin? ', $isAdmin);
