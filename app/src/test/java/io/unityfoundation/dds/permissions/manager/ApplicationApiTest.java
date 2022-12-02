@@ -598,7 +598,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1374,7 +1374,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1571,7 +1571,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1631,7 +1631,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1708,7 +1708,7 @@ public class ApplicationApiTest {
             assertTrue(permissionOptional.isPresent());
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1786,7 +1786,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1806,7 +1806,7 @@ public class ApplicationApiTest {
             loginAsApplication(applicationOne.getId());
 
             // invalid nonce
-            request = HttpRequest.GET("/applications/key-pair?nonce=uni_ty");
+            request = HttpRequest.GET("/applications/key_pair?nonce=uni_ty");
             HttpRequest finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest, Map.class);
@@ -1817,7 +1817,7 @@ public class ApplicationApiTest {
             List<Map> list = listOptional.get();
             assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.INVALID_NONCE_FORMAT.equals(group.get("code"))));
 
-            request = HttpRequest.GET("/applications/key-pair?nonce=unity");
+            request = HttpRequest.GET("/applications/key_pair?nonce=unity");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> bodyOptional = response.getBody(Map.class);
@@ -1848,7 +1848,7 @@ public class ApplicationApiTest {
 
             // generate passphrase for application
             Long applicationOneId = applicationOne.getId();
-            request = HttpRequest.GET("/applications/generate-passphrase/" + applicationOneId);
+            request = HttpRequest.GET("/applications/generate_passphrase/" + applicationOneId);
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);

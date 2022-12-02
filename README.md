@@ -115,7 +115,7 @@ The process is illustrated using `curl` and assumes that `DPM_URL` is the URL of
         
 6. The Application can request a key and certificate from the API.  The
 
-        curl --silent -b cookies.txt ${DPM_URL}/api/applications/key-pair?nonce=NONCE > key-pair.json
+        curl --silent -b cookies.txt ${DPM_URL}/api/applications/key_pair?nonce=NONCE > key-pair.json
         
    The response in a JSON object containing the private key and public certificate
     

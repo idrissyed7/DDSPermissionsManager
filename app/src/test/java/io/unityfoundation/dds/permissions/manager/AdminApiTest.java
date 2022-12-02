@@ -193,7 +193,7 @@ public class AdminApiTest {
             Optional<User> jjones = response.getBody(User.class);
             assertTrue(jjones.isPresent());
 
-            request = HttpRequest.PUT("/admins/remove-admin/"+jjones.get().getId(), Map.of());
+            request = HttpRequest.PUT("/admins/remove_admin/"+jjones.get().getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
             assertTrue(userRepository.findById(jjones.get().getId()).isEmpty());
@@ -247,7 +247,7 @@ public class AdminApiTest {
         @Test
         void cannotRemoveAdmins(){
             loginAsNonAdmin();
-            HttpRequest<?>request = HttpRequest.POST("/admins/remove-admin/1", Map.of());
+            HttpRequest<?>request = HttpRequest.POST("/admins/remove_admin/1", Map.of());
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });

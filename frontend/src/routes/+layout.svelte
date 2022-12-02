@@ -32,7 +32,7 @@
 
 	const checkValidity = async () => {
 		try {
-			const res = await httpAdapter.get(`/group_membership/user-validity`);
+			const res = await httpAdapter.get(`/group_membership/user_validity`);
 			const verify = res.data;
 
 			if (verify.isAdmin) {
