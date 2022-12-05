@@ -58,7 +58,7 @@
 	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// Forms
 	let emailValue = '';
@@ -278,12 +278,13 @@
 					<table
 						class="dropdown"
 						on:mouseenter={() => {
-							if (superUsersDropDownVisible) superUsersDropDownMouseEnter = true;
+							superUsersDropDownMouseEnter = true;
 						}}
 						on:mouseleave={() => {
 							setTimeout(() => {
-								superUsersDropDownVisible = false;
+								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
 							}, waitTime);
+							superUsersDropDownMouseEnter = false;
 						}}
 					>
 						<tr

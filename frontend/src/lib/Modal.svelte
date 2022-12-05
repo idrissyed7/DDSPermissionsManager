@@ -53,7 +53,7 @@
 	const applicationsDropdownSuggestion = 7;
 	const minNameLength = 3;
 	const searchStringLength = 3;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// Forms
 	let selectedIsGroupAdmin = false;
@@ -119,7 +119,8 @@
 	) {
 		searchGroupsResultsVisible = true;
 	} else {
-		searchGroupsResultsVisible = false;
+		if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
+		searchGroupResults = '';
 	}
 
 	// Search Applications Feature
@@ -144,7 +145,8 @@
 	) {
 		searchApplicationsResultsVisible = true;
 	} else {
-		searchApplicationsResultsVisible = false;
+		if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
+		searchApplicationResults = '';
 	}
 
 	const searchGroup = async (searchGroupStr) => {
@@ -698,12 +700,14 @@
 					}}
 					on:focus={async () => {
 						searchGroupActive = true;
+						searchGroupResults = [];
 						errorMessageGroup = '';
 						selectedGroup = '';
 					}}
 					on:focusout={() => {
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
+							searchGroupResults = [];
 						}, waitTime);
 					}}
 					on:click={async () => {
@@ -736,12 +740,14 @@
 				<table
 					class="search-group"
 					style="position: absolute; z-index: 100; display: block; overflow-y: scroll; max-height: 13.3rem"
-					on:mouseenter={() => (searchGroupsResultsMouseEnter = true)}
+					on:mouseenter={() => {
+						searchGroupsResultsMouseEnter = true;
+					}}
 					on:mouseleave={() => {
 						setTimeout(() => {
-							searchGroupsResultsVisible = false;
-							searchGroupsResultsMouseEnter = false;
+							if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
 						}, waitTime);
+						searchGroupsResultsMouseEnter = false;
 					}}
 					on:focusout={() => {
 						searchGroupsResultsVisible = false;
@@ -817,8 +823,11 @@
 						}, waitTime);
 					}}
 					on:click={async () => {
+						searchApplicationResults = [];
 						searchApplicationActive = true;
 						errorMessageApplication = '';
+						stopSearchingApps = false;
+
 						if (searchApplicationResults?.length > 0) {
 							searchApplicationsResultsVisible = true;
 						}
@@ -846,9 +855,9 @@
 				on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
 				on:mouseleave={() => {
 					setTimeout(() => {
-						searchApplicationsResultsVisible = false;
-						searchApplicationsResultsMouseEnter = false;
+						if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
 					}, waitTime);
+					searchApplicationsResultsMouseEnter = false;
 				}}
 			>
 				{#each searchApplicationResults as result}

@@ -31,7 +31,7 @@
 
 	// Constants
 	const applicationsResult = 7;
-	const waitTime = 250;
+	const waitTime = 1000;
 	const returnKey = 13;
 	const searchStringLength = 3;
 	const applicationsDropdownSuggestion = 7;
@@ -394,13 +394,13 @@
 	{#if searchApplicationsResultsVisible}
 		<table
 			class="search-application"
-			style="position:absolute; margin-left: 18rem; margin-top: -0.8rem; width: 12rem; max-height: 13.3rem; display: block; overflow-y: scroll"
+			style="position:absolute; margin-left: 17rem; margin-top: -0.8rem; width: 12rem; max-height: 13.3rem; display: block; overflow-y: scroll"
 			on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
 			on:mouseleave={() => {
 				setTimeout(() => {
-					searchApplicationsResultsVisible = false;
-					searchApplicationsResultsMouseEnter = false;
+					if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
 				}, waitTime);
+				searchApplicationsResultsMouseEnter = false;
 			}}
 		>
 			{#each searchApplicationResults as result}
