@@ -47,7 +47,7 @@ Typically, a Super Admin comes from the organization *operating* the DDS Permiss
 The primary activity of a Super Admin is to enroll organizations that wish to use the DDS Permissions Manager.
 In this capacity, a Super Admin creates a Group for the organization and adds at least one Group Admin to the Group.
 From there, the Group Admin can complete the onboarding process.
-To add the Group Admin, the Super Admin creates a Group Membership that includes the 1) email address of the Group Admin, 2) the Group to which the membership applies, and 3) a set of grants, specifically, the Group Admin grant. 
+To add the Group Admin, the Super Admin creates a Group Membership that includes the 1) email address of the Group Admin, 2) the Group to which the membership applies, and 3) a set of grants, specifically, the Group Admin grant.
 
 The activities that can only be performed by a Super Admin are:
 * Add/remove other super admins
@@ -108,23 +108,23 @@ The process is illustrated using `curl` and assumes that `DPM_URL` is the URL of
 4. and the Permissions CA certificate
 
         curl --silent -b cookies.txt ${DPM_URL}/api/applications/permissions_ca.pem > permissions_ca.pem
-        
+
 5. and the Governance file
 
         curl --silent -b cookies.txt ${DPM_URL}/api/applications/governance.xml.p7s > governance.xml.p7s
-        
+
 6. The Application can request a key and certificate from the API.  The
 
         curl --silent -b cookies.txt ${DPM_URL}/api/applications/key-pair?nonce=NONCE > key-pair.json
-        
+
    The response in a JSON object containing the private key and public certificate
-    
+
         {
           "private": "-----BEGIN PRIVATE KEY-----\nMEEC...",
           "public": "-----BEGIN CERTIFICATE-----\nMIICrT..."
         }
-   
-7. Finally, the Application can request the permissions 
+
+7. Finally, the Application can request the permissions
 
         curl --silent -b cookies.txt ${DPM_URL}/api/applications/permissions.xml.p7s?nonce=NONCE > permissions.xml.p7s
 
@@ -184,46 +184,162 @@ The GROUPID is included in the canonical topic name to disambiguate topics with 
 
 ## Operator Documentation
 
-TODO
+### General Application Architecture
 
-### Supported Databases
+                                                 +--------------+
+                                              +->| Secret Store |
+                                              |  +--------------+
+              +------------+     +---------+  |  +----------+
+              | Web App UI |<--->| Web API |<-+->| Database |
+              +------------+     +---------+  |  +----------+
+                                              |  +---------------+
+                                              +->| Auth Provider |
+                                                 +---------------+
+
+The DDS Permissions Manager consists of
+
+* A Web App UI that can either be served by the Web API or independently
+* A Web API that serves data to the UI and DDS Applications
+* A Secret Store for storing keys and other things related to DDS Security
+* A Database for persistent storage
+* An Auth Provider for authenticating users
+
+The Web Application UI is built using Svelte and is served by the Web API.
+The Web API is built using Micronaut.
+The Web API is horizontally scalable.
+
+### The Secret Store
+
+Currently, the DDS Permissions Manager supports the following Secret Stores:
+
+* GCP Secret Manager
+
+At a minimum, the secret store should contain the following documents
+
+* `governance_xml_p7s` - The signed governance file that will be served to the applications.
+* `identity_ca_key_pem` - The private key of the Identity CA in PEM format.
+* `identity_ca_pem` - The public certificate of the Identity CA in PEM format.
+* `permissions_ca_key_pem` - The private key of the Permissions CA in PEM format.
+* `permissions_ca_pem` - The public certificate of the Permissions CA in PEM format.
+
+The governance file must contain certain rules.
+See [Canonical Topic Names](#canonical-topic-names) for more details.
+
+In addition to the documents necessary for DDS Security, the Secret Store is a good candidate for database credentials and the secrets for JWT generation.
+
+### Steps to produce necessary artifacts (Identity CA, Permissions CA, governance file)
+
+The following shell script shows how to create an Identity CA and Permissions CA and how to sign a governance file.
+The script assumes the existence of an `identity.cnf` and `permissions.cnf`.
+
+    ####################################################################################################
+    # The following steps are not performed in the DDS Permissions Manager but are here for reference. #
+    ####################################################################################################
+
+    echo -n '' > index.txt
+    echo -n '' > index.txt.attr
+    echo -n '01' > serial
+
+    # Generate a self-signed certificate for the identity CA.
+    openssl ecparam -name prime256v1 -genkey -out identity_ca_key.pem
+    openssl req -config ./identity.cnf -days 3650 -new -x509 -extensions v3_ca -key identity_ca_key.pem -out identity_ca.pem
+
+    echo "Identity CA key in identity_ca_key.pem"
+    echo "Identity CA certificate in identity_ca.pem"
+
+    # Generate a self-signed certificate for the permissions CA.
+    openssl ecparam -name prime256v1 -genkey -out permissions_ca_key.pem
+    openssl req -config ./permissions.cnf -days 3650 -new -x509 -extensions v3_ca -key permissions_ca_key.pem -out permissions_ca.pem
+
+    echo "Permissions CA key in permissions_ca_key.pem"
+    echo "Permissions CA certificate in permissions_ca.pem"
+
+    # Sign the governance file with the permissions CA.
+    openssl smime -sign -in governance.xml -text -out governance.xml.p7s -signer permissions_ca.pem -inkey permissions_ca_key.pem
+
+    echo "Signed governance file in governance.xml.p7s"
+
+### Configuring GCP Secret Manager as a Secret Store
+
+The following environment variables should be set to enable GCP Secret Manager:
+
+* GCP_CREDENTIALS_ENABLED - true
+* GCP_PROJECT_ID - the GCP Project ID
+
+Beyond this, the service account used by the Web API will need access to the Secret Manager.
+
+### The Database
+
+Currently, the DDS Permissions Manager supports the following Databases:
 
 | Database     | Versions     | Driver                   | Reference                                                                                                                 |
 |--------------|--------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | MySQL Server | 8.0 and 5.7  | com.mysql.cj.jdbc.Driver | [link](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-versions.html)                                            |
 | PostgreSQL   | 8.2 or newer | org.postgresql.Driver    | [link](https://jdbc.postgresql.org/documentation/#:~:text=The%20current%20version%20of%20the,(JDBC%204.2)%20and%20above.) |
 
-To connect to a database, please set the following environment variables:
+To connect to a database, the following environment variables must be set for the Web API:
 
-* DPM_DATABASE_DEPENDENCY (examples include `mysql:mysql-connector-java:8.0.31` and `org.postgresql:postgresql:42.4.2`)
-* DPM_JDBC_URL
-* DPM_JDBC_DRIVER (see Driver column for values)
-* DPM_JDBC_USER
-* DPM_JDBC_PASSWORD
+* DPM_JDBC_URL - The JDBC URL of the database
+* DPM_JDBC_DRIVER - The driver to use. See Driver column for values.
+* DPM_JDBC_USER - The database user name.
+* DPM_JDBC_PASSWORD - The database user password.
 * DPM_AUTO_SCHEMA_GEN (Options include `none`, `create-only`, `drop`, `create`, `create-drop`, `validate`, and `update` (default value))
 
 The following describes the options for DPM_AUTO_SCHEMA_GEN environment variable in detail:
 
-**none** - No action will be performed. 
+* *none** - No action will be performed.
+* *create-only** - Database creation will be generated.
+* *drop** - Database dropping will be generated.
+* *create** - Database dropping will be generated followed by database creation.
+* *create-drop** - Drop the schema and recreate it on SessionFactory startup. Additionally, drop the schema on SessionFactory shutdown.
+* *validate** - Validate the database schema.
+* *update** - Update the database schema.
 
-**create-only** - Database creation will be generated.
-
-**drop** - Database dropping will be generated.
-
-**create** - Database dropping will be generated followed by database creation.
-
-**create-drop** - Drop the schema and recreate it on SessionFactory startup. Additionally, drop the schema on SessionFactory shutdown.
-
-**validate** - Validate the database schema.
-
-**update** - Update the database schema.
+The DPM_DATABASE_DEPENDENCY environment variable must be set when building the application to inject the correct driver.
+Examples include `mysql:mysql-connector-java:8.0.31` and `org.postgresql:postgresql:42.4.2`.
+Multiple drivers can be specified.
+For example, `mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.7.2`.
 
 ### Initial User
+
 Permissions Manager requires an initial super administrator for the purpose of logging in and adding other super admins
-or regular users. To do so, please connect to the database which Permissions Manager will connect to and execute the 
-following SQL statement:
+or regular users. To add an initial super admin, connect to the database which DDS Permissions Manager will connect to and execute the
+following SQL statement where `$EMAIL` is the email address of the super admin:
 
 ```sql
 INSERT INTO permissions_user (admin, email)
-VALUES (true, 'admin-email@GoogleAccount.com');
+VALUES (true, '$EMAIL');
 ```
+
+### Building the Web Application UI
+
+The Web Application UI requires the URL of the API when built.
+This is set using the VITE_BACKEND_URL environment variable.
+If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
+
+### Configuring Google as an auth provider
+
+Set the following environment variables to enable Google as an auth provider:
+
+* MICRONAUT_SECURITY_OAUTH2_CLIENTS_GOOGLE_CLIENT_ID - The id of oauth client.
+* MICRONAUT_SECURITY_OAUTH2_CLIENTS_GOOGLE_CLIENT_SECRET - The secret of the oauth client.
+* MICRONAUT_SECURITY_OAUTH2_CLIENTS_GOOGLE_OPENID_ISSUER - Set to "https://accounts.google.com"
+
+### Configuring the Web API
+
+The following environment variables should be set to configure the application:
+
+* MICRONAUT_SECURITY_TOKEN_JWT_SIGNATURES_SECRET_GENERATOR_SECRET - Secret uses to sign JWTs.
+* MICRONAUT_SECURITY_TOKEN_JWT_GENERATOR_REFRESH_TOKEN_SECRET - Secret for JWT renewal tokens.
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_SUCCESS
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_FAILURE
+* MICRONAUT_SECURITY_REDIRECT_LOGOUT
+
+The following environment variables can be used to set the validity of DDS Security Documents produced by the API:
+
+* PERMISSIONS_MANAGER_APPLICATION_CLIENT_CERTIFICATES_TIME_EXPIRY - Days that certificates are valid.
+* PERMISSIONS_MANAGER_APPLICATION_PERMISSIONS_FILE_TIME_EXPIRY - Days that permissions files are valid.
+* PERMISSIONS_MANAGER_APPLICATION_PERMISSIONS_FILE_DOMAIN - The DDS domain in use.
+* PERMISSIONS_MANAGER_APPLICATION_PASSPHRASE_LENGTH - The length of the passwords generated for applications.
+
+See `app/src/main/resources/application.yml` for a complete list of configuration options.

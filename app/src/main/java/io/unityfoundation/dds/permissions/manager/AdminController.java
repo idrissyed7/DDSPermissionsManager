@@ -53,7 +53,7 @@ public class AdminController {
         return userService.save(adminDTO);
     }
 
-    @Put("/remove-admin/{id}")
+    @Put("/remove_admin/{id}")
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))

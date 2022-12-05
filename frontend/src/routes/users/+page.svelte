@@ -60,7 +60,7 @@
 	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// Forms
 	let emailValue = '';
@@ -156,7 +156,7 @@
 	const deleteSelectedSuperUsers = async () => {
 		try {
 			for (const superUser of superUsersRowsSelected) {
-				await httpAdapter.put(`/admins/remove-admin/${superUser.id}`, {});
+				await httpAdapter.put(`/admins/remove_admin/${superUser.id}`, {});
 			}
 		} catch (err) {
 			errorMessage('Error Deleting Super User', err.message);
@@ -273,22 +273,28 @@
 				>
 					<img src={threedotsSVG} alt="options" style="scale:50%" />
 
-					{#if superUsersDropDownVisible && !deleteSuperUserVisible && !addSuperUserVisible}
-						<table
-							class="dropdown"
-							on:mouseenter={() => {
-								if (superUsersDropDownVisible) superUsersDropDownMouseEnter = true;
+				{#if superUsersDropDownVisible && !deleteSuperUserVisible && !addSuperUserVisible}
+					<table
+						class="dropdown"
+						on:mouseenter={() => {
+							superUsersDropDownMouseEnter = true;
+						}}
+						on:mouseleave={() => {
+							setTimeout(() => {
+								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
+							}, waitTime);
+							superUsersDropDownMouseEnter = false;
+						}}
+					>
+						<tr
+							tabindex="0"
+							class:disabled={superUsersRowsSelected.length === 0}
+							on:click={async () => {
+								superUsersDropDownVisible = false;
+								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 							}}
-							on:mouseleave={() => {
-								setTimeout(() => {
-									superUsersDropDownVisible = false;
-								}, waitTime);
-							}}
-						>
-							<tr
-								tabindex="0"
-								class:disabled={superUsersRowsSelected.length === 0}
-								on:click={async () => {
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
 									superUsersDropDownVisible = false;
 									if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 								}}

@@ -37,7 +37,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 	const searchStringLength = 3;
 
 	// Error Handling
@@ -321,23 +321,28 @@
 				>
 					<img src={threedotsSVG} alt="options" style="scale:50%" />
 
-					{#if groupsDropDownVisible}
-						<table
-							class="dropdown"
-							on:mouseenter={() => (groupsDropDownMouseEnter = true)}
-							on:mouseleave={() => {
-								setTimeout(() => {
-									groupsDropDownVisible = !groupsDropDownVisible;
-									groupsDropDownMouseEnter = false;
-								}, waitTime);
+				{#if groupsDropDownVisible}
+					<table
+						class="dropdown"
+						on:mouseenter={() => (groupsDropDownMouseEnter = true)}
+						on:mouseleave={() => {
+							setTimeout(() => {
+								if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
+							}, waitTime);
+							groupsDropDownMouseEnter = false;
+						}}
+					>
+						<tr
+							tabindex="0"
+							on:focus={() => (groupsDropDownMouseEnter = true)}
+							disabled={!$isAdmin}
+							class:disabled={!$isAdmin || groupsRowsSelected.length === 0}
+							on:click={async () => {
+								groupsDropDownVisible = false;
+								if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
 							}}
-						>
-							<tr
-								tabindex="0"
-								on:focus={() => (groupsDropDownMouseEnter = true)}
-								disabled={!$isAdmin}
-								class:disabled={!$isAdmin || groupsRowsSelected.length === 0}
-								on:click={async () => {
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
 									groupsDropDownVisible = false;
 									if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
 								}}

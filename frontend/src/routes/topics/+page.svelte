@@ -38,7 +38,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 	const searchStringLength = 3;
 
 	// DropDowns
@@ -413,22 +413,27 @@
 					>
 						<img src={threedotsSVG} alt="options" style="scale:50%" />
 
-						{#if topicsDropDownVisible}
-							<table
-								class="dropdown"
-								on:mouseenter={() => (topicsDropDownMouseEnter = true)}
-								on:mouseleave={() => {
-									setTimeout(() => {
-										topicsDropDownVisible = !topicsDropDownVisible;
-										topicsDropDownMouseEnter = false;
-									}, waitTime);
+					{#if topicsDropDownVisible}
+						<table
+							class="dropdown"
+							on:mouseenter={() => (topicsDropDownMouseEnter = true)}
+							on:mouseleave={() => {
+								setTimeout(() => {
+									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+								}, waitTime);
+								topicsDropDownMouseEnter = false;
+							}}
+						>
+							<tr
+								tabindex="0"
+								disabled={!$isAdmin}
+								class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
+								on:click={() => {
+									topicsDropDownVisible = false;
+									if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 								}}
-							>
-								<tr
-									tabindex="0"
-									disabled={!$isAdmin}
-									class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
-									on:click={() => {
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
 										topicsDropDownVisible = false;
 										if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 									}}

@@ -96,7 +96,7 @@ public class ApplicationController {
         return applicationService.existsByName(application);
     }
 
-    @Get("/generate-passphrase/{application}")
+    @Get("/generate_passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
         return applicationService.generateCleartextPassphrase(application);
@@ -123,7 +123,7 @@ public class ApplicationController {
         return applicationService.getGovernanceFile(etag);
     }
 
-    @Get("/key-pair{?nonce}")
+    @Get("/key_pair{?nonce}")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPrivateKeyAndClientCertificate(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException {
