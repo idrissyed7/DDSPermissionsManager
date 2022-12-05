@@ -64,5 +64,10 @@
     "application_permission":
         {
            "not_found": "Application permission not found"
-        }
+        },
+
+    "refresh_token":
+    {
+        "forbidden": "The request to refresh the JWT token was unsuccessful"
+    }
 }
