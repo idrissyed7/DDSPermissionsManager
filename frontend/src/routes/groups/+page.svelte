@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
 	import deleteSVG from '../../icons/delete.svg';
+	import editSVG from '../../icons/edit.svg';
 	import threedotsSVG from '../../icons/threedots.svg';
 	import addSVG from '../../icons/add.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
@@ -34,7 +35,6 @@
 	}
 
 	// Constants
-	const minNameLength = 3;
 	const returnKey = 13;
 	const waitTime = 250;
 	const searchStringLength = 3;
@@ -50,6 +50,7 @@
 	let errorMessageVisible = false;
 	let addGroupVisible = false;
 	let deleteGroupVisible = false;
+	let editGroupVisible = false;
 
 	// Tables
 	let groupsRowsSelected = [];
@@ -60,9 +61,6 @@
 	let groupsPerPage = 10;
 	let groupsTotalPages, groupsTotalSize;
 	let groupsCurrentPage = 0;
-
-	// Validation
-	let disabled = false;
 
 	// Selection
 	let selectedGroupId;
@@ -162,6 +160,20 @@
 		await reloadAllGroups();
 	};
 
+	const editGroupName = async (groupId, groupNewName) => {
+		await httpAdapter
+			.post(`/groups/save/`, {
+				id: groupId,
+				name: groupNewName
+			})
+			.catch((err) => {
+				errorMessage('Error Editing Group Name', err.message);
+			});
+
+		await reloadAllGroups();
+		editGroupVisible = false;
+	};
+
 	const deleteSelectedGroups = async () => {
 		try {
 			for (const group of groupsRowsSelected) {
@@ -242,6 +254,20 @@
 			groupNewName={true}
 			on:addGroup={(e) => addGroup(e.detail.newGroupName)}
 			on:cancel={() => (addGroupVisible = false)}
+		/>
+	{/if}
+
+	{#if editGroupVisible}
+		<Modal
+			title="Edit Group"
+			actionEditGroup={true}
+			groupCurrentName={selectedGroupName}
+			groupNewName={true}
+			groupId={selectedGroupId}
+			on:addGroup={(e) => {
+				editGroupName(e.detail.groupId, e.detail.newGroupName);
+			}}
+			on:cancel={() => (editGroupVisible = false)}
 		/>
 	{/if}
 
@@ -394,7 +420,7 @@
 							</td>
 						{/if}
 						<td style="width: 7rem;">Group</td>
-						<td style="width: 7rem;"><center>Memberships</center></td>
+						<td style="width: 7rem;"><center>Users</center></td>
 						<td style="width: 7rem;"><center>Topics</center></td>
 						<td style="width: 7rem;"><center>Applications</center></td>
 						<td />
@@ -426,7 +452,7 @@
 									/>
 								</td>
 							{/if}
-							<td class="group-td" style="width: 12rem">{group.name} </td>
+							<td class="group-td" style="width: 23rem">{group.name}</td>
 							<td style="width: 5rem">
 								<center>
 									<a
@@ -463,6 +489,21 @@
 							{#if $isAdmin}
 								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 									<img
+										src={editSVG}
+										alt="edit group"
+										style="cursor: pointer; vertical-align: -0.25rem"
+										height="17rem"
+										width="17rem"
+										on:click={() => {
+											editGroupVisible = true;
+											selectedGroupId = group.id;
+											selectedGroupName = group.name;
+										}}
+									/>
+								</td>
+
+								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+									<img
 										src={deleteSVG}
 										alt="delete group"
 										style="cursor: pointer; vertical-align: -0.5rem"
@@ -475,6 +516,7 @@
 									/>
 								</td>
 							{:else}
+								<td />
 								<td />
 							{/if}
 						</tr>
@@ -541,7 +583,8 @@
 			src={pageforwardSVG}
 			alt="next page"
 			class="pagination-image"
-			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+				$groups?.length === undefined}
 			on:click={() => {
 				deselectAllGroupsCheckboxes();
 				if (groupsCurrentPage + 1 < groupsTotalPages) {
@@ -554,7 +597,8 @@
 			src={pagelastSVG}
 			alt="last page"
 			class="pagination-image"
-			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages}
+			class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+				$groups?.length === undefined}
 			on:click={() => {
 				deselectAllGroupsCheckboxes();
 				if (groupsCurrentPage < groupsTotalPages) {
@@ -568,7 +612,7 @@
 
 <style>
 	.content {
-		width: 35rem;
+		width: fit-content;
 	}
 
 	.dot {

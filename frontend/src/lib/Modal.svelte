@@ -23,6 +23,7 @@
 	export let actionAddGroup = false;
 	export let actionEditUser = false;
 	export let actionEditApplicationName = false;
+	export let actionEditGroup = false;
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
 	export let actionDeleteTopics = false;
@@ -32,11 +33,13 @@
 	export let noneditable = false;
 	export let emailValue = '';
 	export let newTopicName = '';
+	export let groupId = '';
 	export let anyApplicationCanRead = false;
 	export let searchGroups = '';
 	export let searchApplications = '';
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
+	export let groupCurrentName = '';
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let errorMsg = false;
@@ -62,7 +65,6 @@
 	// Error Handling
 	let invalidTopic = false;
 	let invalidGroup = false;
-	let invalidApplication = false;
 	let invalidApplicationName = false;
 	let invalidEmail = false;
 	let errorMessageGroup = '';
@@ -93,6 +95,8 @@
 	let timer;
 	let searchApplicationsResultsMouseEnter = false;
 
+	if (actionEditGroup) newGroupName = groupCurrentName;
+
 	// Search Groups Feature
 	$: if (
 		searchGroups?.trim().length >= searchStringLength &&
@@ -106,10 +110,6 @@
 			stopSearchingGroups = true;
 		}, waitTime);
 	}
-
-	// else {
-	// 	searchGroupsResultsVisible = false;
-	// }
 
 	// Search Groups Dropdown Visibility
 	$: if (
@@ -222,7 +222,13 @@
 			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroups}`
 		);
 		if (
+			searchGroups?.length > 0 &&
 			res.data.content?.some((group) => group.name.toUpperCase() === searchGroups.toUpperCase())
+		) {
+			return true;
+		} else if (
+			actionEditGroup &&
+			res.data.content?.some((group) => group.name.toUpperCase() !== newGroupName.toUpperCase())
 		) {
 			return true;
 		} else {
@@ -237,9 +243,6 @@
 				`/applications/search?page=0&size=1&filter=${searchApplications}`
 			);
 
-			console.log('search string', searchApplications);
-			console.log('res', res.data);
-
 			if (
 				res.data.length > 0 &&
 				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
@@ -247,6 +250,9 @@
 				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
 				return true;
 			} else {
+				searchApplicationActive = false;
+				errorMessageApplication = errorMessages['application']['not_found'];
+
 				return false;
 			}
 		} else {
@@ -278,6 +284,8 @@
 			emailValue: emailValue
 		};
 
+		validateEmail(emailValue);
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -305,8 +313,8 @@
 			selectedApplicationList: selectedApplicationList
 		};
 
-		const validName = await validateNameLength(newTopicName, 'topic');
-		if (!validName) {
+		invalidTopic = !validateNameLength(newTopicName, 'topic');
+		if (invalidTopic) {
 			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
 			return;
 		}
@@ -323,7 +331,7 @@
 			return;
 		}
 
-		if (validName && validGroupName && validApplicationName) {
+		if (!invalidTopic && validGroupName && validApplicationName) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -336,6 +344,8 @@
 			selectedGroup: selectedGroup
 		};
 
+		invalidApplicationName = !validateNameLength(appName, 'application');
+
 		const validGroupName = await validateGroupName();
 		if (!validGroupName) {
 			errorMessageGroup = errorMessages['group']['not_found'];
@@ -347,6 +357,8 @@
 	};
 
 	const actionAddGroupEvent = async () => {
+		invalidGroup = !validateNameLength(newGroupName, 'group');
+
 		let returnGroupName = {
 			newGroupName: newGroupName
 		};
@@ -360,14 +372,22 @@
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
 				errorMessageGroup = errorMessages['group']['exists'];
-
 				return;
 			} else {
-				dispatch('addGroup', returnGroupName);
+				if (actionEditGroup) {
+					dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+				} else {
+					dispatch('addGroup', returnGroupName);
+				}
+
 				closeModal();
 			}
 		} else {
-			dispatch('addGroup', returnGroupName);
+			if (actionEditGroup) {
+				dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+			} else {
+				dispatch('addGroup', returnGroupName);
+			}
 			closeModal();
 		}
 	};
@@ -390,13 +410,6 @@
 		};
 		dispatch('duplicateTopic', newTopic);
 		closeModal();
-	};
-
-	const decodeError = (errorObject) => {
-		errorObject = errorObject.code.replaceAll('-', '_');
-		const cat = errorObject.substring(0, errorObject.indexOf('.'));
-		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
-		return { category: cat, code: code };
 	};
 
 	const loadMoreResultsApp = (e) => {
@@ -440,7 +453,6 @@
 				bind:value={emailValue}
 				on:blur={() => {
 					emailValue = emailValue.trim();
-					validateEmail(emailValue);
 				}}
 				on:click={() => {
 					invalidEmail = false;
@@ -487,7 +499,6 @@
 				bind:value={newTopicName}
 				on:blur={() => {
 					newTopicName = newTopicName.trim();
-					invalidTopic = !validateNameLength(newTopicName, 'topic');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -522,25 +533,28 @@
 			<input
 				autofocus
 				placeholder="Application Name"
-				class:invalid={invalidApplication}
+				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={appName}
 				on:blur={() => {
 					appName = appName.trim();
-					invalidApplication = !validateNameLength(appName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
+					errorMessageApplication = '';
 					if (event.which === returnKey) {
 						appName = appName.trim();
-						invalidApplication = !validateNameLength(appName, 'application');
+						invalidApplicationName = !validateNameLength(appName, 'application');
 
-						if (!invalidApplication && searchGroups?.length >= searchStringLength) {
+						if (!invalidApplicationName && searchGroups?.length >= searchStringLength) {
 							actionAddApplicationEvent();
 						}
 					}
 				}}
-				on:click={() => (errorMessageName = '')}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageApplication = '';
+				}}
 			/>
 		{/if}
 
@@ -559,22 +573,35 @@
 			<input
 				autofocus
 				placeholder="Group Name"
-				class:invalid={invalidGroup}
+				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newGroupName}
 				on:blur={() => {
 					newGroupName = newGroupName.trim();
-					invalidGroup = !validateNameLength(newGroupName, 'group');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
+					errorMessageGroup = '';
+
 					if (event.which === returnKey) {
 						newGroupName = newGroupName.trim();
 						invalidGroup = !validateNameLength(newGroupName, 'group');
-						if (!invalidGroup) actionAddGroupEvent();
+						if (actionAddGroup && !invalidGroup) {
+							actionAddGroupEvent();
+						}
+
+						if (actionEditGroup && !invalidGroup && newGroupName !== groupCurrentName) {
+							actionAddGroupEvent();
+						}
+						if (newGroupName === groupCurrentName) {
+							dispatch('cancel');
+						}
 					}
 				}}
-				on:click={() => (errorMessageName = '')}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+				}}
 			/>
 
 			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
@@ -584,6 +611,16 @@
 					class:hidden={errorMessageName?.length === 0}
 				>
 					{errorMessageName}
+				</span>
+			{/if}
+
+			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === 'Group' && errorMessageGroup?.length > 0}
+				<span
+					class="error-message"
+					style="	top: 9.6rem; right: 2.3rem"
+					class:hidden={errorMessageGroup?.length === 0}
+				>
+					{errorMessageGroup}
 				</span>
 			{/if}
 		{/if}
@@ -598,7 +635,6 @@
 				bind:value={previousAppName}
 				on:blur={() => {
 					previousAppName = previousAppName.trim();
-					invalidApplicationName = !validateNameLength(previousAppName, 'application');
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
@@ -629,6 +665,7 @@
 						groupResultPage = 0;
 
 						if (event.which === returnKey) {
+							errorMessageApplication = '';
 							document.activeElement.blur();
 							searchString = searchString?.trim();
 
@@ -640,15 +677,6 @@
 									searchGroups?.length >= searchStringLength
 								) {
 									actionAddUserEvent();
-								}
-							}
-
-							if (actionAddTopic) {
-								if (
-									newTopicName?.length >= minNameLength &&
-									searchGroups?.length >= searchStringLength
-								) {
-									actionAddTopicEvent();
 								}
 							}
 
@@ -679,8 +707,10 @@
 						}, waitTime);
 					}}
 					on:click={async () => {
+						searchGroupResults = [];
 						searchGroupActive = true;
 						selectedGroup = '';
+						errorMessageApplication = '';
 						stopSearchingGroups = false;
 
 						if (searchGroupResults?.length > 0) {
@@ -702,7 +732,7 @@
 				{errorMessageGroup}
 			</span>
 
-			{#if searchGroupsResultsVisible}
+			{#if searchGroupsResultsVisible && errorMessageGroup?.length === 0 && errorMessageApplication?.length === 0}
 				<table
 					class="search-group"
 					style="position: absolute; z-index: 100; display: block; overflow-y: scroll; max-height: 13.3rem"
@@ -826,7 +856,7 @@
 						<td
 							style="width: 14rem; padding-left: 0.5rem"
 							on:click={() => {
-								selectedSearchApplication(result.name, result.id, result.groupName); ///
+								selectedSearchApplication(result.name, result.id, result.groupName);
 							}}
 							>{result.name} ({result.groupName})
 						</td>
@@ -856,7 +886,8 @@
 									type="checkbox"
 									name="read"
 									style="width:unset;"
-									checked
+									checked={!actionDuplicateTopic ||
+										(actionDuplicateTopic && app.accessType.includes('READ'))}
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(
 											(application) => application.applicationName === app.applicationName
@@ -886,6 +917,7 @@
 								<input
 									type="checkbox"
 									name="write"
+									checked={actionDuplicateTopic && app.accessType.includes('WRITE')}
 									style="width:unset;"
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(
@@ -1099,6 +1131,26 @@
 		</button>
 	{/if}
 
+	{#if actionEditGroup}
+		<hr style="z-index: 1" />
+		<button
+			class="action-button"
+			class:action-button-invalid={newGroupName?.length < minNameLength}
+			disabled={newGroupName?.length < minNameLength}
+			on:click={() => {
+				if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+				else dispatch('cancel');
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+					else dispatch('cancel');
+				}
+			}}
+			>Save Changes
+		</button>
+	{/if}
+
 	{#if actionDeleteUsers}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			Are you sure? This is not reversible.
@@ -1184,7 +1236,9 @@
 		>
 	{/if}
 
+	<!-- svelte-ignore a11y-autofocus -->
 	<button
+		autofocus={errorMsg}
 		class="action-button"
 		on:click={() => {
 			emailValue = '';
@@ -1223,6 +1277,10 @@
 		font-weight: 500;
 		color: #6750a4;
 		cursor: pointer;
+	}
+
+	.action-button:focus {
+		outline: 0;
 	}
 
 	.action-button-invalid {

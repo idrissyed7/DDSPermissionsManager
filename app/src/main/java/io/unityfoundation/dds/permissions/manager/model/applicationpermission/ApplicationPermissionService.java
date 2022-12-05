@@ -40,7 +40,8 @@ public class ApplicationPermissionService {
         return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(), applicationPermission.getPermissionsTopic().getId(),
                 applicationPermission.getPermissionsTopic().getName(), applicationPermission.getPermissionsApplication().getId(),
-                applicationPermission.getPermissionsApplication().getName(), applicationPermission.getAccessType()
+                applicationPermission.getPermissionsApplication().getName(),
+                applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(), applicationPermission.getAccessType()
         ));
     }
 
@@ -100,8 +101,10 @@ public class ApplicationPermissionService {
         String topicName = applicationPermission.getPermissionsTopic().getName();
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
         String applicationName = applicationPermission.getPermissionsApplication().getName();
+        String applicationGroupName = applicationPermission.getPermissionsApplication().getPermissionsGroup().getName();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(applicationPermission.getId(), topicId, topicName, applicationId, applicationName, accessType);
+        return new AccessPermissionDTO(applicationPermission.getId(), topicId, topicName, applicationId, applicationName,
+                applicationGroupName, accessType);
     }
 
     public HttpResponse deleteById(Long permissionId) {

@@ -125,7 +125,7 @@ public class GroupUserService {
 
     @Transactional
     public MutableHttpResponse<?> addMember(@Body GroupUserDTO groupUserDTO) {
-        if (!isAdminOrGroupAdmin(groupUserDTO.getPermissionsGroup())) {
+        if (!securityUtil.isCurrentUserAdmin() && !isAdminOrGroupAdmin(groupUserDTO.getPermissionsGroup())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
@@ -153,7 +153,7 @@ public class GroupUserService {
             throw new DPMException(ResponseStatusCodes.GROUP_MEMBERSHIP_CANNOT_CREATE_WITH_UPDATE);
         }
 
-        if (!isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
+        if (!securityUtil.isCurrentUserAdmin() && !isAdminOrGroupAdmin(groupUser.getPermissionsGroup())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
@@ -192,7 +192,7 @@ public class GroupUserService {
         GroupUser groupUser = groupUserOptional.get();
 
         Long groupId = groupUser.getPermissionsGroup().getId();
-        if (!isAdminOrGroupAdmin(groupId)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isAdminOrGroupAdmin(groupId)) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
