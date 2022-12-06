@@ -463,6 +463,7 @@
 		{#if email}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
+				data-cy="email-input"
 				autofocus
 				disabled={noneditable}
 				placeholder="Email"
@@ -510,6 +511,7 @@
 		{#if topicName}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
+				data-cy="topic-name"
 				autofocus
 				placeholder="Topic Name"
 				class:invalid={invalidTopic}
@@ -549,6 +551,7 @@
 		{#if applicationName}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
+				data-cy="application-name"
 				autofocus
 				placeholder="Application Name"
 				class:invalid={invalidApplicationName}
@@ -589,6 +592,7 @@
 		{#if groupNewName}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
+				data-cy="group-new-name"
 				autofocus
 				placeholder="Group Name"
 				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
@@ -670,6 +674,7 @@
 		{#if group}
 			<form class="searchbox" style="margin-bottom: 0.7rem">
 				<input
+					data-cy="group-input"
 					class="searchbox"
 					type="search"
 					placeholder="Group"
@@ -1019,6 +1024,7 @@
 	{#if actionAddUser}
 		<hr />
 		<button
+			data-cy="button-add-user"
 			class="action-button"
 			class:action-button-invalid={invalidEmail || searchGroups?.length < 3}
 			disabled={invalidEmail || searchGroups?.length < 3}
@@ -1035,6 +1041,7 @@
 	{#if actionAddSuperUser}
 		<hr />
 		<button
+			data-cy="button-add-super-user"
 			class="action-button"
 			class:action-button-invalid={invalidEmail || emailValue.length < 10}
 			on:click={() => {
@@ -1052,6 +1059,7 @@
 	{#if actionAddTopic}
 		<hr />
 		<button
+			data-cy="button-add-topic"
 			class="action-button"
 			class:action-button-invalid={newTopicName.length < minNameLength ||
 				searchGroups?.length < minNameLength}
@@ -1088,6 +1096,7 @@
 	{#if actionAddApplication}
 		<hr />
 		<button
+			data-cy="button-add-application"
 			class="action-button"
 			class:action-button-invalid={appName?.length < minNameLength ||
 				searchGroups?.length < minNameLength}
@@ -1107,6 +1116,7 @@
 	{#if actionAddGroup}
 		<hr />
 		<button
+			data-cy="button-add-group"
 			class="action-button"
 			class:action-button-invalid={newGroupName?.length < minNameLength}
 			disabled={newGroupName?.length < minNameLength}
@@ -1182,6 +1192,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-user"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteGroupMemberships')}
@@ -1199,6 +1210,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-super-user"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteSuperUsers')}
@@ -1216,6 +1228,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-topic"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteTopics')}
@@ -1233,6 +1246,7 @@
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			data-cy="delete-application"
 			autofocus
 			class="action-button"
 			on:click={() => dispatch('deleteApplications')}

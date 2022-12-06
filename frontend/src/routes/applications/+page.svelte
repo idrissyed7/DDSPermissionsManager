@@ -449,10 +449,11 @@
 
 		<div class="content">
 			{#if !applicationDetailVisible}
-				<h1>Applications</h1>
+				<h1 data-cy="applications">Applications</h1>
 
 				<form class="searchbox">
 					<input
+						data-cy="search-applications-table"
 						class="searchbox"
 						type="search"
 						placeholder="Search"
@@ -471,6 +472,7 @@
 
 				{#if (($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) || $isAdmin) && !applicationDetailVisible}
 					<div
+						data-cy="dot-applications"
 						tabindex="0"
 						class="dot"
 						on:mouseleave={() => {
@@ -540,6 +542,7 @@
 								</tr>
 
 								<tr
+									data-cy="add-application"
 									tabindex="0"
 									on:click={() => {
 										applicationsDropDownVisible = false;
@@ -574,6 +577,7 @@
 
 			{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
 				<table
+					data-cy="applications-table"
 					style="margin-top: 0.5rem"
 					class:application-table-admin={($permissionsByGroup &&
 						$permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) ||

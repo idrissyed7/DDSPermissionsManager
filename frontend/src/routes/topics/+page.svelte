@@ -364,38 +364,45 @@
 			/>
 		{/if}
 
-		{#if !topicDetailVisible}
-			<div class="content">
-				<h1>Topics</h1>
+	{#if !topicDetailVisible}
+		<div class="content">
+			<h1 data-cy="topics">Topics</h1>
 
-				<form class="searchbox">
-					<input
-						class="searchbox"
-						type="search"
-						placeholder="Search"
-						bind:value={searchString}
-						on:blur={() => {
+			<form class="searchbox">
+				<input
+					data-cy="search-topics-table"
+					class="searchbox"
+					type="search"
+					placeholder="Search"
+					bind:value={searchString}
+					on:blur={() => {
+						searchString = searchString?.trim();
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							document.activeElement.blur();
 							searchString = searchString?.trim();
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								document.activeElement.blur();
-								searchString = searchString?.trim();
-							}
-						}}
-					/>
-				</form>
+						}
+					}}
+				/>
+			</form>
 
-				{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-					<div
-						class="dot"
-						tabindex="0"
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-							}, waitTime);
-						}}
-						on:click={() => {
+			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+				<div
+					data-cy="dot-topics"
+					class="dot"
+					tabindex="0"
+					on:mouseleave={() => {
+						setTimeout(() => {
+							if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+						}, waitTime);
+					}}
+					on:click={() => {
+						if (!deleteTopicVisible && !addTopicVisible)
+							topicsDropDownVisible = !topicsDropDownVisible;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
 							if (!deleteTopicVisible && !addTopicVisible)
 								topicsDropDownVisible = !topicsDropDownVisible;
 						}}
@@ -457,15 +464,11 @@
 									</td>
 								</tr>
 
-								<tr
-									tabindex="0"
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											topicsDropDownVisible = false;
-											addTopicVisible = true;
-										}
-									}}
-									on:click={() => {
+							<tr
+								data-cy="add-topic"
+								tabindex="0"
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
 										topicsDropDownVisible = false;
 										addTopicVisible = true;
 									}}
@@ -489,57 +492,56 @@
 					</div>
 				{/if}
 
-				{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-					<table class="main" style="margin-top: 0.5rem">
-						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+			{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
+				<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
+					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+						{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+							<td>
+								<input
+									tabindex="-1"
+									type="checkbox"
+									class="topics-checkbox"
+									style="margin-right: 0.5rem"
+									bind:indeterminate={topicsRowsSelectedTrue}
+									on:click={(e) => {
+										topicsDropDownVisible = false;
+										if (e.target.checked) {
+											topicsRowsSelected = $topics;
+											topicsRowsSelectedTrue = false;
+											topicsAllRowsSelectedTrue = true;
+										} else {
+											topicsAllRowsSelectedTrue = false;
+											topicsRowsSelectedTrue = false;
+											topicsRowsSelected = [];
+										}
+									}}
+									checked={topicsAllRowsSelectedTrue}
+								/>
+							</td>
+						{/if}
+						<td style="line-height: 2.2rem">Topic</td>
+						<td>Group</td>
+					</tr>
+					{#each $topics as topic, i}
+						<tr>
 							{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-								<td>
+								<td style="width: 2rem">
 									<input
 										tabindex="-1"
 										type="checkbox"
 										class="topics-checkbox"
-										style="margin-right: 0.5rem"
-										bind:indeterminate={topicsRowsSelectedTrue}
-										on:click={(e) => {
-											topicsDropDownVisible = false;
-											if (e.target.checked) {
-												topicsRowsSelected = $topics;
-												topicsRowsSelectedTrue = false;
-												topicsAllRowsSelectedTrue = true;
-											} else {
-												topicsAllRowsSelectedTrue = false;
-												topicsRowsSelectedTrue = false;
-												topicsRowsSelected = [];
-											}
-										}}
 										checked={topicsAllRowsSelectedTrue}
-									/>
-								</td>
-							{/if}
-							<td style="line-height: 2.2rem">Topic</td>
-							<td>Group</td>
-						</tr>
-						{#each $topics as topic, i}
-							<tr>
-								{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-									<td style="width: 2rem">
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="topics-checkbox"
-											checked={topicsAllRowsSelectedTrue}
-											on:change={(e) => {
-												topicsDropDownVisible = false;
-												if (e.target.checked === true) {
-													topicsRowsSelected.push(topic);
-													topicsRowsSelectedTrue = true;
-												} else {
-													topicsRowsSelected = topicsRowsSelected.filter(
-														(selection) => selection !== topic
-													);
-													if (topicsRowsSelected.length === 0) {
-														topicsRowsSelectedTrue = false;
-													}
+										on:change={(e) => {
+											topicsDropDownVisible = false;
+											if (e.target.checked === true) {
+												topicsRowsSelected.push(topic);
+												topicsRowsSelectedTrue = true;
+											} else {
+												topicsRowsSelected = topicsRowsSelected.filter(
+													(selection) => selection !== topic
+												);
+												if (topicsRowsSelected.length === 0) {
+													topicsRowsSelectedTrue = false;
 												}
 											}}
 										/>

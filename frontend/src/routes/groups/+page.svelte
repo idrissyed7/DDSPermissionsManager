@@ -273,37 +273,44 @@
 			/>
 		{/if}
 
-		<div class="content">
-			<h1>Groups</h1>
+	<div class="content">
+		<h1 data-cy="groups">Groups</h1>
 
-			<form class="searchbox">
-				<input
-					class="searchbox"
-					type="search"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
+		<form class="searchbox">
+			<input
+				data-cy="search-groups-table"
+				class="searchbox"
+				type="search"
+				placeholder="Search"
+				bind:value={searchString}
+				on:blur={() => {
+					searchString = searchString?.trim();
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						document.activeElement.blur();
 						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							document.activeElement.blur();
-							searchString = searchString?.trim();
-						}
-					}}
-				/>
-			</form>
+					}
+				}}
+			/>
+		</form>
 
-			{#if $isAdmin}
-				<div
-					tabindex="0"
-					class="dot"
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
-						}, waitTime);
-					}}
-					on:click={() => {
+		{#if $isAdmin}
+			<div
+				data-cy="dot-groups"
+				tabindex="0"
+				class="dot"
+				on:mouseleave={() => {
+					setTimeout(() => {
+						if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
+					}, waitTime);
+				}}
+				on:click={() => {
+					if (!deleteGroupVisible && !addGroupVisible)
+						groupsDropDownVisible = !groupsDropDownVisible;
+				}}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
 						if (!deleteGroupVisible && !addGroupVisible)
 							groupsDropDownVisible = !groupsDropDownVisible;
 					}}
@@ -365,9 +372,15 @@
 								</td>
 							</tr>
 
-							<tr
-								tabindex="0"
-								on:click={() => {
+						<tr
+							data-cy="add-group"
+							tabindex="0"
+							on:click={() => {
+								groupsDropDownVisible = false;
+								addGroupVisible = true;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
 									groupsDropDownVisible = false;
 									addGroupVisible = true;
 								}}
@@ -398,62 +411,61 @@
 				</div>
 			{/if}
 
-			{#if $groups}
-				{#if $groups.length > 0}
-					<table style="margin-top: 0.5rem; width: 35rem">
-						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+		{#if $groups}
+			{#if $groups.length > 0}
+				<table data-cy="groups-table" style="margin-top: 0.5rem; width: 35rem">
+					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+						{#if $isAdmin}
+							<td>
+								<input
+									tabindex="-1"
+									type="checkbox"
+									class="groups-checkbox"
+									style="margin-right: 0.5rem; vertical-align: middle;"
+									bind:indeterminate={groupsRowsSelectedTrue}
+									on:click={(e) => {
+										groupsDropDownVisible = false;
+										if (e.target.checked) {
+											groupsRowsSelected = $groups;
+											groupsRowsSelectedTrue = false;
+											groupsAllRowsSelectedTrue = true;
+										} else {
+											groupsAllRowsSelectedTrue = false;
+											groupsRowsSelectedTrue = false;
+											groupsRowsSelected = [];
+										}
+									}}
+									checked={groupsAllRowsSelectedTrue}
+								/>
+							</td>
+						{/if}
+						<td style="width: 7rem;">Group</td>
+						<td style="width: 7rem;"><center>Users</center></td>
+						<td style="width: 7rem;"><center>Topics</center></td>
+						<td style="width: 7rem;"><center>Applications</center></td>
+						<td />
+					</tr>
+					{#each $groups as group}
+						<tr>
 							{#if $isAdmin}
-								<td>
+								<td style="width: 2rem">
 									<input
 										tabindex="-1"
 										type="checkbox"
 										class="groups-checkbox"
-										style="margin-right: 0.5rem; vertical-align: middle;"
-										bind:indeterminate={groupsRowsSelectedTrue}
-										on:click={(e) => {
-											groupsDropDownVisible = false;
-											if (e.target.checked) {
-												groupsRowsSelected = $groups;
-												groupsRowsSelectedTrue = false;
-												groupsAllRowsSelectedTrue = true;
-											} else {
-												groupsAllRowsSelectedTrue = false;
-												groupsRowsSelectedTrue = false;
-												groupsRowsSelected = [];
-											}
-										}}
+										style="vertical-align: middle;"
 										checked={groupsAllRowsSelectedTrue}
-									/>
-								</td>
-							{/if}
-							<td style="width: 7rem;">Group</td>
-							<td style="width: 7rem;"><center>Users</center></td>
-							<td style="width: 7rem;"><center>Topics</center></td>
-							<td style="width: 7rem;"><center>Applications</center></td>
-							<td />
-						</tr>
-						{#each $groups as group}
-							<tr>
-								{#if $isAdmin}
-									<td style="width: 2rem">
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="groups-checkbox"
-											style="vertical-align: middle;"
-											checked={groupsAllRowsSelectedTrue}
-											on:change={(e) => {
-												groupsDropDownVisible = false;
-												if (e.target.checked === true) {
-													groupsRowsSelected.push(group);
-													groupsRowsSelectedTrue = true;
-												} else {
-													groupsRowsSelected = groupsRowsSelected.filter(
-														(selection) => selection !== group
-													);
-													if (groupsRowsSelected.length === 0) {
-														groupsRowsSelectedTrue = false;
-													}
+										on:change={(e) => {
+											groupsDropDownVisible = false;
+											if (e.target.checked === true) {
+												groupsRowsSelected.push(group);
+												groupsRowsSelectedTrue = true;
+											} else {
+												groupsRowsSelected = groupsRowsSelected.filter(
+													(selection) => selection !== group
+												);
+												if (groupsRowsSelected.length === 0) {
+													groupsRowsSelectedTrue = false;
 												}
 											}}
 										/>
