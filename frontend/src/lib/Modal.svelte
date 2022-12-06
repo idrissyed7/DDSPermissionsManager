@@ -83,7 +83,6 @@
 	let stopSearchingApps = false;
 
 	// SearchBox
-	let searchString;
 	let searchGroupsResultsMouseEnter = false;
 	let searchGroupResults;
 	let searchGroupsResultsVisible = false;
@@ -105,8 +104,7 @@
 	) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
-			searchGroups = searchGroups.trim();
-			searchGroup(searchGroups);
+			searchGroup(searchGroups.trim());
 			stopSearchingGroups = true;
 		}, waitTime);
 	}
@@ -155,8 +153,12 @@
 			hasMoreGroups = false;
 		}
 
-		if (res.data?.content?.length > 0)
+		if (
+			res.data?.content?.length > 0 &&
+			JSON.stringify(searchGroupResults) !== JSON.stringify(res.data.content)
+		) {
 			searchGroupResults = [...searchGroupResults, ...res.data.content];
+		}
 	};
 
 	const selectedSearchGroup = (groupName, groupId) => {
@@ -667,7 +669,7 @@
 						if (event.which === returnKey) {
 							errorMessageApplication = '';
 							document.activeElement.blur();
-							searchString = searchString?.trim();
+							searchGroups = searchGroups?.trim();
 
 							if (actionAddUser) {
 								validateEmail(emailValue);
@@ -691,7 +693,7 @@
 						}
 					}}
 					on:blur={() => {
-						searchString = searchString?.trim();
+						searchGroups = searchGroups?.trim();
 						setTimeout(() => {
 							searchGroupsResultsVisible = false;
 						}, waitTime);
