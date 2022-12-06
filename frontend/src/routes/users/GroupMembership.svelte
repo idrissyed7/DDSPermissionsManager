@@ -18,7 +18,7 @@
 
 	// Constants
 	const returnKey = 13;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// DropDowns
 	let usersDropDownVisible = false;
@@ -451,12 +451,13 @@
 					<table
 						class="dropdown"
 						on:mouseenter={() => {
-							if (usersDropDownVisible) usersDropDownMouseEnter = true;
+							usersDropDownMouseEnter = true;
 						}}
 						on:mouseleave={() => {
 							setTimeout(() => {
-								usersDropDownVisible = false;
+								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
 							}, waitTime);
+							usersDropDownMouseEnter = false;
 						}}
 					>
 						<tr
@@ -523,7 +524,7 @@
 		{/if}
 
 		{#if $groupMembershipList && $groupMembershipList.length > 0}
-			<table data-cy="users-table" style="margin-top:0.5rem; width:55rem">
+			<table data-cy="users-table" style="margin-top:0.5rem; width: 53rem;">
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 					{#if $isAdmin || isGroupAdmin}
 						<td>
@@ -549,13 +550,11 @@
 							/>
 						</td>
 					{/if}
-					<td style="width: 19rem; font-stretch:ultra-condensed">E-mail</td>
-					<td style="width: 14rem; font-stretch:ultra-condensed">Group</td>
-					<td style="width: 7.5rem; font-stretch:ultra-condensed"><center>Group Admin</center></td>
-					<td style="width: 7.5rem; font-stretch:ultra-condensed"><center>Topic Admin</center></td>
-					<td style="width: 9.3rem; font-stretch:ultra-condensed"
-						><center>Application Admin</center></td
-					>
+					<td style=" font-stretch:ultra-condensed">E-mail</td>
+					<td style=" font-stretch:ultra-condensed">Group</td>
+					<td style=" font-stretch:ultra-condensed"><center>Group Admin</center></td>
+					<td style=" font-stretch:ultra-condensed"><center>Topic Admin</center></td>
+					<td style=" font-stretch:ultra-condensed"><center>Application Admin</center></td>
 					<td /><td />
 				</tr>
 				{#each $groupMembershipList as groupMembership, i}
@@ -585,9 +584,9 @@
 								/>
 							</td>
 						{/if}
-						<td style="width: 19rem">{groupMembership.userEmail}</td>
-						<td style="width: 6rem">{groupMembership.groupName}</td>
-						<td style="width: 5rem">
+						<td>{groupMembership.userEmail}</td>
+						<td>{groupMembership.groupName}</td>
+						<td>
 							<center>
 								{#if groupMembership.groupAdmin}&check;
 								{:else}
@@ -595,7 +594,7 @@
 								{/if}
 							</center>
 						</td>
-						<td style="width: 5rem">
+						<td>
 							<center
 								>{#if groupMembership.topicAdmin}&check;
 								{:else}
@@ -603,7 +602,7 @@
 								{/if}
 							</center>
 						</td>
-						<td style="width: 5rem">
+						<td>
 							<center
 								>{#if groupMembership.applicationAdmin}&check;
 								{:else}
@@ -625,6 +624,7 @@
 									src={editSVG}
 									height="17rem"
 									width="17rem"
+									style="vertical-align: -0.225rem"
 									alt="edit user"
 									on:click={() => updateGroupMembershipSelection(groupMembership)}
 								/>
@@ -634,6 +634,7 @@
 									src={deleteSVG}
 									height="27px"
 									width="27px"
+									style="vertical-align: -0.5rem"
 									alt="delete user"
 									on:click={() => {
 										if (!usersRowsSelected.some((gm) => gm === groupMembership))
@@ -652,93 +653,95 @@
 			<p>No group memberships</p>
 		{/if}
 
-		<div class="pagination">
-			<span>Rows per page</span>
-			<select
-				tabindex="-1"
-				on:change={(e) => {
-					groupMembershipsPerPage = e.target.value;
-					reloadGroupMemberships();
-				}}
-				name="RowsPerPage"
-			>
-				<option value="10">10</option>
-				<option value="25">25</option>
-				<option value="50">50</option>
-				<option value="75">75</option>
-				<option value="100">100&nbsp;</option>
-			</select>
-			<span style="margin: 0 2rem 0 2rem">
-				{#if groupMembershipsTotalSize > 0}
-					{1 + groupMembershipsCurrentPage * groupMembershipsPerPage}
-				{:else}
-					0
-				{/if}
-				- {Math.min(
-					groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
-					groupMembershipsTotalSize
-				)} of {groupMembershipsTotalSize}
-			</span>
-			<img
-				src={pagefirstSVG}
-				alt="first page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage === 0}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage > 0) {
-						groupMembershipsCurrentPage = 0;
-						reloadGroupMemberships();
-					}
-				}}
-			/>
-			<img
-				src={pagebackwardsSVG}
-				alt="previous page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage === 0}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage > 0) {
-						groupMembershipsCurrentPage--;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pageforwardSVG}
-				alt="next page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages) {
-						groupMembershipsCurrentPage++;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pagelastSVG}
-				alt="last page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage < groupMembershipsTotalPages) {
-						groupMembershipsCurrentPage = groupMembershipsTotalPages - 1;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-		</div>
 		<br />
+	</div>
+	<div class="pagination">
+		<span>Rows per page</span>
+		<select
+			tabindex="-1"
+			on:change={(e) => {
+				groupMembershipsPerPage = e.target.value;
+				reloadGroupMemberships();
+			}}
+			name="RowsPerPage"
+		>
+			<option value="10">10</option>
+			<option value="25">25</option>
+			<option value="50">50</option>
+			<option value="75">75</option>
+			<option value="100">100&nbsp;</option>
+		</select>
+		<span style="margin: 0 2rem 0 2rem">
+			{#if groupMembershipsTotalSize > 0}
+				{1 + groupMembershipsCurrentPage * groupMembershipsPerPage}
+			{:else}
+				0
+			{/if}
+			- {Math.min(
+				groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
+				groupMembershipsTotalSize
+			)} of {groupMembershipsTotalSize}
+		</span>
+		<img
+			src={pagefirstSVG}
+			alt="first page"
+			class="pagination-image"
+			class:disabled-img={groupMembershipsCurrentPage === 0}
+			on:click={() => {
+				deselectAllGroupMembershipCheckboxes();
+				if (groupMembershipsCurrentPage > 0) {
+					groupMembershipsCurrentPage = 0;
+					reloadGroupMemberships();
+				}
+			}}
+		/>
+		<img
+			src={pagebackwardsSVG}
+			alt="previous page"
+			class="pagination-image"
+			class:disabled-img={groupMembershipsCurrentPage === 0}
+			on:click={() => {
+				deselectAllGroupMembershipCheckboxes();
+				if (groupMembershipsCurrentPage > 0) {
+					groupMembershipsCurrentPage--;
+					reloadGroupMemberships(groupMembershipsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pageforwardSVG}
+			alt="next page"
+			class="pagination-image"
+			class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+				$groupMembershipList?.length === undefined}
+			on:click={() => {
+				deselectAllGroupMembershipCheckboxes();
+				if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages) {
+					groupMembershipsCurrentPage++;
+					reloadGroupMemberships(groupMembershipsCurrentPage);
+				}
+			}}
+		/>
+		<img
+			src={pagelastSVG}
+			alt="last page"
+			class="pagination-image"
+			class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+				$groupMembershipList?.length === undefined}
+			on:click={() => {
+				deselectAllGroupMembershipCheckboxes();
+				if (groupMembershipsCurrentPage < groupMembershipsTotalPages) {
+					groupMembershipsCurrentPage = groupMembershipsTotalPages - 1;
+					reloadGroupMemberships(groupMembershipsCurrentPage);
+				}
+			}}
+		/>
 	</div>
 {/if}
 
 <style>
 	.content {
-		width: 55rem;
+		width: fit-content;
 	}
 
 	.dropdown {

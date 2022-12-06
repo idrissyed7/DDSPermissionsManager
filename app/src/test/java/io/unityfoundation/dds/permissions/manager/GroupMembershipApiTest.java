@@ -178,11 +178,11 @@ public class GroupMembershipApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
+            assertEquals(NOT_FOUND, exception.getStatus());
             Optional<List> listOptional = exception.getResponse().getBody(List.class);
             assertTrue(listOptional.isPresent());
             List<Map> list = listOptional.get();
-            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NOT_FOUND.equals(map.get("code"))));
         }
 
         @Test
@@ -464,7 +464,7 @@ public class GroupMembershipApiTest {
 
         @Test
         public void shouldBeConsideredValid() {
-            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
+            HttpRequest request = HttpRequest.GET("/group_membership/user_validity");
             HttpResponse response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> mapOptional = response.getBody(Map.class);
@@ -738,7 +738,7 @@ public class GroupMembershipApiTest {
             assertTrue(response.getBody(GroupUserResponseDTO.class).isPresent());
             GroupUserResponseDTO groupUser = response.getBody(GroupUserResponseDTO.class).get();
 
-            request = HttpRequest.GET("/group_membership/user-exists/"+groupUser.getPermissionsUser());
+            request = HttpRequest.GET("/group_membership/user_exists/"+groupUser.getPermissionsUser());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -749,7 +749,7 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            request = HttpRequest.GET("/group_membership/user-exists/"+groupUser.getPermissionsUser());
+            request = HttpRequest.GET("/group_membership/user_exists/"+groupUser.getPermissionsUser());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -1173,7 +1173,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/user-validity");
+            request = HttpRequest.GET("/group_membership/user_validity");
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -1300,7 +1300,7 @@ public class GroupMembershipApiTest {
         @Test
         public void shouldBeConsideredInvalid() {
             loginAsNonAdmin();
-            HttpRequest request = HttpRequest.GET("/group_membership/user-validity");
+            HttpRequest request = HttpRequest.GET("/group_membership/user_validity");
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);

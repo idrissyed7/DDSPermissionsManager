@@ -103,6 +103,7 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		height: 2.8rem;
+		line-height: 2.8rem;
 		box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
 	}
 

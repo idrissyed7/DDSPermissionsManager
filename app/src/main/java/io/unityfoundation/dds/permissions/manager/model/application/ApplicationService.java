@@ -253,6 +253,16 @@ public class ApplicationService {
         return toDtos(results);
     }
 
+    public HttpResponse existsByName(String name) {
+        Optional<Application> byNameEquals = applicationRepository.findByNameEquals(name.trim());
+
+        if (byNameEquals.isEmpty()) {
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        return HttpResponse.ok(new ApplicationDTO(byNameEquals.get()));
+    }
+
     public List<ApplicationDTO> toDtos(Iterable<Application> results) {
         return StreamSupport.stream(results.spliterator(), false)
                 .map(ApplicationDTO::new)
@@ -577,7 +587,7 @@ public class ApplicationService {
     private String buildSubject(Application application, String nonce) {
         X500NameBuilder nameBuilder = new X500NameBuilder();
         nameBuilder.addRDN(BCStyle.CN, application.getId() + "_" + nonce);
-        nameBuilder.addRDN(BCStyle.GIVENNAME, String.valueOf(application.getId()));
+        nameBuilder.addRDN(BCStyle.GIVENNAME, application.getName());
         nameBuilder.addRDN(BCStyle.SURNAME, String.valueOf(application.getPermissionsGroup().getId()));
         return nameBuilder.build().toString();
     }

@@ -58,7 +58,7 @@
 	const searchStringLength = 3;
 	let searchUserResults;
 	let timer;
-	const waitTime = 250;
+	const waitTime = 1000;
 
 	// Forms
 	let emailValue = '';
@@ -161,7 +161,7 @@
 	const deleteSelectedSuperUsers = async () => {
 		try {
 			for (const superUser of superUsersRowsSelected) {
-				await httpAdapter.put(`/admins/remove-admin/${superUser.id}`, {});
+				await httpAdapter.put(`/admins/remove_admin/${superUser.id}`, {});
 			}
 		} catch (err) {
 			errorMessage('Error Deleting Super User', err.message);
@@ -280,12 +280,13 @@
 					<table
 						class="dropdown"
 						on:mouseenter={() => {
-							if (superUsersDropDownVisible) superUsersDropDownMouseEnter = true;
+							superUsersDropDownMouseEnter = true;
 						}}
 						on:mouseleave={() => {
 							setTimeout(() => {
-								superUsersDropDownVisible = false;
+								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
 							}, waitTime);
+							superUsersDropDownMouseEnter = false;
 						}}
 					>
 						<tr
@@ -476,7 +477,8 @@
 				src={pageforwardSVG}
 				alt="next page"
 				class="pagination-image"
-				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages}
+				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+					$users?.length === undefined}
 				on:click={() => {
 					deselectAllSuperUsersCheckboxes();
 					if (superUsersCurrentPage + 1 < superUsersTotalPages) {
@@ -489,7 +491,8 @@
 				src={pagelastSVG}
 				alt="last page"
 				class="pagination-image"
-				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages}
+				class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+					$users?.length === undefined}
 				on:click={() => {
 					deselectAllSuperUsersCheckboxes();
 					if (superUsersCurrentPage < superUsersTotalPages) {
@@ -504,7 +507,7 @@
 
 <style>
 	.content {
-		width: 25rem;
+		width: fit-content;
 	}
 
 	table {
