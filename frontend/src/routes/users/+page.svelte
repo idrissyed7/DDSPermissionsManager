@@ -228,7 +228,7 @@
 		{/if}
 
 		<div class="content">
-			<h1>Super User</h1>
+			<h1>Super Users</h1>
 
 			<form class="searchbox">
 				<input
