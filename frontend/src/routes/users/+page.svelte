@@ -226,48 +226,43 @@
 				/>
 			{/if}
 
-		<div class="content">
-			<h1 data-cy="super-users">Super Users</h1>
+			<div class="content">
+				<h1 data-cy="super-users">Super Users</h1>
 
-			<form class="searchbox">
-				<input
-					data-cy="search-super-users-table"
-					class="searchbox"
-					type="search"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
-						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							document.activeElement.blur();
+				<form class="searchbox">
+					<input
+						data-cy="search-super-users-table"
+						class="searchbox"
+						type="search"
+						placeholder="Search"
+						bind:value={searchString}
+						on:blur={() => {
 							searchString = searchString?.trim();
-						}
-					}}
-				/>
-			</form>
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								document.activeElement.blur();
+								searchString = searchString?.trim();
+							}
+						}}
+					/>
+				</form>
 
-			<div
-				data-cy="dot-super-users"
-				class="dot"
-				tabindex="0"
-				on:mouseleave={() => {
-					setTimeout(() => {
-						if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-					}, waitTime);
-				}}
-				on:focusout={() => {
-					setTimeout(() => {
-						if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-					}, waitTime);
-				}}
-				on:click={() => {
-					if (!deleteSuperUserVisible && !addSuperUserVisible)
-						superUsersDropDownVisible = !superUsersDropDownVisible;
-				}}
-				on:keydown={(event) => {
-					if (event.which === returnKey) {
+				<div
+					data-cy="dot-super-users"
+					class="dot"
+					tabindex="0"
+					on:mouseleave={() => {
+						setTimeout(() => {
+							if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
+						}, waitTime);
+					}}
+					on:focusout={() => {
+						setTimeout(() => {
+							if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
+						}, waitTime);
+					}}
+					on:click={() => {
 						if (!deleteSuperUserVisible && !addSuperUserVisible)
 							superUsersDropDownVisible = !superUsersDropDownVisible;
 					}}
@@ -280,28 +275,23 @@
 				>
 					<img src={threedotsSVG} alt="options" style="scale:50%" />
 
-				{#if superUsersDropDownVisible && !deleteSuperUserVisible && !addSuperUserVisible}
-					<table
-						class="dropdown"
-						on:mouseenter={() => {
-							superUsersDropDownMouseEnter = true;
-						}}
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-							}, waitTime);
-							superUsersDropDownMouseEnter = false;
-						}}
-					>
-						<tr
-							tabindex="0"
-							class:disabled={superUsersRowsSelected.length === 0}
-							on:click={async () => {
-								superUsersDropDownVisible = false;
-								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
+					{#if superUsersDropDownVisible && !deleteSuperUserVisible && !addSuperUserVisible}
+						<table
+							class="dropdown"
+							on:mouseenter={() => {
+								superUsersDropDownMouseEnter = true;
 							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
+							on:mouseleave={() => {
+								setTimeout(() => {
+									if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
+								}, waitTime);
+								superUsersDropDownMouseEnter = false;
+							}}
+						>
+							<tr
+								tabindex="0"
+								class:disabled={superUsersRowsSelected.length === 0}
+								on:click={async () => {
 									superUsersDropDownVisible = false;
 									if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 								}}
@@ -327,15 +317,10 @@
 								</td>
 							</tr>
 
-						<tr
-							data-cy="add-super-user"
-							tabindex="0"
-							on:click={() => {
-								superUsersDropDownVisible = false;
-								addSuperUserVisible = true;
-							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
+							<tr
+								data-cy="add-super-user"
+								tabindex="0"
+								on:click={() => {
 									superUsersDropDownVisible = false;
 									addSuperUserVisible = true;
 								}}
@@ -363,53 +348,54 @@
 					{/if}
 				</div>
 
-			{#if $users && $users.length > 0}
-				<table data-cy="super-users-table" style="margin-top: 0.5rem">
-					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						<td>
-							<input
-								tabindex="-1"
-								type="checkbox"
-								class="super-user-checkbox"
-								style="margin-right: 0.5rem"
-								bind:indeterminate={superUsersRowsSelectedTrue}
-								on:click={(e) => {
-									superUsersDropDownVisible = false;
-									if (e.target.checked) {
-										superUsersRowsSelected = $users;
-										superUsersRowsSelectedTrue = false;
-										superUsersAllRowsSelectedTrue = true;
-									} else {
-										superUsersAllRowsSelectedTrue = false;
-										superUsersRowsSelectedTrue = false;
-										superUsersRowsSelected = [];
-									}
-								}}
-								checked={superUsersAllRowsSelectedTrue}
-							/>
-						</td>
-						<td>E-mail</td>
-						<td />
-					</tr>
-					{#each $users as user}
-						<tr>
-							<td style="width: 2rem">
+				{#if $users && $users.length > 0}
+					<table data-cy="super-users-table" style="margin-top: 0.5rem">
+						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+							<td>
 								<input
 									tabindex="-1"
 									type="checkbox"
 									class="super-user-checkbox"
-									checked={superUsersAllRowsSelectedTrue}
-									on:change={(e) => {
+									style="margin-right: 0.5rem"
+									bind:indeterminate={superUsersRowsSelectedTrue}
+									on:click={(e) => {
 										superUsersDropDownVisible = false;
-										if (e.target.checked === true) {
-											superUsersRowsSelected.push(user);
-											superUsersRowsSelectedTrue = true;
+										if (e.target.checked) {
+											superUsersRowsSelected = $users;
+											superUsersRowsSelectedTrue = false;
+											superUsersAllRowsSelectedTrue = true;
 										} else {
-											superUsersRowsSelected = superUsersRowsSelected.filter(
-												(selection) => selection !== user
-											);
-											if (superUsersRowsSelected.length === 0) {
-												superUsersRowsSelectedTrue = false;
+											superUsersAllRowsSelectedTrue = false;
+											superUsersRowsSelectedTrue = false;
+											superUsersRowsSelected = [];
+										}
+									}}
+									checked={superUsersAllRowsSelectedTrue}
+								/>
+							</td>
+							<td>E-mail</td>
+							<td />
+						</tr>
+						{#each $users as user}
+							<tr>
+								<td style="width: 2rem">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="super-user-checkbox"
+										checked={superUsersAllRowsSelectedTrue}
+										on:change={(e) => {
+											superUsersDropDownVisible = false;
+											if (e.target.checked === true) {
+												superUsersRowsSelected.push(user);
+												superUsersRowsSelectedTrue = true;
+											} else {
+												superUsersRowsSelected = superUsersRowsSelected.filter(
+													(selection) => selection !== user
+												);
+												if (superUsersRowsSelected.length === 0) {
+													superUsersRowsSelectedTrue = false;
+												}
 											}
 										}}
 									/>

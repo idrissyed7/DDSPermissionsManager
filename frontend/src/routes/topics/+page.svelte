@@ -364,45 +364,40 @@
 			/>
 		{/if}
 
-	{#if !topicDetailVisible}
-		<div class="content">
-			<h1 data-cy="topics">Topics</h1>
+		{#if !topicDetailVisible}
+			<div class="content">
+				<h1 data-cy="topics">Topics</h1>
 
-			<form class="searchbox">
-				<input
-					data-cy="search-topics-table"
-					class="searchbox"
-					type="search"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
-						searchString = searchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							document.activeElement.blur();
+				<form class="searchbox">
+					<input
+						data-cy="search-topics-table"
+						class="searchbox"
+						type="search"
+						placeholder="Search"
+						bind:value={searchString}
+						on:blur={() => {
 							searchString = searchString?.trim();
-						}
-					}}
-				/>
-			</form>
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								document.activeElement.blur();
+								searchString = searchString?.trim();
+							}
+						}}
+					/>
+				</form>
 
-			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-				<div
-					data-cy="dot-topics"
-					class="dot"
-					tabindex="0"
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-						}, waitTime);
-					}}
-					on:click={() => {
-						if (!deleteTopicVisible && !addTopicVisible)
-							topicsDropDownVisible = !topicsDropDownVisible;
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
+				{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+					<div
+						data-cy="dot-topics"
+						class="dot"
+						tabindex="0"
+						on:mouseleave={() => {
+							setTimeout(() => {
+								if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+							}, waitTime);
+						}}
+						on:click={() => {
 							if (!deleteTopicVisible && !addTopicVisible)
 								topicsDropDownVisible = !topicsDropDownVisible;
 						}}
@@ -420,27 +415,22 @@
 					>
 						<img src={threedotsSVG} alt="options" style="scale:50%" />
 
-					{#if topicsDropDownVisible}
-						<table
-							class="dropdown"
-							on:mouseenter={() => (topicsDropDownMouseEnter = true)}
-							on:mouseleave={() => {
-								setTimeout(() => {
-									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-								}, waitTime);
-								topicsDropDownMouseEnter = false;
-							}}
-						>
-							<tr
-								tabindex="0"
-								disabled={!$isAdmin}
-								class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
-								on:click={() => {
-									topicsDropDownVisible = false;
-									if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+						{#if topicsDropDownVisible}
+							<table
+								class="dropdown"
+								on:mouseenter={() => (topicsDropDownMouseEnter = true)}
+								on:mouseleave={() => {
+									setTimeout(() => {
+										if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+									}, waitTime);
+									topicsDropDownMouseEnter = false;
 								}}
-								on:keydown={(event) => {
-									if (event.which === returnKey) {
+							>
+								<tr
+									tabindex="0"
+									disabled={!$isAdmin}
+									class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
+									on:click={() => {
 										topicsDropDownVisible = false;
 										if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 									}}
@@ -464,13 +454,14 @@
 									</td>
 								</tr>
 
-							<tr
-								data-cy="add-topic"
-								tabindex="0"
-								on:keydown={(event) => {
-									if (event.which === returnKey) {
-										topicsDropDownVisible = false;
-										addTopicVisible = true;
+								<tr
+									data-cy="add-topic"
+									tabindex="0"
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											topicsDropDownVisible = false;
+											addTopicVisible = true;
+										}
 									}}
 									on:focusout={() => (topicsDropDownMouseEnter = false)}
 									class:hidden={addTopicVisible}
@@ -492,56 +483,57 @@
 					</div>
 				{/if}
 
-			{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-				<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
-					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-							<td>
-								<input
-									tabindex="-1"
-									type="checkbox"
-									class="topics-checkbox"
-									style="margin-right: 0.5rem"
-									bind:indeterminate={topicsRowsSelectedTrue}
-									on:click={(e) => {
-										topicsDropDownVisible = false;
-										if (e.target.checked) {
-											topicsRowsSelected = $topics;
-											topicsRowsSelectedTrue = false;
-											topicsAllRowsSelectedTrue = true;
-										} else {
-											topicsAllRowsSelectedTrue = false;
-											topicsRowsSelectedTrue = false;
-											topicsRowsSelected = [];
-										}
-									}}
-									checked={topicsAllRowsSelectedTrue}
-								/>
-							</td>
-						{/if}
-						<td style="line-height: 2.2rem">Topic</td>
-						<td>Group</td>
-					</tr>
-					{#each $topics as topic, i}
-						<tr>
+				{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
+					<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
+						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 							{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-								<td style="width: 2rem">
+								<td>
 									<input
 										tabindex="-1"
 										type="checkbox"
 										class="topics-checkbox"
-										checked={topicsAllRowsSelectedTrue}
-										on:change={(e) => {
+										style="margin-right: 0.5rem"
+										bind:indeterminate={topicsRowsSelectedTrue}
+										on:click={(e) => {
 											topicsDropDownVisible = false;
-											if (e.target.checked === true) {
-												topicsRowsSelected.push(topic);
-												topicsRowsSelectedTrue = true;
+											if (e.target.checked) {
+												topicsRowsSelected = $topics;
+												topicsRowsSelectedTrue = false;
+												topicsAllRowsSelectedTrue = true;
 											} else {
-												topicsRowsSelected = topicsRowsSelected.filter(
-													(selection) => selection !== topic
-												);
-												if (topicsRowsSelected.length === 0) {
-													topicsRowsSelectedTrue = false;
+												topicsAllRowsSelectedTrue = false;
+												topicsRowsSelectedTrue = false;
+												topicsRowsSelected = [];
+											}
+										}}
+										checked={topicsAllRowsSelectedTrue}
+									/>
+								</td>
+							{/if}
+							<td style="line-height: 2.2rem">Topic</td>
+							<td>Group</td>
+						</tr>
+						{#each $topics as topic, i}
+							<tr>
+								{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
+									<td style="width: 2rem">
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="topics-checkbox"
+											checked={topicsAllRowsSelectedTrue}
+											on:change={(e) => {
+												topicsDropDownVisible = false;
+												if (e.target.checked === true) {
+													topicsRowsSelected.push(topic);
+													topicsRowsSelectedTrue = true;
+												} else {
+													topicsRowsSelected = topicsRowsSelected.filter(
+														(selection) => selection !== topic
+													);
+													if (topicsRowsSelected.length === 0) {
+														topicsRowsSelectedTrue = false;
+													}
 												}
 											}}
 										/>
