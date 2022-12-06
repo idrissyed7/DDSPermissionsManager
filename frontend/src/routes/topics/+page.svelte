@@ -364,10 +364,11 @@
 
 	{#if !topicDetailVisible}
 		<div class="content">
-			<h1>Topics</h1>
+			<h1 data-cy="topics">Topics</h1>
 
 			<form class="searchbox">
 				<input
+					data-cy="search-topics-table"
 					class="searchbox"
 					type="search"
 					placeholder="Search"
@@ -386,6 +387,7 @@
 
 			{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
 				<div
+					data-cy="dot-topics"
 					class="dot"
 					tabindex="0"
 					on:mouseleave={() => {
@@ -451,6 +453,7 @@
 							</tr>
 
 							<tr
+								data-cy="add-topic"
 								tabindex="0"
 								on:keydown={(event) => {
 									if (event.which === returnKey) {
@@ -483,7 +486,7 @@
 			{/if}
 
 			{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-				<table class="main" style="margin-top: 0.5rem">
+				<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
 							<td>

@@ -272,10 +272,11 @@
 	{/if}
 
 	<div class="content">
-		<h1>Groups</h1>
+		<h1 data-cy="groups">Groups</h1>
 
 		<form class="searchbox">
 			<input
+				data-cy="search-groups-table"
 				class="searchbox"
 				type="search"
 				placeholder="Search"
@@ -294,6 +295,7 @@
 
 		{#if $isAdmin}
 			<div
+				data-cy="dot-groups"
 				tabindex="0"
 				class="dot"
 				on:mouseleave={() => {
@@ -359,6 +361,7 @@
 						</tr>
 
 						<tr
+							data-cy="add-group"
 							tabindex="0"
 							on:click={() => {
 								groupsDropDownVisible = false;
@@ -393,7 +396,7 @@
 
 		{#if $groups}
 			{#if $groups.length > 0}
-				<table style="margin-top: 0.5rem; width: 35rem">
+				<table data-cy="groups-table" style="margin-top: 0.5rem; width: 35rem">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						{#if $isAdmin}
 							<td>

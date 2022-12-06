@@ -402,6 +402,7 @@
 	<div class="content">
 		<form class="searchbox">
 			<input
+				data-cy="search-users-table"
 				class="searchbox"
 				type="search"
 				placeholder="Search"
@@ -420,6 +421,7 @@
 
 		{#if $isAdmin || isGroupAdmin}
 			<div
+				data-cy="dot-users"
 				class="dot"
 				tabindex="0"
 				on:mouseleave={() => {
@@ -459,6 +461,7 @@
 						}}
 					>
 						<tr
+							data-cy="delete-user"
 							tabindex="0"
 							class:disabled={usersRowsSelected.length === 0}
 							on:click={() => {
@@ -489,6 +492,7 @@
 						</tr>
 
 						<tr
+							data-cy="add-user"
 							tabindex="0"
 							on:click={() => {
 								usersDropDownVisible = false;
@@ -520,7 +524,7 @@
 		{/if}
 
 		{#if $groupMembershipList && $groupMembershipList.length > 0}
-			<table style="margin-top:0.5rem; width: 53rem;">
+			<table data-cy="users-table" style="margin-top:0.5rem; width: 53rem;">
 				<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 					{#if $isAdmin || isGroupAdmin}
 						<td>

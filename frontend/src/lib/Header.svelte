@@ -31,6 +31,7 @@
 		{/if}
 		<div class="header-title">{$headerTitle}</div>
 		<div
+			data-cy="avatar-dropdown"
 			tabindex="0"
 			class="dot"
 			align="right"
@@ -50,6 +51,7 @@
 		</div>
 		{#if avatarDropdownVisible}
 			<div
+				data-cy="logout-button"
 				class="avatar-dropdown"
 				on:mouseenter={() => (avatarDropdownMouseEnter = true)}
 				on:mouseleave={() => {
