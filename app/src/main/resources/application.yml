@@ -62,6 +62,8 @@ micronaut:
         get-allowed: true
       login:
         path: /api/login
+      oauth:
+        path: /api/oauth/access_token
     intercept-url-map:
       - pattern: /favicon.ico
         http-method: GET

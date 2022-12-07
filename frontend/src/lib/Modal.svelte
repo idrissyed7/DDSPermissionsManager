@@ -1,4 +1,5 @@
 <script>
+	import { isAdmin } from '../stores/authentication';
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../appconfig';
@@ -7,6 +8,9 @@
 	import Switch from './Switch.svelte';
 	import { inview } from 'svelte-inview';
 	import errorMessages from '$lib/errorMessages.json';
+	import groupAdminGroups from '../stores/groupAdminGroups';
+	import topicAdminTopics from '../stores/topicAdminTopics';
+	import applicationAdminApplications from '../stores/applicationAdminApplications';
 
 	export let title;
 	export let email = false;
@@ -150,9 +154,21 @@
 	}
 
 	const searchGroup = async (searchGroupStr) => {
-		let res = await httpAdapter.get(
-			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-		);
+		let res;
+		if ($isAdmin) {
+			console.log('isAdmin', searchGroupResults);
+			res = await httpAdapter.get(
+				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+			);
+		} else if ($groupAdminGroups?.length > 0 && actionAddUser && !$isAdmin) {
+			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=GROUP_ADMIN`);
+		} else if ($topicAdminTopics?.length > 0 && actionAddTopic && !$isAdmin) {
+			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=TOPIC_ADMIN`);
+		} else if ($applicationAdminApplications?.length > 0 && actionAddApplication && !$isAdmin) {
+			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=APPLICATION_ADMIN`);
+		}
+
+		// For all cases
 		if (res.data && res.data?.content?.length < groupsDropdownSuggestion) {
 			hasMoreGroups = false;
 		}
