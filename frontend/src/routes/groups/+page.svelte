@@ -398,7 +398,10 @@
 
 			{#if $groups}
 				{#if $groups.length > 0}
-					<table data-cy="groups-table" style="margin-top: 0.5rem; width: 35rem">
+					<table
+						data-cy="groups-table"
+						style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
+					>
 						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 							{#if $isAdmin}
 								<td>
@@ -424,11 +427,10 @@
 									/>
 								</td>
 							{/if}
-							<td style="width: 7rem;">Group</td>
-							<td style="width: 7rem;"><center>Users</center></td>
-							<td style="width: 7rem;"><center>Topics</center></td>
-							<td style="width: 7rem;"><center>Applications</center></td>
-							<td />
+							<td style="min-width: 12rem">Group</td>
+							<td style="width: 5rem; text-align:center">Users</td>
+							<td style="width: 5rem; text-align:center">Topics</td>
+							<td style="width: 5rem; text-align:right; padding-right: 1rem">Applications</td>
 						</tr>
 						{#each $groups as group}
 							<tr>
@@ -457,8 +459,8 @@
 										/>
 									</td>
 								{/if}
-								<td class="group-td" style="width: 23rem">{group.name}</td>
-								<td style="width: 5rem">
+								<td style="width: max-content">{group.name}</td>
+								<td style="width: max-content">
 									<center>
 										<a
 											tabindex="-1"
@@ -469,7 +471,7 @@
 										>
 									</center>
 								</td>
-								<td style="width: 5rem">
+								<td style="width: max-content">
 									<center>
 										<a
 											tabindex="-1"
@@ -480,7 +482,7 @@
 										>
 									</center>
 								</td>
-								<td style="width: 5rem">
+								<td style="width: max-content">
 									<center>
 										<a
 											tabindex="-1"
@@ -520,9 +522,9 @@
 											}}
 										/>
 									</td>
-								{:else}
+									<!-- {:else}
 									<td />
-									<td />
+									<td /> -->
 								{/if}
 							</tr>
 						{/each}
@@ -632,7 +634,6 @@
 	}
 
 	tr {
-		align-items: center;
 		line-height: 2.2rem;
 	}
 </style>
