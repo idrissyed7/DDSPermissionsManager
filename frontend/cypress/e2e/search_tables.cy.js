@@ -26,7 +26,7 @@ describe('title should say DDS Permissions Manager', () => {
         cy.visit('/users');
         cy.get('[data-cy="search-super-users-table"]').type('computing');
 
-        cy.get('[data-cy="super-users-table"] tr').should('have.length', 3);
+        cy.get('[data-cy="super-users-table"] tr').should('have.length', 4);
     });
 
     it('should filter Topics correctly', () => {
