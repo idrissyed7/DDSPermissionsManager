@@ -14,12 +14,12 @@ describe('title should say DDS Permissions Manager', () => {
 
         cy.wait(500);
 
-        cy.get(':nth-child(2) > [style="cursor: pointer; width: 20.8rem; line-height: 2.2rem;"]')
+        cy.get(':nth-child(2) > [style="cursor: pointer; line-height: 2.2rem;"]')
         .then(($name) => {
 
             const name = $name.text()
 
-            cy.get(':nth-child(2) > [style="cursor: pointer; text-align: right; padding-right: 0.25rem;"] > img')
+            cy.get(':nth-child(2) > [style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem;"] > img')
             .click();
 
             cy.get('[data-cy="delete-application"]')

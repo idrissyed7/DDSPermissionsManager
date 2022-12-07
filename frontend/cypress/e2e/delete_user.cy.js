@@ -14,8 +14,7 @@ describe('title should say DDS Permissions Manager', () => {
 
         cy.wait(500);
 
-
-        cy.get(':nth-child(2) > [style="width: 19rem;"]').then(($name) => {
+        cy.get('[data-cy="users-table"] > :nth-child(2) > :nth-child(2)').then(($name) => {
 
             const name = $name.text()
 

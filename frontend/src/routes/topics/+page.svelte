@@ -457,6 +457,10 @@
 								<tr
 									data-cy="add-topic"
 									tabindex="0"
+									on:click={() => {
+										topicsDropDownVisible = false;
+										addTopicVisible = true;
+									}}
 									on:keydown={(event) => {
 										if (event.which === returnKey) {
 											topicsDropDownVisible = false;
