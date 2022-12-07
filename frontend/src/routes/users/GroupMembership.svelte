@@ -357,7 +357,7 @@
 						e.detail.selectedIsApplicationAdmin,
 						e.detail.searchGroups,
 						e.detail.emailValue
-					); ///
+					);
 					await reloadGroupMemberships(groupMembershipsCurrentPage);
 				}}
 			/>
@@ -524,7 +524,7 @@
 			{/if}
 
 			{#if $groupMembershipList && $groupMembershipList.length > 0}
-				<table data-cy="users-table" style="margin-top:0.5rem; width: 53rem;">
+				<table data-cy="users-table" style="margin-top:0.5rem; min-width: 50rem; width:max-content">
 					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 						{#if $isAdmin || isGroupAdmin}
 							<td>
@@ -550,11 +550,13 @@
 								/>
 							</td>
 						{/if}
-						<td style=" font-stretch:ultra-condensed">E-mail</td>
-						<td style=" font-stretch:ultra-condensed">Group</td>
-						<td style=" font-stretch:ultra-condensed"><center>Group Admin</center></td>
-						<td style=" font-stretch:ultra-condensed"><center>Topic Admin</center></td>
-						<td style=" font-stretch:ultra-condensed"><center>Application Admin</center></td>
+						<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
+						<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
+						<td style="font-stretch:ultra-condensed; width:6rem"><center>Group Admin</center></td>
+						<td style="font-stretch:ultra-condensed; width:7rem"><center>Topic Admin</center></td>
+						<td style="font-stretch:ultra-condensed; width:8rem"
+							><center>Application Admin</center></td
+						>
 						<td /><td />
 					</tr>
 					{#each $groupMembershipList as groupMembership, i}
@@ -585,7 +587,7 @@
 								</td>
 							{/if}
 							<td>{groupMembership.userEmail}</td>
-							<td>{groupMembership.groupName}</td>
+							<td style="width:fit-content">{groupMembership.groupName}</td>
 							<td>
 								<center>
 									{#if groupMembership.groupAdmin}&check;
@@ -760,7 +762,7 @@
 	}
 
 	table {
-		width: 90%;
+		width: fit-content;
 	}
 
 	tr {

@@ -179,12 +179,6 @@ select:focus {
 	outline: none;
 }
 
-@media (min-width: 720px) {
-	h1 {
-		font-size: 2.4rem;
-	}
-}
-
 .modal-open {
 	overflow-y: hidden;
 }

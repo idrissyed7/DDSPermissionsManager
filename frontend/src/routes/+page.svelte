@@ -21,25 +21,29 @@
 </svelte:head>
 
 {#if $isAuthenticated}
-	<h1>Welcome to the DDS Permissions Manager!</h1>
-	<h2>To get started</h2>
-	<ul>
-		<li>
-			<a href="/users">Add topic, application, and group admins</a> to one of your groups
-		</li>
-		<li>
-			Create a <a href="/topics" on:click={() => urlparameters.set('create')}>topic</a>
-		</li>
-		<li>
-			Create an <a href="/applications" on:click={() => urlparameters.set('create')}>application</a>
-			and generate credentials
-		</li>
-		<li>Find a <a href="/topics">topic</a> and grant access to an application</li>
-	</ul>
-	<p>
-		Applications can use credentials to authenticate and download documents for DDS Security. See
-		the README for more details.
-	</p>
+	<div class="content">
+		<h1>Welcome to the DDS Permissions Manager!</h1>
+		<h2>To get started</h2>
+		<ul>
+			<li>
+				<a href="/users">Add topic, application, and group admins</a> to one of your groups
+			</li>
+			<li>
+				Create a <a href="/topics" on:click={() => urlparameters.set('create')}>topic</a>
+			</li>
+			<li>
+				Create an <a href="/applications" on:click={() => urlparameters.set('create')}
+					>application</a
+				>
+				and generate credentials
+			</li>
+			<li>Find a <a href="/topics">topic</a> and grant access to an application</li>
+		</ul>
+		<p>
+			Applications can use credentials to authenticate and download documents for DDS Security. See
+			the README for more details.
+		</p>
+	</div>
 {:else}
 	<center>
 		<h1>DDS Permissions Manager</h1>
@@ -99,7 +103,6 @@
 	}
 
 	p {
-		/* text-align: center; */
 		font-size: 0.9rem;
 		margin-top: 3rem;
 		margin-left: 3rem;
@@ -110,6 +113,10 @@
 		border-color: rgba(0, 0, 0, 0.15);
 		border-style: solid;
 		border-width: 0.05rem;
+	}
+
+	.content {
+		width: max-content;
 	}
 
 	.container-box {

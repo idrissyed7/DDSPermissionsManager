@@ -9,7 +9,7 @@
 
 	export let avatarName;
 
-	const waitTime = 250;
+	const waitTime = 1000;
 	const returnKey = 13;
 
 	let avatarDropdownMouseEnter = false;
@@ -18,107 +18,142 @@
 </script>
 
 <header>
-	<img src={DDSLock} alt="logo" class="logo" />
-	<div class="logo-text">DDS Permission Manager</div>
-	{#if $isAuthenticated}
-		{#if $detailView}
-			<img
-				src={pagebackwardsSVG}
-				alt="back to topics"
-				style="margin-left: 10rem; cursor: pointer"
-				on:click={() => detailView.set()}
-			/>
-		{/if}
-		<div class="header-title">{$headerTitle}</div>
-		<div
-			data-cy="avatar-dropdown"
-			tabindex="0"
-			class="dot"
-			align="right"
-			on:mouseleave={() => {
-				setTimeout(() => {
-					if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
-				}, waitTime);
-			}}
-			on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
-			on:keydown={(event) => {
-				if (event.which === returnKey) {
-					avatarDropdownVisible = !avatarDropdownVisible;
-				}
-			}}
-		>
-			{avatarName}
-		</div>
-		{#if avatarDropdownVisible}
+	<div class="header-bar">
+		<img src={DDSLock} alt="logo" class="logo" />
+		<div class="logo-text">DDS Permission Manager</div>
+
+		{#if $isAuthenticated}
+			{#if $detailView}
+				<img
+					class="go-back"
+					src={pagebackwardsSVG}
+					alt="back to topics"
+					on:click={() => detailView.set()}
+				/>
+			{/if}
+
+			<div class="header-title">{$headerTitle}</div>
+
 			<div
-				data-cy="logout-button"
-				class="avatar-dropdown"
+				data-cy="avatar-dropdown"
+				tabindex="0"
+				class="dot"
+				align="right"
 				on:mouseenter={() => (avatarDropdownMouseEnter = true)}
 				on:mouseleave={() => {
 					setTimeout(() => {
-						avatarDropdownVisible = !avatarDropdownVisible;
+						if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
 					}, waitTime);
+					avatarDropdownMouseEnter = false;
 				}}
-				on:click={() => goto('/api/logout', true)}
+				on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
-						goto('/api/logout', true);
+						avatarDropdownVisible = !avatarDropdownVisible;
 					}
 				}}
-				on:focusout={() => (avatarDropdownVisible = false)}
 			>
-				<a href="/api/logout">
-					Logout
-					<img src={logoutSVG} alt="logout" class="icon-logout" />
-				</a>
+				{avatarName}
 			</div>
 		{/if}
-	{/if}
+	</div>
 </header>
+
 <hr style="border-color: rgba(0, 0, 0, 0.15);" />
 
+{#if avatarDropdownVisible}
+	<div
+		data-cy="logout-button"
+		class="avatar-dropdown"
+		class:hidden={!$isAuthenticated}
+		on:mouseenter={() => (avatarDropdownMouseEnter = true)}
+		on:mouseleave={() => {
+			setTimeout(() => {
+				setTimeout(() => {
+					if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
+				});
+			}, waitTime);
+			avatarDropdownMouseEnter = false;
+		}}
+		on:click={() => goto('/api/logout', true)}
+		on:keydown={(event) => {
+			if (event.which === returnKey) {
+				goto('/api/logout', true);
+			}
+		}}
+		on:focusout={() => (avatarDropdownVisible = false)}
+	>
+		<a href="/api/logout">
+			Logout
+			<img src={logoutSVG} alt="logout" class="icon-logout" />
+		</a>
+	</div>
+{/if}
+
 <style>
+	.header-bar {
+		display: flex;
+		align-self: center;
+		height: 2rem;
+		justify-content: space-between;
+		width: 100%;
+	}
+
+	.logo {
+		height: 30px;
+		width: 30px;
+		margin-left: 1.55rem;
+	}
+
+	.logo-text {
+		position: absolute;
+		left: 10%;
+		align-self: center;
+		margin-left: 0.5rem;
+		font-size: 1.2rem;
+		letter-spacing: -0.02rem;
+	}
+
 	.header-title {
 		position: absolute;
-		left: 50%;
+		left: max(50%, 50% + 4.5rem);
 		align-self: center;
 		font-size: 1.2rem;
 	}
 
 	.icon-logout {
-		scale: 45%;
-		align-items: center;
+		width: 21px;
+		height: 21px;
 		align-self: center;
-		text-align: center;
-		margin-left: 2.5rem;
+		margin: auto 0.5rem auto 2rem;
 	}
 
 	.avatar-dropdown {
-		position: absolute;
+		position: sticky;
+		position: -webkit-sticky; /* Safari */
+		align-self: center;
+		float: right;
+		right: 0vw;
+		height: 2.4rem;
 		width: fit-content;
-		right: 0;
-		top: 3rem;
+		margin: -0.65rem 0 -2.4rem 0vw;
 		background-color: #f3edf7;
 		padding-left: 1rem;
 		font-size: 0.9rem;
 		font-weight: 500;
-		height: 2.8rem;
 		line-height: 2.8rem;
 		box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
 	}
 
 	.dot {
-		position: absolute;
-		display: flex;
-		flex-direction: row;
-		flex-wrap: nowrap;
-		justify-content: center;
-		align-items: center;
+		position: sticky;
+		position: -webkit-sticky; /* Safari */
 		align-self: center;
-		text-align: center;
-		right: 1.3rem;
+		float: right;
+		right: 1vw;
 		height: 2.4rem;
 		width: 2.4rem;
+		margin: 0 0 0 0vw;
 		color: white;
 		background-color: #6750a4;
 		border-radius: 50%;
@@ -134,32 +169,21 @@
 		background-color: #7b61c4;
 	}
 
-	.logo {
-		scale: 90%;
-		margin-left: 1.55rem;
-	}
-
-	.logo-text {
-		position: relative;
-		top: 0.3rem;
-		margin-left: 0.5rem;
-		font-size: 1.2rem;
-		letter-spacing: -0.02rem;
-	}
-
-	header {
-		display: flex;
-		align-items: left;
-		height: 2rem;
+	.go-back {
+		position: absolute;
+		left: min(40%, 30%);
+		align-self: center;
+		margin-left: 8rem;
+		cursor: pointer;
+		width: 30px;
+		height: 30px;
 	}
 
 	a {
 		display: flex;
-		align-items: center;
-		align-self: center;
-		text-align: center;
 		color: unset;
-		margin-top: -0.1rem;
+		height: 2.4rem;
+		align-items: center;
 	}
 
 	a:hover {

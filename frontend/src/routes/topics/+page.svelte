@@ -511,7 +511,7 @@
 								</td>
 							{/if}
 							<td style="line-height: 2.2rem">Topic</td>
-							<td>Group</td>
+							<td style="text-align:right; padding-right: 1rem;">Group</td>
 						</tr>
 						{#each $topics as topic, i}
 							<tr>
@@ -540,7 +540,7 @@
 									</td>
 								{/if}
 								<td
-									style="line-height: 2.2rem; cursor: pointer; width: 20.8rem"
+									style="line-height: 2.2rem; cursor: pointer; width: max-content"
 									on:click={() => {
 										loadTopic(topic.id);
 										selectedTopicId = topic.id;
@@ -554,14 +554,15 @@
 									>{topic.name}
 								</td>
 
-								<td style="width: fit-content">{topic.groupName}</td>
+								<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
+
 								{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 									<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 										<img
 											src={deleteSVG}
 											width="27rem"
 											alt="delete user"
-											style="vertical-align: -0.5rem; margin-left: 2rem"
+											style="vertical-align: -0.1rem"
 											on:click={() => {
 												if (!topicsRowsSelected.some((tpc) => tpc === topic))
 													topicsRowsSelected.push(topic);
@@ -664,11 +665,7 @@
 
 <style>
 	table.main {
-		width: fit-content;
-	}
-
-	tr {
-		height: 2.2rem;
+		min-width: 33rem;
 	}
 
 	.dot {

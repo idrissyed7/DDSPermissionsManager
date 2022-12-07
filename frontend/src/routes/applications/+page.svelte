@@ -530,7 +530,7 @@
 											? 'Applications'
 											: 'Application'}
 									</td>
-									<td style="width: 0.1rem; padding-left: 0; vertical-align: middle">
+									<td style="padding-left: 0; vertical-align: middle">
 										<img
 											src={deleteSVG}
 											alt="delete application"
@@ -559,7 +559,7 @@
 								>
 									<td style="border-bottom-color: transparent">Add New Application</td>
 									<td
-										style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
+										style="height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
 									>
 										<img
 											src={addSVG}
@@ -578,6 +578,7 @@
 			{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
 				<table
 					data-cy="applications-table"
+					class="main-table"
 					style="margin-top: 0.5rem"
 					class:application-table-admin={($permissionsByGroup &&
 						$permissionsByGroup.find((groupPermission) => groupPermission?.isApplicationAdmin)) ||
@@ -609,7 +610,7 @@
 							</td>
 						{/if}
 						<td style="line-height: 2.2rem">Application</td>
-						<td>Group</td>
+						<td style="text-align:right; padding-right: 1rem">Group</td>
 					</tr>
 
 					{#if $applications.length > 0}
@@ -653,7 +654,7 @@
 									}}
 									>{app.name}
 								</td>
-								<td>{app.groupName}</td>
+								<td style="padding-right: 1rem; text-align: right">{app.groupName}</td>
 
 								{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 									<td
@@ -709,7 +710,7 @@
 			{/if}
 
 			{#if $applications && applicationDetailVisible && !applicationListVisible}
-				<table style="width: 35rem;margin-top: 2rem">
+				<table style="width: 35rem; margin-top: 2rem">
 					<tr style="border-width: 0px">
 						<td>Group</td>
 						<td>Topic</td>
@@ -903,12 +904,12 @@
 		line-height: 1rem;
 	}
 
-	table {
-		width: 25rem;
+	.main-table {
+		min-width: 33rem;
 	}
 
 	tr {
-		height: 2rem;
+		height: 2.2rem;
 	}
 
 	span {

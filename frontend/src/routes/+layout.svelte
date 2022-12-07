@@ -120,40 +120,46 @@
 		<div class="grid-item-vertical-nav">
 			<Navigation />
 		</div>
-	{/if}
-	<div class="grid-item-vertical-main">
-		<main>
-			<slot />
-		</main>
-		<footer>
-			{#if $isAuthenticated}
+		<div class="grid-item-vertical-main">
+			<main>
+				<slot />
+			</main>
+			<footer>
 				<p class:footer-margin={$page.url.pathname === '/'}>
 					© 2022 Unity Foundation. All rights reserved.
 				</p>
-			{/if}
-		</footer>
-	</div>
+			</footer>
+		</div>
+	{:else}
+		<div class="grid-item-vertical-main-not-authenticated">
+			<main>
+				<slot />
+			</main>
+		</div>
+	{/if}
 </div>
 
 <style>
 	.grid-container {
 		display: grid;
+		width: fit-content;
 		grid-template-columns: 0.3fr 1fr 1fr;
 		grid-template-rows: auto;
 		grid-template-areas:
-			'header header header '
+			'header header header'
 			'nav main main'
-			'footer footer footer ';
+			'footer footer footer';
 	}
 
 	.grid-container-not-authenticated {
 		display: grid;
+		width: 100%;
 		grid-template-columns: 0.3fr 1fr 1fr;
 		grid-template-rows: auto;
 		grid-template-areas:
-			'header header header '
-			'main main main'
-			'footer footer footer ';
+			'header header header'
+			'main-not-authenticated main-not-authenticated main-not-authenticated'
+			'footer footer footer';
 	}
 
 	.grid-item-horizontal {
@@ -166,6 +172,11 @@
 
 	.grid-item-vertical-main {
 		grid-area: main;
+		grid-column: 2;
+	}
+
+	.grid-item-vertical-main-not-authenticated {
+		grid-area: main-not-authenticated;
 	}
 
 	main {
