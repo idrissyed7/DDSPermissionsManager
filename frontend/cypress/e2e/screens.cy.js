@@ -8,9 +8,9 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-    afterEach(() => {
-        cy.visit('http://localhost:8080/api/logout')
-    });
+    // afterEach(() => {
+    //     cy.visit('http://localhost:8080/api/logout')
+    // });
 
     
 
