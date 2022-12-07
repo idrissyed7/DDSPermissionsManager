@@ -14,7 +14,7 @@ describe('title should say DDS Permissions Manager', () => {
 
         cy.wait(500);
 
-        cy.get(':nth-child(3) > [style="line-height: 2.2rem; cursor: pointer; width: 20.8rem;"]').then(($name) => {
+        cy.get(':nth-child(3) > [style="line-height: 2.2rem; cursor: pointer; width: max-content;"]').then(($name) => {
 
             const name = $name.text()
 
