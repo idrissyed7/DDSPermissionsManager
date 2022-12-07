@@ -18,7 +18,7 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait(500);
 
         cy.get('[data-cy="users-table"] tr')
-        .should('have.length', 3);
+        .should('have.length', 2);
     })
        
 
