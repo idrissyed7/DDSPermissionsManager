@@ -29,3 +29,7 @@ jobs:
         with:
           working-directory: ./frontend
           wait-on: 'http://localhost:8080'
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: frontend/cypress/videos/
