@@ -31,5 +31,5 @@ jobs:
           wait-on: 'http://localhost:8080'
       - uses: actions/upload-artifact@v3
         with:
-          name: my-artifact
+          name: cypress-videos
           path: frontend/cypress/videos/
