@@ -1,9 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
 	import refreshPage from '../stores/refreshPage';
 	import permissionsByGroup from '../stores/permissionsByGroup';
 	import groupAdminGroups from '../stores/groupAdminGroups';
@@ -13,18 +13,21 @@
 	import Header from '$lib/Header.svelte';
 	import Navigation from '$lib//Navigation.svelte';
 	import userValidityCheck from '../stores/userValidityCheck';
+	import loginCompleted from '../stores/loginCompleted';
+	import lastActivity from '../stores/lastActivity';
+	import errorMessages from '$lib/errorMessages.json';
 	import '../app.css';
 
 	export let data;
 
 	let userLoggedCookie;
-	let errorMessageVisible = false;
+	let reminderMessageVisible = false;
 
-	// Error Handling
-	let errorMsg, errorObject;
+	// Extend Session
+	let reminderMsg, reminderObject;
 
-	// const userValidityInterval = 180000; // 3 minutes
-	let expirationTime, nowTime, remindTime;
+	const userValidityInterval = 180000; // 3 minutes
+
 	let avatarName;
 
 	userValidityCheck.set(false);
@@ -33,22 +36,36 @@
 		refreshToken();
 	}
 
+	$: if (browser && reminderMessageVisible) {
+		document.body.classList.add('modal-open');
+	} else if (browser && !reminderMessageVisible) {
+		document.body.classList.remove('modal-open');
+	}
+
 	onMount(async () => {
+		document.body.addEventListener('click', userClicked);
+		lastActivity.set(Date.now());
 		userLoggedCookie = document.cookie;
 		if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {
 			userLoggedCookie = userLoggedCookie.substring(
-				userLoggedCookie.indexOf('=') + 1,
+				userLoggedCookie.indexOf('JWT_REFRESH_TOKEN=') + 18,
 				userLoggedCookie.length
 			);
 
 			await refreshToken_Info();
-		}
+
+			setInterval(checkValidity, userValidityInterval);
+		} else loginCompleted.set(false);
 	});
 
-	const errorMessage = (errMsg, errObj) => {
-		errorMsg = errMsg;
-		errorObject = errObj;
-		errorMessageVisible = true;
+	const userClicked = () => {
+		lastActivity.set(Date.now());
+	};
+
+	const reminderMessage = (remMsg, remObj) => {
+		reminderMsg = remMsg;
+		reminderObject = remObj;
+		reminderMessageVisible = true;
 	};
 
 	const refreshToken_Info = async () => {
@@ -71,6 +88,7 @@
 		}
 
 		onLoggedIn(res.data);
+		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 
 		refreshPage.set(true);
@@ -95,16 +113,41 @@
 			goto('/api/logout', true);
 		}
 	};
+
+	const checkValidity = async () => {
+		try {
+			const fiftyFiveMin = 3300000;
+
+			if (Date.now() - $lastActivity > fiftyFiveMin) {
+				const msg = errorMessages['refresh_token']['five_min_reminder'];
+				reminderMessage('Session Expiration', msg);
+			}
+
+			await httpAdapter.get(`/group_membership/user_validity`);
+		} catch (err) {
+			const oneHour = 3600000;
+
+			// If: the user is not active for 1hr we log them out, Else: we refresh the session
+			if (Date.now() - $lastActivity > oneHour) goto('/api/logout', true);
+			else {
+				refreshToken();
+			}
+		}
+	};
 </script>
 
-{#if errorMessageVisible}
+{#if reminderMessageVisible}
 	<Modal
-		title={errorMsg}
-		errorMsg={true}
-		errorDescription={errorObject}
-		closeModalText={'Close'}
+		title={reminderMsg}
+		reminderMsg={true}
+		reminderDescription={reminderObject}
+		closeModalText={'No'}
 		on:cancel={() => {
-			errorMessageVisible = false;
+			reminderMessageVisible = false;
+		}}
+		on:extendSession={() => {
+			reminderMessageVisible = false;
+			refreshToken();
 		}}
 	/>
 {/if}
@@ -124,11 +167,6 @@
 			<main>
 				<slot />
 			</main>
-			<footer>
-				<p class:footer-margin={$page.url.pathname === '/'}>
-					© 2022 Unity Foundation. All rights reserved.
-				</p>
-			</footer>
 		</div>
 	{:else}
 		<div class="grid-item-vertical-main-not-authenticated">
@@ -147,8 +185,7 @@
 		grid-template-rows: auto;
 		grid-template-areas:
 			'header header header'
-			'nav main main'
-			'footer footer footer';
+			'nav main main';
 	}
 
 	.grid-container-not-authenticated {
@@ -182,27 +219,5 @@
 	main {
 		padding: 1rem;
 		box-sizing: border-box;
-	}
-
-	footer {
-		display: flex;
-		flex-direction: column;
-		padding: 40px;
-		margin-left: 1rem;
-		margin-top: 5rem;
-	}
-
-	.footer-margin {
-		margin-left: 3rem;
-	}
-
-	p {
-		bottom: 5px;
-	}
-
-	@media (min-width: 480px) {
-		footer {
-			padding: 40px 0;
-		}
 	}
 </style>

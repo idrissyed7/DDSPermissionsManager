@@ -68,6 +68,6 @@
 
     "refresh_token":
     {
-        "forbidden": "The request to refresh the JWT token was unsuccessful"
+        "five_min_reminder": "Would you like to extend your session?"
     }
 }

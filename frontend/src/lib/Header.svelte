@@ -6,6 +6,7 @@
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
+	import renderAvatar from '../stores/renderAvatar';
 
 	export let avatarName;
 
@@ -14,6 +15,7 @@
 
 	let avatarDropdownMouseEnter = false;
 	let avatarDropdownVisible = false;
+
 	detailView.set();
 </script>
 
@@ -28,33 +30,36 @@
 					class="go-back"
 					src={pagebackwardsSVG}
 					alt="back to topics"
-					on:click={() => detailView.set()}
+					on:click={() => detailView.set('backToList')}
 				/>
 			{/if}
 
-			<div class="header-title">{$headerTitle}</div>
-
-			<div
-				data-cy="avatar-dropdown"
-				tabindex="0"
-				class="dot"
-				align="right"
-				on:mouseenter={() => (avatarDropdownMouseEnter = true)}
-				on:mouseleave={() => {
-					setTimeout(() => {
-						if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
-					}, waitTime);
-					avatarDropdownMouseEnter = false;
-				}}
-				on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
-				on:keydown={(event) => {
-					if (event.which === returnKey) {
-						avatarDropdownVisible = !avatarDropdownVisible;
-					}
-				}}
-			>
-				{avatarName}
+			<div class="header-title">
+				{$headerTitle}
 			</div>
+
+			{#if $renderAvatar === true}
+				<div
+					data-cy="avatar-dropdown"
+					tabindex="0"
+					class="dot"
+					on:mouseenter={() => (avatarDropdownMouseEnter = true)}
+					on:mouseleave={() => {
+						setTimeout(() => {
+							if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
+						}, waitTime);
+						avatarDropdownMouseEnter = false;
+					}}
+					on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							avatarDropdownVisible = !avatarDropdownVisible;
+						}
+					}}
+				>
+					{avatarName}
+				</div>
+			{/if}
 		{/if}
 	</div>
 </header>
@@ -96,7 +101,7 @@
 		align-self: center;
 		height: 2rem;
 		justify-content: space-between;
-		width: 100%;
+		width: 100vw;
 	}
 
 	.logo {
@@ -149,11 +154,9 @@
 		position: sticky;
 		position: -webkit-sticky; /* Safari */
 		align-self: center;
-		float: right;
 		right: 1vw;
 		height: 2.4rem;
 		width: 2.4rem;
-		margin: 0 0 0 0vw;
 		color: white;
 		background-color: #6750a4;
 		border-radius: 50%;
