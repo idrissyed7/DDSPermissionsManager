@@ -408,132 +408,136 @@
 							data-cy="groups-table"
 							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
 						>
-							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-								{#if $isAdmin}
-									<td>
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="groups-checkbox"
-											style="margin-right: 0.5rem; vertical-align: middle;"
-											bind:indeterminate={groupsRowsSelectedTrue}
-											on:click={(e) => {
-												groupsDropDownVisible = false;
-												if (e.target.checked) {
-													groupsRowsSelected = $groups;
-													groupsRowsSelectedTrue = false;
-													groupsAllRowsSelectedTrue = true;
-												} else {
-													groupsAllRowsSelectedTrue = false;
-													groupsRowsSelectedTrue = false;
-													groupsRowsSelected = [];
-												}
-											}}
-											checked={groupsAllRowsSelectedTrue}
-										/>
-									</td>
-								{/if}
-								<td style="min-width: 12rem">Group</td>
-								<td style="width: 5rem; text-align:center">Users</td>
-								<td style="width: 5rem; text-align:center">Topics</td>
-								<td style="width: 5rem; text-align:right; padding-right: 1rem">Applications</td>
-							</tr>
-							{#each $groups as group}
-								<tr>
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 									{#if $isAdmin}
-										<td style="width: 2rem">
+										<td>
 											<input
 												tabindex="-1"
 												type="checkbox"
 												class="groups-checkbox"
-												style="vertical-align: middle;"
-												checked={groupsAllRowsSelectedTrue}
-												on:change={(e) => {
+												style="margin-right: 0.5rem; vertical-align: middle;"
+												bind:indeterminate={groupsRowsSelectedTrue}
+												on:click={(e) => {
 													groupsDropDownVisible = false;
-													if (e.target.checked === true) {
-														groupsRowsSelected.push(group);
-														groupsRowsSelectedTrue = true;
+													if (e.target.checked) {
+														groupsRowsSelected = $groups;
+														groupsRowsSelectedTrue = false;
+														groupsAllRowsSelectedTrue = true;
 													} else {
-														groupsRowsSelected = groupsRowsSelected.filter(
-															(selection) => selection !== group
-														);
-														if (groupsRowsSelected.length === 0) {
-															groupsRowsSelectedTrue = false;
-														}
+														groupsAllRowsSelectedTrue = false;
+														groupsRowsSelectedTrue = false;
+														groupsRowsSelected = [];
 													}
 												}}
+												checked={groupsAllRowsSelectedTrue}
 											/>
 										</td>
 									{/if}
-									<td style="width: max-content">{group.name}</td>
-									<td style="width: max-content">
-										<center>
-											<a
-												tabindex="-1"
-												style="vertical-align: middle"
-												href="/users"
-												on:click={() =>
-													urlparameters.set({ type: 'prepopulate', data: group.name })}
-												>{group.membershipCount}</a
-											>
-										</center>
-									</td>
-									<td style="width: max-content">
-										<center>
-											<a
-												tabindex="-1"
-												style="vertical-align: middle"
-												href="/topics"
-												on:click={() =>
-													urlparameters.set({ type: 'prepopulate', data: group.name })}
-												>{group.topicCount}</a
-											>
-										</center>
-									</td>
-									<td style="width: max-content">
-										<center>
-											<a
-												tabindex="-1"
-												style="vertical-align: middle"
-												href="/applications"
-												on:click={() =>
-													urlparameters.set({ type: 'prepopulate', data: group.name })}
-												>{group.applicationCount}</a
-											>
-										</center>
-									</td>
-									{#if $isAdmin}
-										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-											<img
-												src={editSVG}
-												alt="edit group"
-												style="cursor: pointer; vertical-align: -0.25rem"
-												height="17rem"
-												width="17rem"
-												on:click={() => {
-													editGroupVisible = true;
-													selectedGroupId = group.id;
-													selectedGroupName = group.name;
-												}}
-											/>
-										</td>
-
-										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-											<img
-												src={deleteSVG}
-												alt="delete group"
-												style="cursor: pointer; vertical-align: -0.5rem"
-												height="27rem"
-												on:click={() => {
-													if (!groupsRowsSelected.some((grp) => grp === group))
-														groupsRowsSelected.push(group);
-													deleteGroupVisible = true;
-												}}
-											/>
-										</td>
-									{/if}
+									<td style="min-width: 12rem">Group</td>
+									<td style="width: 5rem; text-align:center">Users</td>
+									<td style="width: 5rem; text-align:center">Topics</td>
+									<td style="width: 5rem; text-align:right; padding-right: 1rem">Applications</td>
 								</tr>
-							{/each}
+							</thead>
+							<tbody>
+								{#each $groups as group}
+									<tr>
+										{#if $isAdmin}
+											<td style="width: 2rem">
+												<input
+													tabindex="-1"
+													type="checkbox"
+													class="groups-checkbox"
+													style="vertical-align: middle;"
+													checked={groupsAllRowsSelectedTrue}
+													on:change={(e) => {
+														groupsDropDownVisible = false;
+														if (e.target.checked === true) {
+															groupsRowsSelected.push(group);
+															groupsRowsSelectedTrue = true;
+														} else {
+															groupsRowsSelected = groupsRowsSelected.filter(
+																(selection) => selection !== group
+															);
+															if (groupsRowsSelected.length === 0) {
+																groupsRowsSelectedTrue = false;
+															}
+														}
+													}}
+												/>
+											</td>
+										{/if}
+										<td style="width: max-content">{group.name}</td>
+										<td style="width: max-content">
+											<center>
+												<a
+													tabindex="-1"
+													style="vertical-align: middle"
+													href="/users"
+													on:click={() =>
+														urlparameters.set({ type: 'prepopulate', data: group.name })}
+													>{group.membershipCount}</a
+												>
+											</center>
+										</td>
+										<td style="width: max-content">
+											<center>
+												<a
+													tabindex="-1"
+													style="vertical-align: middle"
+													href="/topics"
+													on:click={() =>
+														urlparameters.set({ type: 'prepopulate', data: group.name })}
+													>{group.topicCount}</a
+												>
+											</center>
+										</td>
+										<td style="width: max-content">
+											<center>
+												<a
+													tabindex="-1"
+													style="vertical-align: middle"
+													href="/applications"
+													on:click={() =>
+														urlparameters.set({ type: 'prepopulate', data: group.name })}
+													>{group.applicationCount}</a
+												>
+											</center>
+										</td>
+										{#if $isAdmin}
+											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<img
+													src={editSVG}
+													alt="edit group"
+													style="cursor: pointer; vertical-align: -0.25rem"
+													height="17rem"
+													width="17rem"
+													on:click={() => {
+														editGroupVisible = true;
+														selectedGroupId = group.id;
+														selectedGroupName = group.name;
+													}}
+												/>
+											</td>
+
+											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<img
+													src={deleteSVG}
+													alt="delete group"
+													style="cursor: pointer; vertical-align: -0.5rem"
+													height="27rem"
+													on:click={() => {
+														if (!groupsRowsSelected.some((grp) => grp === group))
+															groupsRowsSelected.push(group);
+														deleteGroupVisible = true;
+													}}
+												/>
+											</td>
+										{/if}
+									</tr>
+								{/each}
+							</tbody>
 						</table>
 					{/if}
 				{:else}

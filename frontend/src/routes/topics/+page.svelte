@@ -496,93 +496,97 @@
 
 					{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
-							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-								{#if isTopicAdmin || $isAdmin}
-									<td>
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="topics-checkbox"
-											style="margin-right: 0.5rem"
-											bind:indeterminate={topicsRowsSelectedTrue}
-											on:click={(e) => {
-												topicsDropDownVisible = false;
-												if (e.target.checked) {
-													topicsRowsSelected = $topics;
-													topicsRowsSelectedTrue = false;
-													topicsAllRowsSelectedTrue = true;
-												} else {
-													topicsAllRowsSelectedTrue = false;
-													topicsRowsSelectedTrue = false;
-													topicsRowsSelected = [];
-												}
-											}}
-											checked={topicsAllRowsSelectedTrue}
-										/>
-									</td>
-								{/if}
-								<td>Topic</td>
-								<td style="text-align:right; padding-right: 1rem;">Group</td>
-							</tr>
-							{#each $topics as topic, i}
-								<tr>
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 									{#if isTopicAdmin || $isAdmin}
-										<td style="width: 2rem">
+										<td>
 											<input
 												tabindex="-1"
 												type="checkbox"
 												class="topics-checkbox"
-												checked={topicsAllRowsSelectedTrue}
-												on:change={(e) => {
+												style="margin-right: 0.5rem"
+												bind:indeterminate={topicsRowsSelectedTrue}
+												on:click={(e) => {
 													topicsDropDownVisible = false;
-													if (e.target.checked === true) {
-														topicsRowsSelected.push(topic);
-														topicsRowsSelectedTrue = true;
+													if (e.target.checked) {
+														topicsRowsSelected = $topics;
+														topicsRowsSelectedTrue = false;
+														topicsAllRowsSelectedTrue = true;
 													} else {
-														topicsRowsSelected = topicsRowsSelected.filter(
-															(selection) => selection !== topic
-														);
-														if (topicsRowsSelected.length === 0) {
-															topicsRowsSelectedTrue = false;
-														}
+														topicsAllRowsSelectedTrue = false;
+														topicsRowsSelectedTrue = false;
+														topicsRowsSelected = [];
 													}
 												}}
+												checked={topicsAllRowsSelectedTrue}
 											/>
 										</td>
 									{/if}
-									<td
-										style="cursor: pointer; width: max-content"
-										on:click={() => {
-											loadTopic(topic.id);
-											selectedTopicId = topic.id;
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
+									<td>Topic</td>
+									<td style="text-align:right; padding-right: 1rem;">Group</td>
+								</tr>
+							</thead>
+							<tbody>
+								{#each $topics as topic, i}
+									<tr>
+										{#if isTopicAdmin || $isAdmin}
+											<td style="width: 2rem">
+												<input
+													tabindex="-1"
+													type="checkbox"
+													class="topics-checkbox"
+													checked={topicsAllRowsSelectedTrue}
+													on:change={(e) => {
+														topicsDropDownVisible = false;
+														if (e.target.checked === true) {
+															topicsRowsSelected.push(topic);
+															topicsRowsSelectedTrue = true;
+														} else {
+															topicsRowsSelected = topicsRowsSelected.filter(
+																(selection) => selection !== topic
+															);
+															if (topicsRowsSelected.length === 0) {
+																topicsRowsSelectedTrue = false;
+															}
+														}
+													}}
+												/>
+											</td>
+										{/if}
+										<td
+											style="cursor: pointer; width: max-content"
+											on:click={() => {
 												loadTopic(topic.id);
 												selectedTopicId = topic.id;
-											}
-										}}
-										>{topic.name}
-									</td>
-
-									<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
-
-									{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
-										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-											<img
-												src={deleteSVG}
-												width="27rem"
-												alt="delete topic"
-												on:click={() => {
-													if (!topicsRowsSelected.some((tpc) => tpc === topic))
-														topicsRowsSelected.push(topic);
-													deleteTopicVisible = true;
-												}}
-											/>
+											}}
+											on:keydown={(event) => {
+												if (event.which === returnKey) {
+													loadTopic(topic.id);
+													selectedTopicId = topic.id;
+												}
+											}}
+											>{topic.name}
 										</td>
-									{/if}
-								</tr>
-							{/each}
+
+										<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
+
+										{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
+											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<img
+													src={deleteSVG}
+													width="27rem"
+													alt="delete topic"
+													on:click={() => {
+														if (!topicsRowsSelected.some((tpc) => tpc === topic))
+															topicsRowsSelected.push(topic);
+														deleteTopicVisible = true;
+													}}
+												/>
+											</td>
+										{/if}
+									</tr>
+								{/each}
+							</tbody>
 						</table>
 					{:else if !topicDetailVisible}
 						<p>No Topics Found</p>

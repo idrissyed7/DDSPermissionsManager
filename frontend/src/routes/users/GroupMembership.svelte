@@ -535,133 +535,141 @@
 						data-cy="users-table"
 						style="margin-top:0.5rem; min-width: 50rem; width:max-content"
 					>
-						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-							{#if $isAdmin || isGroupAdmin}
-								<td>
-									<input
-										tabindex="-1"
-										type="checkbox"
-										class="group-membership-checkbox"
-										style="margin-right: 0.5rem"
-										bind:indeterminate={usersRowsSelectedTrue}
-										on:click={(e) => {
-											usersDropDownVisible = false;
-											if (e.target.checked) {
-												usersRowsSelected = $groupMembershipList;
-												usersRowsSelectedTrue = false;
-												usersAllRowsSelectedTrue = true;
-											} else {
-												usersAllRowsSelectedTrue = false;
-												usersRowsSelectedTrue = false;
-												usersRowsSelected = [];
-											}
-										}}
-										checked={usersAllRowsSelectedTrue}
-									/>
-								</td>
-							{/if}
-							<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
-							<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
-							<td style="font-stretch:ultra-condensed; width:6rem"><center>Group Admin</center></td>
-							<td style="font-stretch:ultra-condensed; width:7rem"><center>Topic Admin</center></td>
-							<td style="font-stretch:ultra-condensed; width:8rem"
-								><center>Application Admin</center></td
-							>
-							<td /><td />
-						</tr>
-						{#each $groupMembershipList as groupMembership, i}
-							<tr>
+						<thead>
+							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 								{#if $isAdmin || isGroupAdmin}
-									<td style="width: 2rem">
+									<td>
 										<input
 											tabindex="-1"
 											type="checkbox"
-											style="margin-right: 0.5rem"
 											class="group-membership-checkbox"
-											checked={usersAllRowsSelectedTrue}
-											on:change={(e) => {
+											style="margin-right: 0.5rem"
+											bind:indeterminate={usersRowsSelectedTrue}
+											on:click={(e) => {
 												usersDropDownVisible = false;
-												if (e.target.checked === true) {
-													usersRowsSelected.push(groupMembership);
-													usersRowsSelectedTrue = true;
+												if (e.target.checked) {
+													usersRowsSelected = $groupMembershipList;
+													usersRowsSelectedTrue = false;
+													usersAllRowsSelectedTrue = true;
 												} else {
-													usersRowsSelected = usersRowsSelected.filter(
-														(selection) => selection !== groupMembership
-													);
-													if (usersRowsSelected.length === 0) {
-														usersRowsSelectedTrue = false;
-													}
+													usersAllRowsSelectedTrue = false;
+													usersRowsSelectedTrue = false;
+													usersRowsSelected = [];
 												}
 											}}
+											checked={usersAllRowsSelectedTrue}
 										/>
 									</td>
 								{/if}
-								<td>{groupMembership.userEmail}</td>
-								<td style="width:fit-content">{groupMembership.groupName}</td>
-								<td>
-									<center>
-										{#if groupMembership.groupAdmin}&check;
-										{:else}
-											-
-										{/if}
-									</center>
-								</td>
-								<td>
-									<center
-										>{#if groupMembership.topicAdmin}&check;
-										{:else}
-											-
-										{/if}
-									</center>
-								</td>
-								<td>
-									<center
-										>{#if groupMembership.applicationAdmin}&check;
-										{:else}
-											-
-										{/if}
-									</center>
-								</td>
-
-								{#if $isAdmin || $groupAdminGroups?.some((group) => group.groupName === groupMembership.groupName)}
-									<td
-										style="cursor: pointer; text-align: right"
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												updateGroupMembershipSelection(groupMembership);
-											}
-										}}
-									>
-										<img
-											src={editSVG}
-											height="17rem"
-											width="17rem"
-											style="vertical-align: -0.225rem"
-											alt="edit user"
-											on:click={() => updateGroupMembershipSelection(groupMembership)}
-										/>
-									</td>
-									<td
-										style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
-									>
-										<img
-											src={deleteSVG}
-											height="27px"
-											width="27px"
-											style="vertical-align: -0.5rem"
-											alt="delete user"
-											on:click={() => {
-												if (!usersRowsSelected.some((gm) => gm === groupMembership))
-													usersRowsSelected.push(groupMembership);
-												deleteSelectedGroupMembershipsVisible = true;
-											}}
-										/>
-									</td>
-								{:else}
-									<td /><td />
-								{/if}
+								<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
+								<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
+								<td style="font-stretch:ultra-condensed; width:6rem"
+									><center>Group Admin</center></td
+								>
+								<td style="font-stretch:ultra-condensed; width:7rem"
+									><center>Topic Admin</center></td
+								>
+								<td style="font-stretch:ultra-condensed; width:8rem"
+									><center>Application Admin</center></td
+								>
+								<td /><td />
 							</tr>
-						{/each}
+						</thead>
+						<tbody>
+							{#each $groupMembershipList as groupMembership, i}
+								<tr>
+									{#if $isAdmin || isGroupAdmin}
+										<td style="width: 2rem">
+											<input
+												tabindex="-1"
+												type="checkbox"
+												style="margin-right: 0.5rem"
+												class="group-membership-checkbox"
+												checked={usersAllRowsSelectedTrue}
+												on:change={(e) => {
+													usersDropDownVisible = false;
+													if (e.target.checked === true) {
+														usersRowsSelected.push(groupMembership);
+														usersRowsSelectedTrue = true;
+													} else {
+														usersRowsSelected = usersRowsSelected.filter(
+															(selection) => selection !== groupMembership
+														);
+														if (usersRowsSelected.length === 0) {
+															usersRowsSelectedTrue = false;
+														}
+													}
+												}}
+											/>
+										</td>
+									{/if}
+									<td>{groupMembership.userEmail}</td>
+									<td style="width:fit-content">{groupMembership.groupName}</td>
+									<td>
+										<center>
+											{#if groupMembership.groupAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+									<td>
+										<center
+											>{#if groupMembership.topicAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+									<td>
+										<center
+											>{#if groupMembership.applicationAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+
+									{#if $isAdmin || $groupAdminGroups?.some((group) => group.groupName === groupMembership.groupName)}
+										<td
+											style="cursor: pointer; text-align: right"
+											on:keydown={(event) => {
+												if (event.which === returnKey) {
+													updateGroupMembershipSelection(groupMembership);
+												}
+											}}
+										>
+											<img
+												src={editSVG}
+												height="17rem"
+												width="17rem"
+												style="vertical-align: -0.225rem"
+												alt="edit user"
+												on:click={() => updateGroupMembershipSelection(groupMembership)}
+											/>
+										</td>
+										<td
+											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
+										>
+											<img
+												src={deleteSVG}
+												height="27px"
+												width="27px"
+												style="vertical-align: -0.5rem"
+												alt="delete user"
+												on:click={() => {
+													if (!usersRowsSelected.some((gm) => gm === groupMembership))
+														usersRowsSelected.push(groupMembership);
+													deleteSelectedGroupMembershipsVisible = true;
+												}}
+											/>
+										</td>
+									{:else}
+										<td /><td />
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
 					</table>
 				{:else}
 					<p>No group memberships</p>

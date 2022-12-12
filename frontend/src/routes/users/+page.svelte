@@ -367,71 +367,75 @@
 
 					{#if $users && $users.length > 0}
 						<table data-cy="super-users-table" style="margin-top: 0.5rem">
-							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-								<td>
-									<input
-										tabindex="-1"
-										type="checkbox"
-										class="super-user-checkbox"
-										style="margin-right: 0.5rem"
-										bind:indeterminate={superUsersRowsSelectedTrue}
-										on:click={(e) => {
-											superUsersDropDownVisible = false;
-											if (e.target.checked) {
-												superUsersRowsSelected = $users;
-												superUsersRowsSelectedTrue = false;
-												superUsersAllRowsSelectedTrue = true;
-											} else {
-												superUsersAllRowsSelectedTrue = false;
-												superUsersRowsSelectedTrue = false;
-												superUsersRowsSelected = [];
-											}
-										}}
-										checked={superUsersAllRowsSelectedTrue}
-									/>
-								</td>
-								<td>E-mail</td>
-								<td />
-							</tr>
-							{#each $users as user}
-								<tr>
-									<td style="width: 2rem">
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+									<td>
 										<input
 											tabindex="-1"
 											type="checkbox"
 											class="super-user-checkbox"
-											checked={superUsersAllRowsSelectedTrue}
-											on:change={(e) => {
+											style="margin-right: 0.5rem"
+											bind:indeterminate={superUsersRowsSelectedTrue}
+											on:click={(e) => {
 												superUsersDropDownVisible = false;
-												if (e.target.checked === true) {
-													superUsersRowsSelected.push(user);
-													superUsersRowsSelectedTrue = true;
+												if (e.target.checked) {
+													superUsersRowsSelected = $users;
+													superUsersRowsSelectedTrue = false;
+													superUsersAllRowsSelectedTrue = true;
 												} else {
-													superUsersRowsSelected = superUsersRowsSelected.filter(
-														(selection) => selection !== user
-													);
-													if (superUsersRowsSelected.length === 0) {
-														superUsersRowsSelectedTrue = false;
-													}
+													superUsersAllRowsSelectedTrue = false;
+													superUsersRowsSelectedTrue = false;
+													superUsersRowsSelected = [];
 												}
 											}}
+											checked={superUsersAllRowsSelectedTrue}
 										/>
 									</td>
-									<td style="margin-left: 0.3rem">{user.email}</td>
-									<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-										<img
-											src={deleteSVG}
-											width="25px"
-											alt="delete user"
-											on:click={() => {
-												if (!superUsersRowsSelected?.some((usr) => usr === user))
-													superUsersRowsSelected.push(user);
-												deleteSuperUserVisible = true;
-											}}
-										/>
-									</td>
+									<td>E-mail</td>
+									<td />
 								</tr>
-							{/each}
+							</thead>
+							<tbody>
+								{#each $users as user}
+									<tr>
+										<td style="width: 2rem">
+											<input
+												tabindex="-1"
+												type="checkbox"
+												class="super-user-checkbox"
+												checked={superUsersAllRowsSelectedTrue}
+												on:change={(e) => {
+													superUsersDropDownVisible = false;
+													if (e.target.checked === true) {
+														superUsersRowsSelected.push(user);
+														superUsersRowsSelectedTrue = true;
+													} else {
+														superUsersRowsSelected = superUsersRowsSelected.filter(
+															(selection) => selection !== user
+														);
+														if (superUsersRowsSelected.length === 0) {
+															superUsersRowsSelectedTrue = false;
+														}
+													}
+												}}
+											/>
+										</td>
+										<td style="margin-left: 0.3rem">{user.email}</td>
+										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+											<img
+												src={deleteSVG}
+												width="25px"
+												alt="delete user"
+												on:click={() => {
+													if (!superUsersRowsSelected?.some((usr) => usr === user))
+														superUsersRowsSelected.push(user);
+													deleteSuperUserVisible = true;
+												}}
+											/>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
 						</table>
 					{:else}
 						<p style="margin-left: 0.3rem">No Super Users Found</p>

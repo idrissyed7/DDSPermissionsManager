@@ -590,125 +590,131 @@
 						style="margin-top: 0.5rem"
 						class:application-table-admin={isApplicationAdmin || $isAdmin}
 					>
-						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-							{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
-								<td>
-									<input
-										tabindex="-1"
-										type="checkbox"
-										class="apps-checkbox"
-										style="margin-right: 0.5rem"
-										bind:indeterminate={applicationsRowsSelectedTrue}
-										on:click={(e) => {
-											applicationsDropDownVisible = false;
-											if (e.target.checked) {
-												applicationsRowsSelected = $applications;
-												applicationsRowsSelectedTrue = false;
-												applicationsAllRowsSelectedTrue = true;
-											} else {
-												applicationsAllRowsSelectedTrue = false;
-												applicationsRowsSelectedTrue = false;
-												applicationsRowsSelected = [];
-											}
-										}}
-										checked={applicationsAllRowsSelectedTrue}
-									/>
-								</td>
-							{/if}
-							<td style="line-height: 2.2rem">Application</td>
-							<td style="text-align:right; padding-right: 1rem">Group</td>
-						</tr>
-
-						{#if $applications.length > 0}
-							{#each $applications as app, i}
-								<tr>
-									{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
-										<td style="width: 2rem">
-											<input
-												tabindex="-1"
-												type="checkbox"
-												class="apps-checkbox"
-												checked={applicationsAllRowsSelectedTrue}
-												on:change={(e) => {
-													applicationsDropDownVisible = false;
-													if (e.target.checked === true) {
-														applicationsRowsSelected.push(app);
-														applicationsRowsSelectedTrue = true;
-													} else {
-														applicationsRowsSelected = applicationsRowsSelected.filter(
-															(selection) => selection !== app
-														);
-														if (applicationsRowsSelected.length === 0) {
-															applicationsRowsSelectedTrue = false;
-														}
-													}
-												}}
-											/>
-										</td>
-									{/if}
-									<td
-										style="cursor: pointer; line-height: 2.2rem"
-										on:click={() => {
-											loadApplicationDetail(app.id, app.group);
-											headerTitle.set(app.name);
-											detailView.set(true);
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												loadApplicationDetail(app.id, app.group);
-											}
-										}}
-										>{app.name}
-									</td>
-									<td style="padding-right: 1rem; text-align: right">{app.groupName}</td>
-
-									{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
-										<td
-											style="cursor: pointer; width:1rem"
-											on:keydown={(event) => {
-												if (event.which === returnKey) {
-													editApplicationNameVisible = true;
+						<thead>
+							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+								{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
+									<td>
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="apps-checkbox"
+											style="margin-right: 0.5rem"
+											bind:indeterminate={applicationsRowsSelectedTrue}
+											on:click={(e) => {
+												applicationsDropDownVisible = false;
+												if (e.target.checked) {
+													applicationsRowsSelected = $applications;
+													applicationsRowsSelectedTrue = false;
+													applicationsAllRowsSelectedTrue = true;
+												} else {
+													applicationsAllRowsSelectedTrue = false;
+													applicationsRowsSelectedTrue = false;
+													applicationsRowsSelected = [];
 												}
 											}}
-										>
-											<img
-												src={editSVG}
-												height="17rem"
-												width="17rem"
-												style="margin-left: 2rem"
-												alt="edit user"
-												on:click={() => {
-													previousAppName = app.name;
-													selectedAppGroupId = app.group;
-													selectedAppId = app.id;
-													editApplicationNameVisible = true;
-												}}
-											/>
-										</td>
+											checked={applicationsAllRowsSelectedTrue}
+										/>
+									</td>
+								{/if}
+								<td style="line-height: 2.2rem">Application</td>
+								<td style="text-align:right; padding-right: 1rem">Group</td>
+							</tr>
+						</thead>
 
+						{#if $applications.length > 0}
+							<tbody>
+								{#each $applications as app, i}
+									<tr>
+										{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
+											<td style="width: 2rem">
+												<input
+													tabindex="-1"
+													type="checkbox"
+													class="apps-checkbox"
+													checked={applicationsAllRowsSelectedTrue}
+													on:change={(e) => {
+														applicationsDropDownVisible = false;
+														if (e.target.checked === true) {
+															applicationsRowsSelected.push(app);
+															applicationsRowsSelectedTrue = true;
+														} else {
+															applicationsRowsSelected = applicationsRowsSelected.filter(
+																(selection) => selection !== app
+															);
+															if (applicationsRowsSelected.length === 0) {
+																applicationsRowsSelectedTrue = false;
+															}
+														}
+													}}
+												/>
+											</td>
+										{/if}
 										<td
-											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
-										>
-											<img
-												src={deleteSVG}
-												alt="delete application"
-												width="27rem"
-												style="cursor: pointer"
-												on:click={() => {
-													selectedAppId = app.id;
-													selectedAppName = app.name;
-													deleteApplicationVisible = true;
-												}}
-												on:click={() => {
-													if (!applicationsRowsSelected.some((application) => application === app))
-														applicationsRowsSelected.push(app);
-													deleteApplicationVisible = true;
-												}}
-											/>
+											style="cursor: pointer; line-height: 2.2rem"
+											on:click={() => {
+												loadApplicationDetail(app.id, app.group);
+												headerTitle.set(app.name);
+												detailView.set(true);
+											}}
+											on:keydown={(event) => {
+												if (event.which === returnKey) {
+													loadApplicationDetail(app.id, app.group);
+												}
+											}}
+											>{app.name}
 										</td>
-									{/if}
-								</tr>
-							{/each}
+										<td style="padding-right: 1rem; text-align: right">{app.groupName}</td>
+
+										{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
+											<td
+												style="cursor: pointer; width:1rem"
+												on:keydown={(event) => {
+													if (event.which === returnKey) {
+														editApplicationNameVisible = true;
+													}
+												}}
+											>
+												<img
+													src={editSVG}
+													height="17rem"
+													width="17rem"
+													style="margin-left: 2rem"
+													alt="edit user"
+													on:click={() => {
+														previousAppName = app.name;
+														selectedAppGroupId = app.group;
+														selectedAppId = app.id;
+														editApplicationNameVisible = true;
+													}}
+												/>
+											</td>
+
+											<td
+												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
+											>
+												<img
+													src={deleteSVG}
+													alt="delete application"
+													width="27rem"
+													style="cursor: pointer"
+													on:click={() => {
+														selectedAppId = app.id;
+														selectedAppName = app.name;
+														deleteApplicationVisible = true;
+													}}
+													on:click={() => {
+														if (
+															!applicationsRowsSelected.some((application) => application === app)
+														)
+															applicationsRowsSelected.push(app);
+														deleteApplicationVisible = true;
+													}}
+												/>
+											</td>
+										{/if}
+									</tr>
+								{/each}
+							</tbody>
 						{/if}
 					</table>
 				{:else if !applicationDetailVisible && applicationListVisible}
@@ -717,26 +723,30 @@
 				{#await promiseDetail then _}
 					{#if $applications && applicationDetailVisible && !applicationListVisible}
 						<table style="width: 35rem; margin-top: 2rem">
-							<tr style="border-width: 0px">
-								<td>Group</td>
-								<td>Topic</td>
-								<td>Access</td>
-							</tr>
+							<thead>
+								<tr style="border-width: 0px">
+									<td>Group</td>
+									<td>Topic</td>
+									<td>Access</td>
+								</tr>
+							</thead>
 							{#if $applicationPermission}
 								{#each $applicationPermission as appPermission}
-									<tr style="line-height: 2rem">
-										<td>
-											{appPermission.topicGroup}
-										</td>
-										<td>
-											{appPermission.topicName}
-										</td>
-										<td>
-											{appPermission.accessType === 'READ_WRITE'
-												? 'READ & WRITE'
-												: appPermission.accessType}
-										</td>
-									</tr>
+									<tbody>
+										<tr style="line-height: 2rem">
+											<td>
+												{appPermission.topicGroup}
+											</td>
+											<td>
+												{appPermission.topicName}
+											</td>
+											<td>
+												{appPermission.accessType === 'READ_WRITE'
+													? 'READ & WRITE'
+													: appPermission.accessType}
+											</td>
+										</tr>
+									</tbody>
 								{/each}
 							{:else}
 								<p>No Topics Associated</p>

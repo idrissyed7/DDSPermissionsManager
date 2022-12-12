@@ -12,19 +12,15 @@ describe('title should say DDS Permissions Manager', () => {
         it('should delete the second topic', () => {
         cy.visit('/topics');
 
-        cy.wait(500);
-
-        cy.get(':nth-child(3) > [style="line-height: 2.2rem; cursor: pointer; width: max-content;"]').then(($name) => {
+        cy.get('table.main > tbody > tr:nth-child(1) > td:nth-child(2)').then(($name) => {
 
             const name = $name.text()
 
-            cy.get(':nth-child(3) > [style="cursor: pointer; text-align: right; padding-right: 0.25rem;"] > img')
+            cy.get('table.main > tbody > tr:nth-child(1) > td:nth-child(4) > img')
             .click();
 
             cy.get('[data-cy="delete-topic"]')
             .click();
-
-            cy.wait(500);
 
             cy.get('td').should('not.eq', name);
         
