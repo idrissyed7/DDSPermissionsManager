@@ -30,7 +30,7 @@ describe('title should say DDS Permissions Manager', () => {
 
     it('should filter Topics correctly', () => {
         cy.visit('/topics');
-        cy.get('[data-cy="search-topics-table"]').type('123');
+        cy.get('[data-cy="search-topics-table"]').type('456');
 
         cy.get('[data-cy="topics-table"] > tbody > tr')
         .should('have.length', 1);
