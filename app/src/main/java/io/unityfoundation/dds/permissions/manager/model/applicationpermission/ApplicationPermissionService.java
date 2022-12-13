@@ -1,9 +1,15 @@
 package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTParser;
+import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import io.micronaut.security.token.jwt.generator.claims.JwtClaims;
+import io.micronaut.security.token.jwt.generator.claims.JwtClaimsSetAdapter;
+import io.micronaut.security.token.jwt.validator.JwtTokenValidator;
 import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
@@ -14,7 +20,9 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
+import org.reactivestreams.Publisher;
 
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,18 +30,22 @@ import java.util.Optional;
 @Singleton
 public class ApplicationPermissionService {
 
+    public static final String APPLICATION_BIND_TOKEN = "APPLICATION_BIND_TOKEN";
+
     private final ApplicationPermissionRepository applicationPermissionRepository;
     private final ApplicationRepository applicationRepository;
     private final TopicRepository topicRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
+    private final JwtTokenValidator jwtTokenValidator;
 
-    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService) {
+    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
         this.applicationPermissionRepository = applicationPermissionRepository;
         this.applicationRepository = applicationRepository;
         this.topicRepository = topicRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
+        this.jwtTokenValidator = jwtTokenValidator;
     }
 
     public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
@@ -56,6 +68,25 @@ public class ApplicationPermissionService {
             return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicId(
                     applicationId, topicId, pageable);
         }
+    }
+
+    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String bindToken, Long topicId, AccessType access) {
+        return Publishers.map(jwtTokenValidator.validateToken(bindToken, null), authentication -> {
+            JWT jwt;
+            JwtClaims claims;
+            try {
+                jwt = JWTParser.parse(bindToken);
+                claims = new JwtClaimsSetAdapter(jwt.getJWTClaimsSet());
+                if (claims.get(JwtClaims.SUBJECT) != null) {
+                    Long applicationId = Long.valueOf((String) claims.get(JwtClaims.SUBJECT));
+                    return addAccess(applicationId, topicId, access);
+                } else {
+                    throw new DPMException(ResponseStatusCodes.APPLICATION_BIND_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
+                }
+            } catch (ParseException e) {
+                throw new DPMException(ResponseStatusCodes.APPLICATION_BIND_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
+            }
+        });
     }
 
     public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
