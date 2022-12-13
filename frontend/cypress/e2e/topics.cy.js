@@ -1,6 +1,6 @@
 /// <reference types="Cypress" />
 
-describe('title should say DDS Permissions Manager', () => {
+describe('Topics Capabilities', () => {
     beforeEach(() => {
         cy.login('unity-admin', 'password');
         cy.intercept('http://localhost:8080/api/token_info').as('tokenInfo');
@@ -8,8 +8,7 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-   
-        it('should add a new topic to group Alpha', () => {
+    it('should add a new topic to group Alpha', () => {
         cy.visit('/topics');
 
         cy.get('[data-cy="dot-topics"]')
@@ -31,7 +30,7 @@ describe('title should say DDS Permissions Manager', () => {
         .siblings()
         .contains('td', 'Alpha');               
       
-    })
+    });
 
     it('should add a new topic to group Beta', () => {
         cy.visit('/topics');
@@ -55,6 +54,18 @@ describe('title should say DDS Permissions Manager', () => {
         .siblings()
         .contains('td', 'Beta'); 
 
-    })
+    });
 
+    it('should delete the Test Topic Beta', () => {
+        cy.visit('/topics');
+
+        cy.get('td').contains('Test Topic Beta').siblings().find('[data-cy="delete-topic-icon"]')
+        .click();
+
+        cy.get('[data-cy="delete-topic"]')
+        .click();
+
+        cy.get('td').should('not.eq', 'Test Topic Beta');
+        
+    });
 });

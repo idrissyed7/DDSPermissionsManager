@@ -423,6 +423,7 @@
 										<td style="margin-left: 0.3rem">{user.email}</td>
 										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 											<img
+												data-cy="delete-super-users-icon"
 												src={deleteSVG}
 												width="25px"
 												alt="delete user"

@@ -1,4 +1,4 @@
- describe('title should say DDS Permissions Manager', () => {
+ describe('Users capabilities', () => {
     beforeEach(() => {
         cy.login('unity-admin', 'password');
         cy.intercept('http://localhost:8080/api/token_info').as('tokenInfo');
@@ -25,7 +25,5 @@
         .click();
 
         cy.get('td').should('contain.text', 'user@email.com');	
-
-    })
-
+    });
 });

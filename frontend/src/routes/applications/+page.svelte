@@ -686,6 +686,7 @@
 												}}
 											>
 												<img
+													data-cy="edit-application-icon"
 													src={editSVG}
 													height="17rem"
 													width="17rem"
@@ -704,6 +705,7 @@
 												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
 											>
 												<img
+													data-cy="delete-application-icon"
 													src={deleteSVG}
 													alt="delete application"
 													width="27rem"

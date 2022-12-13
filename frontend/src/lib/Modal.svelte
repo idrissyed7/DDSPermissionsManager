@@ -33,7 +33,6 @@
 	export let actionDeleteTopics = false;
 	export let actionDeleteGroups = false;
 	export let actionDeleteApplications = false;
-	export let actionDuplicateTopic = false;
 	export let noneditable = false;
 	export let emailValue = '';
 	export let newTopicName = '';
@@ -420,18 +419,6 @@
 		});
 	};
 
-	const actionDuplicateTopicEvent = () => {
-		let newTopic = {
-			newTopicName: newTopicName,
-			searchGroups: searchGroups,
-			selectedGroup: selectedGroup,
-			anyApplicationCanRead: anyApplicationCanRead,
-			selectedApplicationList: selectedApplicationList
-		};
-		dispatch('duplicateTopic', newTopic);
-		closeModal();
-	};
-
 	const loadMoreResultsApp = (e) => {
 		if (e.detail.inView && hasMoreApps) {
 			applicationResultPage++;
@@ -533,10 +520,6 @@
 					if (event.which === returnKey) {
 						newTopicName = newTopicName.trim();
 						invalidTopic = !validateNameLength(newTopicName);
-
-						if (!invalidTopic && searchGroups?.length >= searchStringLength) {
-							actionDuplicateTopicEvent();
-						}
 					}
 				}}
 				on:click={() => {
@@ -658,6 +641,7 @@
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				autofocus
+				data-cy="application-name"
 				placeholder="Application Name"
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
@@ -928,11 +912,11 @@
 							<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Read</span></li>
 							<li style="margin-top: -0.05rem">
 								<input
+									checked={app.accessType === 'READ' || app.accessType === 'READ_WRITE'}
+									disabled={app.accessType === 'READ'}
 									type="checkbox"
 									name="read"
 									style="width:unset;"
-									checked={!actionDuplicateTopic ||
-										(actionDuplicateTopic && app.accessType.includes('READ'))}
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(
 											(application) => application.applicationName === app.applicationName
@@ -948,7 +932,7 @@
 											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
 												selectedApplicationList[applicationIndex].accessType = 'WRITE';
 											} else {
-												selectedApplicationList[applicationIndex].accessType = '';
+												selectedApplicationList[applicationIndex].accessType = 'READ';
 											}
 										}
 									}}
@@ -962,7 +946,6 @@
 								<input
 									type="checkbox"
 									name="write"
-									checked={actionDuplicateTopic && app.accessType.includes('WRITE')}
 									style="width:unset;"
 									on:change={(e) => {
 										const applicationIndex = selectedApplicationList.findIndex(
@@ -979,7 +962,7 @@
 											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
 												selectedApplicationList[applicationIndex].accessType = 'READ';
 											} else {
-												selectedApplicationList[applicationIndex].accessType = '';
+												selectedApplicationList[applicationIndex].accessType = 'READ';
 											}
 										}
 									}}
@@ -1090,24 +1073,6 @@
 		</button>
 	{/if}
 
-	{#if actionDuplicateTopic}
-		<hr />
-		<button
-			class="action-button"
-			class:action-button-invalid={newTopicName.length < minNameLength ||
-				searchGroups?.length < minNameLength}
-			on:click={() => {
-				actionDuplicateTopicEvent();
-			}}
-			on:keydown={(event) => {
-				if (event.which === returnKey) {
-					actionDuplicateTopicEvent();
-				}
-			}}
-			>Add Topic
-		</button>
-	{/if}
-
 	{#if actionAddApplication}
 		<hr />
 		<button
@@ -1166,6 +1131,7 @@
 	{#if actionEditApplicationName}
 		<hr style="z-index: 1" />
 		<button
+			data-cy="save-application"
 			class="action-button"
 			class:action-button-invalid={previousAppName?.length < minNameLength}
 			disabled={previousAppName?.length < minNameLength}
@@ -1184,6 +1150,7 @@
 	{#if actionEditGroup}
 		<hr style="z-index: 1" />
 		<button
+			data-cy="edit-group"
 			class="action-button"
 			class:action-button-invalid={newGroupName?.length < minNameLength}
 			disabled={newGroupName?.length < minNameLength}
@@ -1280,6 +1247,7 @@
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
 			autofocus
+			data-cy="delete-group"
 			class="action-button"
 			on:click={() => dispatch('deleteGroups')}
 			on:keydown={(event) => {
