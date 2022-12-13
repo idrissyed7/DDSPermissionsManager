@@ -1,7 +1,8 @@
 /// <reference types="Cypress" />
 
-describe('title should say DDS Permissions Manager', () => {
+describe('should verify the values of all the tables', () => {
     beforeEach(() => {
+        cy.visit('http://localhost:8080/api/logout'); 
         cy.login('unity-admin', 'password');
         cy.intercept('http://localhost:8080/api/token_info').as('tokenInfo');
         cy.visit('http://localhost:8080/');
@@ -19,9 +20,9 @@ describe('title should say DDS Permissions Manager', () => {
 
     it('should filter Super Users correctly', () => {
         cy.visit('/users');
-        cy.get('[data-cy="search-super-users-table"]').type('computing');
+        cy.get('[data-cy="search-super-users-table"]').type('belloned');
 
-        cy.get('[data-cy="super-users-table"] > tbody > tr').should('have.length', 3);
+        cy.get('[data-cy="super-users-table"] > tbody > tr').should('have.length', 1);
     });
 
     it('should filter Topics correctly', () => {

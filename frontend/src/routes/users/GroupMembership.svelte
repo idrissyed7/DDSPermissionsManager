@@ -640,6 +640,7 @@
 											}}
 										>
 											<img
+												data-cy="edit-users-icon"
 												src={editSVG}
 												height="17rem"
 												width="17rem"
@@ -652,6 +653,7 @@
 											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
 										>
 											<img
+												data-cy="delete-users-icon"
 												src={deleteSVG}
 												height="27px"
 												width="27px"
