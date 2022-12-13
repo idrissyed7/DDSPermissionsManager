@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import urlparameters from '../../stores/urlparameters';
 	import topics from '../../stores/groups';
@@ -10,6 +10,7 @@
 	import TopicDetails from './TopicDetails.svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
+	import userValidityCheck from '../../stores/userValidityCheck';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
@@ -20,6 +21,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import threedotsSVG from '../../icons/threedots.svg';
 	import errorMessages from '$lib/errorMessages.json';
+	import renderAvatar from '../../stores/renderAvatar';
 
 	export let data, errors;
 
@@ -35,6 +37,9 @@
 	} else if (browser && !(addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
 		document.body.classList.remove('modal-open');
 	}
+
+	// Promises
+	let promise;
 
 	// Constants
 	const returnKey = 13;
@@ -87,7 +92,7 @@
 	let selectedApplicationList = [];
 
 	// Topics Filter Feature
-	$: if (searchString?.trim().length >= searchStringLength) {
+	$: if (searchString?.trim().length >= searchStringLength && $urlparameters === null) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchTopics(searchString.trim());
@@ -102,29 +107,28 @@
 	}
 
 	// Return to List view
-	$: if (!$detailView) {
+	$: if ($detailView === 'backToList') {
 		headerTitle.set('Topics');
-		topicDetailVisible = false;
 		reloadAllTopics();
 		returnToTopicsList();
 	}
 
 	onMount(async () => {
+		if ($urlparameters?.type === 'prepopulate') {
+			searchString = $urlparameters.data;
+		}
+
+		detailView.set('first run');
+
 		headerTitle.set('Topics');
-		detailView.set();
+		promise = reloadAllTopics();
 
-		try {
-			reloadAllTopics();
-			const res = await httpAdapter.get(`/token_info`);
-			permissionsByGroup.set(res.data.permissionsByGroup);
+		setTimeout(() => renderAvatar.set(true), 40);
 
-			if ($permissionsByGroup) {
-				isTopicAdmin = $permissionsByGroup.some(
-					(groupPermission) => groupPermission.isTopicAdmin === true
-				);
-			}
-		} catch (err) {
-			errorMessage('Error Loading Topics', err.message);
+		if ($permissionsByGroup) {
+			isTopicAdmin = $permissionsByGroup.some(
+				(groupPermission) => groupPermission.isTopicAdmin === true
+			);
 		}
 
 		if ($urlparameters === 'create') {
@@ -133,13 +137,12 @@
 			} else {
 				errorMessage('Only Topic Admins can create topics.', 'Contact your Group Admin.');
 			}
-			urlparameters.set([]);
 		}
+	});
 
-		if ($urlparameters?.type === 'prepopulate') {
-			searchString = $urlparameters.data;
-			urlparameters.set([]);
-		}
+	onDestroy(() => {
+		renderAvatar.set(false);
+		urlparameters.set([]);
 	});
 
 	const searchTopics = async (searchStr) => {
@@ -206,6 +209,8 @@
 			topics.set(res.data.content);
 			topicsCurrentPage = page;
 		} catch (err) {
+			userValidityCheck.set(true);
+
 			errorMessage('Error Loading Topics', err.message);
 		}
 	};
@@ -293,383 +298,391 @@
 
 {#key $refreshPage}
 	{#if $isAuthenticated}
-		{#if errorMessageVisible}
-			<Modal
-				title={errorMsg}
-				errorMsg={true}
-				errorDescription={errorObject}
-				closeModalText={'Close'}
-				on:cancel={() => {
-					errorMessageVisible = false;
-					errorMessageClear();
-				}}
-			/>
-		{/if}
-		{#if addTopicVisible}
-			<Modal
-				title="Add Topic"
-				topicName={true}
-				group={true}
-				application={true}
-				actionAddTopic={true}
-				on:cancel={() => (addTopicVisible = false)}
-				on:addTopic={(e) => {
-					newTopicName = e.detail.newTopicName;
-					searchGroups = e.detail.searchGroups;
-					selectedGroup = e.detail.selectedGroup;
-					anyApplicationCanRead = e.detail.anyApplicationCanRead;
-					selectedApplicationList = e.detail.selectedApplicationList;
-					addTopic();
-				}}
-			/>
-		{/if}
+		{#await promise then _}
+			{#if errorMessageVisible}
+				<Modal
+					title={errorMsg}
+					errorMsg={true}
+					errorDescription={errorObject}
+					closeModalText={'Close'}
+					on:cancel={() => {
+						errorMessageVisible = false;
+						errorMessageClear();
+					}}
+				/>
+			{/if}
 
-		{#if topicDetailVisible && !topicsListVisible}
-			<TopicDetails
-				{selectedTopicName}
-				{selectedTopicId}
-				{selectedTopicKind}
-				{selectedTopicGroupName}
-				{selectedTopicGroupId}
-				on:addTopic={async (e) => {
-					newTopicName = e.detail.newTopicName;
-					searchGroups = e.detail.searchGroups;
-					selectedGroup = e.detail.selectedGroup;
-					anyApplicationCanRead = e.detail.anyApplicationCanRead;
-					selectedApplicationList = e.detail.selectedApplicationList;
-					addTopic();
+			{#if addTopicVisible}
+				<Modal
+					title="Add Topic"
+					topicName={true}
+					group={true}
+					application={true}
+					actionAddTopic={true}
+					on:cancel={() => (addTopicVisible = false)}
+					on:addTopic={(e) => {
+						newTopicName = e.detail.newTopicName;
+						searchGroups = e.detail.searchGroups;
+						selectedGroup = e.detail.selectedGroup;
+						anyApplicationCanRead = e.detail.anyApplicationCanRead;
+						selectedApplicationList = e.detail.selectedApplicationList;
+						addTopic();
+					}}
+				/>
+			{/if}
 
-					detailView.set();
-					await reloadAllTopics();
-					topicDetailVisible = false;
-				}}
-			/>
-		{/if}
+			{#if topicDetailVisible && !topicsListVisible}
+				<TopicDetails
+					{selectedTopicName}
+					{selectedTopicId}
+					{selectedTopicKind}
+					{selectedTopicGroupName}
+					{selectedTopicGroupId}
+					on:addTopic={async (e) => {
+						newTopicName = e.detail.newTopicName;
+						searchGroups = e.detail.searchGroups;
+						selectedGroup = e.detail.selectedGroup;
+						anyApplicationCanRead = e.detail.anyApplicationCanRead;
+						selectedApplicationList = e.detail.selectedApplicationList;
+						addTopic();
 
-		{#if deleteTopicVisible}
-			<Modal
-				actionDeleteTopics={true}
-				title="Delete {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'}"
-				on:cancel={() => {
-					if (topicsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
-						topicsRowsSelected = [];
-					deleteTopicVisible = false;
-				}}
-				on:deleteTopics={async () => {
-					await deleteSelectedTopics();
-					reloadAllTopics();
-					deselectAllTopicsCheckboxes();
-					deleteTopicVisible = false;
-				}}
-			/>
-		{/if}
+						detailView.set();
+						await reloadAllTopics();
+						topicDetailVisible = false;
+					}}
+				/>
+			{/if}
 
-		{#if !topicDetailVisible}
-			<div class="content">
-				<h1 data-cy="topics">Topics</h1>
+			{#if deleteTopicVisible}
+				<Modal
+					actionDeleteTopics={true}
+					title="Delete {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'}"
+					on:cancel={() => {
+						if (topicsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+							topicsRowsSelected = [];
+						deleteTopicVisible = false;
+					}}
+					on:deleteTopics={async () => {
+						await deleteSelectedTopics();
+						reloadAllTopics();
+						deselectAllTopicsCheckboxes();
+						deleteTopicVisible = false;
+					}}
+				/>
+			{/if}
 
-				<form class="searchbox">
-					<input
-						data-cy="search-topics-table"
-						class="searchbox"
-						type="search"
-						placeholder="Search"
-						bind:value={searchString}
-						on:blur={() => {
-							searchString = searchString?.trim();
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								document.activeElement.blur();
+			{#if !topicDetailVisible}
+				<div class="content">
+					<h1 data-cy="topics">Topics</h1>
+
+					<form class="searchbox">
+						<input
+							data-cy="search-topics-table"
+							class="searchbox"
+							type="search"
+							placeholder="Search"
+							bind:value={searchString}
+							on:blur={() => {
 								searchString = searchString?.trim();
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									document.activeElement.blur();
+									searchString = searchString?.trim();
+								}
+							}}
+						/>
+					</form>
+
+					{#if isTopicAdmin || $isAdmin}
+						<div
+							data-cy="dot-topics"
+							class="dot"
+							tabindex="0"
+							on:mouseleave={() => {
+								setTimeout(() => {
+									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+								}, waitTime);
+							}}
+							on:click={() => {
+								if (!deleteTopicVisible && !addTopicVisible)
+									topicsDropDownVisible = !topicsDropDownVisible;
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									if (!deleteTopicVisible && !addTopicVisible)
+										topicsDropDownVisible = !topicsDropDownVisible;
+								}
+							}}
+							on:focusout={() => {
+								setTimeout(() => {
+									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+								}, waitTime);
+							}}
+						>
+							<img src={threedotsSVG} alt="options" style="scale:50%" />
+
+							{#if topicsDropDownVisible}
+								<table
+									class="dropdown"
+									on:mouseenter={() => (topicsDropDownMouseEnter = true)}
+									on:mouseleave={() => {
+										setTimeout(() => {
+											if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
+										}, waitTime);
+										topicsDropDownMouseEnter = false;
+									}}
+								>
+									<tr
+										tabindex="0"
+										disabled={!$isAdmin}
+										class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
+										on:click={() => {
+											topicsDropDownVisible = false;
+											if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+										}}
+										on:keydown={(event) => {
+											if (event.which === returnKey) {
+												topicsDropDownVisible = false;
+												if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+											}
+										}}
+										on:focus={() => (topicsDropDownMouseEnter = true)}
+									>
+										<td>Delete Selected {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'} </td>
+										<td>
+											<img
+												src={deleteSVG}
+												alt="delete topic"
+												height="35rem"
+												style="vertical-align: -0.8rem"
+												class:disabled-img={!$isAdmin || topicsRowsSelected.length === 0}
+											/>
+										</td>
+									</tr>
+
+									<tr
+										data-cy="add-topic"
+										tabindex="0"
+										on:click={() => {
+											topicsDropDownVisible = false;
+											addTopicVisible = true;
+										}}
+										on:keydown={(event) => {
+											if (event.which === returnKey) {
+												topicsDropDownVisible = false;
+												addTopicVisible = true;
+											}
+										}}
+										on:focusout={() => (topicsDropDownMouseEnter = false)}
+										class:hidden={addTopicVisible}
+									>
+										<td style="border-bottom-color: transparent">Add New Topic</td>
+										<td
+											style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
+										>
+											<img
+												src={addSVG}
+												alt="add user"
+												height="27rem"
+												style="vertical-align: middle; margin-left: 1.25rem"
+											/>
+										</td>
+									</tr>
+								</table>
+							{/if}
+						</div>
+					{/if}
+
+					{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
+						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+									{#if isTopicAdmin || $isAdmin}
+										<td>
+											<input
+												tabindex="-1"
+												type="checkbox"
+												class="topics-checkbox"
+												style="margin-right: 0.5rem"
+												bind:indeterminate={topicsRowsSelectedTrue}
+												on:click={(e) => {
+													topicsDropDownVisible = false;
+													if (e.target.checked) {
+														topicsRowsSelected = $topics;
+														topicsRowsSelectedTrue = false;
+														topicsAllRowsSelectedTrue = true;
+													} else {
+														topicsAllRowsSelectedTrue = false;
+														topicsRowsSelectedTrue = false;
+														topicsRowsSelected = [];
+													}
+												}}
+												checked={topicsAllRowsSelectedTrue}
+											/>
+										</td>
+									{/if}
+									<td>Topic</td>
+									<td style="text-align:right; padding-right: 1rem;">Group</td>
+								</tr>
+							</thead>
+							<tbody>
+								{#each $topics as topic, i}
+									<tr>
+										{#if isTopicAdmin || $isAdmin}
+											<td style="width: 2rem">
+												<input
+													tabindex="-1"
+													type="checkbox"
+													class="topics-checkbox"
+													checked={topicsAllRowsSelectedTrue}
+													on:change={(e) => {
+														topicsDropDownVisible = false;
+														if (e.target.checked === true) {
+															topicsRowsSelected.push(topic);
+															topicsRowsSelectedTrue = true;
+														} else {
+															topicsRowsSelected = topicsRowsSelected.filter(
+																(selection) => selection !== topic
+															);
+															if (topicsRowsSelected.length === 0) {
+																topicsRowsSelectedTrue = false;
+															}
+														}
+													}}
+												/>
+											</td>
+										{/if}
+										<td
+											style="cursor: pointer; width: max-content"
+											on:click={() => {
+												loadTopic(topic.id);
+												selectedTopicId = topic.id;
+											}}
+											on:keydown={(event) => {
+												if (event.which === returnKey) {
+													loadTopic(topic.id);
+													selectedTopicId = topic.id;
+												}
+											}}
+											>{topic.name}
+										</td>
+
+										<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
+
+										{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
+											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<img
+													src={deleteSVG}
+													width="27rem"
+													alt="delete topic"
+													on:click={() => {
+														if (!topicsRowsSelected.some((tpc) => tpc === topic))
+															topicsRowsSelected.push(topic);
+														deleteTopicVisible = true;
+													}}
+												/>
+											</td>
+										{/if}
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					{:else if !topicDetailVisible}
+						<p>No Topics Found</p>
+					{/if}
+				</div>
+
+				<div class="pagination">
+					<span>Rows per page</span>
+					<select
+						tabindex="-1"
+						on:change={(e) => {
+							topicsPerPage = e.target.value;
+							reloadAllTopics();
+						}}
+						name="RowsPerPage"
+					>
+						<option value="10">10</option>
+						<option value="25">25</option>
+						<option value="50">50</option>
+						<option value="75">75</option>
+						<option value="100">100&nbsp;</option>
+					</select>
+					<span style="margin: 0 2rem 0 2rem">
+						{#if topicsTotalSize > 0}
+							{1 + topicsCurrentPage * topicsPerPage}
+						{:else}
+							0
+						{/if}
+						- {Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
+						{topicsTotalSize}
+					</span>
+					<img
+						src={pagefirstSVG}
+						alt="first page"
+						class="pagination-image"
+						class:disabled-img={topicsCurrentPage === 0}
+						on:click={() => {
+							deselectAllTopicsCheckboxes();
+							if (topicsCurrentPage > 0) {
+								topicsCurrentPage = 0;
+								reloadAllTopics();
 							}
 						}}
 					/>
-				</form>
-
-				{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-					<div
-						data-cy="dot-topics"
-						class="dot"
-						tabindex="0"
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-							}, waitTime);
-						}}
+					<img
+						src={pagebackwardsSVG}
+						alt="previous page"
+						class="pagination-image"
+						class:disabled-img={topicsCurrentPage === 0}
 						on:click={() => {
-							if (!deleteTopicVisible && !addTopicVisible)
-								topicsDropDownVisible = !topicsDropDownVisible;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								if (!deleteTopicVisible && !addTopicVisible)
-									topicsDropDownVisible = !topicsDropDownVisible;
+							deselectAllTopicsCheckboxes();
+							if (topicsCurrentPage > 0) {
+								topicsCurrentPage--;
+								reloadAllTopics(topicsCurrentPage);
 							}
 						}}
-						on:focusout={() => {
-							setTimeout(() => {
-								if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-							}, waitTime);
+					/>
+					<img
+						src={pageforwardSVG}
+						alt="next page"
+						class="pagination-image"
+						class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+							$topics?.length === undefined}
+						on:click={() => {
+							deselectAllTopicsCheckboxes();
+							if (topicsCurrentPage + 1 < topicsTotalPages) {
+								topicsCurrentPage++;
+								reloadAllTopics(topicsCurrentPage);
+							}
 						}}
-					>
-						<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-						{#if topicsDropDownVisible}
-							<table
-								class="dropdown"
-								on:mouseenter={() => (topicsDropDownMouseEnter = true)}
-								on:mouseleave={() => {
-									setTimeout(() => {
-										if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-									}, waitTime);
-									topicsDropDownMouseEnter = false;
-								}}
-							>
-								<tr
-									tabindex="0"
-									disabled={!$isAdmin}
-									class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
-									on:click={() => {
-										topicsDropDownVisible = false;
-										if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											topicsDropDownVisible = false;
-											if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
-										}
-									}}
-									on:focus={() => (topicsDropDownMouseEnter = true)}
-								>
-									<td>Delete Selected {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'} </td>
-									<td>
-										<img
-											src={deleteSVG}
-											alt="delete topic"
-											height="35rem"
-											style="vertical-align: -0.8rem"
-											class:disabled-img={!$isAdmin || topicsRowsSelected.length === 0}
-										/>
-									</td>
-								</tr>
-
-								<tr
-									data-cy="add-topic"
-									tabindex="0"
-									on:click={() => {
-										topicsDropDownVisible = false;
-										addTopicVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											topicsDropDownVisible = false;
-											addTopicVisible = true;
-										}
-									}}
-									on:focusout={() => (topicsDropDownMouseEnter = false)}
-									class:hidden={addTopicVisible}
-								>
-									<td style="border-bottom-color: transparent">Add New Topic</td>
-									<td
-										style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-									>
-										<img
-											src={addSVG}
-											alt="add user"
-											height="27rem"
-											style="vertical-align: middle; margin-left: 1.25rem"
-										/>
-									</td>
-								</tr>
-							</table>
-						{/if}
-					</div>
-				{/if}
-
-				{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
-					<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
-						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-							{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-								<td>
-									<input
-										tabindex="-1"
-										type="checkbox"
-										class="topics-checkbox"
-										style="margin-right: 0.5rem"
-										bind:indeterminate={topicsRowsSelectedTrue}
-										on:click={(e) => {
-											topicsDropDownVisible = false;
-											if (e.target.checked) {
-												topicsRowsSelected = $topics;
-												topicsRowsSelectedTrue = false;
-												topicsAllRowsSelectedTrue = true;
-											} else {
-												topicsAllRowsSelectedTrue = false;
-												topicsRowsSelectedTrue = false;
-												topicsRowsSelected = [];
-											}
-										}}
-										checked={topicsAllRowsSelectedTrue}
-									/>
-								</td>
-							{/if}
-							<td style="line-height: 2.2rem">Topic</td>
-							<td style="text-align:right; padding-right: 1rem;">Group</td>
-						</tr>
-						{#each $topics as topic, i}
-							<tr>
-								{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-									<td style="width: 2rem">
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="topics-checkbox"
-											checked={topicsAllRowsSelectedTrue}
-											on:change={(e) => {
-												topicsDropDownVisible = false;
-												if (e.target.checked === true) {
-													topicsRowsSelected.push(topic);
-													topicsRowsSelectedTrue = true;
-												} else {
-													topicsRowsSelected = topicsRowsSelected.filter(
-														(selection) => selection !== topic
-													);
-													if (topicsRowsSelected.length === 0) {
-														topicsRowsSelectedTrue = false;
-													}
-												}
-											}}
-										/>
-									</td>
-								{/if}
-								<td
-									style="line-height: 2.2rem; cursor: pointer; width: max-content"
-									on:click={() => {
-										loadTopic(topic.id);
-										selectedTopicId = topic.id;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											loadTopic(topic.id);
-											selectedTopicId = topic.id;
-										}
-									}}
-									>{topic.name}
-								</td>
-
-								<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
-
-								{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
-									<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-										<img
-											src={deleteSVG}
-											width="27rem"
-											alt="delete user"
-											style="vertical-align: -0.1rem"
-											on:click={() => {
-												if (!topicsRowsSelected.some((tpc) => tpc === topic))
-													topicsRowsSelected.push(topic);
-												deleteTopicVisible = true;
-											}}
-										/>
-									</td>
-								{/if}
-							</tr>
-						{/each}
-					</table>
-				{:else if !topicDetailVisible}
-					<p>No Topics Found</p>
-				{/if}
-			</div>
-
-			<div class="pagination">
-				<span>Rows per page</span>
-				<select
-					tabindex="-1"
-					on:change={(e) => {
-						topicsPerPage = e.target.value;
-						reloadAllTopics();
-					}}
-					name="RowsPerPage"
-				>
-					<option value="10">10</option>
-					<option value="25">25</option>
-					<option value="50">50</option>
-					<option value="75">75</option>
-					<option value="100">100&nbsp;</option>
-				</select>
-				<span style="margin: 0 2rem 0 2rem">
-					{#if topicsTotalSize > 0}
-						{1 + topicsCurrentPage * topicsPerPage}
-					{:else}
-						0
-					{/if}
-					- {Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
-					{topicsTotalSize}
-				</span>
-				<img
-					src={pagefirstSVG}
-					alt="first page"
-					class="pagination-image"
-					class:disabled-img={topicsCurrentPage === 0}
-					on:click={() => {
-						deselectAllTopicsCheckboxes();
-						if (topicsCurrentPage > 0) {
-							topicsCurrentPage = 0;
-							reloadAllTopics();
-						}
-					}}
-				/>
-				<img
-					src={pagebackwardsSVG}
-					alt="previous page"
-					class="pagination-image"
-					class:disabled-img={topicsCurrentPage === 0}
-					on:click={() => {
-						deselectAllTopicsCheckboxes();
-						if (topicsCurrentPage > 0) {
-							topicsCurrentPage--;
-							reloadAllTopics(topicsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pageforwardSVG}
-					alt="next page"
-					class="pagination-image"
-					class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
-						$topics?.length === undefined}
-					on:click={() => {
-						deselectAllTopicsCheckboxes();
-						if (topicsCurrentPage + 1 < topicsTotalPages) {
-							topicsCurrentPage++;
-							reloadAllTopics(topicsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pagelastSVG}
-					alt="last page"
-					class="pagination-image"
-					class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
-						$topics?.length === undefined}
-					on:click={() => {
-						deselectAllTopicsCheckboxes();
-						if (topicsCurrentPage < topicsTotalPages) {
-							topicsCurrentPage = topicsTotalPages - 1;
-							reloadAllTopics(topicsCurrentPage);
-						}
-					}}
-				/>
-			</div>
-		{/if}
+					/>
+					<img
+						src={pagelastSVG}
+						alt="last page"
+						class="pagination-image"
+						class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+							$topics?.length === undefined}
+						on:click={() => {
+							deselectAllTopicsCheckboxes();
+							if (topicsCurrentPage < topicsTotalPages) {
+								topicsCurrentPage = topicsTotalPages - 1;
+								reloadAllTopics(topicsCurrentPage);
+							}
+						}}
+					/>
+				</div>
+				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+			{/if}
+		{/await}
 	{/if}
 {/key}
 
 <style>
 	table.main {
-		min-width: 33rem;
+		min-width: 34rem;
+		line-height: 1rem;
 	}
 
 	.dot {
@@ -684,5 +697,11 @@
 
 	.content {
 		width: fit-content;
+		min-width: 32rem;
+		margin-right: 1rem;
+	}
+
+	p {
+		font-size: large;
 	}
 </style>

@@ -1,11 +1,14 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
+	import { onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import urlparameters from '../stores/urlparameters';
 	import wavesSVG from '../icons/waves.svg';
 	import googleSVG from '../icons/google.svg';
+	import loginCompleted from '../stores/loginCompleted';
+	import renderAvatar from '../stores/renderAvatar';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 
@@ -13,6 +16,9 @@
 
 	headerTitle.set('Home');
 	detailView.set();
+	setTimeout(() => renderAvatar.set(true), 40);
+
+	onDestroy(() => renderAvatar.set(false));
 </script>
 
 <svelte:head>
@@ -43,8 +49,9 @@
 			Applications can use credentials to authenticate and download documents for DDS Security. See
 			the README for more details.
 		</p>
+		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 	</div>
-{:else}
+{:else if $isAuthenticated === false && $loginCompleted !== null}
 	<center>
 		<h1>DDS Permissions Manager</h1>
 	</center>

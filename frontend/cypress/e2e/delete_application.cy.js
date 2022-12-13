@@ -12,20 +12,15 @@ describe('title should say DDS Permissions Manager', () => {
         it('should delete the first application', () => {
         cy.visit('/applications');
 
-        cy.wait(500);
-
-        cy.get(':nth-child(2) > [style="cursor: pointer; line-height: 2.2rem;"]')
-        .then(($name) => {
+        cy.get('table.main-table > tbody > tr:nth-child(1) > td:nth-child(2)').then(($name) => {
 
             const name = $name.text()
 
-            cy.get(':nth-child(2) > [style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem;"] > img')
+            cy.get('table.main-table > tbody > tr:nth-child(1) > td:nth-child(5) > img')
             .click();
 
             cy.get('[data-cy="delete-application"]')
             .click();
-
-            cy.wait(500);
 
             cy.get('td').should('not.eq', name);
         

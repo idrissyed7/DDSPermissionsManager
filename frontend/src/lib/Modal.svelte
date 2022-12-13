@@ -46,7 +46,9 @@
 	export let groupCurrentName = '';
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
+	export let reminderDescription = '';
 	export let errorMsg = false;
+	export let reminderMsg = false;
 	export let closeModalText = 'Cancel';
 
 	const dispatch = createEventDispatcher();
@@ -154,7 +156,6 @@
 	const searchGroup = async (searchGroupStr) => {
 		let res;
 		if ($isAdmin) {
-			console.log('isAdmin', searchGroupResults);
 			res = await httpAdapter.get(
 				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
 			);
@@ -312,8 +313,7 @@
 			return;
 		}
 
-		if (!invalidEmail || searchGroups?.length >= minNameLength)
-			dispatch('addGroupMembership', newGroupMembership);
+		if (!invalidEmail || validateNameLength()) dispatch('addGroupMembership', newGroupMembership);
 	};
 
 	const actionAddSuperUserEvent = () => {
@@ -462,6 +462,10 @@
 			<p>{errorDescription}</p>
 		{/if}
 
+		{#if reminderMsg}
+			<p>{reminderDescription}</p>
+		{/if}
+
 		{#if email}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
@@ -474,6 +478,7 @@
 				bind:value={emailValue}
 				on:blur={() => {
 					emailValue = emailValue.trim();
+					if (emailValue?.length > 0) validateEmail(emailValue);
 				}}
 				on:click={() => {
 					invalidEmail = false;
@@ -735,6 +740,9 @@
 					}}
 					on:click={async () => {
 						searchGroupResults = [];
+						groupResultPage = 0;
+						hasMoreGroups = true;
+
 						searchGroupActive = true;
 						selectedGroup = '';
 						errorMessageApplication = '';
@@ -762,7 +770,8 @@
 			{#if searchGroupsResultsVisible && errorMessageGroup?.length === 0 && errorMessageApplication?.length === 0}
 				<table
 					class="search-group"
-					style="position: absolute; z-index: 100; display: block; overflow-y: scroll; max-height: 13.3rem"
+					class:hidden={searchGroupResults?.length === 0}
+					style="position: absolute; z-index: 100; display: block; overflow-y: auto; max-height: 13.3rem"
 					on:mouseenter={() => {
 						searchGroupsResultsMouseEnter = true;
 					}}
@@ -847,6 +856,9 @@
 					}}
 					on:click={async () => {
 						searchApplicationResults = [];
+						applicationResultPage = 0;
+						hasMoreApps = true;
+
 						searchApplicationActive = true;
 						errorMessageApplication = '';
 						stopSearchingApps = false;
@@ -874,7 +886,8 @@
 		{#if searchApplicationsResultsVisible}
 			<table
 				class="search-application"
-				style="position: absolute; display: block; overflow-y: scroll; max-height: 13.3rem"
+				class:hidden={searchApplicationResults?.length === 0}
+				style="position: absolute; display: block; overflow-y: auto; max-height: 13.3rem"
 				on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
 				on:mouseleave={() => {
 					setTimeout(() => {
@@ -1274,6 +1287,20 @@
 					dispatch('deleteGroups');
 				}
 			}}>{title}</button
+		>
+	{/if}
+
+	{#if reminderMsg}
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('extendSession')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('extendSession');
+				}
+			}}>Yes</button
 		>
 	{/if}
 

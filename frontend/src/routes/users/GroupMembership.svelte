@@ -18,6 +18,9 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 
+	// Promises
+	let promise;
+
 	// Constants
 	const returnKey = 13;
 	const waitTime = 1000;
@@ -87,7 +90,7 @@
 	}
 
 	// Search Group Membership Feature
-	$: if (searchString?.trim().length >= searchStringLength) {
+	$: if (searchString?.trim().length >= searchStringLength && $urlparameters === null) {
 		searchGroupActive = false;
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -142,14 +145,13 @@
 	};
 
 	onMount(async () => {
-		refreshPage.set();
-
-		await reloadGroupMemberships();
-
 		if ($urlparameters?.type === 'prepopulate') {
 			searchString = $urlparameters.data;
-			urlparameters.set([]);
 		}
+
+		refreshPage.set();
+
+		promise = reloadGroupMemberships();
 	});
 
 	const reloadGroupMemberships = async (page = 0) => {
@@ -175,6 +177,8 @@
 			}
 			groupMembershipsCurrentPage = page;
 		} catch (err) {
+			userValidityCheck.set(true);
+
 			if (err.response.status === 500) onLoggedIn(false);
 			errorMessage('Error Loading Group Memberships', err.message);
 		}
@@ -340,411 +344,432 @@
 
 {#key $refreshPage}
 	{#if $isAuthenticated}
-		{#if addGroupMembershipVisible}
-			<Modal
-				title="Add User"
-				actionAddUser={true}
-				email={true}
-				group={true}
-				adminRoles={true}
-				on:cancel={() => (addGroupMembershipVisible = false)}
-				on:addGroupMembership={async (e) => {
-					addGroupMembershipVisible = false;
-					await addGroupMembership(
-						e.detail.selectedGroup,
-						e.detail.selectedIsGroupAdmin,
-						e.detail.selectedIsTopicAdmin,
-						e.detail.selectedIsApplicationAdmin,
-						e.detail.searchGroups,
-						e.detail.emailValue
-					);
-					await reloadGroupMemberships(groupMembershipsCurrentPage);
-				}}
-			/>
-		{/if}
-
-		{#if updateGroupMembershipVisible}
-			<Modal
-				title="Change User"
-				actionEditUser={true}
-				email={true}
-				emailValue={selectedGroupMembership.userEmail}
-				group={true}
-				searchGroups={selectedGroupMembership.groupName}
-				adminRoles={true}
-				noneditable={true}
-				{selectedGroupMembership}
-				on:cancel={() => (updateGroupMembershipVisible = false)}
-				on:reloadGroupMemberships={() => reloadGroupMemberships(groupMembershipsCurrentPage)}
-				on:updateGroupMembership={(e) => updateGroupMembership(e.detail)}
-			/>
-		{/if}
-
-		{#if deleteSelectedGroupMembershipsVisible}
-			<Modal
-				title="Delete {usersRowsSelected.length > 1 ? 'Users' : 'User'}"
-				actionDeleteUsers={true}
-				on:cancel={() => {
-					if (usersRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
-						usersRowsSelected = [];
-
-					deleteSelectedGroupMembershipsVisible = false;
-				}}
-				on:deleteGroupMemberships={async () => {
-					await deleteSelectedGroupMemberships();
-					reloadGroupMemberships();
-					deselectAllGroupMembershipCheckboxes();
-					deleteSelectedGroupMembershipsVisible = false;
-				}}
-			/>
-		{/if}
-
-		<div class="content">
-			<form class="searchbox">
-				<input
-					data-cy="search-users-table"
-					class="searchbox"
-					type="search"
-					placeholder="Search"
-					bind:value={searchString}
-					on:blur={() => {
-						searchString = searchString?.trim();
+		{#await promise then _}
+			{#if addGroupMembershipVisible}
+				<Modal
+					title="Add User"
+					actionAddUser={true}
+					email={true}
+					group={true}
+					adminRoles={true}
+					on:cancel={() => (addGroupMembershipVisible = false)}
+					on:addGroupMembership={async (e) => {
+						addGroupMembershipVisible = false;
+						await addGroupMembership(
+							e.detail.selectedGroup,
+							e.detail.selectedIsGroupAdmin,
+							e.detail.selectedIsTopicAdmin,
+							e.detail.selectedIsApplicationAdmin,
+							e.detail.searchGroups,
+							e.detail.emailValue
+						);
+						await reloadGroupMemberships(groupMembershipsCurrentPage);
 					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							document.activeElement.blur();
+				/>
+			{/if}
+
+			{#if updateGroupMembershipVisible}
+				<Modal
+					title="Change User"
+					actionEditUser={true}
+					email={true}
+					emailValue={selectedGroupMembership.userEmail}
+					group={true}
+					searchGroups={selectedGroupMembership.groupName}
+					adminRoles={true}
+					noneditable={true}
+					{selectedGroupMembership}
+					on:cancel={() => (updateGroupMembershipVisible = false)}
+					on:reloadGroupMemberships={() => reloadGroupMemberships(groupMembershipsCurrentPage)}
+					on:updateGroupMembership={(e) => updateGroupMembership(e.detail)}
+				/>
+			{/if}
+
+			{#if deleteSelectedGroupMembershipsVisible}
+				<Modal
+					title="Delete {usersRowsSelected.length > 1 ? 'Users' : 'User'}"
+					actionDeleteUsers={true}
+					on:cancel={() => {
+						if (usersRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+							usersRowsSelected = [];
+
+						deleteSelectedGroupMembershipsVisible = false;
+					}}
+					on:deleteGroupMemberships={async () => {
+						await deleteSelectedGroupMemberships();
+
+						reloadGroupMemberships();
+						deselectAllGroupMembershipCheckboxes();
+						deleteSelectedGroupMembershipsVisible = false;
+					}}
+				/>
+			{/if}
+
+			<div class="content">
+				<form class="searchbox">
+					<input
+						data-cy="search-users-table"
+						class="searchbox"
+						type="search"
+						placeholder="Search"
+						bind:value={searchString}
+						on:blur={() => {
 							searchString = searchString?.trim();
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								document.activeElement.blur();
+								searchString = searchString?.trim();
+							}
+						}}
+					/>
+				</form>
+
+				{#if $isAdmin || isGroupAdmin}
+					<div
+						data-cy="dot-users"
+						class="dot"
+						tabindex="0"
+						on:mouseleave={() => {
+							setTimeout(() => {
+								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
+							}, waitTime);
+						}}
+						on:focusout={() => {
+							setTimeout(() => {
+								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
+							}, waitTime);
+						}}
+						on:click={() => {
+							if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
+								usersDropDownVisible = !usersDropDownVisible;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
+									usersDropDownVisible = !usersDropDownVisible;
+							}
+						}}
+					>
+						<img src={threedotsSVG} alt="options" style="scale:50%" />
+
+						{#if usersDropDownVisible}
+							<table
+								class="dropdown"
+								on:mouseenter={() => {
+									usersDropDownMouseEnter = true;
+								}}
+								on:mouseleave={() => {
+									setTimeout(() => {
+										if (!usersDropDownMouseEnter) usersDropDownVisible = false;
+									}, waitTime);
+									usersDropDownMouseEnter = false;
+								}}
+							>
+								<tr
+									data-cy="delete-user"
+									tabindex="0"
+									class:disabled={usersRowsSelected.length === 0}
+									on:click={() => {
+										usersDropDownVisible = false;
+										if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
+									}}
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											usersDropDownVisible = false;
+											if (usersRowsSelected.length > 0)
+												deleteSelectedGroupMembershipsVisible = true;
+										}
+									}}
+									on:focus={() => (usersDropDownMouseEnter = true)}
+								>
+									<td>
+										Delete Selected {usersRowsSelected.length > 1 ? 'Users' : 'User'}
+									</td>
+
+									<td>
+										<img
+											src={deleteSVG}
+											alt="delete user"
+											height="35rem"
+											style="vertical-align: -0.8rem"
+											class:disabled-img={usersRowsSelected.length === 0}
+										/>
+									</td>
+								</tr>
+
+								<tr
+									data-cy="add-user"
+									tabindex="0"
+									on:click={() => {
+										usersDropDownVisible = false;
+										addGroupMembershipVisible = true;
+									}}
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											usersDropDownVisible = false;
+											addGroupMembershipVisible = true;
+										}
+									}}
+									on:focusout={() => (usersDropDownMouseEnter = false)}
+								>
+									<td style="border-bottom-color: transparent"> Add New User </td>
+									<td
+										style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
+									>
+										<img
+											src={addSVG}
+											alt="add user"
+											height="27rem"
+											style="vertical-align: middle; margin-left: 1.2rem"
+										/>
+									</td>
+								</tr>
+							</table>
+						{/if}
+					</div>
+				{/if}
+
+				{#if $groupMembershipList && $groupMembershipList.length > 0}
+					<table
+						data-cy="users-table"
+						style="margin-top:0.5rem; min-width: 50rem; width:max-content"
+					>
+						<thead>
+							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+								{#if $isAdmin || isGroupAdmin}
+									<td>
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="group-membership-checkbox"
+											style="margin-right: 0.5rem"
+											bind:indeterminate={usersRowsSelectedTrue}
+											on:click={(e) => {
+												usersDropDownVisible = false;
+												if (e.target.checked) {
+													usersRowsSelected = $groupMembershipList;
+													usersRowsSelectedTrue = false;
+													usersAllRowsSelectedTrue = true;
+												} else {
+													usersAllRowsSelectedTrue = false;
+													usersRowsSelectedTrue = false;
+													usersRowsSelected = [];
+												}
+											}}
+											checked={usersAllRowsSelectedTrue}
+										/>
+									</td>
+								{/if}
+								<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
+								<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
+								<td style="font-stretch:ultra-condensed; width:6rem"
+									><center>Group Admin</center></td
+								>
+								<td style="font-stretch:ultra-condensed; width:7rem"
+									><center>Topic Admin</center></td
+								>
+								<td style="font-stretch:ultra-condensed; width:8rem"
+									><center>Application Admin</center></td
+								>
+								<td /><td />
+							</tr>
+						</thead>
+						<tbody>
+							{#each $groupMembershipList as groupMembership, i}
+								<tr>
+									{#if $isAdmin || isGroupAdmin}
+										<td style="width: 2rem">
+											<input
+												tabindex="-1"
+												type="checkbox"
+												style="margin-right: 0.5rem"
+												class="group-membership-checkbox"
+												checked={usersAllRowsSelectedTrue}
+												on:change={(e) => {
+													usersDropDownVisible = false;
+													if (e.target.checked === true) {
+														usersRowsSelected.push(groupMembership);
+														usersRowsSelectedTrue = true;
+													} else {
+														usersRowsSelected = usersRowsSelected.filter(
+															(selection) => selection !== groupMembership
+														);
+														if (usersRowsSelected.length === 0) {
+															usersRowsSelectedTrue = false;
+														}
+													}
+												}}
+											/>
+										</td>
+									{/if}
+									<td>{groupMembership.userEmail}</td>
+									<td style="width:fit-content">{groupMembership.groupName}</td>
+									<td>
+										<center>
+											{#if groupMembership.groupAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+									<td>
+										<center
+											>{#if groupMembership.topicAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+									<td>
+										<center
+											>{#if groupMembership.applicationAdmin}&check;
+											{:else}
+												-
+											{/if}
+										</center>
+									</td>
+
+									{#if $isAdmin || $groupAdminGroups?.some((group) => group.groupName === groupMembership.groupName)}
+										<td
+											style="cursor: pointer; text-align: right"
+											on:keydown={(event) => {
+												if (event.which === returnKey) {
+													updateGroupMembershipSelection(groupMembership);
+												}
+											}}
+										>
+											<img
+												src={editSVG}
+												height="17rem"
+												width="17rem"
+												style="vertical-align: -0.225rem"
+												alt="edit user"
+												on:click={() => updateGroupMembershipSelection(groupMembership)}
+											/>
+										</td>
+										<td
+											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
+										>
+											<img
+												src={deleteSVG}
+												height="27px"
+												width="27px"
+												style="vertical-align: -0.5rem"
+												alt="delete user"
+												on:click={() => {
+													if (!usersRowsSelected.some((gm) => gm === groupMembership))
+														usersRowsSelected.push(groupMembership);
+													deleteSelectedGroupMembershipsVisible = true;
+												}}
+											/>
+										</td>
+									{:else}
+										<td /><td />
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				{:else}
+					<p>No group memberships</p>
+				{/if}
+
+				<br />
+			</div>
+			<div class="pagination">
+				<span>Rows per page</span>
+				<select
+					tabindex="-1"
+					on:change={(e) => {
+						groupMembershipsPerPage = e.target.value;
+
+						reloadGroupMemberships();
+					}}
+					name="RowsPerPage"
+				>
+					<option value="10">10</option>
+					<option value="25">25</option>
+					<option value="50">50</option>
+					<option value="75">75</option>
+					<option value="100">100&nbsp;</option>
+				</select>
+				<span style="margin: 0 2rem 0 2rem">
+					{#if groupMembershipsTotalSize > 0}
+						{1 + groupMembershipsCurrentPage * groupMembershipsPerPage}
+					{:else}
+						0
+					{/if}
+					- {Math.min(
+						groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
+						groupMembershipsTotalSize
+					)} of {groupMembershipsTotalSize}
+				</span>
+				<img
+					src={pagefirstSVG}
+					alt="first page"
+					class="pagination-image"
+					class:disabled-img={groupMembershipsCurrentPage === 0}
+					on:click={() => {
+						deselectAllGroupMembershipCheckboxes();
+						if (groupMembershipsCurrentPage > 0) {
+							groupMembershipsCurrentPage = 0;
+
+							reloadGroupMemberships();
 						}
 					}}
 				/>
-			</form>
-
-			{#if $isAdmin || isGroupAdmin}
-				<div
-					data-cy="dot-users"
-					class="dot"
-					tabindex="0"
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-						}, waitTime);
-					}}
-					on:focusout={() => {
-						setTimeout(() => {
-							if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-						}, waitTime);
-					}}
+				<img
+					src={pagebackwardsSVG}
+					alt="previous page"
+					class="pagination-image"
+					class:disabled-img={groupMembershipsCurrentPage === 0}
 					on:click={() => {
-						if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
-							usersDropDownVisible = !usersDropDownVisible;
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
-								usersDropDownVisible = !usersDropDownVisible;
+						deselectAllGroupMembershipCheckboxes();
+						if (groupMembershipsCurrentPage > 0) {
+							groupMembershipsCurrentPage--;
+							reloadGroupMemberships(groupMembershipsCurrentPage);
 						}
 					}}
-				>
-					<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-					{#if usersDropDownVisible}
-						<table
-							class="dropdown"
-							on:mouseenter={() => {
-								usersDropDownMouseEnter = true;
-							}}
-							on:mouseleave={() => {
-								setTimeout(() => {
-									if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-								}, waitTime);
-								usersDropDownMouseEnter = false;
-							}}
-						>
-							<tr
-								data-cy="delete-user"
-								tabindex="0"
-								class:disabled={usersRowsSelected.length === 0}
-								on:click={() => {
-									usersDropDownVisible = false;
-									if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
-								}}
-								on:keydown={(event) => {
-									if (event.which === returnKey) {
-										usersDropDownVisible = false;
-										if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
-									}
-								}}
-								on:focus={() => (usersDropDownMouseEnter = true)}
-							>
-								<td>
-									Delete Selected {usersRowsSelected.length > 1 ? 'Users' : 'User'}
-								</td>
-
-								<td>
-									<img
-										src={deleteSVG}
-										alt="delete user"
-										height="35rem"
-										style="vertical-align: -0.8rem"
-										class:disabled-img={usersRowsSelected.length === 0}
-									/>
-								</td>
-							</tr>
-
-							<tr
-								data-cy="add-user"
-								tabindex="0"
-								on:click={() => {
-									usersDropDownVisible = false;
-									addGroupMembershipVisible = true;
-								}}
-								on:keydown={(event) => {
-									if (event.which === returnKey) {
-										usersDropDownVisible = false;
-										addGroupMembershipVisible = true;
-									}
-								}}
-								on:focusout={() => (usersDropDownMouseEnter = false)}
-							>
-								<td style="border-bottom-color: transparent"> Add New User </td>
-								<td
-									style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-								>
-									<img
-										src={addSVG}
-										alt="add user"
-										height="27rem"
-										style="vertical-align: middle; margin-left: 1.2rem"
-									/>
-								</td>
-							</tr>
-						</table>
-					{/if}
-				</div>
-			{/if}
-
-			{#if $groupMembershipList && $groupMembershipList.length > 0}
-				<table data-cy="users-table" style="margin-top:0.5rem; min-width: 50rem; width:max-content">
-					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						{#if $isAdmin || isGroupAdmin}
-							<td>
-								<input
-									tabindex="-1"
-									type="checkbox"
-									class="group-membership-checkbox"
-									style="margin-right: 0.5rem"
-									bind:indeterminate={usersRowsSelectedTrue}
-									on:click={(e) => {
-										usersDropDownVisible = false;
-										if (e.target.checked) {
-											usersRowsSelected = $groupMembershipList;
-											usersRowsSelectedTrue = false;
-											usersAllRowsSelectedTrue = true;
-										} else {
-											usersAllRowsSelectedTrue = false;
-											usersRowsSelectedTrue = false;
-											usersRowsSelected = [];
-										}
-									}}
-									checked={usersAllRowsSelectedTrue}
-								/>
-							</td>
-						{/if}
-						<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
-						<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
-						<td style="font-stretch:ultra-condensed; width:6rem"><center>Group Admin</center></td>
-						<td style="font-stretch:ultra-condensed; width:7rem"><center>Topic Admin</center></td>
-						<td style="font-stretch:ultra-condensed; width:8rem"
-							><center>Application Admin</center></td
-						>
-						<td /><td />
-					</tr>
-					{#each $groupMembershipList as groupMembership, i}
-						<tr>
-							{#if $isAdmin || isGroupAdmin}
-								<td style="width: 2rem">
-									<input
-										tabindex="-1"
-										type="checkbox"
-										style="margin-right: 0.5rem"
-										class="group-membership-checkbox"
-										checked={usersAllRowsSelectedTrue}
-										on:change={(e) => {
-											usersDropDownVisible = false;
-											if (e.target.checked === true) {
-												usersRowsSelected.push(groupMembership);
-												usersRowsSelectedTrue = true;
-											} else {
-												usersRowsSelected = usersRowsSelected.filter(
-													(selection) => selection !== groupMembership
-												);
-												if (usersRowsSelected.length === 0) {
-													usersRowsSelectedTrue = false;
-												}
-											}
-										}}
-									/>
-								</td>
-							{/if}
-							<td>{groupMembership.userEmail}</td>
-							<td style="width:fit-content">{groupMembership.groupName}</td>
-							<td>
-								<center>
-									{#if groupMembership.groupAdmin}&check;
-									{:else}
-										-
-									{/if}
-								</center>
-							</td>
-							<td>
-								<center
-									>{#if groupMembership.topicAdmin}&check;
-									{:else}
-										-
-									{/if}
-								</center>
-							</td>
-							<td>
-								<center
-									>{#if groupMembership.applicationAdmin}&check;
-									{:else}
-										-
-									{/if}
-								</center>
-							</td>
-
-							{#if $isAdmin || $groupAdminGroups?.some((group) => group.groupName === groupMembership.groupName)}
-								<td
-									style="cursor: pointer; text-align: right"
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											updateGroupMembershipSelection(groupMembership);
-										}
-									}}
-								>
-									<img
-										src={editSVG}
-										height="17rem"
-										width="17rem"
-										style="vertical-align: -0.225rem"
-										alt="edit user"
-										on:click={() => updateGroupMembershipSelection(groupMembership)}
-									/>
-								</td>
-								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem">
-									<img
-										src={deleteSVG}
-										height="27px"
-										width="27px"
-										style="vertical-align: -0.5rem"
-										alt="delete user"
-										on:click={() => {
-											if (!usersRowsSelected.some((gm) => gm === groupMembership))
-												usersRowsSelected.push(groupMembership);
-											deleteSelectedGroupMembershipsVisible = true;
-										}}
-									/>
-								</td>
-							{:else}
-								<td /><td />
-							{/if}
-						</tr>
-					{/each}
-				</table>
-			{:else}
-				<p>No group memberships</p>
-			{/if}
-
-			<br />
-		</div>
-		<div class="pagination">
-			<span>Rows per page</span>
-			<select
-				tabindex="-1"
-				on:change={(e) => {
-					groupMembershipsPerPage = e.target.value;
-					reloadGroupMemberships();
-				}}
-				name="RowsPerPage"
-			>
-				<option value="10">10</option>
-				<option value="25">25</option>
-				<option value="50">50</option>
-				<option value="75">75</option>
-				<option value="100">100&nbsp;</option>
-			</select>
-			<span style="margin: 0 2rem 0 2rem">
-				{#if groupMembershipsTotalSize > 0}
-					{1 + groupMembershipsCurrentPage * groupMembershipsPerPage}
-				{:else}
-					0
-				{/if}
-				- {Math.min(
-					groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
-					groupMembershipsTotalSize
-				)} of {groupMembershipsTotalSize}
-			</span>
-			<img
-				src={pagefirstSVG}
-				alt="first page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage === 0}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage > 0) {
-						groupMembershipsCurrentPage = 0;
-						reloadGroupMemberships();
-					}
-				}}
-			/>
-			<img
-				src={pagebackwardsSVG}
-				alt="previous page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage === 0}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage > 0) {
-						groupMembershipsCurrentPage--;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pageforwardSVG}
-				alt="next page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
-					$groupMembershipList?.length === undefined}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages) {
-						groupMembershipsCurrentPage++;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pagelastSVG}
-				alt="last page"
-				class="pagination-image"
-				class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
-					$groupMembershipList?.length === undefined}
-				on:click={() => {
-					deselectAllGroupMembershipCheckboxes();
-					if (groupMembershipsCurrentPage < groupMembershipsTotalPages) {
-						groupMembershipsCurrentPage = groupMembershipsTotalPages - 1;
-						reloadGroupMemberships(groupMembershipsCurrentPage);
-					}
-				}}
-			/>
-		</div>
+				/>
+				<img
+					src={pageforwardSVG}
+					alt="next page"
+					class="pagination-image"
+					class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+						$groupMembershipList?.length === undefined}
+					on:click={() => {
+						deselectAllGroupMembershipCheckboxes();
+						if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages) {
+							groupMembershipsCurrentPage++;
+							reloadGroupMemberships(groupMembershipsCurrentPage);
+						}
+					}}
+				/>
+				<img
+					src={pagelastSVG}
+					alt="last page"
+					class="pagination-image"
+					class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+						$groupMembershipList?.length === undefined}
+					on:click={() => {
+						deselectAllGroupMembershipCheckboxes();
+						if (groupMembershipsCurrentPage < groupMembershipsTotalPages) {
+							groupMembershipsCurrentPage = groupMembershipsTotalPages - 1;
+							reloadGroupMemberships(groupMembershipsCurrentPage);
+						}
+					}}
+				/>
+			</div>
+		{/await}
 	{/if}
 {/key}
 
 <style>
 	.content {
 		width: fit-content;
+		min-width: 32rem;
+		margin-right: 1rem;
 	}
 
 	.dropdown {
@@ -767,5 +792,9 @@
 
 	tr {
 		line-height: 2.2rem;
+	}
+
+	p {
+		font-size: large;
 	}
 </style>
