@@ -109,6 +109,9 @@
 	// Validation
 	let previousAppName;
 
+	// Application Detail
+	let applicationDetailId, ApplicationDetailGroupId;
+
 	// Return to List view
 	$: if ($detailView === 'backToList') {
 		headerTitle.set('Applications');
@@ -379,6 +382,11 @@
 		let checkboxes = document.querySelectorAll('.apps-checkbox');
 		checkboxes = Array.from(checkboxes);
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
+
+	const deleteTopicApplicationAssociation = async (permissionId) => {
+		await httpAdapter.delete(`/application_permissions/${permissionId}`);
+		await loadApplicationDetail(applicationDetailId, ApplicationDetailGroupId);
 	};
 
 	const decodeError = (errorObject) => {
@@ -652,6 +660,9 @@
 										<td
 											style="cursor: pointer; line-height: 2.2rem"
 											on:click={() => {
+												applicationDetailId = app.id;
+												ApplicationDetailGroupId = app.group;
+
 												loadApplicationDetail(app.id, app.group);
 												headerTitle.set(app.name);
 												detailView.set(true);
@@ -728,6 +739,9 @@
 									<td>Group</td>
 									<td>Topic</td>
 									<td>Access</td>
+									{#if isApplicationAdmin || $isAdmin}
+										<td />
+									{/if}
 								</tr>
 							</thead>
 							{#if $applicationPermission}
@@ -745,6 +759,20 @@
 													? 'READ & WRITE'
 													: appPermission.accessType}
 											</td>
+											{#if isApplicationAdmin || $isAdmin}
+												<td>
+													<img
+														src={deleteSVG}
+														alt="delete topic"
+														height="27px"
+														width="27px"
+														style="vertical-align: -0.4rem; float: right; cursor: pointer"
+														on:click={() => {
+															deleteTopicApplicationAssociation(appPermission.id);
+														}}
+													/>
+												</td>
+											{/if}
 										</tr>
 									</tbody>
 								{/each}
