@@ -8,10 +8,6 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-    // afterEach(() => {
-    //     cy.visit('http://localhost:8080/api/logout')
-    // });
-
     it('should filter Users correctly', () => {
         cy.visit('/users');
         cy.get('[data-cy="search-users-table"]').type('unity');

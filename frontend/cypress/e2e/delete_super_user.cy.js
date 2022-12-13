@@ -12,8 +12,6 @@ describe('title should say DDS Permissions Manager', () => {
         it('should delete the second super user', () => {
         cy.visit('/users');
 
-        cy.wait(500);
-
         cy.get(':nth-child(3) > [style="margin-left: 0.3rem;"]').then(($name) => {
 
             const name = $name.text()
@@ -23,8 +21,6 @@ describe('title should say DDS Permissions Manager', () => {
 
             cy.get('[data-cy="delete-super-user"]')
             .click();
-
-            cy.wait(500);
 
             cy.get('td').should('not.eq', name);
         

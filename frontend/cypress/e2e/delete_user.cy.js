@@ -8,11 +8,8 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-   
         it('should delete the first user', () => {
         cy.visit('/users');
-
-        cy.wait(500);
 
         cy.get('[data-cy="users-table"] > :nth-child(2) > :nth-child(2)').then(($name) => {
 
@@ -23,8 +20,6 @@ describe('title should say DDS Permissions Manager', () => {
 
             cy.get('[data-cy="delete-user"]')
             .click();
-
-            cy.wait(500);
 
             cy.get('td').should('not.eq', name);
         

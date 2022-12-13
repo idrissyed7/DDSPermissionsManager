@@ -405,6 +405,7 @@
 				{#if $groups}
 					{#if $groups.length > 0}
 						<table
+							class="main"
 							data-cy="groups-table"
 							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
 						>
