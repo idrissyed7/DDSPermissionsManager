@@ -2,21 +2,18 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
-	import { inview } from 'svelte-inview';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
+	import addSVG from '../../icons/add.svg';
 	import errorMessages from '$lib/errorMessages.json';
 
-	export let selectedTopicName,
-		selectedTopicId,
-		selectedTopicKind,
-		selectedTopicGroupName,
-		selectedTopicGroupId;
+	export let selectedTopicId;
 
+	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
@@ -30,51 +27,15 @@
 	let errorMessageVisible = false;
 
 	// Constants
-	const applicationsResult = 7;
 	const waitTime = 1000;
 	const returnKey = 13;
-	const searchStringLength = 3;
-	const applicationsDropdownSuggestion = 7;
 
 	// Error Handling
 	let errorMsg, errorObject;
 	let errorMessageApplication = '';
 
-	// Search Applications
-	let searchApplications, searchApplicationsId;
-	let searchApplicationActive = true;
-	let searchApplicationResults;
-	let searchApplicationsResultsVisible = false;
-	let applicationResultPage = 0;
-	let hasMoreApps = true;
-	let stopSearchingApps = false;
-	let searchApplicationsResultsMouseEnter = false;
-	let timer;
-
-	// Search Applications Feature
-	$: if (
-		searchApplications?.trim().length >= searchStringLength &&
-		searchApplicationActive &&
-		!stopSearchingApps
-	) {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			searchApplications = searchApplications.trim();
-			searchApplication(searchApplications);
-			stopSearchingApps = true;
-		}, waitTime);
-	}
-
-	// Search Applications Dropdown Visibility
-	$: if (
-		searchApplicationResults?.length >= 1 &&
-		searchApplicationActive &&
-		searchApplications?.trim().length >= searchStringLength
-	) {
-		searchApplicationsResultsVisible = true;
-	} else {
-		searchApplicationsResultsVisible = false;
-	}
+	// Bind Token
+	let bindToken;
 
 	onMount(async () => {
 		try {
@@ -108,71 +69,71 @@
 		errorMessageVisible = false;
 	};
 
-	const searchApplication = async (searchString) => {
-		let res = await httpAdapter.get(
-			`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
-		);
+	// const searchApplication = async (searchString) => {
+	// 	let res = await httpAdapter.get(
+	// 		`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
+	// 	);
 
-		if (res.data.length < applicationsDropdownSuggestion) {
-			hasMoreApps = false;
-		}
-		const applicationPermissions = await httpAdapter.get(
-			`/application_permissions/?topic=${selectedTopicId}`
-		);
+	// 	if (res.data.length < applicationsDropdownSuggestion) {
+	// 		hasMoreApps = false;
+	// 	}
+	// 	const applicationPermissions = await httpAdapter.get(
+	// 		`/application_permissions/?topic=${selectedTopicId}`
+	// 	);
 
-		if (res.data?.length > 0) {
-			if (selectedTopicApplications?.length > 0)
-				for (const selectedApp of selectedTopicApplications) {
-					res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
-				}
+	// 	if (res.data?.length > 0) {
+	// 		if (selectedTopicApplications?.length > 0)
+	// 			for (const selectedApp of selectedTopicApplications) {
+	// 				res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
+	// 			}
 
-			searchApplicationResults = [...searchApplicationResults, ...res.data];
-		}
+	// 		searchApplicationResults = [...searchApplicationResults, ...res.data];
+	// 	}
 
-		searchApplicationResults.forEach((app) => {
-			applicationPermissions.data.content?.forEach((appPermission) => {
-				if (app.name === appPermission.applicationName) {
-					searchApplicationResults.data = searchApplicationResults.filter(
-						(result) => result.name !== appPermission.applicationName
-					);
-				}
-			});
-		});
-	};
+	// 	searchApplicationResults.forEach((app) => {
+	// 		applicationPermissions.data.content?.forEach((appPermission) => {
+	// 			if (app.name === appPermission.applicationName) {
+	// 				searchApplicationResults.data = searchApplicationResults.filter(
+	// 					(result) => result.name !== appPermission.applicationName
+	// 				);
+	// 			}
+	// 		});
+	// 	});
+	// };
 
-	const validateApplicationName = async () => {
-		// if there is data in the applications input field, we verify it's validity
-		if (searchApplications?.length > 0) {
-			const res = await httpAdapter.get(
-				`/applications/search?page=0&size=1&filter=${searchApplications}`
-			);
+	// const validateApplicationName = async () => {
+	// 	// if there is data in the applications input field, we verify it's validity
+	// 	if (searchApplications?.length > 0) {
+	// 		const res = await httpAdapter.get(
+	// 			`/applications/search?page=0&size=1&filter=${searchApplications}`
+	// 		);
 
-			if (
-				res.data.length > 0 &&
-				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
-			) {
-				selectedApplicationList = {
-					id: res.data[0].id,
-					accessType: 'READ'
-				};
+	// 		if (
+	// 			res.data.length > 0 &&
+	// 			res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
+	// 		) {
+	// 			selectedApplicationList = {
+	// 				id: res.data[0].id,
+	// 				accessType: 'READ'
+	// 			};
 
-				searchApplications = '';
-				await addTopicApplicationAssociation(selectedTopicId, true);
+	// 			searchApplications = '';
+	// 			await addTopicApplicationAssociation(selectedTopicId, true);
 
-				selectedApplicationList = '';
-				searchApplicationResults = [];
+	// 			selectedApplicationList = '';
+	// 			searchApplicationResults = [];
 
-				return true;
-			} else {
-				searchApplicationActive = false;
-				errorMessageApplication = errorMessages['application']['not_found'];
+	// 			return true;
+	// 		} else {
+	// 			searchApplicationActive = false;
+	// 			errorMessageApplication = errorMessages['application']['not_found'];
 
-				return false;
-			}
-		} else {
-			return true;
-		}
-	};
+	// 			return false;
+	// 		}
+	// 	} else {
+	// 		return true;
+	// 	}
+	// };
 
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
@@ -180,16 +141,19 @@
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
+		const header = {};
 		if (selectedApplicationList && !reload) {
 			await httpAdapter.post(
-				`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
+				`/application_permissions/${topicId}/${selectedApplicationList.accessType}`,
+				{},
+				{
+					headers: { APPLICATION_BIND_TOKEN: bindToken }
+				}
 			);
 		}
 		if (reload) {
 			await httpAdapter
-				.post(
-					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
-				)
+				.post(`/application_permissions/${topicId}/${selectedApplicationList.accessType}`)
 				.then(async () => await loadApplicationPermissions(topicId));
 		}
 	};
@@ -202,18 +166,6 @@
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
 		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
 		await loadApplicationPermissions(topicId);
-	};
-
-	const loadMoreResultsApp = (e) => {
-		if (e.detail.inView && hasMoreApps) {
-			applicationResultPage++;
-			searchApplication(searchApplications);
-		}
-	};
-
-	const options = {
-		rootMargin: '20px',
-		unobserveOnEnter: true
 	};
 </script>
 
@@ -273,50 +225,17 @@
 							style="margin-top: 0.5rem; margin-bottom: 0.5rem"
 							class="searchbox"
 							type="search"
-							placeholder="Search Application"
-							bind:value={searchApplications}
+							placeholder="Bind Token"
+							bind:value={bindToken}
 							on:keydown={(event) => {
-								searchApplicationResults = [];
-								stopSearchingApps = false;
-								hasMoreApps = true;
-								applicationResultPage = 0;
-
 								if (event.which === returnKey) {
+									bindToken = bindToken?.trim();
 									document.activeElement.blur();
-
-									validateApplicationName();
-									searchApplicationActive = false;
+									if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId);
 								}
 							}}
 							on:blur={() => {
-								searchApplications = searchApplications?.trim();
-								setTimeout(() => {
-									searchApplicationsResultsVisible = false;
-								}, waitTime);
-							}}
-							on:focus={() => {
-								searchApplicationActive = true;
-								errorMessageApplication = '';
-							}}
-							on:focusout={() => {
-								setTimeout(() => {
-									searchApplicationsResultsVisible = false;
-								}, waitTime);
-							}}
-							on:click={async () => {
-								if (searchApplications?.length === 0) searchApplicationResults = [];
-
-								searchApplicationActive = true;
-								errorMessageApplication = '';
-								if (searchApplicationResults?.length > 0) {
-									searchApplicationsResultsVisible = true;
-								}
-							}}
-							on:mouseleave={() => {
-								setTimeout(() => {
-									if (!searchApplicationsResultsMouseEnter)
-										searchApplicationsResultsVisible = false;
-								}, waitTime);
+								bindToken = bindToken?.trim();
 							}}
 						/>
 						<div style="margin-left: 7.4rem">
@@ -325,48 +244,27 @@
 							</span>
 						</div>
 					</td>
+					<td style="border-bottom-color: transparent;">
+						<button
+							style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
+							class="button-blue"
+							on:click={() => {
+								console.log('bindToken', bindToken);
+								if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId);
+							}}
+						>
+							<img
+								src={addSVG}
+								alt="add application"
+								height="20rem"
+								style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+							/>
+							<span style="vertical-align: middle">Add Application</span>
+						</button>
+					</td>
 				{/if}
 			</tr>
 		</table>
-
-		{#if searchApplicationsResultsVisible}
-			<table
-				class="search-application"
-				style="position:absolute; margin-left: 17rem; margin-top: -0.8rem; width: 12rem; max-height: 13.3rem; display: block; overflow-y: auto"
-				on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
-				on:mouseleave={() => {
-					setTimeout(() => {
-						if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
-					}, waitTime);
-					searchApplicationsResultsMouseEnter = false;
-				}}
-			>
-				{#each searchApplicationResults as result}
-					<tr style="border-width: 0px">
-						<td
-							style="width: 14rem; padding-left: 0.5rem"
-							on:click={async () => {
-								searchApplications = result.name;
-								searchApplicationsId = result.id;
-
-								searchApplicationActive = false;
-
-								selectedApplicationList = {
-									id: searchApplicationsId,
-									accessType: 'READ'
-								};
-
-								await addTopicApplicationAssociation(selectedTopicId, true);
-								searchApplications = '';
-								selectedApplicationList = '';
-								searchApplicationResults = [];
-							}}>{result.name} ({result.groupName})</td
-						>
-					</tr>
-				{/each}
-				<div use:inview={{ options }} on:change={loadMoreResultsApp} />
-			</table>
-		{/if}
 
 		{#if selectedTopicApplications}
 			<div>

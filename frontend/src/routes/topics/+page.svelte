@@ -78,11 +78,7 @@
 	let deleteTopicVisible = false;
 
 	// Selection
-	let selectedTopicId,
-		selectedTopicName,
-		selectedTopicKind,
-		selectedTopicGroupName,
-		selectedTopicGroupId;
+	let selectedTopicId;
 
 	// Topic Creation
 	let newTopicName = '';
@@ -248,46 +244,25 @@
 			})
 			.catch((err) => {
 				addTopicVisible = false;
-				if (err.response.status) err.message = 'Topic already exists. Topic name should be unique.';
 				errorMessage('Error Adding Topic', err.message);
 			});
 
+		addTopicVisible = false;
 		if (res) {
-			const createdTopicId = res.data.id;
-			addTopicApplicationAssociation(createdTopicId);
+			selectedTopicId = res.data?.id;
+			loadTopic();
 		}
+
 		if (res === undefined) {
 			errorMessage('Error Adding Topic', errorMessages['topic']['exists']);
 		}
-
-		addTopicVisible = false;
-		await reloadAllTopics();
 	};
 
-	const addTopicApplicationAssociation = async (topicId, reload = false) => {
-		if (selectedApplicationList && selectedApplicationList.length > 0 && !reload) {
-			selectedApplicationList.forEach(async (app) => {
-				try {
-					await httpAdapter.post(
-						`/application_permissions/${app.applicationId}/${topicId}/${app.accessType}`
-					);
-				} catch (err) {
-					errorMessage('Error Adding Applications to the Topic', err.message);
-				}
-			});
-		}
-		if (reload) {
-			await httpAdapter
-				.post(
-					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
-				)
-				.then(() => loadApplicationPermissions(topicId));
-		}
-	};
-
-	const loadApplicationPermissions = async (topicId) => {
-		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
-		selectedTopicApplications = resApps.data.content;
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
 	};
 </script>
 
@@ -317,7 +292,6 @@
 					title="Add Topic"
 					topicName={true}
 					group={true}
-					application={true}
 					actionAddTopic={true}
 					on:cancel={() => (addTopicVisible = false)}
 					on:addTopic={(e) => {
@@ -333,11 +307,7 @@
 
 			{#if topicDetailVisible && !topicsListVisible}
 				<TopicDetails
-					{selectedTopicName}
 					{selectedTopicId}
-					{selectedTopicKind}
-					{selectedTopicGroupName}
-					{selectedTopicGroupId}
 					on:addTopic={async (e) => {
 						newTopicName = e.detail.newTopicName;
 						searchGroups = e.detail.searchGroups;
@@ -556,13 +526,13 @@
 										<td
 											style="cursor: pointer; width: max-content"
 											on:click={() => {
-												loadTopic(topic.id);
 												selectedTopicId = topic.id;
+												loadTopic();
 											}}
 											on:keydown={(event) => {
 												if (event.which === returnKey) {
-													loadTopic(topic.id);
 													selectedTopicId = topic.id;
+													loadTopic();
 												}
 											}}
 											>{topic.name}

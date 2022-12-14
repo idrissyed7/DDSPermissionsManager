@@ -19,7 +19,7 @@
 	export let groupNewName = false;
 	export let group = false;
 	export let adminRoles = false;
-	export let application = false;
+	// export let application = false;
 	export let actionAddUser = false;
 	export let actionAddSuperUser = false;
 	export let actionAddTopic = false;
@@ -74,18 +74,19 @@
 	let invalidEmail = false;
 	let errorMessageGroup = '';
 	let errorMessageApplication = '';
+	let errorMessageTopic = '';
 	let errorMessageEmail = '';
 	let errorMessageName = '';
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
 	// Search Applications
-	let searchApplicationActive = false;
-	let searchApplicationResults = [];
-	let searchApplicationsResultsVisible = false;
+	// let searchApplicationActive = false;
+	// let searchApplicationResults = [];
+	// let searchApplicationsResultsVisible = false;
 	let applicationResultPage = 0;
 	let hasMoreApps = true;
-	let stopSearchingApps = false;
+	// let stopSearchingApps = false;
 
 	// SearchBox
 	let searchGroupsResultsMouseEnter = false;
@@ -97,7 +98,7 @@
 	let hasMoreGroups = true;
 	let stopSearchingGroups = false;
 	let timer;
-	let searchApplicationsResultsMouseEnter = false;
+	// let searchApplicationsResultsMouseEnter = false;
 
 	if (actionEditGroup) newGroupName = groupCurrentName;
 
@@ -126,31 +127,31 @@
 		searchGroupResults = '';
 	}
 
-	// Search Applications Feature
-	$: if (
-		searchApplications?.trim().length >= searchStringLength &&
-		searchApplicationActive &&
-		!stopSearchingApps
-	) {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			searchApplications = searchApplications.trim();
-			searchApplication(searchApplications);
-			stopSearchingApps = true;
-		}, waitTime);
-	}
+	// // Search Applications Feature
+	// $: if (
+	// 	searchApplications?.trim().length >= searchStringLength &&
+	// 	searchApplicationActive &&
+	// 	!stopSearchingApps
+	// ) {
+	// 	clearTimeout(timer);
+	// 	timer = setTimeout(() => {
+	// 		searchApplications = searchApplications.trim();
+	// 		searchApplication(searchApplications);
+	// 		stopSearchingApps = true;
+	// 	}, waitTime);
+	// }
 
-	// Search Applications Dropdown Visibility
-	$: if (
-		searchApplicationResults?.length >= 1 &&
-		searchApplicationActive &&
-		searchApplications?.trim().length >= searchStringLength
-	) {
-		searchApplicationsResultsVisible = true;
-	} else {
-		if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
-		searchApplicationResults = '';
-	}
+	// // Search Applications Dropdown Visibility
+	// $: if (
+	// 	searchApplicationResults?.length >= 1 &&
+	// 	searchApplicationActive &&
+	// 	searchApplications?.trim().length >= searchStringLength
+	// ) {
+	// 	searchApplicationsResultsVisible = true;
+	// } else {
+	// 	if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
+	// 	searchApplicationResults = '';
+	// }
 
 	const searchGroup = async (searchGroupStr) => {
 		let res;
@@ -190,44 +191,44 @@
 		searchGroupActive = false;
 	};
 
-	const searchApplication = async (searchString) => {
-		let res = await httpAdapter.get(
-			`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
-		);
+	// const searchApplication = async (searchString) => {
+	// 	let res = await httpAdapter.get(
+	// 		`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
+	// 	);
 
-		if (res?.data?.length < applicationsDropdownSuggestion) {
-			hasMoreApps = false;
-		}
+	// 	if (res?.data?.length < applicationsDropdownSuggestion) {
+	// 		hasMoreApps = false;
+	// 	}
 
-		if (res.data.length > 0) {
-			if (selectedApplicationList?.length > 0)
-				for (const selectedApp of selectedApplicationList) {
-					res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
-				}
+	// 	if (res.data.length > 0) {
+	// 		if (selectedApplicationList?.length > 0)
+	// 			for (const selectedApp of selectedApplicationList) {
+	// 				res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
+	// 			}
 
-			searchApplicationResults = [...searchApplicationResults, ...res.data];
-		}
-	};
+	// 		searchApplicationResults = [...searchApplicationResults, ...res.data];
+	// 	}
+	// };
 
-	const selectedSearchApplication = (appName, appId, groupName) => {
-		searchApplicationResults = [];
-		applicationResultPage = 0;
+	// const selectedSearchApplication = (appName, appId, groupName) => {
+	// 	searchApplicationResults = [];
+	// 	applicationResultPage = 0;
 
-		selectedApplicationList.push({
-			applicationId: appId,
-			applicationName: appName,
-			applicationGroup: groupName,
-			accessType: 'READ'
-		});
+	// 	selectedApplicationList.push({
+	// 		applicationId: appId,
+	// 		applicationName: appName,
+	// 		applicationGroup: groupName,
+	// 		accessType: 'READ'
+	// 	});
 
-		// This statement is used to trigger Svelte reactivity and re-render the component
-		selectedApplicationList = selectedApplicationList;
-		searchApplications = appName;
+	// 	// This statement is used to trigger Svelte reactivity and re-render the component
+	// 	selectedApplicationList = selectedApplicationList;
+	// 	searchApplications = appName;
 
-		searchApplicationsResultsVisible = false;
-		searchApplications = '';
-		searchApplicationActive = false;
-	};
+	// 	searchApplicationsResultsVisible = false;
+	// 	searchApplications = '';
+	// 	searchApplicationActive = false;
+	// };
 
 	const validateEmail = (input) => {
 		if (input.match(validRegex)) invalidEmail = false;
@@ -256,29 +257,43 @@
 		}
 	};
 
-	const validateApplicationName = async () => {
-		// if there is data in the applications input field, we verify it's validity
-		if (searchApplications?.length > 0) {
-			const res = await httpAdapter.get(
-				`/applications/search?page=0&size=1&filter=${searchApplications}`
-			);
-
-			if (
-				res.data.length > 0 &&
-				res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
-			) {
-				selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
-				return true;
-			} else {
-				searchApplicationActive = false;
-				errorMessageApplication = errorMessages['application']['not_found'];
-
-				return false;
-			}
+	const validateTopicName = async () => {
+		const res = await httpAdapter.get(
+			`/topics?page=0&size=${groupsDropdownSuggestion}&filter=${newTopicName}`
+		);
+		if (
+			newTopicName?.length > 0 &&
+			res.data.content?.some((topic) => topic.name.toUpperCase() === newTopicName.toUpperCase())
+		) {
+			return false;
 		} else {
 			return true;
 		}
 	};
+
+	// const validateApplicationName = async () => {
+	// 	// if there is data in the applications input field, we verify it's validity///
+	// 	if (searchApplications?.length > 0) {
+	// 		const res = await httpAdapter.get(
+	// 			`/applications/search?page=0&size=1&filter=${searchApplications}`
+	// 		);
+
+	// 		if (
+	// 			res.data.length > 0 &&
+	// 			res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
+	// 		) {
+	// 			selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
+	// 			return true;
+	// 		} else {
+	// 			searchApplicationActive = false;
+	// 			errorMessageApplication = errorMessages['application']['not_found'];
+
+	// 			return false;
+	// 		}
+	// 	} else {
+	// 		return true;
+	// 	}
+	// };
 
 	const validateNameLength = (name, category) => {
 		if (name?.length < minNameLength && category) {
@@ -344,13 +359,19 @@
 			return;
 		}
 
-		const validApplicationName = await validateApplicationName();
-		if (!validApplicationName) {
-			errorMessageApplication = errorMessages['application']['not_found'];
+		// const validApplicationName = await validateApplicationName();
+		// if (!validApplicationName) {
+		// 	errorMessageApplication = errorMessages['application']['not_found'];
+		// 	return;
+		// }
+
+		const validTopicName = await validateTopicName();
+		if (!validTopicName) {
+			errorMessageTopic = errorMessages['topic']['exists'];
 			return;
 		}
 
-		if (!invalidTopic && validGroupName && validApplicationName) {
+		if (!invalidTopic && validGroupName) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -528,13 +549,13 @@
 			/>
 		{/if}
 
-		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Topic' && errorMessageName?.length > 0}
+		{#if errorMessageTopic?.substring(0, errorMessageTopic?.indexOf(' ')) === 'Topic' && errorMessageTopic?.length > 0}
 			<span
 				class="error-message"
 				style="	top: 9.6rem; right: 2.2rem"
-				class:hidden={errorMessageName?.length === 0}
+				class:hidden={errorMessageTopic?.length === 0}
 			>
-				{errorMessageName}
+				{errorMessageTopic}
 			</span>
 		{/if}
 
@@ -555,11 +576,7 @@
 					errorMessageApplication = '';
 					if (event.which === returnKey) {
 						appName = appName.trim();
-						invalidApplicationName = !validateNameLength(appName, 'application');
-
-						if (!invalidApplicationName && searchGroups?.length >= searchStringLength) {
-							actionAddApplicationEvent();
-						}
+						if (searchGroups?.length >= searchStringLength) actionAddApplicationEvent();
 					}
 				}}
 				on:click={() => {
@@ -802,7 +819,7 @@
 			</div>
 		{/if}
 
-		{#if application}
+		<!-- {#if application}
 			<form class="searchbox">
 				<input
 					class="searchbox"
@@ -865,9 +882,9 @@
 			>
 				{errorMessageApplication}
 			</span>
-		{/if}
+		{/if} -->
 
-		{#if searchApplicationsResultsVisible}
+		<!-- {#if searchApplicationsResultsVisible}
 			<table
 				class="search-application"
 				class:hidden={searchApplicationResults?.length === 0}
@@ -893,9 +910,9 @@
 				{/each}
 				<div use:inview={{ options }} on:change={loadMoreResultsApp} />
 			</table>
-		{/if}
+		{/if} -->
 
-		{#if selectedApplicationList?.length > 0}
+		<!-- {#if selectedApplicationList?.length > 0}
 			<div style="margin-bottom: 0.8rem">
 				{#each selectedApplicationList as app}
 					<div class="application-list">
@@ -989,7 +1006,7 @@
 					</div>
 				{/each}
 			</div>
-		{/if}
+		{/if} -->
 
 		{#if adminRoles}
 			<div class="admin-roles">
