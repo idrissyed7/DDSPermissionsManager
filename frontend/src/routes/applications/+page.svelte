@@ -59,8 +59,9 @@
 	// Error Handling
 	let errorMsg, errorObject;
 
-	// Password
+	// Password & Tokens
 	let password;
+	let bindToken;
 
 	// Modals
 	let errorMessageVisible = false;
@@ -92,7 +93,9 @@
 
 	// Forms
 	let generateCredentialsVisible = false;
-	let showCopyNotificationVisible = false;
+	let generateBindTokenVisible = false;
+	let showCopyPasswordNotificationVisible = false;
+	let showCopyBindTokenNotificationVisible = false;
 
 	// Timer
 	let timer;
@@ -339,7 +342,9 @@
 
 	const returnToApplicationsList = () => {
 		generateCredentialsVisible = false;
+		generateBindTokenVisible = false;
 		password = '';
+		bindToken = '';
 		applicationDetailVisible = false;
 		applicationListVisible = true;
 	};
@@ -349,8 +354,12 @@
 		applicationListVisible = true;
 	};
 
-	const copyPassword = async (applicationId) => {
+	const copyPassword = async () => {
 		navigator.clipboard.writeText(password);
+	};
+
+	const copyBindToken = async () => {
+		navigator.clipboard.writeText(bindToken);
 	};
 
 	const generatePassword = async (applicationId) => {
@@ -363,10 +372,27 @@
 		}
 	};
 
-	const showCopyNotification = () => {
-		showCopyNotificationVisible = true;
+	const generateBindToken = async (applicationId) => {
+		try {
+			const res = await httpAdapter.get(`/applications/generate_bind_token/${applicationId}`);
+			bindToken = res.data;
+			generateBindTokenVisible = true;
+		} catch (err) {
+			errorMessage('Error Generating Bind Token', err.message);
+		}
+	};
+
+	const showCopyPasswordNotification = () => {
+		showCopyPasswordNotificationVisible = true;
 		setTimeout(() => {
-			showCopyNotificationVisible = false;
+			showCopyPasswordNotificationVisible = false;
+		}, fiveSeconds);
+	};
+
+	const showCopyBindTokenNotification = () => {
+		showCopyBindTokenNotificationVisible = true;
+		setTimeout(() => {
+			showCopyBindTokenNotificationVisible = false;
 		}, fiveSeconds);
 	};
 
@@ -779,7 +805,7 @@
 									</tbody>
 								{/each}
 							{:else}
-								<p>No Topics Associated</p>
+								<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated</p>
 							{/if}
 						</table>
 						<div
@@ -793,20 +819,35 @@
 						</div>
 
 						{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
-							<button
-								style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem 0 1rem;"
-								class="button-blue"
-								on:click={() => generatePassword(selectedAppId)}
-							>
-								<img
-									src={lockSVG}
-									alt="generate password"
-									height="20rem"
-									style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-								/>
-								<span style="vertical-align: middle">Generate Password</span>
-							</button>
+							<div style="display: inline-flex; height: 7rem">
+								<button
+									style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
+									class="button-blue"
+									on:click={() => generateBindToken(selectedAppId)}
+								>
+									<img
+										src={lockSVG}
+										alt="generate bind token"
+										height="20rem"
+										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+									/>
+									<span style="vertical-align: middle">Generate Bind Token</span>
+								</button>
 
+								<button
+									style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
+									class="button-blue"
+									on:click={() => generatePassword(selectedAppId)}
+								>
+									<img
+										src={lockSVG}
+										alt="generate password"
+										height="20rem"
+										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+									/>
+									<span style="vertical-align: middle">Generate Password</span>
+								</button>
+							</div>
 							<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
 								Username: <span style="font-weight: 300">{selectedAppId}</span>
 							</div>
@@ -815,12 +856,12 @@
 							</div>
 
 							{#if generateCredentialsVisible}
-								<div style="margin-top: 1.5rem; font-weight: 500; font-size: 0.9rem">Password</div>
+								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
 								<div
 									style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
 									on:click={() => {
 										copyPassword(selectedAppId);
-										showCopyNotification();
+										showCopyPasswordNotification();
 									}}
 								>
 									<span style="vertical-align: middle">{password}</span>
@@ -831,13 +872,39 @@
 										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
 										on:click={() => {
 											copyPassword(selectedAppId);
-											showCopyNotification();
+											showCopyPasswordNotification();
 										}}
 									/>
 								</div>
 
-								{#if showCopyNotificationVisible}
+								{#if showCopyPasswordNotificationVisible}
 									<div class="bubble">Password Copied!</div>
+								{/if}
+							{/if}
+
+							{#if generateBindTokenVisible}
+								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
+									Bind Token
+									<img
+										src={copySVG}
+										alt="copy bind token"
+										height="29rem"
+										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+										on:click={() => {
+											copyBindToken(selectedAppId);
+											showCopyBindTokenNotification();
+										}}
+									/>
+									<textarea
+										rows="4"
+										cols="50"
+										style="vertical-align: middle; width: 50vw; margin-top: 1rem"
+										>{bindToken}</textarea
+									>
+								</div>
+
+								{#if showCopyBindTokenNotificationVisible}
+									<div class="bubble">Bind Token Copied!</div>
 								{/if}
 							{/if}
 						{/if}
