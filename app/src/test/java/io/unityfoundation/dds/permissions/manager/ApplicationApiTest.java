@@ -2032,38 +2032,6 @@ public class ApplicationApiTest {
             assertTrue(body.contains("SN="+primaryGroup.getId()));
         }
     }
-    @Test
-    public void testApplicationFilter() {
-        mockSecurityService.postConstruct();
-        mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
-
-        HttpRequest<Object> request = HttpRequest.GET("/applications/search?filter=Group");
-        List<Map> results = blockingClient.retrieve(request, List.class);
-
-        List<String> expectedApplicationNames = Arrays.asList("GoLang", "Groovy", "Micronaut", "Guitar", "Piano", "Drums", "Paint", "Clay", "Pencil", "Group Psychology");
-        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
-
-        request = HttpRequest.GET("/applications/search?filter=Group&size=7");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(7, results.size());
-        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
-
-        request = HttpRequest.GET("/applications/search?filter=Art");
-        results = blockingClient.retrieve(request, List.class);
-
-        expectedApplicationNames = Arrays.asList("Paint", "Clay", "Pencil", "Art");
-        assertResultContainsAllExpectedApplicationNames(expectedApplicationNames, results);
-
-        request = HttpRequest.GET("/applications/search?filter=Art&size=2");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(2, results.size());
-        assertResultOnlyContainsExpectedApplicationNames(results, expectedApplicationNames);
-
-        request = HttpRequest.GET("/applications/search?filter=Clay");
-        results = blockingClient.retrieve(request, List.class);
-        assertEquals(1, results.size());
-        assertEquals("Clay", results.get(0).get("name"));
-    }
 
     @Test
     public void testApplicationExistenceEndpoint() {
