@@ -573,6 +573,7 @@
 										{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
+													data-cy="delete-topic-icon"
 													src={deleteSVG}
 													width="27rem"
 													alt="delete topic"

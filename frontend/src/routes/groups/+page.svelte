@@ -405,6 +405,7 @@
 				{#if $groups}
 					{#if $groups.length > 0}
 						<table
+							class="main"
 							data-cy="groups-table"
 							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
 						>
@@ -508,6 +509,7 @@
 										{#if $isAdmin}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
+													data-cy="edit-group-icon"
 													src={editSVG}
 													alt="edit group"
 													style="cursor: pointer; vertical-align: -0.25rem"
@@ -523,6 +525,7 @@
 
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
+													data-cy="delete-group-icon"
 													src={deleteSVG}
 													alt="delete group"
 													style="cursor: pointer; vertical-align: -0.5rem"

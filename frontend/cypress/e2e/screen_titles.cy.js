@@ -8,12 +8,6 @@ describe('title should say DDS Permissions Manager', () => {
         cy.wait('@tokenInfo');
     });
 
-    // afterEach(() => {
-    //     cy.visit('http://localhost:8080/api/logout')
-    // });
-
-    
-
     it('should have correct title', () => {
         cy.get('title')
         .invoke('text')

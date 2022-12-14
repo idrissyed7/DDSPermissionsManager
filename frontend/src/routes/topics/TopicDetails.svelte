@@ -9,7 +9,6 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
-	import duplicateSVG from '../../icons/duplicate.svg';
 	import errorMessages from '$lib/errorMessages.json';
 
 	export let selectedTopicName,
@@ -29,8 +28,6 @@
 
 	// Modals
 	let errorMessageVisible = false;
-	let addTopicVisible = false;
-	let duplicateTopicVisible = false;
 
 	// Constants
 	const applicationsResult = 7;
@@ -43,14 +40,8 @@
 	let errorMsg, errorObject;
 	let errorMessageApplication = '';
 
-	// Search Groups
-	let searchGroups;
-	let searchGroupResults;
-	let searchGroupsResultsVisible = false;
-	let searchGroupActive = true;
-
 	// Search Applications
-	let searchApplications, searchApplicationsId, searchApplicationsGroup;
+	let searchApplications, searchApplicationsId;
 	let searchApplicationActive = true;
 	let searchApplicationResults;
 	let searchApplicationsResultsVisible = false;
@@ -250,51 +241,6 @@
 	{/if}
 
 	{#await promise then _}
-		{#if $isAdmin || $permissionsByGroup.find((Topic) => Topic.groupId === selectedTopicGroupId && Topic.isTopicAdmin === true)}
-			<div>
-				<button
-					class="button-blue"
-					style="width:9.2rem; height: 2.2rem; cursor:pointer"
-					on:click={async () => {
-						duplicateTopicVisible = true;
-						addTopicVisible = true;
-					}}
-				>
-					<img
-						src={duplicateSVG}
-						alt="duplicate topic"
-						width="20rem"
-						style="vertical-align: middle; filter: invert(); margin-left: -0.5rem; margin-right: 0.2rem "
-						on:click={async () => {
-							duplicateTopicVisible = true;
-							addTopicVisible = true;
-						}}
-					/>
-
-					<span style="vertical-align: middle; font-size: 0.8rem">Duplicate Topic</span>
-				</button>
-
-				{#if duplicateTopicVisible}
-					<Modal
-						title="Duplicate Topic"
-						actionDuplicateTopic={true}
-						topicName={true}
-						newTopicName={selectedTopicName}
-						group={true}
-						searchGroups={selectedTopicGroupName}
-						application={true}
-						selectedApplicationList={selectedTopicApplications}
-						anyApplicationCanRead={selectedTopicKind === 'B' ? true : false}
-						on:cancel={() => (duplicateTopicVisible = false)}
-						on:duplicateTopic={(e) => {
-							duplicateTopicVisible = false;
-							dispatch('addTopic', e.detail);
-						}}
-					/>
-				{/if}
-			</div>
-		{/if}
-
 		<table class="topics-details">
 			<tr>
 				<td>Name:</td>
@@ -552,6 +498,7 @@
 	.topics-details {
 		font-size: 12pt;
 		width: 38rem;
+		margin-top: 1.6rem;
 	}
 
 	.topics-details td {
