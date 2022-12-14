@@ -75,6 +75,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
@@ -630,6 +631,65 @@ public class ApplicationApiTest {
             assertEquals(SEE_OTHER, response.getStatus());
             assertTrue(response.getCookie("JWT").isPresent());
         }
+
+        @Test
+        void canGenerateApplicationBindToken() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+        }
+
+        @Test
+        void cannotGenerateApplicationBindTokenForApplicationThatDoesNotExist() {
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId() + 1);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, ApplicationDTO.class);
+            });
+            assertEquals(NOT_FOUND, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NOT_FOUND.equals(group.get("code"))));
+        }
     }
 
     @Nested
@@ -1080,6 +1140,50 @@ public class ApplicationApiTest {
             response = blockingClient.exchange(request);
             assertEquals(SEE_OTHER, response.getStatus());
         }
+
+        @Test
+        void canGenerateApplicationBindToken() {
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group as an application admin
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            loginAsNonAdmin();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+        }
     }
 
     @Nested
@@ -1317,6 +1421,43 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
+        }
+
+        @Test
+        void canGenerateApplicationBindToken() {
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("ApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOneOptional.isPresent());
+            ApplicationDTO applicationOne = applicationOneOptional.get();
+
+            loginAsNonAdmin();
+
+            // generate passphrase for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);

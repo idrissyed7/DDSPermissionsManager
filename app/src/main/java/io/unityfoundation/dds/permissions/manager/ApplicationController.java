@@ -84,6 +84,20 @@ public class ApplicationController {
         return applicationService.deleteById(id);
     }
 
+    @Get("/generate_bind_token/{applicationId}")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = "text/plain"))
+    @ApiResponse(responseCode = "401", description = "Not authorized.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
+    @ApiResponse(responseCode = "404", description = "Application not found.",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
+    )
+    @Produces(MediaType.TEXT_PLAIN)
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse generateBindToken(Long applicationId) {
+        return applicationService.generateBindToken(applicationId);
+    }
+
     @Get("/search{?filter}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse search(@Nullable String filter, @Valid Pageable page) {

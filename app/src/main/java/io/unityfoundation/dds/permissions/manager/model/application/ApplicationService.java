@@ -1,14 +1,17 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import freemarker.template.TemplateException;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationResponse;
+import io.micronaut.security.token.jwt.generator.JwtTokenGenerator;
+import io.micronaut.security.token.jwt.generator.claims.JWTClaimsSetGenerator;
+import io.micronaut.security.token.jwt.validator.AuthenticationJWTClaimsSetAdapter;
 import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
@@ -104,12 +107,17 @@ public class ApplicationService {
     private final BCryptPasswordEncoderService passwordEncoderService;
     private final ApplicationSecretsClient applicationSecretsClient;
     private final TemplateService templateService;
+    private final JwtTokenGenerator jwtTokenGenerator;
+    private final JWTClaimsSetGenerator jwtClaimsSetGenerator;
+
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
                               ApplicationPermissionService applicationPermissionService,
                               SecurityUtil securityUtil, GroupUserService groupUserService,
                               PassphraseGenerator passphraseGenerator,
-                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient, TemplateService templateService) {
+                              BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient,
+                              TemplateService templateService, JwtTokenGenerator jwtTokenGenerator,
+                              JWTClaimsSetGenerator jwtClaimsSetGenerator) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
@@ -119,6 +127,8 @@ public class ApplicationService {
         this.passwordEncoderService = passwordEncoderService;
         this.applicationSecretsClient = applicationSecretsClient;
         this.templateService = templateService;
+        this.jwtTokenGenerator = jwtTokenGenerator;
+        this.jwtClaimsSetGenerator = jwtClaimsSetGenerator;
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
@@ -618,5 +628,30 @@ public class ApplicationService {
         PEMParser parser = new PEMParser(new StringReader(pemEncoding));
         PEMKeyPair pemKeyPair = (PEMKeyPair) parser.readObject();
         return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
+    }
+
+    public HttpResponse generateBindToken(Long applicationId) {
+        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
+        if (applicationOptional.isEmpty()) {
+            throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        Application application = applicationOptional.get();
+
+        if (!securityUtil.isCurrentUserAdmin() && !isUserApplicationAdminOfGroup(application.getPermissionsGroup())) {
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+        }
+
+        Optional<User> currentlyAuthenticatedUser = securityUtil.getCurrentlyAuthenticatedUser();
+
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject(applicationId.toString())
+                .claim("email", currentlyAuthenticatedUser.get().getEmail())
+                .build();
+
+        Map<String, Object> map = jwtClaimsSetGenerator.generateClaims(
+                new AuthenticationJWTClaimsSetAdapter(claimsSet), 6000);
+        Optional<String> token = jwtTokenGenerator.generateToken(map);
+
+        return HttpResponse.ok(token.get());
     }
 }
