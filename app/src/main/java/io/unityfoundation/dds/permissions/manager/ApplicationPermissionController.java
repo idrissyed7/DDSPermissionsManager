@@ -13,8 +13,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
+import org.reactivestreams.Publisher;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+
+import static io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService.APPLICATION_BIND_TOKEN;
 
 @Controller("/api/application_permissions")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -37,10 +41,12 @@ public class ApplicationPermissionController {
         return AccessType.values();
     }
 
-    @Post("/{applicationId}/{topicId}/{access}")
+    @Post("/{topicId}/{access}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
-        return applicationPermissionService.addAccess(applicationId, topicId, access);
+    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(Long topicId,
+                                                                  AccessType access,
+                                                                  @NotBlank @Header(APPLICATION_BIND_TOKEN) String bindToken) {
+        return applicationPermissionService.addAccess(bindToken, topicId, access);
     }
 
     @Put("/{permissionId}/{access}")

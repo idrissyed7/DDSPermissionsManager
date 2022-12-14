@@ -6,15 +6,15 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
+import io.micronaut.security.token.jwt.generator.JwtTokenGenerator;
+import io.micronaut.security.token.jwt.generator.claims.JWTClaimsSetGenerator;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.*;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
@@ -31,8 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static io.micronaut.http.HttpStatus.CREATED;
-import static io.micronaut.http.HttpStatus.OK;
+import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @MicronautTest
@@ -57,6 +56,12 @@ public class ApplicationPermissionApiTest {
 
     @Inject
     TopicRepository topicRepository;
+
+    @Inject
+    JWTClaimsSetGenerator jwtClaimsSetGenerator;
+
+    @Inject
+    JwtTokenGenerator jwtTokenGenerator;
 
     @Inject
     DbCleanup dbCleanup;
@@ -97,6 +102,7 @@ public class ApplicationPermissionApiTest {
         public void permissionIsDeletedPostTopicDeletion() {
 
             HttpResponse<?> response;
+            HttpRequest<?> request;
 
             // create groups
             response = createGroup("PrimaryGroup");
@@ -112,6 +118,14 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
             assertEquals(OK, response.getStatus());
@@ -120,13 +134,13 @@ public class ApplicationPermissionApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationOptional.get().getId(), topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
             // topic delete
-            HttpRequest<?> request = HttpRequest.POST("/topics/delete/"+topicOptional.get().getId(), Map.of());
+            request = HttpRequest.POST("/topics/delete/"+topicOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
@@ -137,6 +151,7 @@ public class ApplicationPermissionApiTest {
         public void permissionIsDeletedPostApplicationDeletion() {
 
             HttpResponse<?> response;
+            HttpRequest<?> request;
 
             // create groups
             response = createGroup("PrimaryGroup");
@@ -152,6 +167,14 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
             assertEquals(OK, response.getStatus());
@@ -160,13 +183,13 @@ public class ApplicationPermissionApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationOptional.get().getId(), topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
             // application delete
-            HttpRequest<?> request = HttpRequest.POST("/applications/delete/"+applicationOptional.get().getId(), Map.of());
+            request = HttpRequest.POST("/applications/delete/"+applicationOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
@@ -226,6 +249,44 @@ public class ApplicationPermissionApiTest {
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
         }
 
+        @Test
+        public void attemptToAssociatedApplicationWithInvalidApplicationJwtToken() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // invalid jwt token
+            Map<String, Object> stringObjectMap = jwtClaimsSetGenerator.generateClaimsSet(Map.of("myKey", "myVal"), 5000);
+            Optional<String> s = jwtTokenGenerator.generateToken(stringObjectMap);
+
+            request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
+                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, s.get());
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(request, AccessPermissionDTO.class);
+            });
+            assertEquals(FORBIDDEN, exception.getStatus());
+        }
+
         private void addReadWritePermission(Long applicationId, Long topicId) {
             addPermission(applicationId, topicId, AccessType.READ_WRITE);
         }
@@ -238,7 +299,16 @@ public class ApplicationPermissionApiTest {
             HttpRequest<?> request;
             HashMap<String, Object> responseMap;
 
-            request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationId);
+            HttpResponse<String> response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
             responseMap = blockingClient.retrieve(request, HashMap.class);
 
             assertNotNull(responseMap);
@@ -376,8 +446,9 @@ public class ApplicationPermissionApiTest {
         return blockingClient.exchange(request, TopicDTO.class);
     }
 
-    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
-        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+    private HttpResponse<?> createApplicationPermission(String applicationBindToken, Long topicId, AccessType accessType) {
+        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+                .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }

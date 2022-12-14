@@ -15,6 +15,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
@@ -2178,7 +2179,18 @@ public class ApplicationApiTest {
     }
 
     private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
-        HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + applicationId + "/" + topicId + "/" + accessType.name(), Map.of());
+        HttpRequest<?> request;
+
+        // generate bind token for application
+        request = HttpRequest.GET("/applications/generate_bind_token/" + applicationId);
+        HttpResponse<String> response = blockingClient.exchange(request, String.class);
+        assertEquals(OK, response.getStatus());
+        Optional<String> optional = response.getBody(String.class);
+        assertTrue(optional.isPresent());
+        String applicationBindToken = optional.get();
+
+        request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+                .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }
