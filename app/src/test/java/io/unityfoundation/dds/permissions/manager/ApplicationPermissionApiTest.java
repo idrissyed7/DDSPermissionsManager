@@ -17,6 +17,7 @@ import io.unityfoundation.dds.permissions.manager.model.application.ApplicationR
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.*;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
@@ -250,7 +251,7 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
-        public void attemptToAssociatedApplicationWithInvalidApplicationJwtToken() {
+        public void attemptToAssociateApplicationWithInvalidApplicationJwtToken() {
             HttpResponse<?> response;
             HttpRequest<?> request;
 
@@ -285,6 +286,54 @@ public class ApplicationPermissionApiTest {
                 blockingClient.exchange(request, AccessPermissionDTO.class);
             });
             assertEquals(FORBIDDEN, exception.getStatus());
+        }
+
+        @Test
+        public void canDeleteApplicationPermission() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create application permission
+            request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
+                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+            response = blockingClient.exchange(request, AccessPermissionDTO.class);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(accessPermissionDTOOptional.isPresent());
+
+            // application permissions delete
+            request = HttpRequest.DELETE("/application_permissions/"+accessPermissionDTOOptional.get().getId());
+            response = blockingClient.exchange(request, HashMap.class);
+            assertEquals(NO_CONTENT, response.getStatus());
         }
 
         private void addReadWritePermission(Long applicationId, Long topicId) {
@@ -340,15 +389,161 @@ public class ApplicationPermissionApiTest {
             dbCleanup.cleanup();
             userRepository.save(new User("montesm@test.test"));
             userRepository.save(new User("jjones@test.test"));
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
-        void loginAsNonAdmin() {
+        void loginAsApplicationAdmin() {
             mockSecurityService.setServerAuthentication(new ServerAuthentication(
                     "jjones@test.test",
                     Collections.emptyList(),
                     Map.of()
             ));
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        @Test
+        public void canDeleteApplicationPermission() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+            // add user to group as an application admin
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setApplicationAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create application permission
+            request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
+                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+            response = blockingClient.exchange(request, AccessPermissionDTO.class);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(accessPermissionDTOOptional.isPresent());
+
+            loginAsApplicationAdmin();
+
+            // application permissions delete
+            request = HttpRequest.DELETE("/application_permissions/"+accessPermissionDTOOptional.get().getId());
+            response = blockingClient.exchange(request, HashMap.class);
+            assertEquals(NO_CONTENT, response.getStatus());
+        }
+    }
+
+    @Nested
+    class WhenAsATopicAdmin {
+
+        @BeforeEach
+        void setup() {
+            dbCleanup.cleanup();
+            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("jjones@test.test"));
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        void loginATopicAdmin() {
+            mockSecurityService.setServerAuthentication(new ServerAuthentication(
+                    "jjones@test.test",
+                    Collections.emptyList(),
+                    Map.of()
+            ));
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+        }
+
+        @Test
+        public void canDeleteApplicationPermission() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+            // add user to group as an application admin
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            dto.setTopicAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create application permission
+            request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
+                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+            response = blockingClient.exchange(request, AccessPermissionDTO.class);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(accessPermissionDTOOptional.isPresent());
+
+            loginATopicAdmin();
+
+            // application permissions delete
+            request = HttpRequest.DELETE("/application_permissions/"+accessPermissionDTOOptional.get().getId());
+            response = blockingClient.exchange(request, HashMap.class);
+            assertEquals(NO_CONTENT, response.getStatus());
         }
     }
 
@@ -417,6 +612,29 @@ public class ApplicationPermissionApiTest {
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
             assertEquals(1, content.size());
+        }
+
+        @Test
+        public void cannotDeleteApplicationPermission() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/application_permissions");
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(2, content.size());
+            Map map = content.get(0);
+
+            // application permissions delete
+            request = HttpRequest.DELETE("/application_permissions/"+map.get("id"));
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
         }
     }
 
