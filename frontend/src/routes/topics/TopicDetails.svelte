@@ -477,7 +477,10 @@
 										alt="remove application"
 										style="background-color: transparent; cursor: pointer; scale: 50%; align-content:center"
 										on:click={async () => {
-											deleteTopicApplicationAssociation(application.id, application.topicId);
+											promise = deleteTopicApplicationAssociation(
+												application.id,
+												application.topicId
+											);
 										}}
 									/>
 								</li>
