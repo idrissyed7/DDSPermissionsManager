@@ -146,9 +146,14 @@ public class ApplicationPermissionService {
             throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_NOT_FOUND, HttpStatus.NOT_FOUND);
         } else {
             Topic topic = applicationPermissionOptional.get().getPermissionsTopic();
+            Application application = applicationPermissionOptional.get().getPermissionsApplication();
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
 
-            if (!securityUtil.isCurrentUserAdmin() && !groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId())) {
+            if (!securityUtil.isCurrentUserAdmin() &&
+                    !(
+                            groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId()) ||
+                            groupUserService.isUserApplicationAdminOfGroup(application.getPermissionsGroup().getId(), user.getId())
+                    )) {
                 throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
             }
         }
