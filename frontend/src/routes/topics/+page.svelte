@@ -308,6 +308,7 @@
 			{#if topicDetailVisible && !topicsListVisible}
 				<TopicDetails
 					{selectedTopicId}
+					{isTopicAdmin}
 					on:addTopic={async (e) => {
 						newTopicName = e.detail.newTopicName;
 						searchGroups = e.detail.searchGroups;
@@ -469,7 +470,7 @@
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 									{#if isTopicAdmin || $isAdmin}
-										<td>
+										<td style="line-height: 1rem;">
 											<input
 												tabindex="-1"
 												type="checkbox"
@@ -500,7 +501,7 @@
 								{#each $topics as topic, i}
 									<tr>
 										{#if isTopicAdmin || $isAdmin}
-											<td style="width: 2rem">
+											<td style="line-height: 1rem; width: 2rem; ">
 												<input
 													tabindex="-1"
 													type="checkbox"
@@ -545,7 +546,9 @@
 												<img
 													data-cy="delete-topic-icon"
 													src={deleteSVG}
-													width="27rem"
+													width="27px"
+													height="27px"
+													style="vertical-align: -0.45rem"
 													alt="delete topic"
 													on:click={() => {
 														if (!topicsRowsSelected.some((tpc) => tpc === topic))
@@ -653,7 +656,7 @@
 <style>
 	table.main {
 		min-width: 34rem;
-		line-height: 1rem;
+		line-height: 2.2rem;
 	}
 
 	.dot {

@@ -792,8 +792,8 @@
 													<img
 														src={deleteSVG}
 														alt="delete topic"
-														height="27px"
-														width="27px"
+														height="23px"
+														width="23px"
 														style="vertical-align: -0.4rem; float: right; cursor: pointer"
 														on:click={() => {
 															deleteTopicApplicationAssociation(appPermission.id);
@@ -819,8 +819,9 @@
 						</div>
 
 						{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
-							<div style="display: inline-flex; height: 7rem">
+							<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
 								<button
+									data-cy="generate-bind-token-button"
 									style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
 									class="button-blue"
 									on:click={() => generateBindToken(selectedAppId)}
@@ -835,6 +836,7 @@
 								</button>
 
 								<button
+									data-cy="generate-password-button"
 									style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
 									class="button-blue"
 									on:click={() => generatePassword(selectedAppId)}
@@ -1024,7 +1026,7 @@
 	}
 
 	.main-table {
-		min-width: 33rem;
+		min-width: 34rem;
 	}
 
 	tr {

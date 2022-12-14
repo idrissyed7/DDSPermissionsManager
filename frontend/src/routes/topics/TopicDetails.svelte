@@ -11,7 +11,7 @@
 	import addSVG from '../../icons/add.svg';
 	import errorMessages from '$lib/errorMessages.json';
 
-	export let selectedTopicId;
+	export let selectedTopicId, isTopicAdmin;
 
 	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
@@ -69,91 +69,24 @@
 		errorMessageVisible = false;
 	};
 
-	// const searchApplication = async (searchString) => {
-	// 	let res = await httpAdapter.get(
-	// 		`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
-	// 	);
-
-	// 	if (res.data.length < applicationsDropdownSuggestion) {
-	// 		hasMoreApps = false;
-	// 	}
-	// 	const applicationPermissions = await httpAdapter.get(
-	// 		`/application_permissions/?topic=${selectedTopicId}`
-	// 	);
-
-	// 	if (res.data?.length > 0) {
-	// 		if (selectedTopicApplications?.length > 0)
-	// 			for (const selectedApp of selectedTopicApplications) {
-	// 				res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
-	// 			}
-
-	// 		searchApplicationResults = [...searchApplicationResults, ...res.data];
-	// 	}
-
-	// 	searchApplicationResults.forEach((app) => {
-	// 		applicationPermissions.data.content?.forEach((appPermission) => {
-	// 			if (app.name === appPermission.applicationName) {
-	// 				searchApplicationResults.data = searchApplicationResults.filter(
-	// 					(result) => result.name !== appPermission.applicationName
-	// 				);
-	// 			}
-	// 		});
-	// 	});
-	// };
-
-	// const validateApplicationName = async () => {
-	// 	// if there is data in the applications input field, we verify it's validity
-	// 	if (searchApplications?.length > 0) {
-	// 		const res = await httpAdapter.get(
-	// 			`/applications/search?page=0&size=1&filter=${searchApplications}`
-	// 		);
-
-	// 		if (
-	// 			res.data.length > 0 &&
-	// 			res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
-	// 		) {
-	// 			selectedApplicationList = {
-	// 				id: res.data[0].id,
-	// 				accessType: 'READ'
-	// 			};
-
-	// 			searchApplications = '';
-	// 			await addTopicApplicationAssociation(selectedTopicId, true);
-
-	// 			selectedApplicationList = '';
-	// 			searchApplicationResults = [];
-
-	// 			return true;
-	// 		} else {
-	// 			searchApplicationActive = false;
-	// 			errorMessageApplication = errorMessages['application']['not_found'];
-
-	// 			return false;
-	// 		}
-	// 	} else {
-	// 		return true;
-	// 	}
-	// };
-
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
 		selectedTopicApplications = resApps.data.content;
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
-		const header = {};
+		const config = {
+			headers: {
+				accept: 'application/json',
+				APPLICATION_BIND_TOKEN: bindToken
+			}
+		};
 		if (selectedApplicationList && !reload) {
-			await httpAdapter.post(
-				`/application_permissions/${topicId}/${selectedApplicationList.accessType}`,
-				{},
-				{
-					headers: { APPLICATION_BIND_TOKEN: bindToken }
-				}
-			);
+			await httpAdapter.post(`/application_permissions/${topicId}/READ`, {}, config);
 		}
 		if (reload) {
 			await httpAdapter
-				.post(`/application_permissions/${topicId}/${selectedApplicationList.accessType}`)
+				.post(`/application_permissions/${topicId}/READ`, {}, config)
 				.then(async () => await loadApplicationPermissions(topicId));
 		}
 	};
@@ -197,11 +130,13 @@
 			<tr>
 				<td>Name:</td>
 				<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
+				<td />
 			</tr>
 
 			<tr>
 				<td>Group:</td>
 				<td>{selectedTopicGroupName}</td>
+				<td />
 			</tr>
 
 			<tr>
@@ -213,56 +148,58 @@
 						No
 					{/if}
 				</td>
+				<td />
 			</tr>
 
 			<tr style="border-width: 0px;">
 				<td style="border-bottom-color: transparent;">
 					<span style="margin-right: 1rem">Applications:</span>
 				</td>
-				{#if ($permissionsByGroup && $permissionsByGroup.some((groupPermission) => groupPermission.isTopicAdmin === true)) || $isAdmin}
-					<td style="border-bottom-color: transparent;">
-						<input
-							style="margin-top: 0.5rem; margin-bottom: 0.5rem"
-							class="searchbox"
-							type="search"
-							placeholder="Bind Token"
-							bind:value={bindToken}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
-									bindToken = bindToken?.trim();
-									document.activeElement.blur();
-									if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId);
-								}
-							}}
-							on:blur={() => {
+
+				<td style="border-bottom-color: transparent;">
+					<input
+						style="margin-top: 0.5rem; margin-bottom: 0.5rem"
+						class="searchbox"
+						type="search"
+						placeholder="Bind Token"
+						disabled={!$isAdmin && !isTopicAdmin}
+						bind:value={bindToken}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
 								bindToken = bindToken?.trim();
-							}}
+								document.activeElement.blur();
+								if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId, true);
+							}
+						}}
+						on:blur={() => {
+							bindToken = bindToken?.trim();
+						}}
+					/>
+					<div style="margin-left: 7.4rem">
+						<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
+							{errorMessageApplication}
+						</span>
+					</div>
+				</td>
+				<td style="border-bottom-color: transparent;">
+					<button
+						style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
+						class="button-blue"
+						class:button-disabled={!$isAdmin && !isTopicAdmin}
+						disabled={!$isAdmin && !isTopicAdmin}
+						on:click={() => {
+							if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId, true);
+						}}
+					>
+						<img
+							src={addSVG}
+							alt="add application"
+							height="20rem"
+							style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 						/>
-						<div style="margin-left: 7.4rem">
-							<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
-								{errorMessageApplication}
-							</span>
-						</div>
-					</td>
-					<td style="border-bottom-color: transparent;">
-						<button
-							style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
-							class="button-blue"
-							on:click={() => {
-								console.log('bindToken', bindToken);
-								if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId);
-							}}
-						>
-							<img
-								src={addSVG}
-								alt="add application"
-								height="20rem"
-								style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-							/>
-							<span style="vertical-align: middle">Add Application</span>
-						</button>
-					</td>
-				{/if}
+						<span style="vertical-align: middle">Add Application</span>
+					</button>
+				</td>
 			</tr>
 		</table>
 
@@ -398,7 +335,7 @@
 <style>
 	.topics-details {
 		font-size: 12pt;
-		width: 38rem;
+		width: 41rem;
 		margin-top: 1.6rem;
 	}
 
