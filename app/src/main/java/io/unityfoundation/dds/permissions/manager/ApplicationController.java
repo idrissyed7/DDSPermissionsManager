@@ -98,12 +98,6 @@ public class ApplicationController {
         return applicationService.generateBindToken(applicationId);
     }
 
-    @Get("/search{?filter}")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse search(@Nullable String filter, @Valid Pageable page) {
-        return HttpResponse.ok(applicationService.search(filter, page));
-    }
-
     @Get("/check_exists/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse checkApplicationExistence(@NotBlank @Size(min = 3) String application) {

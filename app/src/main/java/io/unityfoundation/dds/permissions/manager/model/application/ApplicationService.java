@@ -258,11 +258,6 @@ public class ApplicationService {
         return HttpResponse.ok(applicationDTO);
     }
 
-    public List<ApplicationDTO> search(String filter, Pageable page) {
-        Page<Application> results = applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, page);
-        return toDtos(results);
-    }
-
     public HttpResponse existsByName(String name) {
         Optional<Application> byNameEquals = applicationRepository.findByNameEquals(name.trim());
 
