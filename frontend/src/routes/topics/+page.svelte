@@ -78,11 +78,7 @@
 	let deleteTopicVisible = false;
 
 	// Selection
-	let selectedTopicId,
-		selectedTopicName,
-		selectedTopicKind,
-		selectedTopicGroupName,
-		selectedTopicGroupId;
+	let selectedTopicId;
 
 	// Topic Creation
 	let newTopicName = '';
@@ -248,46 +244,25 @@
 			})
 			.catch((err) => {
 				addTopicVisible = false;
-				if (err.response.status) err.message = 'Topic already exists. Topic name should be unique.';
 				errorMessage('Error Adding Topic', err.message);
 			});
 
+		addTopicVisible = false;
 		if (res) {
-			const createdTopicId = res.data.id;
-			addTopicApplicationAssociation(createdTopicId);
+			selectedTopicId = res.data?.id;
+			loadTopic();
 		}
+
 		if (res === undefined) {
 			errorMessage('Error Adding Topic', errorMessages['topic']['exists']);
 		}
-
-		addTopicVisible = false;
-		await reloadAllTopics();
 	};
 
-	const addTopicApplicationAssociation = async (topicId, reload = false) => {
-		if (selectedApplicationList && selectedApplicationList.length > 0 && !reload) {
-			selectedApplicationList.forEach(async (app) => {
-				try {
-					await httpAdapter.post(
-						`/application_permissions/${app.applicationId}/${topicId}/${app.accessType}`
-					);
-				} catch (err) {
-					errorMessage('Error Adding Applications to the Topic', err.message);
-				}
-			});
-		}
-		if (reload) {
-			await httpAdapter
-				.post(
-					`/application_permissions/${selectedApplicationList.id}/${topicId}/${selectedApplicationList.accessType}`
-				)
-				.then(() => loadApplicationPermissions(topicId));
-		}
-	};
-
-	const loadApplicationPermissions = async (topicId) => {
-		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
-		selectedTopicApplications = resApps.data.content;
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
 	};
 </script>
 
@@ -317,7 +292,6 @@
 					title="Add Topic"
 					topicName={true}
 					group={true}
-					application={true}
 					actionAddTopic={true}
 					on:cancel={() => (addTopicVisible = false)}
 					on:addTopic={(e) => {
@@ -333,11 +307,8 @@
 
 			{#if topicDetailVisible && !topicsListVisible}
 				<TopicDetails
-					{selectedTopicName}
 					{selectedTopicId}
-					{selectedTopicKind}
-					{selectedTopicGroupName}
-					{selectedTopicGroupId}
+					{isTopicAdmin}
 					on:addTopic={async (e) => {
 						newTopicName = e.detail.newTopicName;
 						searchGroups = e.detail.searchGroups;
@@ -499,7 +470,7 @@
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 									{#if isTopicAdmin || $isAdmin}
-										<td>
+										<td style="line-height: 1rem;">
 											<input
 												tabindex="-1"
 												type="checkbox"
@@ -530,7 +501,7 @@
 								{#each $topics as topic, i}
 									<tr>
 										{#if isTopicAdmin || $isAdmin}
-											<td style="width: 2rem">
+											<td style="line-height: 1rem; width: 2rem; ">
 												<input
 													tabindex="-1"
 													type="checkbox"
@@ -556,13 +527,13 @@
 										<td
 											style="cursor: pointer; width: max-content"
 											on:click={() => {
-												loadTopic(topic.id);
 												selectedTopicId = topic.id;
+												loadTopic();
 											}}
 											on:keydown={(event) => {
 												if (event.which === returnKey) {
-													loadTopic(topic.id);
 													selectedTopicId = topic.id;
+													loadTopic();
 												}
 											}}
 											>{topic.name}
@@ -575,7 +546,9 @@
 												<img
 													data-cy="delete-topic-icon"
 													src={deleteSVG}
-													width="27rem"
+													width="27px"
+													height="27px"
+													style="vertical-align: -0.45rem"
 													alt="delete topic"
 													on:click={() => {
 														if (!topicsRowsSelected.some((tpc) => tpc === topic))
@@ -683,7 +656,7 @@
 <style>
 	table.main {
 		min-width: 34rem;
-		line-height: 1rem;
+		line-height: 2.2rem;
 	}
 
 	.dot {
