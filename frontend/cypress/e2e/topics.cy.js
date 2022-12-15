@@ -26,9 +26,8 @@ describe('Topics Capabilities', () => {
         cy.get('[data-cy="button-add-topic"]')
         .click();
 
-        cy.contains('td', 'Test Topic Alpha')   
-        .siblings()
-        .contains('td', 'Alpha');               
+        cy.get('.header-title')
+        .contains('Test Topic Alpha');            
       
     });
 
@@ -50,9 +49,7 @@ describe('Topics Capabilities', () => {
         cy.get('[data-cy="button-add-topic"]')
         .click();
 
-        cy.contains('td', 'Test Topic Beta')   
-        .siblings()
-        .contains('td', 'Beta'); 
+        cy.get('.header-title').contains('Test Topic Beta')   
 
     });
 
