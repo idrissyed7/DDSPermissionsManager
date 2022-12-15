@@ -4,7 +4,6 @@
 	import { createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import closeSVG from '../icons/close.svg';
-	import deleteSVG from '../icons/delete.svg';
 	import Switch from './Switch.svelte';
 	import { inview } from 'svelte-inview';
 	import errorMessages from '$lib/errorMessages.json';
@@ -19,7 +18,6 @@
 	export let groupNewName = false;
 	export let group = false;
 	export let adminRoles = false;
-	// export let application = false;
 	export let actionAddUser = false;
 	export let actionAddSuperUser = false;
 	export let actionAddTopic = false;
@@ -39,7 +37,6 @@
 	export let groupId = '';
 	export let anyApplicationCanRead = false;
 	export let searchGroups = '';
-	export let searchApplications = '';
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
 	export let groupCurrentName = '';
@@ -55,7 +52,6 @@
 	// Constants
 	const returnKey = 13;
 	const groupsDropdownSuggestion = 7;
-	const applicationsDropdownSuggestion = 7;
 	const minNameLength = 3;
 	const searchStringLength = 3;
 	const waitTime = 1000;
@@ -80,14 +76,6 @@
 	let validRegex =
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
-	// Search Applications
-	// let searchApplicationActive = false;
-	// let searchApplicationResults = [];
-	// let searchApplicationsResultsVisible = false;
-	let applicationResultPage = 0;
-	let hasMoreApps = true;
-	// let stopSearchingApps = false;
-
 	// SearchBox
 	let searchGroupsResultsMouseEnter = false;
 	let searchGroupResults;
@@ -98,7 +86,6 @@
 	let hasMoreGroups = true;
 	let stopSearchingGroups = false;
 	let timer;
-	// let searchApplicationsResultsMouseEnter = false;
 
 	if (actionEditGroup) newGroupName = groupCurrentName;
 
@@ -126,32 +113,6 @@
 		if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
 		searchGroupResults = '';
 	}
-
-	// // Search Applications Feature
-	// $: if (
-	// 	searchApplications?.trim().length >= searchStringLength &&
-	// 	searchApplicationActive &&
-	// 	!stopSearchingApps
-	// ) {
-	// 	clearTimeout(timer);
-	// 	timer = setTimeout(() => {
-	// 		searchApplications = searchApplications.trim();
-	// 		searchApplication(searchApplications);
-	// 		stopSearchingApps = true;
-	// 	}, waitTime);
-	// }
-
-	// // Search Applications Dropdown Visibility
-	// $: if (
-	// 	searchApplicationResults?.length >= 1 &&
-	// 	searchApplicationActive &&
-	// 	searchApplications?.trim().length >= searchStringLength
-	// ) {
-	// 	searchApplicationsResultsVisible = true;
-	// } else {
-	// 	if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
-	// 	searchApplicationResults = '';
-	// }
 
 	const searchGroup = async (searchGroupStr) => {
 		let res;
@@ -190,45 +151,6 @@
 		searchGroupsResultsVisible = false;
 		searchGroupActive = false;
 	};
-
-	// const searchApplication = async (searchString) => {
-	// 	let res = await httpAdapter.get(
-	// 		`/applications/search?page=${applicationResultPage}&size=${applicationsDropdownSuggestion}&filter=${searchString}`
-	// 	);
-
-	// 	if (res?.data?.length < applicationsDropdownSuggestion) {
-	// 		hasMoreApps = false;
-	// 	}
-
-	// 	if (res.data.length > 0) {
-	// 		if (selectedApplicationList?.length > 0)
-	// 			for (const selectedApp of selectedApplicationList) {
-	// 				res.data = res.data.filter((results) => results.name !== selectedApp.applicationName);
-	// 			}
-
-	// 		searchApplicationResults = [...searchApplicationResults, ...res.data];
-	// 	}
-	// };
-
-	// const selectedSearchApplication = (appName, appId, groupName) => {
-	// 	searchApplicationResults = [];
-	// 	applicationResultPage = 0;
-
-	// 	selectedApplicationList.push({
-	// 		applicationId: appId,
-	// 		applicationName: appName,
-	// 		applicationGroup: groupName,
-	// 		accessType: 'READ'
-	// 	});
-
-	// 	// This statement is used to trigger Svelte reactivity and re-render the component
-	// 	selectedApplicationList = selectedApplicationList;
-	// 	searchApplications = appName;
-
-	// 	searchApplicationsResultsVisible = false;
-	// 	searchApplications = '';
-	// 	searchApplicationActive = false;
-	// };
 
 	const validateEmail = (input) => {
 		if (input.match(validRegex)) invalidEmail = false;
@@ -270,30 +192,6 @@
 			return true;
 		}
 	};
-
-	// const validateApplicationName = async () => {
-	// 	// if there is data in the applications input field, we verify it's validity///
-	// 	if (searchApplications?.length > 0) {
-	// 		const res = await httpAdapter.get(
-	// 			`/applications/search?page=0&size=1&filter=${searchApplications}`
-	// 		);
-
-	// 		if (
-	// 			res.data.length > 0 &&
-	// 			res.data?.[0].name?.toUpperCase() === searchApplications.toUpperCase()
-	// 		) {
-	// 			selectedSearchApplication(res.data[0].name, res.data[0].id, res.data[0].groupName);
-	// 			return true;
-	// 		} else {
-	// 			searchApplicationActive = false;
-	// 			errorMessageApplication = errorMessages['application']['not_found'];
-
-	// 			return false;
-	// 		}
-	// 	} else {
-	// 		return true;
-	// 	}
-	// };
 
 	const validateNameLength = (name, category) => {
 		if (name?.length < minNameLength && category) {
@@ -358,12 +256,6 @@
 			errorMessageGroup = errorMessages['group']['not_found'];
 			return;
 		}
-
-		// const validApplicationName = await validateApplicationName();
-		// if (!validApplicationName) {
-		// 	errorMessageApplication = errorMessages['application']['not_found'];
-		// 	return;
-		// }
 
 		const validTopicName = await validateTopicName();
 		if (!validTopicName) {
@@ -438,13 +330,6 @@
 			topicAdmin: selectedGroupMembership.topicAdmin,
 			applicationAdmin: selectedGroupMembership.applicationAdmin
 		});
-	};
-
-	const loadMoreResultsApp = (e) => {
-		if (e.detail.inView && hasMoreApps) {
-			applicationResultPage++;
-			searchApplication(searchApplications);
-		}
 	};
 
 	const loadMoreResultsGroups = (e) => {
@@ -819,195 +704,6 @@
 			</div>
 		{/if}
 
-		<!-- {#if application}
-			<form class="searchbox">
-				<input
-					class="searchbox"
-					type="search"
-					placeholder="Application"
-					bind:value={searchApplications}
-					on:keydown={(event) => {
-						searchApplicationResults = [];
-						stopSearchingApps = false;
-						hasMoreApps = true;
-						applicationResultPage = 0;
-
-						if (event.which === returnKey) {
-							document.activeElement.blur();
-							newTopicName = newTopicName?.trim();
-							searchGroups = searchGroups?.trim();
-
-							validateApplicationName();
-						}
-					}}
-					on:blur={() => {
-						searchApplications = searchApplications?.trim();
-						setTimeout(() => {
-							searchApplicationsResultsVisible = false;
-						}, waitTime);
-					}}
-					on:focus={() => {
-						searchApplicationActive = true;
-						errorMessageApplication = '';
-					}}
-					on:focusout={() => {
-						setTimeout(() => {
-							searchApplicationsResultsVisible = false;
-						}, waitTime);
-					}}
-					on:click={async () => {
-						searchApplicationResults = [];
-						applicationResultPage = 0;
-						hasMoreApps = true;
-
-						searchApplicationActive = true;
-						errorMessageApplication = '';
-						stopSearchingApps = false;
-
-						if (searchApplicationResults?.length > 0) {
-							searchApplicationsResultsVisible = true;
-						}
-					}}
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
-						}, waitTime);
-					}}
-				/>
-			</form>
-			<span
-				class="error-message"
-				style="	top: 19.9rem; right: 2.2rem"
-				class:hidden={errorMessageApplication?.length === 0}
-			>
-				{errorMessageApplication}
-			</span>
-		{/if} -->
-
-		<!-- {#if searchApplicationsResultsVisible}
-			<table
-				class="search-application"
-				class:hidden={searchApplicationResults?.length === 0}
-				style="position: absolute; display: block; overflow-y: auto; max-height: 13.3rem"
-				on:mouseenter={() => (searchApplicationsResultsMouseEnter = true)}
-				on:mouseleave={() => {
-					setTimeout(() => {
-						if (!searchApplicationsResultsMouseEnter) searchApplicationsResultsVisible = false;
-					}, waitTime);
-					searchApplicationsResultsMouseEnter = false;
-				}}
-			>
-				{#each searchApplicationResults as result}
-					<tr style="border-width: 0px;">
-						<td
-							style="width: 14rem; padding-left: 0.5rem"
-							on:click={() => {
-								selectedSearchApplication(result.name, result.id, result.groupName);
-							}}
-							>{result.name} ({result.groupName})
-						</td>
-					</tr>
-				{/each}
-				<div use:inview={{ options }} on:change={loadMoreResultsApp} />
-			</table>
-		{/if} -->
-
-		<!-- {#if selectedApplicationList?.length > 0}
-			<div style="margin-bottom: 0.8rem">
-				{#each selectedApplicationList as app}
-					<div class="application-list">
-						<ul style="list-style-type: none; padding-left: 0; margin-right: -3rem">
-							<li style="width: 9rem">
-								{app.applicationName}
-							</li>
-							<li style="color: rgb(120,120,120)">
-								({app.applicationGroup})
-							</li>
-						</ul>
-
-						<ul style="list-style-type: none; margin-right: -2rem">
-							<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Read</span></li>
-							<li style="margin-top: -0.05rem">
-								<input
-									checked={app.accessType === 'READ' || app.accessType === 'READ_WRITE'}
-									disabled={app.accessType === 'READ'}
-									type="checkbox"
-									name="read"
-									style="width:unset;"
-									on:change={(e) => {
-										const applicationIndex = selectedApplicationList.findIndex(
-											(application) => application.applicationName === app.applicationName
-										);
-
-										if (e.target.checked) {
-											if (selectedApplicationList[applicationIndex].accessType === 'WRITE') {
-												selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
-											} else {
-												selectedApplicationList[applicationIndex].accessType = 'READ';
-											}
-										} else {
-											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
-												selectedApplicationList[applicationIndex].accessType = 'WRITE';
-											} else {
-												selectedApplicationList[applicationIndex].accessType = 'READ';
-											}
-										}
-									}}
-								/>
-							</li>
-						</ul>
-
-						<ul style="list-style-type: none; margin-right: -2.4rem">
-							<li style="margin-top: -0.05rem"><span style="font-size: 0.65rem">Write</span></li>
-							<li style="margin-top: -0.05rem">
-								<input
-									type="checkbox"
-									name="write"
-									style="width:unset;"
-									on:change={(e) => {
-										const applicationIndex = selectedApplicationList.findIndex(
-											(application) => application.applicationName === app.applicationName
-										);
-
-										if (e.target.checked) {
-											if (selectedApplicationList[applicationIndex].accessType === 'READ') {
-												selectedApplicationList[applicationIndex].accessType = 'READ_WRITE';
-											} else {
-												selectedApplicationList[applicationIndex].accessType = 'WRITE';
-											}
-										} else {
-											if (selectedApplicationList[applicationIndex].accessType === 'READ_WRITE') {
-												selectedApplicationList[applicationIndex].accessType = 'READ';
-											} else {
-												selectedApplicationList[applicationIndex].accessType = 'READ';
-											}
-										}
-									}}
-								/>
-							</li>
-						</ul>
-
-						<ul style="list-style-type: none; margin-top: 0.35rem; margin-left: -0.5rem">
-							<li />
-							<li>
-								<img
-									src={deleteSVG}
-									alt="remove application"
-									style="background-color: transparent; cursor: pointer; scale: 50%;"
-									on:click={() => {
-										selectedApplicationList = selectedApplicationList.filter(
-											(selectedApplication) =>
-												selectedApplication.applicationName != app.applicationName
-										);
-									}}
-								/>
-							</li>
-						</ul>
-					</div>
-				{/each}
-			</div>
-		{/if} -->
-
 		{#if adminRoles}
 			<div class="admin-roles">
 				{#if noneditable}
@@ -1308,19 +1004,6 @@
 </div>
 
 <style>
-	.application-list {
-		display: inline-flex;
-		height: 2rem;
-		width: 14rem;
-		font-size: 0.7rem;
-		margin-left: 0.1rem;
-		margin: -0.5rem 0 0.7rem 0;
-	}
-
-	.application-list:first-of-type {
-		margin-top: 1rem;
-	}
-
 	.action-button {
 		float: right;
 		margin: 0.8rem 1.5rem 1rem 0;

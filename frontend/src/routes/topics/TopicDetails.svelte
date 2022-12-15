@@ -158,6 +158,7 @@
 
 				<td style="border-bottom-color: transparent;">
 					<input
+						data-cy="bind-token-input"
 						style="margin-top: 0.5rem; margin-bottom: 0.5rem"
 						class="searchbox"
 						type="search"
@@ -183,6 +184,7 @@
 				</td>
 				<td style="border-bottom-color: transparent;">
 					<button
+						data-cy="add-application-button"
 						style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
 						class="button-blue"
 						class:button-disabled={!$isAdmin && !isTopicAdmin}

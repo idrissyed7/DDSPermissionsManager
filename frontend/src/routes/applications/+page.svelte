@@ -378,7 +378,7 @@
 			bindToken = res.data;
 			generateBindTokenVisible = true;
 		} catch (err) {
-			errorMessage('Error Generating Bind Token', err.message);
+			errorMessage('Error Generating Token', err.message);
 		}
 	};
 
@@ -866,7 +866,8 @@
 										showCopyPasswordNotification();
 									}}
 								>
-									<span style="vertical-align: middle">{password}</span>
+									<span data-cy="generated-password" style="vertical-align: middle">{password}</span
+									>
 									<img
 										src={copySVG}
 										alt="copy password"
