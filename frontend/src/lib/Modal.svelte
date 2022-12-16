@@ -828,6 +828,7 @@
 	{#if actionEditUser}
 		<hr style="z-index: 1" />
 		<button
+			data-cy="save-edit-user"
 			class="action-button"
 			on:click={() => {
 				actionEditUserEvent();
