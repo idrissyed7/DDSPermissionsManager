@@ -537,7 +537,7 @@
 	}
 
 	table {
-		width: 25rem;
+		width: 32rem;
 	}
 
 	.dot {
