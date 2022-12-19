@@ -57,5 +57,15 @@ describe('Group Capabilities', () => {
         cy.get('td').should('not.eq', 'New Group');
         
         });
+
+    it('should navigate to the link', () => {
+        cy.visit('/groups');
+
+        cy.get('[data-cy="groups-table"] > tbody > tr:nth-child(1) > td:nth-child(3)')
+        .click();
+        
+        cy.get('.header-title').contains('Users')   
+
+    })
 });
 

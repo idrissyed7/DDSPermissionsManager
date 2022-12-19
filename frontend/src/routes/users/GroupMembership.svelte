@@ -621,7 +621,7 @@
 											{/if}
 										</center>
 									</td>
-									<td>
+									<td data-cy="is-application-admin">
 										<center
 											>{#if groupMembership.applicationAdmin}&check;
 											{:else}
