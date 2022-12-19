@@ -212,17 +212,6 @@ public class ApplicationPermissionApiTest {
             assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
             assertFalse(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
             assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
-
-            addReadWritePermission(applicationOneId, testTopicId);
-
-            request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
-            responseMap = blockingClient.retrieve(request, HashMap.class);
-            assertNotNull(responseMap);
-            content = (List<Map>) responseMap.get("content");
-            assertEquals(2, content.size());
-            assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
-            assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
-            assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
             int permissionId = (int) content.get(0).get("id");
 
             updatePermission(permissionId, AccessType.WRITE);
@@ -231,9 +220,9 @@ public class ApplicationPermissionApiTest {
             responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             content = (List<Map>) responseMap.get("content");
-            assertEquals(2, content.size());
+            assertEquals(1, content.size());
             assertFalse(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
-            assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
+            assertFalse(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
             assertTrue(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
 
             request = HttpRequest.DELETE("/application_permissions/" + permissionId);
@@ -244,10 +233,7 @@ public class ApplicationPermissionApiTest {
             responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             content = (List<Map>) responseMap.get("content");
-            assertEquals(1, content.size());
-            assertFalse(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
-            assertTrue(content.stream().anyMatch((m) -> "READ_WRITE".equals(m.get("accessType"))));
-            assertFalse(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
+            assertNull(content);
         }
 
         @Test
@@ -334,6 +320,57 @@ public class ApplicationPermissionApiTest {
             request = HttpRequest.DELETE("/application_permissions/"+accessPermissionDTOOptional.get().getId());
             response = blockingClient.exchange(request, HashMap.class);
             assertEquals(NO_CONTENT, response.getStatus());
+        }
+
+        @Test
+        public void cannotCreateDuplicateEntries() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // create app permission
+            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            // second create attempt
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.WRITE);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> body = exception.getResponse().getBody(List.class);
+            assertTrue(body.isPresent());
+            List<Map> list = body.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_PERMISSION_ALREADY_EXISTS.equals(group.get("code"))));
         }
 
         private void addReadWritePermission(Long applicationId, Long topicId) {

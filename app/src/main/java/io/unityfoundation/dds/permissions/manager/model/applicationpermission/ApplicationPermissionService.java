@@ -123,6 +123,9 @@ public class ApplicationPermissionService {
     }
 
     public ApplicationPermission saveNewPermission(Application application, Topic topic, AccessType access) {
+        if (applicationPermissionRepository.existsByPermissionsApplicationAndPermissionsTopic(application, topic)) {
+            throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_ALREADY_EXISTS);
+        }
         ApplicationPermission applicationPermission = new ApplicationPermission(application, topic, access);
         return applicationPermissionRepository.save(applicationPermission);
     }
