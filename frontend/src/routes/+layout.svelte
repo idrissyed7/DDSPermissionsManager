@@ -28,7 +28,7 @@
 
 	const userValidityInterval = 180000; // 3 minutes
 
-	let avatarName;
+	let avatarName, userEmail;
 
 	userValidityCheck.set(false);
 
@@ -90,6 +90,7 @@
 		onLoggedIn(res.data);
 		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
+		userEmail = res.data.username;
 
 		refreshPage.set(true);
 		console.log('is Admin? ', $isAdmin);
@@ -157,7 +158,7 @@
 	class:grid-container-not-authenticated={!$isAuthenticated}
 >
 	<div class="grid-item-horizontal">
-		<Header {avatarName} />
+		<Header {avatarName} {userEmail} />
 	</div>
 	{#if $isAuthenticated}
 		<div class="grid-item-vertical-nav">

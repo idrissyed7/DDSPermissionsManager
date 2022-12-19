@@ -9,6 +9,7 @@
 	import renderAvatar from '../stores/renderAvatar';
 
 	export let avatarName;
+	export let userEmail;
 
 	const waitTime = 1000;
 	const returnKey = 13;
@@ -67,35 +68,51 @@
 <hr style="border-color: rgba(0, 0, 0, 0.15);" />
 
 {#if avatarDropdownVisible}
-	<div
-		data-cy="logout-button"
-		class="avatar-dropdown"
-		class:hidden={!$isAuthenticated}
-		on:mouseenter={() => (avatarDropdownMouseEnter = true)}
-		on:mouseleave={() => {
-			setTimeout(() => {
+	<div style="position:absolute; right: 0vw">
+		<table
+			class="avatar-dropdown"
+			class:hidden={!$isAuthenticated}
+			on:mouseenter={() => (avatarDropdownMouseEnter = true)}
+			on:mouseleave={() => {
 				setTimeout(() => {
-					if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
-				});
-			}, waitTime);
-			avatarDropdownMouseEnter = false;
-		}}
-		on:click={() => goto('/api/logout', true)}
-		on:keydown={(event) => {
-			if (event.which === returnKey) {
-				goto('/api/logout', true);
-			}
-		}}
-		on:focusout={() => (avatarDropdownVisible = false)}
-	>
-		<a href="/api/logout">
-			Logout
-			<img src={logoutSVG} alt="logout" class="icon-logout" />
-		</a>
+					setTimeout(() => {
+						if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
+					});
+				}, waitTime);
+				avatarDropdownMouseEnter = false;
+			}}
+		>
+			<tr>
+				<td style="font-weight: 300">{userEmail}</td>
+			</tr>
+
+			<tr>
+				<td
+					data-cy="logout-button"
+					on:click={() => goto('/api/logout', true)}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							goto('/api/logout', true);
+						}
+					}}
+					on:focusout={() => (avatarDropdownVisible = false)}
+				>
+					<a href="/api/logout" style="float:right">
+						Logout
+						<img src={logoutSVG} alt="logout" class="icon-logout" />
+					</a>
+				</td>
+			</tr>
+		</table>
 	</div>
 {/if}
 
 <style>
+	table > tr > td {
+		line-height: 2.4rem;
+		padding: 0 1rem 0 1rem;
+	}
+
 	.header-bar {
 		display: flex;
 		align-self: center;
@@ -130,7 +147,7 @@
 		width: 21px;
 		height: 21px;
 		align-self: center;
-		margin: auto 0.5rem auto 2rem;
+		padding-left: 1rem;
 	}
 
 	.avatar-dropdown {
@@ -139,7 +156,6 @@
 		align-self: center;
 		float: right;
 		right: 0vw;
-		height: 2.4rem;
 		width: fit-content;
 		margin: -0.65rem 0 -2.4rem 0vw;
 		background-color: #f3edf7;
