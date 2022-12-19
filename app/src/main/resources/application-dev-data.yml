@@ -14,7 +14,7 @@ dpm:
       non-admin-users:
         - kstanley@test.test
         - jgracia@test.test
-        - unity-test@etest.test
+        - unity-test@test.test
       groups:
         -
           name: Alpha
