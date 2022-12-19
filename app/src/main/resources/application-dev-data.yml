@@ -10,9 +10,11 @@ dpm:
         - jeff@unityfoundation
         - montesm@test.test
         - pasumarthis@test.test
+        - unity-admin-test@test.test
       non-admin-users:
         - kstanley@test.test
         - jgracia@test.test
+        - unity-test@test.test
       groups:
         -
           name: Alpha
