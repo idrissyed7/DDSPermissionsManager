@@ -39,7 +39,9 @@ public class ApplicationPermissionService {
     private final GroupUserService groupUserService;
     private final JwtTokenValidator jwtTokenValidator;
 
-    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, SecurityUtil securityUtil, GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
+    public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository,
+                                        ApplicationRepository applicationRepository, TopicRepository topicRepository,
+                                        SecurityUtil securityUtil, GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
         this.applicationPermissionRepository = applicationPermissionRepository;
         this.applicationRepository = applicationRepository;
         this.topicRepository = topicRepository;
@@ -58,15 +60,34 @@ public class ApplicationPermissionService {
     }
 
     private Page<ApplicationPermission> getApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
-        if (applicationId == null && topicId == null) {
-            return applicationPermissionRepository.findAll(pageable);
-        } else if (applicationId != null && topicId == null) {
-            return applicationPermissionRepository.findByPermissionsApplicationId(applicationId, pageable);
-        } else if (topicId != null && applicationId == null) {
-            return applicationPermissionRepository.findByPermissionsTopicId(topicId, pageable);
+        if (securityUtil.isCurrentUserAdmin()) {
+            if (applicationId == null && topicId == null) {
+                return applicationPermissionRepository.findAll(pageable);
+            } else if (applicationId != null && topicId == null) {
+                return applicationPermissionRepository.findByPermissionsApplicationId(applicationId, pageable);
+            } else if (topicId != null && applicationId == null) {
+                return applicationPermissionRepository.findByPermissionsTopicId(topicId, pageable);
+            } else {
+                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicId(
+                        applicationId, topicId, pageable);
+            }
         } else {
-            return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicId(
-                    applicationId, topicId, pageable);
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+            List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+
+            List<Long> groupsApplications = applicationRepository.findIdByPermissionsGroupIdIn(groups);
+            List<Long> groupsTopics = topicRepository.findIdByPermissionsGroupIdIn(groups);
+
+            if (applicationId == null && topicId == null) {
+                return applicationPermissionRepository.findByPermissionsApplicationIdInOrPermissionsTopicIdIn(groupsApplications, groupsTopics, pageable);
+            } else if (applicationId != null && topicId == null) {
+                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsApplicationIdIn(applicationId, groupsApplications, pageable);
+            } else if (topicId != null && applicationId == null) {
+                return applicationPermissionRepository.findByPermissionsTopicIdAndPermissionsTopicIdIn(topicId, groupsTopics, pageable);
+            } else {
+                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndPermissionsApplicationIdInAndPermissionsTopicIdIn(
+                        applicationId, topicId, groupsApplications, groupsTopics, pageable);
+            }
         }
     }
 
