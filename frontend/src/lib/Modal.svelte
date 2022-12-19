@@ -10,6 +10,7 @@
 	import groupAdminGroups from '../stores/groupAdminGroups';
 	import topicAdminTopics from '../stores/topicAdminTopics';
 	import applicationAdminApplications from '../stores/applicationAdminApplications';
+	import { onMount } from 'svelte';
 
 	export let title;
 	export let email = false;
@@ -113,6 +114,13 @@
 		if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
 		searchGroupResults = '';
 	}
+
+	onMount(() => {
+		// Check if the action is to Add Application and change placeholder text
+		if (actionAddApplication) {
+			document.querySelector('#group-input').placeholder = 'Group **';
+		}
+	});
 
 	const searchGroup = async (searchGroupStr) => {
 		let res;
@@ -365,7 +373,7 @@
 				data-cy="email-input"
 				autofocus
 				disabled={noneditable}
-				placeholder="Email"
+				placeholder="Email *"
 				class:invalid={invalidEmail && emailValue?.length >= 1}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={emailValue}
@@ -413,7 +421,7 @@
 			<input
 				data-cy="topic-name"
 				autofocus
-				placeholder="Topic Name"
+				placeholder="Topic Name *"
 				class:invalid={invalidTopic}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newTopicName}
@@ -449,7 +457,7 @@
 			<input
 				data-cy="application-name"
 				autofocus
-				placeholder="Application Name"
+				placeholder="Application Name *"
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={appName}
@@ -486,7 +494,7 @@
 			<input
 				data-cy="group-new-name"
 				autofocus
-				placeholder="Group Name"
+				placeholder="Group Name *"
 				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newGroupName}
@@ -544,7 +552,7 @@
 			<input
 				autofocus
 				data-cy="application-name"
-				placeholder="Application Name"
+				placeholder="Application Name *"
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={previousAppName}
@@ -567,10 +575,11 @@
 		{#if group}
 			<form class="searchbox" style="margin-bottom: 0.7rem">
 				<input
+					id="group-input"
 					data-cy="group-input"
 					class="searchbox"
 					type="search"
-					placeholder="Group"
+					placeholder="Group *"
 					disabled={noneditable}
 					class:invalid={errorMessageGroup?.length > 0}
 					bind:value={searchGroups}
@@ -733,6 +742,9 @@
 	</div>
 
 	{#if actionAddUser}
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
+			>* Required & Immutable</span
+		>
 		<hr />
 		<button
 			data-cy="button-add-user"
@@ -750,6 +762,9 @@
 	{/if}
 
 	{#if actionAddSuperUser}
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
+			>* Required & Immutable</span
+		>
 		<hr />
 		<button
 			data-cy="button-add-super-user"
@@ -768,6 +783,9 @@
 	{/if}
 
 	{#if actionAddTopic}
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
+			>* Required & Immutable</span
+		>
 		<hr />
 		<button
 			data-cy="button-add-topic"
@@ -787,6 +805,9 @@
 	{/if}
 
 	{#if actionAddApplication}
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
+			>* Required &nbsp;**Required & Immutable</span
+		>
 		<hr />
 		<button
 			data-cy="button-add-application"
@@ -807,6 +828,7 @@
 	{/if}
 
 	{#if actionAddGroup}
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0">* Required</span>
 		<hr />
 		<button
 			data-cy="button-add-group"
