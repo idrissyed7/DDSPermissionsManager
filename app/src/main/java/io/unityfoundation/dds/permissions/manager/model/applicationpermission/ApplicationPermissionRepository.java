@@ -16,6 +16,10 @@ public interface ApplicationPermissionRepository extends PageableRepository<Appl
     List<ApplicationPermission> findByPermissionsApplication(Application permissionsApplication);
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicId(Long applicationId, Long topicId, Pageable pageable);
+    Page<ApplicationPermission> findByPermissionsApplicationIdInOrPermissionsTopicIdIn(Collection<Long> permissionsTopic_id, Collection<Long> permissionsApplication_id, Pageable pageable);
+    Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsApplicationIdIn(Long applicationId, List<Long> groupsApplications, Pageable pageable);
+    Page<ApplicationPermission> findByPermissionsTopicIdAndPermissionsTopicIdIn(Long topicId, List<Long> groupsTopics, Pageable pageable);
+    Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicIdAndPermissionsApplicationIdInAndPermissionsTopicIdIn(Long applicationId, Long topicId, List<Long> groupsApplications, List<Long> groupsTopics, Pageable pageable);
     void deleteByPermissionsTopicEquals(Topic permissionsTopic);
     void deleteByPermissionsApplicationEquals(Application permissionsApplication);
     void deleteByPermissionsApplicationIdIn(Collection<Long> permissionsApplications);
