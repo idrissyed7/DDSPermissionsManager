@@ -23,7 +23,7 @@
 <header>
 	<div class="header-bar">
 		<img src={DDSLock} alt="logo" class="logo" />
-		<div class="logo-text">DDS Permission Manager</div>
+		<div class="logo-text">DDS Permissions Manager</div>
 
 		{#if $isAuthenticated}
 			{#if $detailView}
