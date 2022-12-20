@@ -563,7 +563,12 @@
 							</tbody>
 						</table>
 					{:else if !topicDetailVisible}
-						<p>No Topics Found</p>
+						<p>
+							No Topics Found.&nbsp;<span class="link" on:click={() => (addTopicVisible = true)}>
+								Click here
+							</span>
+							to create a new Topic
+						</p>
 					{/if}
 				</div>
 

@@ -544,7 +544,12 @@
 						</table>
 					{/if}
 				{:else}
-					<p>No Groups Found</p>
+					<p>
+						No Groups Found.&nbsp;<span class="link" on:click={() => (addGroupVisible = true)}>
+							Click here
+						</span>
+						to create a new Group
+					</p>
 				{/if}
 			</div>
 

@@ -674,7 +674,15 @@
 						</tbody>
 					</table>
 				{:else}
-					<p>No group memberships</p>
+					<p>
+						No users found.&nbsp;<span
+							class="link"
+							on:click={() => (addGroupMembershipVisible = true)}
+						>
+							Click here
+						</span>
+						to create a new user
+					</p>
 				{/if}
 
 				<br />
