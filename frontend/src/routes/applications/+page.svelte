@@ -757,7 +757,15 @@
 						{/if}
 					</table>
 				{:else if !applicationDetailVisible && applicationListVisible}
-					<p>No Applications Found</p>
+					<p>
+						No Applications Found.&nbsp;<span
+							class="link"
+							on:click={() => (addApplicationVisible = true)}
+						>
+							Click here
+						</span>
+						to create a new Application
+					</p>
 				{/if}
 				{#await promiseDetail then _}
 					{#if $applications && applicationDetailVisible && !applicationListVisible}
