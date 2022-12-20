@@ -16,6 +16,7 @@
 	import loginCompleted from '../stores/loginCompleted';
 	import lastActivity from '../stores/lastActivity';
 	import errorMessages from '$lib/errorMessages.json';
+	import userEmail from '../stores/userEmail';
 	import '../app.css';
 
 	export let data;
@@ -28,7 +29,7 @@
 
 	const userValidityInterval = 180000; // 3 minutes
 
-	let avatarName, userEmail;
+	let avatarName;
 
 	userValidityCheck.set(false);
 
@@ -90,7 +91,7 @@
 		onLoggedIn(res.data);
 		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
-		userEmail = res.data.username;
+		userEmail.set(res.data.username);
 
 		refreshPage.set(true);
 		console.log('is Admin? ', $isAdmin);
@@ -158,7 +159,7 @@
 	class:grid-container-not-authenticated={!$isAuthenticated}
 >
 	<div class="grid-item-horizontal">
-		<Header {avatarName} {userEmail} />
+		<Header {avatarName} userEmail={$userEmail} />
 	</div>
 	{#if $isAuthenticated}
 		<div class="grid-item-vertical-nav">
