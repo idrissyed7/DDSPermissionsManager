@@ -67,7 +67,12 @@
         },
 
     "refresh_token":
-    {
-        "five_min_reminder": "Would you like to extend your session?"
-    }
+        {
+            "five_min_reminder": "Would you like to extend your session?"
+        },
+
+    "bind_token":
+        {
+            "forbidden": "Invalid or Expired Bind Token"
+        }
 }

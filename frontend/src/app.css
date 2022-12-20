@@ -249,7 +249,7 @@ select:focus {
 	border-radius: 25px; 
 	border-style: solid; 
 	border-color: transparent; 
-
+	cursor: pointer;
 }
 
 .button-blue:focus {
