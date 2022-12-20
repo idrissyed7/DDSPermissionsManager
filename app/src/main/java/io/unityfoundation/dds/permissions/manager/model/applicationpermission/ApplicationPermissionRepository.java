@@ -12,6 +12,7 @@ import java.util.List;
 
 @Repository
 public interface ApplicationPermissionRepository extends PageableRepository<ApplicationPermission, Long> {
+    boolean existsByPermissionsApplicationAndPermissionsTopic(Application permissionsApplication, Topic permissionsTopic);
     Page<ApplicationPermission> findByPermissionsApplicationId(Long applicationId, Pageable pageable);
     List<ApplicationPermission> findByPermissionsApplication(Application permissionsApplication);
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
