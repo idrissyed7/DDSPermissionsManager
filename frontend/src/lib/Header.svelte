@@ -26,7 +26,7 @@
 		<div class="logo-text">DDS Permission Manager</div>
 
 		{#if $isAuthenticated}
-			{#if $detailView}
+			{#if $detailView && $headerTitle !== 'Topics' && $headerTitle !== 'Applications'}
 				<img
 					class="go-back"
 					src={pagebackwardsSVG}
