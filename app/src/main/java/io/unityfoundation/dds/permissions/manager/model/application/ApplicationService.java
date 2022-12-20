@@ -641,6 +641,9 @@ public class ApplicationService {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(applicationId.toString())
                 .claim("email", currentlyAuthenticatedUser.get().getEmail())
+                .claim("appName", application.getName())
+                .claim("groupId", application.getPermissionsGroup().getId())
+                .claim("groupName", application.getPermissionsGroup().getName())
                 .build();
 
         Map<String, Object> map = jwtClaimsSetGenerator.generateClaims(

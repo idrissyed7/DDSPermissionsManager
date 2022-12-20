@@ -27,4 +27,6 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     List<Long> findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application, String group);
 
     Page<Application> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
+
+    List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
 }

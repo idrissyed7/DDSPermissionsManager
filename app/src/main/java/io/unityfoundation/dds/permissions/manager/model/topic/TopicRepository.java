@@ -25,4 +25,6 @@ public interface TopicRepository extends PageableRepository<Topic, Long> {
 
     Optional<Topic> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
                                                   @NotNull @NonNull Group group);
+
+    List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
 }
