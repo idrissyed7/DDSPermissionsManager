@@ -11,6 +11,10 @@
 	export let avatarName;
 	export let userEmail;
 
+	// Headers Constants
+	let topicsHeader = 'Topics';
+	let applicationsHeader = 'Applications';
+
 	const waitTime = 1000;
 	const returnKey = 13;
 
@@ -26,7 +30,7 @@
 		<div class="logo-text">DDS Permission Manager</div>
 
 		{#if $isAuthenticated}
-			{#if $detailView}
+			{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader}
 				<img
 					class="go-back"
 					src={pagebackwardsSVG}
