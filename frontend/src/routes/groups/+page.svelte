@@ -301,6 +301,14 @@
 					/>
 				</form>
 
+				{#if searchString?.length > 0}
+					<button
+						class="button-blue"
+						style="cursor: pointer; width: 4rem; height: 2.1rem"
+						on:click={() => (searchString = '')}>Clear</button
+					>
+				{/if}
+
 				{#if $isAdmin}
 					<div
 						data-cy="dot-groups"
