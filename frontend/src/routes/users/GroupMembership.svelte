@@ -17,6 +17,7 @@
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
+	import userEmail from '../../stores/userEmail';
 
 	// Promises
 	let promise;
@@ -577,7 +578,7 @@
 						</thead>
 						<tbody>
 							{#each $groupMembershipList as groupMembership, i}
-								<tr>
+								<tr class:highlighted={groupMembership.userEmail === $userEmail}>
 									{#if $isAdmin || isGroupAdmin}
 										<td style="width: 2rem">
 											<input

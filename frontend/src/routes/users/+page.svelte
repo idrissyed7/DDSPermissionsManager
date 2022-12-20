@@ -21,6 +21,7 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import renderAvatar from '../../stores/renderAvatar';
+	import userEmail from '../../stores/userEmail';
 
 	export let data, errors;
 
@@ -397,7 +398,7 @@
 							</thead>
 							<tbody>
 								{#each $users as user}
-									<tr>
+									<tr class:highlighted={user.email === $userEmail}>
 										<td style="width: 2rem">
 											<input
 												tabindex="-1"

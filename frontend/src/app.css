@@ -339,6 +339,10 @@ select:focus {
 	vertical-align: middle;
 }
 
+.highlighted {
+	font-weight: 700;
+}
+
 @-webkit-keyframes fadeIn {
 0% {
 	opacity: 0;
