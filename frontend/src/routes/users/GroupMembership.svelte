@@ -572,13 +572,13 @@
 								{/if}
 								<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
 								<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
-								<td style="font-stretch:ultra-condensed; width:6rem"
+								<td style="font-stretch:ultra-condensed; width:5.25rem"
 									><center>Group Admin</center></td
 								>
-								<td style="font-stretch:ultra-condensed; width:7rem"
+								<td style="font-stretch:ultra-condensed; width:5rem"
 									><center>Topic Admin</center></td
 								>
-								<td style="font-stretch:ultra-condensed; width:8rem"
+								<td style="font-stretch:ultra-condensed; width:7.4rem"
 									><center>Application Admin</center></td
 								>
 								<td /><td />
@@ -612,7 +612,7 @@
 											/>
 										</td>
 									{/if}
-									<td>{groupMembership.userEmail}</td>
+									<td style="width:fit-content">{groupMembership.userEmail}</td>
 									<td style="width:fit-content">{groupMembership.groupName}</td>
 									<td>
 										<center>
