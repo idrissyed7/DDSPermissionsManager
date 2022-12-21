@@ -80,6 +80,9 @@ public class ApplicationPermissionApiTest {
     @Inject
     MockAuthenticationFetcher mockAuthenticationFetcher;
 
+    @Inject
+    MockSecretSignature mockJwtSecret;
+
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
@@ -287,6 +290,50 @@ public class ApplicationPermissionApiTest {
                     .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, s.get());
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request, AccessPermissionDTO.class);
+            });
+            assertEquals(FORBIDDEN, exception.getStatus());
+        }
+
+        @Test
+        public void tokenWithInvalidSignatureSecretShouldFail() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            response = createApplication("Application123", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertEquals("Application123", applicationOptional.get().getName());
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create topic
+            response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals("Topic123", topicOptional.get().getName());
+
+            // change signature secret
+            mockJwtSecret.setSecret("thisIsASecretThatIsInvalidAndIsMoreThan256BitsLong");
+
+            // create app permission
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
             });
             assertEquals(FORBIDDEN, exception.getStatus());
         }
