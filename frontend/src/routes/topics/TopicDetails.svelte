@@ -143,7 +143,7 @@
 			</tr>
 
 			<tr>
-				<td>Any application can read:</td>
+				<td style="min-width:12rem">Any application can read:</td>
 				<td
 					>{#if selectedTopicKind === 'B'}
 						Yes

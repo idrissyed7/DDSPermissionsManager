@@ -19,7 +19,6 @@
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
-	import threedotsSVG from '../../icons/threedots.svg';
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
 
@@ -36,6 +35,16 @@
 		document.body.classList.add('modal-open');
 	} else if (browser && !(addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
 		document.body.classList.remove('modal-open');
+	}
+
+	// checkboxes selection
+	$: if ($topics?.length === topicsRowsSelected?.length) {
+		topicsRowsSelectedTrue = false;
+		topicsAllRowsSelectedTrue = true;
+	} else if (topicsRowsSelected?.length > 0) {
+		topicsRowsSelectedTrue = true;
+	} else {
+		topicsAllRowsSelectedTrue = false;
 	}
 
 	// Promises
@@ -373,105 +382,35 @@
 						>
 					{/if}
 
-					{#if isTopicAdmin || $isAdmin}
-						<div
-							data-cy="dot-topics"
-							class="dot"
-							tabindex="0"
-							on:mouseleave={() => {
-								setTimeout(() => {
-									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-								}, waitTime);
-							}}
-							on:click={() => {
-								if (!deleteTopicVisible && !addTopicVisible)
-									topicsDropDownVisible = !topicsDropDownVisible;
-							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
-									if (!deleteTopicVisible && !addTopicVisible)
-										topicsDropDownVisible = !topicsDropDownVisible;
-								}
-							}}
-							on:focusout={() => {
-								setTimeout(() => {
-									if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-								}, waitTime);
-							}}
-						>
-							<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-							{#if topicsDropDownVisible}
-								<table
-									class="dropdown"
-									on:mouseenter={() => (topicsDropDownMouseEnter = true)}
-									on:mouseleave={() => {
-										setTimeout(() => {
-											if (!topicsDropDownMouseEnter) topicsDropDownVisible = false;
-										}, waitTime);
-										topicsDropDownMouseEnter = false;
-									}}
-								>
-									<tr
-										tabindex="0"
-										disabled={!$isAdmin}
-										class:disabled={!$isAdmin || topicsRowsSelected.length === 0}
-										on:click={() => {
-											topicsDropDownVisible = false;
-											if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												topicsDropDownVisible = false;
-												if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
-											}
-										}}
-										on:focus={() => (topicsDropDownMouseEnter = true)}
-									>
-										<td>Delete Selected {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'} </td>
-										<td>
-											<img
-												src={deleteSVG}
-												alt="delete topic"
-												height="35rem"
-												style="vertical-align: -0.8rem"
-												class:disabled-img={!$isAdmin || topicsRowsSelected.length === 0}
-											/>
-										</td>
-									</tr>
-
-									<tr
-										data-cy="add-topic"
-										tabindex="0"
-										on:click={() => {
-											topicsDropDownVisible = false;
-											addTopicVisible = true;
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												topicsDropDownVisible = false;
-												addTopicVisible = true;
-											}
-										}}
-										on:focusout={() => (topicsDropDownMouseEnter = false)}
-										class:hidden={addTopicVisible}
-									>
-										<td style="border-bottom-color: transparent">Add New Topic</td>
-										<td
-											style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-										>
-											<img
-												src={addSVG}
-												alt="add user"
-												height="27rem"
-												style="vertical-align: middle; margin-left: 1.25rem"
-											/>
-										</td>
-									</tr>
-								</table>
-							{/if}
-						</div>
-					{/if}
+					<img
+						src={deleteSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={(!$isAdmin && !isTopicAdmin) || topicsRowsSelected.length === 0}
+						style="margin-left: 0.5rem"
+						on:click={() => {
+							if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
+							}
+						}}
+					/>
+					<img
+						src={addSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={!$isAdmin && !isTopicAdmin}
+						on:click={() => {
+							if ($isAdmin || isTopicAdmin) addTopicVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								addTopicVisible = true;
+							}
+						}}
+					/>
 
 					{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
@@ -519,6 +458,8 @@
 														topicsDropDownVisible = false;
 														if (e.target.checked === true) {
 															topicsRowsSelected.push(topic);
+															// reactive statement
+															topicsRowsSelected = topicsRowsSelected;
 															topicsRowsSelectedTrue = true;
 														} else {
 															topicsRowsSelected = topicsRowsSelected.filter(
@@ -575,7 +516,7 @@
 							No Topics Found.&nbsp;<span class="link" on:click={() => (addTopicVisible = true)}>
 								Click here
 							</span>
-							to create a new Topic
+							to create a new Topic.
 						</p>
 					{/if}
 				</div>
@@ -674,12 +615,6 @@
 
 	.dot {
 		float: right;
-	}
-
-	.dropdown {
-		margin-top: 8.5rem;
-		margin-right: 8.5rem;
-		width: 13rem;
 	}
 
 	.content {

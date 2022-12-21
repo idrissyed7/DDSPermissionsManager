@@ -9,7 +9,6 @@
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import refreshPage from '../../stores/refreshPage';
 	import Modal from '$lib/Modal.svelte';
-	import threedotsSVG from '../../icons/threedots.svg';
 	import deleteSVG from '../../icons/delete.svg';
 	import addSVG from '../../icons/add.svg';
 	import editSVG from '../../icons/edit.svg';
@@ -18,6 +17,16 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
+
+	// Checkboxes selection
+	$: if ($groupMembershipList?.length === usersRowsSelected?.length) {
+		usersRowsSelectedTrue = false;
+		usersAllRowsSelectedTrue = true;
+	} else if (usersRowsSelected?.length > 0) {
+		usersRowsSelectedTrue = true;
+	} else {
+		usersAllRowsSelectedTrue = false;
+	}
 
 	// Promises
 	let promise;
@@ -28,7 +37,6 @@
 
 	// DropDowns
 	let usersDropDownVisible = false;
-	let usersDropDownMouseEnter = false;
 
 	// Modals
 	let addGroupMembershipVisible = false;
@@ -434,110 +442,35 @@
 					>
 				{/if}
 
-				{#if $isAdmin || isGroupAdmin}
-					<div
-						data-cy="dot-users"
-						class="dot"
-						tabindex="0"
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-							}, waitTime);
-						}}
-						on:focusout={() => {
-							setTimeout(() => {
-								if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-							}, waitTime);
-						}}
-						on:click={() => {
-							if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
-								usersDropDownVisible = !usersDropDownVisible;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								if (!deleteSelectedGroupMembershipsVisible && !addGroupMembershipVisible)
-									usersDropDownVisible = !usersDropDownVisible;
-							}
-						}}
-					>
-						<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-						{#if usersDropDownVisible}
-							<table
-								class="dropdown"
-								on:mouseenter={() => {
-									usersDropDownMouseEnter = true;
-								}}
-								on:mouseleave={() => {
-									setTimeout(() => {
-										if (!usersDropDownMouseEnter) usersDropDownVisible = false;
-									}, waitTime);
-									usersDropDownMouseEnter = false;
-								}}
-							>
-								<tr
-									data-cy="delete-user"
-									tabindex="0"
-									class:disabled={usersRowsSelected.length === 0}
-									on:click={() => {
-										usersDropDownVisible = false;
-										if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											usersDropDownVisible = false;
-											if (usersRowsSelected.length > 0)
-												deleteSelectedGroupMembershipsVisible = true;
-										}
-									}}
-									on:focus={() => (usersDropDownMouseEnter = true)}
-								>
-									<td>
-										Delete Selected {usersRowsSelected.length > 1 ? 'Users' : 'User'}
-									</td>
-
-									<td>
-										<img
-											src={deleteSVG}
-											alt="delete user"
-											height="35rem"
-											style="vertical-align: -0.8rem"
-											class:disabled-img={usersRowsSelected.length === 0}
-										/>
-									</td>
-								</tr>
-
-								<tr
-									data-cy="add-user"
-									tabindex="0"
-									on:click={() => {
-										usersDropDownVisible = false;
-										addGroupMembershipVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											usersDropDownVisible = false;
-											addGroupMembershipVisible = true;
-										}
-									}}
-									on:focusout={() => (usersDropDownMouseEnter = false)}
-								>
-									<td style="border-bottom-color: transparent"> Add New User </td>
-									<td
-										style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-									>
-										<img
-											src={addSVG}
-											alt="add user"
-											height="27rem"
-											style="vertical-align: middle; margin-left: 1.2rem"
-										/>
-									</td>
-								</tr>
-							</table>
-						{/if}
-					</div>
-				{/if}
+				<img
+					src={deleteSVG}
+					alt="options"
+					class="dot"
+					class:button-disabled={(!$isAdmin && !isGroupAdmin) || usersRowsSelected.length === 0}
+					style="margin-left: 0.5rem"
+					on:click={() => {
+						if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
+						}
+					}}
+				/>
+				<img
+					src={addSVG}
+					alt="options"
+					class="dot"
+					class:button-disabled={!$isAdmin && !isGroupAdmin}
+					on:click={() => {
+						if ($isAdmin || isGroupAdmin) addGroupMembershipVisible = true;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							addGroupMembershipVisible = true;
+						}
+					}}
+				/>
 
 				{#if $groupMembershipList && $groupMembershipList.length > 0}
 					<table
@@ -599,6 +532,8 @@
 													usersDropDownVisible = false;
 													if (e.target.checked === true) {
 														usersRowsSelected.push(groupMembership);
+														// reactive statement
+														usersRowsSelected = usersRowsSelected;
 														usersRowsSelectedTrue = true;
 													} else {
 														usersRowsSelected = usersRowsSelected.filter(
@@ -690,7 +625,7 @@
 						>
 							Click here
 						</span>
-						to create a new user
+						to create a new user.
 					</p>
 				{/if}
 
@@ -789,12 +724,6 @@
 		width: fit-content;
 		min-width: 32rem;
 		margin-right: 1rem;
-	}
-
-	.dropdown {
-		width: 12.5rem;
-		margin-right: 8.5rem;
-		margin-top: 8rem;
 	}
 
 	.dot {

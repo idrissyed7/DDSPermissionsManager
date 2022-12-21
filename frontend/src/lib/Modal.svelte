@@ -437,7 +437,7 @@
 					}
 				}}
 				on:click={() => {
-					errorMessageName = '';
+					errorMessageTopic = '';
 				}}
 			/>
 		{/if}

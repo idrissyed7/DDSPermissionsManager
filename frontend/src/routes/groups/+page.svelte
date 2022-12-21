@@ -10,7 +10,6 @@
 	import { browser } from '$app/env';
 	import deleteSVG from '../../icons/delete.svg';
 	import editSVG from '../../icons/edit.svg';
-	import threedotsSVG from '../../icons/threedots.svg';
 	import addSVG from '../../icons/add.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
@@ -34,6 +33,16 @@
 		document.body.classList.add('modal-open');
 	} else if (browser && !(addGroupVisible || deleteGroupVisible || errorMessageVisible)) {
 		document.body.classList.remove('modal-open');
+	}
+
+	// checkboxes selection
+	$: if ($groups?.length === groupsRowsSelected?.length) {
+		groupsRowsSelectedTrue = false;
+		groupsAllRowsSelectedTrue = true;
+	} else if (groupsRowsSelected?.length > 0) {
+		groupsRowsSelectedTrue = true;
+	} else {
+		groupsAllRowsSelectedTrue = false;
 	}
 
 	// Promises
@@ -309,106 +318,35 @@
 					>
 				{/if}
 
-				{#if $isAdmin}
-					<div
-						data-cy="dot-groups"
-						tabindex="0"
-						class="dot"
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
-							}, waitTime);
-						}}
-						on:click={() => {
-							if (!deleteGroupVisible && !addGroupVisible)
-								groupsDropDownVisible = !groupsDropDownVisible;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								if (!deleteGroupVisible && !addGroupVisible)
-									groupsDropDownVisible = !groupsDropDownVisible;
-							}
-						}}
-						on:focusout={() => {
-							setTimeout(() => {
-								if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
-							}, waitTime);
-						}}
-					>
-						<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-						{#if groupsDropDownVisible}
-							<table
-								class="dropdown"
-								on:mouseenter={() => (groupsDropDownMouseEnter = true)}
-								on:mouseleave={() => {
-									setTimeout(() => {
-										if (!groupsDropDownMouseEnter) groupsDropDownVisible = false;
-									}, waitTime);
-									groupsDropDownMouseEnter = false;
-								}}
-							>
-								<tr
-									tabindex="0"
-									on:focus={() => (groupsDropDownMouseEnter = true)}
-									disabled={!$isAdmin}
-									class:disabled={!$isAdmin || groupsRowsSelected.length === 0}
-									on:click={async () => {
-										groupsDropDownVisible = false;
-										if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											groupsDropDownVisible = false;
-											if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
-										}
-									}}
-								>
-									<td>Delete Selected {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'} </td>
-									<td style="width: 0.1rem; padding-left: 0; vertical-align: middle">
-										<img
-											src={deleteSVG}
-											alt="delete group"
-											height="35rem"
-											style="vertical-align: -0.8rem"
-											class:disabled-img={!$isAdmin || groupsRowsSelected.length === 0}
-										/>
-									</td>
-								</tr>
-
-								<tr
-									data-cy="add-group"
-									tabindex="0"
-									on:click={() => {
-										groupsDropDownVisible = false;
-										addGroupVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											groupsDropDownVisible = false;
-											addGroupVisible = true;
-										}
-									}}
-									on:focusout={() => (groupsDropDownMouseEnter = false)}
-									class:hidden={addGroupVisible}
-								>
-									<td style="border-bottom-color: transparent">Add New Group</td>
-									<td
-										on:click={() => (addGroupVisible = true)}
-										style="width: 0.1rem; height: 2.2rem;padding-left: 0; vertical-align: middle; border-bottom-color: transparent"
-									>
-										<img
-											src={addSVG}
-											alt="add group"
-											height="27rem"
-											style="vertical-align: middle; margin-left: 0.2rem"
-										/>
-									</td>
-								</tr>
-							</table>
-						{/if}
-					</div>
-				{/if}
+				<img
+					src={deleteSVG}
+					alt="options"
+					class="dot"
+					class:button-disabled={!$isAdmin || groupsRowsSelected.length === 0}
+					style="margin-left: 0.5rem"
+					on:click={() => {
+						if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
+						}
+					}}
+				/>
+				<img
+					src={addSVG}
+					alt="options"
+					class="dot"
+					class:button-disabled={!$isAdmin}
+					on:click={() => {
+						if ($isAdmin) addGroupVisible = true;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							addGroupVisible = true;
+						}
+					}}
+				/>
 
 				{#if $groups}
 					{#if $groups.length > 0}
@@ -464,6 +402,8 @@
 														groupsDropDownVisible = false;
 														if (e.target.checked === true) {
 															groupsRowsSelected.push(group);
+															// reactive statement
+															groupsRowsSelected = groupsRowsSelected;
 															groupsRowsSelectedTrue = true;
 														} else {
 															groupsRowsSelected = groupsRowsSelected.filter(
@@ -556,7 +496,7 @@
 						No Groups Found.&nbsp;<span class="link" on:click={() => (addGroupVisible = true)}>
 							Click here
 						</span>
-						to create a new Group
+						to create a new Group.
 					</p>
 				{/if}
 			</div>
@@ -655,12 +595,6 @@
 
 	.dot {
 		float: right;
-	}
-
-	.dropdown {
-		margin-top: 8.5rem;
-		margin-right: 8rem;
-		width: 12rem;
 	}
 
 	tr {
