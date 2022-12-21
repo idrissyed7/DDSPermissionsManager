@@ -398,6 +398,7 @@
 						}}
 					/>
 					<img
+						data-cy="add-topic"
 						src={addSVG}
 						alt="options"
 						class="dot"

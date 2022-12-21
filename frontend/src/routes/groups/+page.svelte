@@ -334,6 +334,7 @@
 					}}
 				/>
 				<img
+					data-cy="add-group"
 					src={addSVG}
 					alt="options"
 					class="dot"

@@ -546,6 +546,7 @@
 						}}
 					/>
 					<img
+						data-cy="add-application"
 						src={addSVG}
 						alt="options"
 						class="dot"

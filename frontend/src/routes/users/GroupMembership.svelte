@@ -458,6 +458,7 @@
 					}}
 				/>
 				<img
+					data-cy="add-user"
 					src={addSVG}
 					alt="options"
 					class="dot"
