@@ -140,6 +140,8 @@ gcp:
 ---
 permissions-manager:
   application:
+    bind-token:
+      time-expiry: 48 # in hours
     client-certificate:
       time-expiry: 365 # in days
     permissions-file:

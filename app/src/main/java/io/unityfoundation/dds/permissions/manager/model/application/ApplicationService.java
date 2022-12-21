@@ -98,6 +98,8 @@ public class ApplicationService {
     protected Long permissionExpiry;
     @Property(name = "permissions-manager.application.permissions-file.domain")
     protected Long permissionDomain;
+    @Property(name = "permissions-manager.application.bind-token.time-expiry")
+    protected Integer appBindTokenExpiry;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -637,6 +639,7 @@ public class ApplicationService {
         }
 
         Optional<User> currentlyAuthenticatedUser = securityUtil.getCurrentlyAuthenticatedUser();
+        Integer expiry = appBindTokenExpiry != null ? appBindTokenExpiry: 48;
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(applicationId.toString())
@@ -647,7 +650,7 @@ public class ApplicationService {
                 .build();
 
         Map<String, Object> map = jwtClaimsSetGenerator.generateClaims(
-                new AuthenticationJWTClaimsSetAdapter(claimsSet), 6000);
+                new AuthenticationJWTClaimsSetAdapter(claimsSet),  expiry * 60 * 60);
         Optional<String> token = jwtTokenGenerator.generateToken(map);
 
         return HttpResponse.ok(token.get());
