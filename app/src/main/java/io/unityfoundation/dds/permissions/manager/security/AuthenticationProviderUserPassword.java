@@ -36,7 +36,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
         if ( (identity.equals("unity") || identity.equals("unity-admin")) && password.equals("password") ) {
             if (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) {
 
-                String testEmail = "unity-test@etest.test";
+                String testEmail = "unity-test@test.test";
                 if ( identity.equals("unity-admin") ){
                     testEmail = "unity-admin-test@test.test";
                 }
