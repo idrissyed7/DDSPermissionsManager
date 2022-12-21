@@ -87,6 +87,7 @@
 	let hasMoreGroups = true;
 	let stopSearchingGroups = false;
 	let timer;
+	let singleGroup;
 
 	if (actionEditGroup) newGroupName = groupCurrentName;
 
@@ -120,6 +121,7 @@
 		if (actionAddApplication) {
 			document.querySelector('#group-input').placeholder = 'Group **';
 		}
+		singleGroupCheck();
 	});
 
 	const searchGroup = async (searchGroupStr) => {
@@ -158,6 +160,17 @@
 
 		searchGroupsResultsVisible = false;
 		searchGroupActive = false;
+	};
+
+	const singleGroupCheck = async () => {
+		const res = await httpAdapter.get(
+			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}`
+		);
+		if (res.data.content?.length === 1) {
+			singleGroup = res.data.content;
+			searchGroupActive = false;
+			searchGroups = singleGroup[0].name;
+		}
 	};
 
 	const validateEmail = (input) => {
