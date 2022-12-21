@@ -12,7 +12,7 @@ public class GroupUserDTO {
     private Long id;
 
     @NotBlank
-    @Email
+    @Email(regexp = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$")
     private String email;
 
     @NotNull

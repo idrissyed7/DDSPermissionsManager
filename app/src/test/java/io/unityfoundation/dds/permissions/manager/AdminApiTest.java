@@ -108,8 +108,7 @@ public class AdminApiTest {
 
         @Test
         public void userWithInvalidEmailFormatShallNotPersist() {
-            User john = new User("pparker@.test.test", true);
-            HttpRequest<?> request = HttpRequest.POST("/admins/save", john);
+            HttpRequest<?> request = HttpRequest.POST("/admins/save", new User("pparker@.test.test", true));
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -118,6 +117,17 @@ public class AdminApiTest {
             Optional<List> bodyOptional = thrown.getResponse().getBody(List.class);
             assertTrue(bodyOptional.isPresent());
             List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.INVALID_EMAIL_FORMAT.equals(map.get("code"))));
+
+            request = HttpRequest.POST("/admins/save", new User("pparker@unityfoundation", true));
+            HttpRequest<?> finalRequest1 = request;
+            thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest1);
+            });
+            assertEquals(BAD_REQUEST, thrown.getStatus());
+            bodyOptional = thrown.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.INVALID_EMAIL_FORMAT.equals(map.get("code"))));
         }
 
