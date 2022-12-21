@@ -92,13 +92,13 @@ public class ApplicationService {
 
     public static final String E_TAG_HEADER_NAME = "ETag";
 
-    @Property(name = "permissions-manager.application.client-certificate.time-expiry")
+    @Property(name = "permissions-manager.application.client-certificate.time-expiry", defaultValue = "365")
     protected Long certExpiry;
-    @Property(name = "permissions-manager.application.permissions-file.time-expiry")
+    @Property(name = "permissions-manager.application.permissions-file.time-expiry", defaultValue = "30")
     protected Long permissionExpiry;
-    @Property(name = "permissions-manager.application.permissions-file.domain")
+    @Property(name = "permissions-manager.application.permissions-file.domain", defaultValue = "1")
     protected Long permissionDomain;
-    @Property(name = "permissions-manager.application.bind-token.time-expiry")
+    @Property(name = "permissions-manager.application.bind-token.time-expiry", defaultValue = "48")
     protected Integer appBindTokenExpiry;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
@@ -503,14 +503,11 @@ public class ApplicationService {
         dataModel.put("subject", sn);
         dataModel.put("applicationId", application.getId());
 
-        Long expiry = permissionExpiry != null ? permissionExpiry: 30;
         String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-        String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(expiry).format(DateTimeFormatter.ISO_INSTANT);
+        String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(permissionExpiry).format(DateTimeFormatter.ISO_INSTANT);
         dataModel.put("validStart", validStart);
         dataModel.put("validEnd", validEnd);
-
-        Long domain = permissionDomain != null ? permissionDomain : 1;
-        dataModel.put("domain", domain);
+        dataModel.put("domain", permissionDomain);
 
         dataModel.putAll(buildApplicationPermissions(application));
 
@@ -561,14 +558,12 @@ public class ApplicationService {
             X509Certificate caCertificate, PrivateKey caPrivateKey, PublicKey eePublicKey, Application application, String nonce)
             throws GeneralSecurityException, CertIOException, OperatorCreationException {
 
-        Long expiry = certExpiry != null ? certExpiry : 365;
-
         X509v3CertificateBuilder v3CertBldr = new JcaX509v3CertificateBuilder(
                 caCertificate.getSubjectX500Principal(), // issuer
                 BigInteger.valueOf(System.currentTimeMillis()) // serial number
                         .multiply(BigInteger.valueOf(10)),
                 new Date(System.currentTimeMillis() - 1000L * 5), // start time
-                new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(expiry)), // expiry time
+                new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(certExpiry)), // expiry time
                 new X500Principal(buildSubject(application, nonce)), // subject
                 eePublicKey); // subject public key
 
@@ -639,7 +634,6 @@ public class ApplicationService {
         }
 
         Optional<User> currentlyAuthenticatedUser = securityUtil.getCurrentlyAuthenticatedUser();
-        Integer expiry = appBindTokenExpiry != null ? appBindTokenExpiry: 48;
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(applicationId.toString())
@@ -650,7 +644,7 @@ public class ApplicationService {
                 .build();
 
         Map<String, Object> map = jwtClaimsSetGenerator.generateClaims(
-                new AuthenticationJWTClaimsSetAdapter(claimsSet),  expiry * 60 * 60);
+                new AuthenticationJWTClaimsSetAdapter(claimsSet),  appBindTokenExpiry * 60 * 60);
         Optional<String> token = jwtTokenGenerator.generateToken(map);
 
         return HttpResponse.ok(token.get());
