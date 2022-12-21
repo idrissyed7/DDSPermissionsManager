@@ -186,7 +186,6 @@ select:focus {
 .dot {
 	height: 2.1rem;
 	width: 2.1rem;
-	background-color: #e9e4e8;
 	border-radius: 50%;
 	display: inline-flex;
 	justify-content: center;
@@ -195,6 +194,9 @@ select:focus {
 	font-weight: 600;
 	font-size: 0.9rem;
 	cursor: pointer;
+	filter: invert();
+	background-color: #c7a35a;
+	/* background-color: #e9e4e8; grey */
 }
 
 .pagination-image {

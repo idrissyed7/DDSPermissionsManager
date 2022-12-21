@@ -11,9 +11,6 @@ describe('Applications Capabilities', () => {
     it('should add a new application', () => {
         cy.visit('/applications');
 
-        cy.get('[data-cy="dot-applications"]')
-        .click();
-
         cy.get('[data-cy="add-application"]')
         .click();
 

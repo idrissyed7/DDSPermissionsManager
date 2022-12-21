@@ -13,7 +13,6 @@
 	import GroupMembership from './GroupMembership.svelte';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
-	import threedotsSVG from '../../icons/threedots.svg';
 	import deleteSVG from '../../icons/delete.svg';
 	import addSVG from '../../icons/add.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
@@ -36,6 +35,16 @@
 		document.body.classList.add('modal-open');
 	} else if (browser && !(addSuperUserVisible || deleteSuperUserVisible)) {
 		document.body.classList.remove('modal-open');
+	}
+
+	// Checkboxes selection
+	$: if ($users?.length === superUsersRowsSelected?.length) {
+		superUsersRowsSelectedTrue = false;
+		superUsersAllRowsSelectedTrue = true;
+	} else if (superUsersRowsSelected?.length > 0) {
+		superUsersRowsSelectedTrue = true;
+	} else {
+		superUsersAllRowsSelectedTrue = false;
 	}
 
 	// Promises
@@ -273,106 +282,35 @@
 							on:click={() => (searchString = '')}>Clear</button
 						>
 					{/if}
-
-					<div
-						data-cy="dot-super-users"
+					<img
+						src={deleteSVG}
+						alt="options"
 						class="dot"
-						tabindex="0"
-						on:mouseleave={() => {
-							setTimeout(() => {
-								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-							}, waitTime);
-						}}
-						on:focusout={() => {
-							setTimeout(() => {
-								if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-							}, waitTime);
-						}}
+						class:button-disabled={superUsersRowsSelected.length === 0}
+						style="margin-left: 0.5rem"
 						on:click={() => {
-							if (!deleteSuperUserVisible && !addSuperUserVisible)
-								superUsersDropDownVisible = !superUsersDropDownVisible;
+							if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								if (!deleteSuperUserVisible && !addSuperUserVisible)
-									superUsersDropDownVisible = !superUsersDropDownVisible;
+								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 							}
 						}}
-					>
-						<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-						{#if superUsersDropDownVisible && !deleteSuperUserVisible && !addSuperUserVisible}
-							<table
-								class="dropdown"
-								on:mouseenter={() => {
-									superUsersDropDownMouseEnter = true;
-								}}
-								on:mouseleave={() => {
-									setTimeout(() => {
-										if (!superUsersDropDownMouseEnter) superUsersDropDownVisible = false;
-									}, waitTime);
-									superUsersDropDownMouseEnter = false;
-								}}
-							>
-								<tr
-									tabindex="0"
-									class:disabled={superUsersRowsSelected.length === 0}
-									on:click={async () => {
-										superUsersDropDownVisible = false;
-										if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											superUsersDropDownVisible = false;
-											if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-										}
-									}}
-									on:focus={() => (superUsersDropDownMouseEnter = true)}
-								>
-									<td>
-										Delete Selected {superUsersRowsSelected.length > 1 ? 'Users' : 'User'}
-									</td>
-									<td>
-										<img
-											src={deleteSVG}
-											alt="delete user"
-											height="35rem"
-											style="vertical-align: -0.8rem"
-											class:disabled-img={superUsersRowsSelected.length === 0}
-										/>
-									</td>
-								</tr>
-
-								<tr
-									data-cy="add-super-user"
-									tabindex="0"
-									on:click={() => {
-										superUsersDropDownVisible = false;
-										addSuperUserVisible = true;
-									}}
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											superUsersDropDownVisible = false;
-											addSuperUserVisible = true;
-										}
-									}}
-									on:focusout={() => (superUsersDropDownMouseEnter = false)}
-								>
-									<td style="border-bottom-color: transparent"> Add New Super User </td>
-									<td
-										style="width: 0.1rem; height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-									>
-										<img
-											src={addSVG}
-											alt="add user"
-											height="27rem"
-											style="vertical-align: middle; margin-left: 1.3rem"
-										/>
-									</td>
-								</tr>
-							</table>
-						{/if}
-					</div>
+					/>
+					<img
+						data-cy="add-super-user"
+						src={addSVG}
+						alt="options"
+						class="dot"
+						on:click={() => {
+							addSuperUserVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								addSuperUserVisible = true;
+							}
+						}}
+					/>
 
 					{#if $users && $users.length > 0}
 						<table data-cy="super-users-table" style="margin-top: 0.5rem">
@@ -417,6 +355,8 @@
 													superUsersDropDownVisible = false;
 													if (e.target.checked === true) {
 														superUsersRowsSelected.push(user);
+														// reactive statement
+														superUsersRowsSelected = superUsersRowsSelected;
 														superUsersRowsSelectedTrue = true;
 													} else {
 														superUsersRowsSelected = superUsersRowsSelected.filter(

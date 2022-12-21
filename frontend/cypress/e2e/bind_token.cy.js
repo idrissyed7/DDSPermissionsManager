@@ -17,22 +17,10 @@ describe('Bind Token Functionality', () => {
         cy.get('[data-cy="generate-bind-token-button"]')
         .click();
 
-        cy.get('textarea').then(($bindToken) => {
+        cy.wait(500);
 
-            const bindToken = $bindToken.text();
-
-            cy.visit('/topics');
-
-            cy.get('td').contains('Test Topic 123')
-            .click();
-
-            cy.get('[data-cy="bind-token-input"]')
-            .type(bindToken);
-
-            cy.get('[data-cy="add-application-button"]')
-            .click();
-
-            cy.get('span').should('contain.text', 'Application One');
-        })
-    });
+        cy.get('textarea').invoke('val').should('contains', 'eyJh');
+        });
 });
+ 
+

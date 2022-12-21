@@ -72,7 +72,7 @@
 <hr style="border-color: rgba(0, 0, 0, 0.15);" />
 
 {#if avatarDropdownVisible}
-	<div style="position:absolute; right: 0vw">
+	<div style="display: flex; justify-content: flex-end; margin-bottom: -1.87rem">
 		<table
 			class="avatar-dropdown"
 			class:hidden={!$isAuthenticated}
@@ -122,7 +122,7 @@
 		align-self: center;
 		height: 2rem;
 		justify-content: space-between;
-		width: 100vw;
+		width: 100%;
 	}
 
 	.logo {
@@ -154,22 +154,6 @@
 		padding-left: 1rem;
 	}
 
-	.avatar-dropdown {
-		position: sticky;
-		position: -webkit-sticky; /* Safari */
-		align-self: center;
-		float: right;
-		right: 0vw;
-		width: fit-content;
-		margin: -0.65rem 0 -2.4rem 0vw;
-		background-color: #f3edf7;
-		padding-left: 1rem;
-		font-size: 0.9rem;
-		font-weight: 500;
-		line-height: 2.8rem;
-		box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-	}
-
 	.dot {
 		position: sticky;
 		position: -webkit-sticky; /* Safari */
@@ -177,8 +161,6 @@
 		right: 1vw;
 		height: 2.4rem;
 		width: 2.4rem;
-		color: white;
-		background-color: #6750a4;
 		border-radius: 50%;
 		font-weight: 600;
 		font-size: 0.9rem;
@@ -188,8 +170,20 @@
 		cursor: pointer;
 	}
 
-	div.dot:focus {
-		background-color: #7b61c4;
+	.avatar-dropdown {
+		position: sticky;
+		position: -webkit-sticky; /* Safari */
+		align-self: center;
+		right: 0vw;
+		float: right;
+		width: fit-content;
+		margin: -0.65rem 0 -2.4rem 1vw;
+		background-color: #f3edf7;
+		padding-left: 1rem;
+		font-size: 0.9rem;
+		font-weight: 500;
+		line-height: 2.8rem;
+		box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
 	}
 
 	.go-back {

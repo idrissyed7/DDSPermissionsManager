@@ -11,9 +11,6 @@ describe('Super users capabilities', () => {
     it('should add a new super user', () => {
         cy.visit('/users');
 
-        cy.get('[data-cy="dot-super-users"]')
-        .click();
-
         cy.get('[data-cy="add-super-user"]')
         .click();
 

@@ -11,9 +11,6 @@ describe('Topics Capabilities', () => {
     it('should add a new topic to group Alpha', () => {
         cy.visit('/topics');
 
-        cy.get('[data-cy="dot-topics"]')
-        .click();
-
         cy.get('[data-cy="add-topic"]')
         .click();
 
@@ -33,9 +30,6 @@ describe('Topics Capabilities', () => {
 
     it('should add a new topic to group Beta', () => {
         cy.visit('/topics');
-
-        cy.get('[data-cy="dot-topics"]')
-        .click();
 
         cy.get('[data-cy="add-topic"]')
         .click();

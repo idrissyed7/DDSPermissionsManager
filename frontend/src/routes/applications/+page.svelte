@@ -19,7 +19,6 @@
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
-	import threedotsSVG from '../../icons/threedots.svg';
 	import lockSVG from '../../icons/lock.svg';
 	import copySVG from '../../icons/copy.svg';
 	import errorMessages from '$lib/errorMessages.json';
@@ -42,6 +41,16 @@
 		!(addApplicationVisible || deleteApplicationVisible || errorMessageVisible)
 	) {
 		document.body.classList.remove('modal-open');
+	}
+
+	// checkboxes selection
+	$: if ($applications?.length === applicationsRowsSelected?.length) {
+		applicationsRowsSelectedTrue = false;
+		applicationsAllRowsSelectedTrue = true;
+	} else if (applicationsRowsSelected?.length > 0) {
+		applicationsRowsSelectedTrue = true;
+	} else {
+		applicationsAllRowsSelectedTrue = false;
 	}
 
 	// Promises
@@ -520,109 +529,37 @@
 						>
 					{/if}
 
-					{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
-						<div
-							data-cy="dot-applications"
-							tabindex="0"
-							class="dot"
-							on:mouseleave={() => {
-								setTimeout(() => {
-									if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
-								}, waitTime);
-							}}
-							on:focusout={() => {
-								setTimeout(() => {
-									if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
-								}, waitTime);
-							}}
-							on:click={() => {
-								if (!deleteApplicationVisible && !addApplicationVisible)
-									applicationsDropDownVisible = !applicationsDropDownVisible;
-							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
-									if (!deleteApplicationVisible && !addApplicationVisible)
-										applicationsDropDownVisible = !applicationsDropDownVisible;
-								}
-							}}
-						>
-							<img src={threedotsSVG} alt="options" style="scale:50%" />
-
-							{#if applicationsDropDownVisible}
-								<table
-									class="dropdown"
-									on:mouseenter={() => (applicationsDropDownMouseEnter = true)}
-									on:mouseleave={() => {
-										setTimeout(() => {
-											if (!applicationsDropDownMouseEnter) applicationsDropDownVisible = false;
-										}, waitTime);
-										applicationsDropDownMouseEnter = false;
-									}}
-								>
-									<tr
-										tabindex="0"
-										disabled={!$isAdmin}
-										class:disabled={!$isAdmin || applicationsRowsSelected.length === 0}
-										on:click={async () => {
-											applicationsDropDownVisible = false;
-											if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												applicationsDropDownVisible = false;
-												if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
-											}
-										}}
-										on:focus={() => (applicationsDropDownMouseEnter = true)}
-									>
-										<td
-											>Delete Selected {applicationsRowsSelected.length > 1
-												? 'Applications'
-												: 'Application'}
-										</td>
-										<td style="padding-left: 0; vertical-align: middle">
-											<img
-												src={deleteSVG}
-												alt="delete application"
-												height="35rem"
-												style="vertical-align: -0.8rem"
-												class:disabled-img={!$isAdmin || applicationsRowsSelected.length === 0}
-											/>
-										</td>
-									</tr>
-
-									<tr
-										data-cy="add-application"
-										tabindex="0"
-										on:click={() => {
-											applicationsDropDownVisible = false;
-											addApplicationVisible = true;
-										}}
-										on:keydown={(event) => {
-											if (event.which === returnKey) {
-												applicationsDropDownVisible = false;
-												addApplicationVisible = true;
-											}
-										}}
-										on:focusout={() => (applicationsDropDownMouseEnter = false)}
-										class:hidden={addApplicationVisible}
-									>
-										<td style="border-bottom-color: transparent">Add New Application</td>
-										<td
-											style="height: 2.2rem; padding-left: 0; vertical-align: middle;border-bottom-color: transparent"
-										>
-											<img
-												src={addSVG}
-												alt="add application"
-												height="27rem"
-												style="vertical-align: middle; margin-left: 0.25rem"
-											/>
-										</td>
-									</tr>
-								</table>
-							{/if}
-						</div>
-					{/if}
+					<img
+						src={deleteSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={(!$isAdmin && !isApplicationAdmin) ||
+							applicationsRowsSelected.length === 0}
+						style="margin-left: 0.5rem"
+						on:click={() => {
+							if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
+							}
+						}}
+					/>
+					<img
+						data-cy="add-application"
+						src={addSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={!$isAdmin && !isApplicationAdmin}
+						on:click={() => {
+							if ($isAdmin || isApplicationAdmin) addApplicationVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								addApplicationVisible = true;
+							}
+						}}
+					/>
 				{/if}
 
 				{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
@@ -678,6 +615,8 @@
 														applicationsDropDownVisible = false;
 														if (e.target.checked === true) {
 															applicationsRowsSelected.push(app);
+															// reactive statement
+															applicationsRowsSelected = applicationsRowsSelected;
 															applicationsRowsSelectedTrue = true;
 														} else {
 															applicationsRowsSelected = applicationsRowsSelected.filter(
@@ -772,7 +711,7 @@
 						>
 							Click here
 						</span>
-						to create a new Application
+						to create a new Application.
 					</p>
 				{/if}
 				{#await promiseDetail then _}
@@ -821,7 +760,7 @@
 									</tbody>
 								{/each}
 							{:else}
-								<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated</p>
+								<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated.</p>
 							{/if}
 						</table>
 						<div
@@ -833,100 +772,102 @@
 								0 of 0
 							{/if}
 						</div>
+						<!-- {#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin} -->
+						<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
+							<button
+								data-cy="generate-bind-token-button"
+								style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
+								class="button-blue"
+								class:button-disabled={!isApplicationAdmin && !$isAdmin}
+								disabled={!isApplicationAdmin && !$isAdmin}
+								on:click={() => generateBindToken(selectedAppId)}
+							>
+								<img
+									src={lockSVG}
+									alt="generate bind token"
+									height="20rem"
+									style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+								/>
+								<span style="vertical-align: middle">Generate Bind Token</span>
+							</button>
 
-						{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin}
-							<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
-								<button
-									data-cy="generate-bind-token-button"
-									style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
-									class="button-blue"
-									on:click={() => generateBindToken(selectedAppId)}
-								>
-									<img
-										src={lockSVG}
-										alt="generate bind token"
-										height="20rem"
-										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-									/>
-									<span style="vertical-align: middle">Generate Bind Token</span>
-								</button>
+							<button
+								data-cy="generate-password-button"
+								style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
+								class="button-blue"
+								class:button-disabled={!isApplicationAdmin && !$isAdmin}
+								disabled={!isApplicationAdmin && !$isAdmin}
+								on:click={() => generatePassword(selectedAppId)}
+							>
+								<img
+									src={lockSVG}
+									alt="generate password"
+									height="20rem"
+									style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+								/>
+								<span style="vertical-align: middle">Generate Password</span>
+							</button>
+						</div>
+						<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
+							Username: <span style="font-weight: 300">{selectedAppId}</span>
+						</div>
+						<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
+							Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
+						</div>
 
-								<button
-									data-cy="generate-password-button"
-									style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
-									class="button-blue"
-									on:click={() => generatePassword(selectedAppId)}
-								>
-									<img
-										src={lockSVG}
-										alt="generate password"
-										height="20rem"
-										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-									/>
-									<span style="vertical-align: middle">Generate Password</span>
-								</button>
-							</div>
-							<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
-								Username: <span style="font-weight: 300">{selectedAppId}</span>
-							</div>
-							<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
-								Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
-							</div>
-
-							{#if generateCredentialsVisible}
-								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
-								<div
-									style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
+						{#if generateCredentialsVisible}
+							<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
+							<div
+								style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
+								on:click={() => {
+									copyPassword(selectedAppId);
+									showCopyPasswordNotification();
+								}}
+							>
+								<span data-cy="generated-password" style="vertical-align: middle">{password}</span>
+								<img
+									src={copySVG}
+									alt="copy password"
+									height="29rem"
+									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
 									on:click={() => {
 										copyPassword(selectedAppId);
 										showCopyPasswordNotification();
 									}}
-								>
-									<span data-cy="generated-password" style="vertical-align: middle">{password}</span
-									>
-									<img
-										src={copySVG}
-										alt="copy password"
-										height="29rem"
-										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
-										on:click={() => {
-											copyPassword(selectedAppId);
-											showCopyPasswordNotification();
-										}}
-									/>
-								</div>
+								/>
+							</div>
 
-								{#if showCopyPasswordNotificationVisible}
-									<div class="bubble">Password Copied!</div>
-								{/if}
-							{/if}
-
-							{#if generateBindTokenVisible}
-								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
-									Bind Token
-									<img
-										src={copySVG}
-										alt="copy bind token"
-										height="29rem"
-										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
-										on:click={() => {
-											copyBindToken(selectedAppId);
-											showCopyBindTokenNotification();
-										}}
-									/>
-									<textarea
-										rows="4"
-										cols="50"
-										style="vertical-align: middle; width: 50vw; margin-top: 1rem"
-										>{bindToken}</textarea
-									>
-								</div>
-
-								{#if showCopyBindTokenNotificationVisible}
-									<div class="bubble">Bind Token Copied!</div>
-								{/if}
+							{#if showCopyPasswordNotificationVisible}
+								<div class="bubble">Password Copied!</div>
 							{/if}
 						{/if}
+
+						{#if generateBindTokenVisible}
+							<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
+								Bind Token
+								<img
+									src={copySVG}
+									alt="copy bind token"
+									height="29rem"
+									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+									on:click={() => {
+										copyBindToken(selectedAppId);
+										showCopyBindTokenNotification();
+									}}
+								/>
+								<textarea
+									rows="4"
+									cols="50"
+									style="vertical-align: middle; width: 50vw; margin-top: 1rem"
+									>{bindToken}</textarea
+								>
+							</div>
+
+							{#if showCopyBindTokenNotificationVisible}
+								<div class="bubble">Bind Token Copied!</div>
+							{/if}
+						{/if}
+						<!-- {/if} -->
 					{/if}
 				{/await}
 			</div>
@@ -1028,13 +969,6 @@
 
 	.dot {
 		float: right;
-	}
-
-	.dropdown {
-		margin-top: 8.5rem;
-		margin-right: 9.5rem;
-		width: 14rem;
-		height: 5rem;
 	}
 
 	table.application-table-admin {

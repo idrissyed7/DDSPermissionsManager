@@ -9,9 +9,6 @@
  it('should add a new user', () => {
         cy.visit('/users');
 
-        cy.get('[data-cy="dot-users"]')
-        .click();
-
         cy.get('[data-cy="add-user"]')
         .click();
 

@@ -11,9 +11,6 @@ describe('Group Capabilities', () => {
     it('should add a new group', () => {
         cy.visit('/groups');
 
-        cy.get('[data-cy="dot-groups"]')
-        .click();
-
         cy.get('[data-cy="add-group"]')
         .click();
 
