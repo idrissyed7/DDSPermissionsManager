@@ -2,7 +2,7 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
-	import permissionsByGroup from '../../stores/permissionsByGroup';
+	// import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 	import headerTitle from '../../stores/headerTitle';
@@ -10,6 +10,7 @@
 	import deleteSVG from '../../icons/delete.svg';
 	import addSVG from '../../icons/add.svg';
 	import errorMessages from '$lib/errorMessages.json';
+	import errorMessageAssociation from '../../stores/errorMessageAssociation';
 
 	export let selectedTopicId, isTopicAdmin;
 
@@ -26,9 +27,9 @@
 
 	// Modals
 	let errorMessageVisible = false;
+	let associateApplicationVisible = false;
 
 	// Constants
-	const waitTime = 1000;
 	const returnKey = 13;
 
 	// Error Handling
@@ -64,12 +65,6 @@
 		errorMessageVisible = true;
 	};
 
-	const errorMessageClear = () => {
-		errorMsg = '';
-		errorObject = '';
-		errorMessageVisible = false;
-	};
-
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
 		selectedTopicApplications = resApps.data.content;
@@ -92,9 +87,14 @@
 					.post(`/application_permissions/${topicId}/${accessTypeSelection}`, {}, config)
 					.then(async () => await loadApplicationPermissions(topicId));
 			}
+			errorMessageAssociation.set([]);
+			associateApplicationVisible = false;
 		} catch (err) {
-			if (err.request.status === 403) {
-				errorMessage('Error Adding Application', errorMessages['bind_token']['forbidden']);
+			if (err.response.data && err.response.status === 400) {
+				const decodedError = decodeError(Object.create(...err.response.data));
+				errorMessageAssociation.set(errorMessages[decodedError.category][decodedError.code]);
+			} else {
+				errorMessageAssociation.set(errorMessages['bind_token']['forbidden']);
 			}
 		}
 	};
@@ -107,6 +107,13 @@
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
 		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
 		await loadApplicationPermissions(topicId);
+	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
 	};
 </script>
 
@@ -122,6 +129,29 @@
 				if (event.which === returnKey) {
 					errorMessageVisible = false;
 				}
+			}}
+		/>
+	{/if}
+
+	{#if associateApplicationVisible}
+		<Modal
+			title="Associate an Application"
+			actionAssociateApplication={true}
+			{selectedTopicId}
+			on:cancel={() => {
+				errorMessageAssociation.set([]);
+				associateApplicationVisible = false;
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					errorMessageAssociation.set([]);
+					associateApplicationVisible = false;
+				}
+			}}
+			on:addTopicApplicationAssociation={(e) => {
+				accessTypeSelection = e.detail.accessTypeSelection;
+				bindToken = e.detail.bindToken;
+				addTopicApplicationAssociation(selectedTopicId, true);
 			}}
 		/>
 	{/if}
@@ -161,54 +191,22 @@
 				</td>
 
 				<td style="border-bottom-color: transparent;">
-					<input
-						data-cy="bind-token-input"
-						style="margin-top: 0.5rem; margin-bottom: 0.5rem"
-						class="searchbox"
-						type="search"
-						placeholder="Bind Token"
-						disabled={!$isAdmin && !isTopicAdmin}
-						bind:value={bindToken}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								bindToken = bindToken?.trim();
-								document.activeElement.blur();
-								if (bindToken?.length > 0) addTopicApplicationAssociation(selectedTopicId, true);
-							}
-						}}
-						on:blur={() => {
-							bindToken = bindToken?.trim();
-						}}
-					/>
 					<div style="margin-left: 7.4rem">
 						<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
 							{errorMessageApplication}
 						</span>
 					</div>
 				</td>
-				<td style="border-bottom-color: transparent;">
-					<select style="width: 8rem" bind:value={accessTypeSelection}>
-						<option value="" disabled selected>Access Type</option>
-						<option value="READ">Read</option>
-						<option value="WRITE">Write</option>
-						<option value="READ_WRITE">Read + Write</option>
-					</select>
-				</td>
-				<td style="border-bottom-color: transparent;">
+				<td style="border-bottom-color: transparent" />
+
+				<td style="border-bottom-color: transparent">
 					<button
 						data-cy="add-application-button"
 						style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
 						class="button-blue"
-						class:button-disabled={(!$isAdmin && !isTopicAdmin) ||
-							bindToken?.length === 0 ||
-							accessTypeSelection === ''}
-						disabled={(!$isAdmin && !isTopicAdmin) ||
-							bindToken?.length === 0 ||
-							accessTypeSelection === ''}
-						on:click={() => {
-							if (bindToken?.length > 0 && accessTypeSelection !== '')
-								addTopicApplicationAssociation(selectedTopicId, true);
-						}}
+						class:button-disabled={!$isAdmin && !isTopicAdmin}
+						disabled={!$isAdmin && !isTopicAdmin}
+						on:click={() => (associateApplicationVisible = true)}
 					>
 						<img
 							src={addSVG}

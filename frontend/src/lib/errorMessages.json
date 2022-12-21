@@ -36,6 +36,7 @@
             "requires_group_association": "Application requires group association",
             "cannot_update_group_association": "Application cannot update group association",
             "exists": "Application already exists",
+            "permission.exists": "Application already exists",
             "name.cannot_be_blank_or_null": "Application name cannot be blank or invalid",
             "name.cannot_be_less_than_three_characters": "Application name cannot be less than 3 characters",
             "identity_ca_cert.not_found": "Application certificate not found",
@@ -73,6 +74,7 @@
 
     "bind_token":
         {
-            "forbidden": "Invalid or Expired Bind Token"
+            "forbidden": "Invalid or Expired Bind Token",
+            "invalid": "Invalid Bind Token"
         }
 }
