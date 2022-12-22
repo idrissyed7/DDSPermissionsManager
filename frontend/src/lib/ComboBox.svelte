@@ -110,10 +110,10 @@
 				comboboxfilter.blur();
 				break;
 			case 'ArrowUp':
-				if (selected !== -1) {
-					selected = (selected - 1) % searchGroupResults.length;
-				} else {
+				if (selected === -1 || selected === 0) {
 					selected = searchGroupResults.length - 1;
+				} else {
+					selected--;
 				}
 				list.querySelector(`#listbox-1-option-${selected}`).scrollIntoView(false);
 
