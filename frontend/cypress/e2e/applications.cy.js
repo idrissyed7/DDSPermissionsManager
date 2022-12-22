@@ -19,6 +19,10 @@ describe('Applications Capabilities', () => {
 
         cy.get('[data-cy="group-input"]')
         .type("alpha");
+        
+        cy.wait(500);
+        
+        cy.get('[data-cy="group-input"]').type('{downArrow}').type('{enter}');
 
         cy.get('[data-cy="button-add-application"]')
         .click();

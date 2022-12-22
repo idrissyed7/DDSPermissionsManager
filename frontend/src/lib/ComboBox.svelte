@@ -170,6 +170,7 @@
 		aria-haspopup="listbox"
 	>
 		<input
+			data-cy="group-input"
 			placeholder="Group *"
 			role="combobox"
 			id="combobox-1"
