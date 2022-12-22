@@ -849,7 +849,7 @@
 									src={copySVG}
 									alt="copy bind token"
 									height="29rem"
-									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem; cursor: pointer"
 									on:click={() => {
 										copyBindToken(selectedAppId);
 										showCopyBindTokenNotification();

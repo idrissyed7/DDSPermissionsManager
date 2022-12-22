@@ -11,6 +11,7 @@
 	import topicAdminTopics from '../stores/topicAdminTopics';
 	import applicationAdminApplications from '../stores/applicationAdminApplications';
 	import { onMount } from 'svelte';
+	import errorMessageAssociation from '../stores/errorMessageAssociation';
 
 	export let title;
 	export let email = false;
@@ -24,6 +25,7 @@
 	export let actionAddTopic = false;
 	export let actionAddApplication = false;
 	export let actionAddGroup = false;
+	export let actionAssociateApplication = false;
 	export let actionEditUser = false;
 	export let actionEditApplicationName = false;
 	export let actionEditGroup = false;
@@ -47,6 +49,7 @@
 	export let errorMsg = false;
 	export let reminderMsg = false;
 	export let closeModalText = 'Cancel';
+	export let selectedTopicId = '';
 
 	const dispatch = createEventDispatcher();
 
@@ -63,6 +66,12 @@
 	let selectedIsApplicationAdmin = false;
 	let appName = '';
 	let newGroupName = '';
+	let accessTypeSelection;
+
+	// Bind Token
+	let bindToken;
+	let tokenApplicationName, tokenApplicationGroup;
+	let invalidToken = false;
 
 	// Error Handling
 	let invalidTopic = false;
@@ -90,6 +99,17 @@
 	let singleGroup;
 
 	if (actionEditGroup) newGroupName = groupCurrentName;
+
+	// Bind Token Decode
+	$: if (bindToken?.length > 0) {
+		const tokenBody = bindToken.substring(
+			bindToken.indexOf('.') + 1,
+			bindToken.lastIndexOf('.') - 1
+		);
+		decodeToken(tokenBody);
+	} else {
+		errorMessageAssociation.set([]);
+	}
 
 	// Search Groups Feature
 	$: if (
@@ -363,6 +383,22 @@
 	const options = {
 		rootMargin: '20px',
 		unobserveOnEnter: true
+	};
+
+	const decodeToken = async (token) => {
+		let res = atob(token);
+		res = res + '}';
+
+		try {
+			res = JSON.parse(res);
+			invalidToken = false;
+		} catch (err) {
+			errorMessageAssociation.set(errorMessages['bind_token']['invalid']);
+			invalidToken = true;
+		}
+
+		tokenApplicationName = res.appName;
+		tokenApplicationGroup = res.groupName;
 	};
 </script>
 
@@ -752,6 +788,56 @@
 				<h3>Application Admin</h3>
 			</div>
 		{/if}
+
+		{#if actionAssociateApplication}
+			<input
+				data-cy="bind-token-input"
+				style="margin-top: 0.5rem; margin-bottom: 1.5rem"
+				class="searchbox"
+				type="search"
+				placeholder="Bind Token"
+				bind:value={bindToken}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						bindToken = bindToken?.trim();
+						document.activeElement.blur();
+						if (bindToken?.length > 0) {
+							dispatch('addTopicApplicationAssociation', selectedTopicId);
+						}
+					}
+				}}
+				on:blur={() => {
+					bindToken = bindToken?.trim();
+				}}
+			/>
+
+			<select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
+				<option value="" disabled selected>Access Type</option>
+				<option value="READ">Read</option>
+				<option value="WRITE">Write</option>
+				<option value="READ_WRITE">Read + Write</option>
+			</select>
+
+			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
+				<div style="font-size:0.9rem; margin-top: 2rem">Application Name:</div>
+				<div style="font-size:1rem; margin-top: 0.5rem">
+					<strong>{tokenApplicationName}</strong>
+				</div>
+				<div style="font-size:0.9rem; margin-top: 1rem">Application Group:</div>
+				<div style="font-size:1rem; margin-top: 0.5rem">
+					<strong>{tokenApplicationGroup}</strong>
+				</div>
+			{/if}
+			{#if $errorMessageAssociation}
+				<span
+					class="error-message"
+					style="	top: 10.1rem; right: 2.2rem"
+					class:hidden={$errorMessageAssociation?.length === 0}
+				>
+					{$errorMessageAssociation}
+				</span>
+			{/if}
+		{/if}
 	</div>
 
 	{#if actionAddUser}
@@ -1007,6 +1093,31 @@
 		>
 	{/if}
 
+	{#if actionAssociateApplication}
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			class="action-button"
+			disabled={bindToken === undefined || accessTypeSelection?.length === 0 || invalidToken}
+			class:button-disabled={bindToken === undefined ||
+				accessTypeSelection?.length === 0 ||
+				invalidToken}
+			on:click={() =>
+				dispatch('addTopicApplicationAssociation', {
+					bindToken: bindToken,
+					accessTypeSelection: accessTypeSelection
+				})}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('addTopicApplicationAssociation', {
+						bindToken: bindToken,
+						accessTypeSelection: accessTypeSelection
+					});
+				}
+			}}>Add</button
+		>
+	{/if}
+
 	{#if reminderMsg}
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1148,7 +1259,11 @@
 		border-color: rgba(0, 0, 0, 0.07);
 	}
 
-	input[type='checkbox'] {
+	/* input[type='checkbox'] {
 		height: 0.7rem;
+	} */
+
+	.button-disabled {
+		cursor: default;
 	}
 </style>
