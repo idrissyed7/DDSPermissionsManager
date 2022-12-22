@@ -1,17 +1,12 @@
 <script>
-	import { isAdmin } from '../stores/authentication';
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import closeSVG from '../icons/close.svg';
 	import Switch from './Switch.svelte';
-	import { inview } from 'svelte-inview';
 	import errorMessages from '$lib/errorMessages.json';
-	import groupAdminGroups from '../stores/groupAdminGroups';
-	import topicAdminTopics from '../stores/topicAdminTopics';
-	import applicationAdminApplications from '../stores/applicationAdminApplications';
-	import { onMount } from 'svelte';
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
+	import ComboBox from './ComboBox.svelte';
 
 	export let title;
 	export let email = false;
@@ -58,7 +53,6 @@
 	const groupsDropdownSuggestion = 7;
 	const minNameLength = 3;
 	const searchStringLength = 3;
-	const waitTime = 1000;
 
 	// Forms
 	let selectedIsGroupAdmin = false;
@@ -87,16 +81,7 @@
 		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
 
 	// SearchBox
-	let searchGroupsResultsMouseEnter = false;
-	let searchGroupResults;
-	let searchGroupsResultsVisible = false;
-	let searchGroupActive = false;
 	let selectedGroup;
-	let groupResultPage = 0;
-	let hasMoreGroups = true;
-	let stopSearchingGroups = false;
-	let timer;
-	let singleGroup;
 
 	if (actionEditGroup) newGroupName = groupCurrentName;
 
@@ -111,112 +96,11 @@
 		errorMessageAssociation.set([]);
 	}
 
-	// Search Groups Feature
-	$: if (
-		searchGroups?.trim().length >= searchStringLength &&
-		searchGroupActive &&
-		!stopSearchingGroups
-	) {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			searchGroup(searchGroups.trim());
-			stopSearchingGroups = true;
-		}, waitTime);
-	}
-
-	// Search Groups Dropdown Visibility
-	$: if (
-		searchGroupResults?.length >= 1 &&
-		searchGroupActive &&
-		searchGroups?.trim().length >= searchStringLength
-	) {
-		searchGroupsResultsVisible = true;
-	} else {
-		if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
-		searchGroupResults = '';
-	}
-
-	onMount(() => {
-		// Check if the action is to Add Application and change placeholder text
-		if (actionAddApplication) {
-			document.querySelector('#group-input').placeholder = 'Group **';
-		}
-		singleGroupCheck();
-	});
-
-	const searchGroup = async (searchGroupStr) => {
-		let res;
-		if ($isAdmin) {
-			res = await httpAdapter.get(
-				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-			);
-		} else if ($groupAdminGroups?.length > 0 && actionAddUser && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=GROUP_ADMIN`);
-		} else if ($topicAdminTopics?.length > 0 && actionAddTopic && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=TOPIC_ADMIN`);
-		} else if ($applicationAdminApplications?.length > 0 && actionAddApplication && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=APPLICATION_ADMIN`);
-		}
-
-		// For all cases
-		if (res.data && res.data?.content?.length < groupsDropdownSuggestion) {
-			hasMoreGroups = false;
-		}
-
-		if (
-			res.data?.content?.length > 0 &&
-			JSON.stringify(searchGroupResults) !== JSON.stringify(res.data.content)
-		) {
-			searchGroupResults = [...searchGroupResults, ...res.data.content];
-		}
-	};
-
-	const selectedSearchGroup = (groupName, groupId) => {
-		searchGroupResults = [];
-		groupResultPage = 0;
-
-		selectedGroup = groupId;
-		searchGroups = groupName;
-
-		searchGroupsResultsVisible = false;
-		searchGroupActive = false;
-	};
-
-	const singleGroupCheck = async () => {
-		const res = await httpAdapter.get(
-			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}`
-		);
-		if (res.data.content?.length === 1) {
-			singleGroup = res.data.content;
-			searchGroupActive = false;
-			searchGroups = singleGroup[0].name;
-		}
-	};
-
 	const validateEmail = (input) => {
 		if (input.match(validRegex)) invalidEmail = false;
 		else {
 			invalidEmail = true;
 			errorMessageEmail = errorMessages['email']['is_not_format'];
-		}
-	};
-
-	const validateGroupName = async () => {
-		const res = await httpAdapter.get(
-			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroups}`
-		);
-		if (
-			searchGroups?.length > 0 &&
-			res.data.content?.some((group) => group.name.toUpperCase() === searchGroups.toUpperCase())
-		) {
-			return true;
-		} else if (
-			actionEditGroup &&
-			res.data.content?.some((group) => group.name.toUpperCase() !== newGroupName.toUpperCase())
-		) {
-			return true;
-		} else {
-			return false;
 		}
 	};
 
@@ -260,13 +144,7 @@
 
 		validateEmail(emailValue);
 
-		const validGroupName = await validateGroupName();
-		if (!validGroupName) {
-			errorMessageGroup = errorMessages['group']['not_found'];
-			return;
-		}
-
-		if (!invalidEmail || validateNameLength()) dispatch('addGroupMembership', newGroupMembership);
+		if (!invalidEmail) dispatch('addGroupMembership', newGroupMembership);
 	};
 
 	const actionAddSuperUserEvent = () => {
@@ -292,19 +170,13 @@
 			return;
 		}
 
-		const validGroupName = await validateGroupName();
-		if (!validGroupName) {
-			errorMessageGroup = errorMessages['group']['not_found'];
-			return;
-		}
-
 		const validTopicName = await validateTopicName();
 		if (!validTopicName) {
 			errorMessageTopic = errorMessages['topic']['exists'];
 			return;
 		}
 
-		if (!invalidTopic && validGroupName) {
+		if (!invalidTopic) {
 			dispatch('addTopic', newTopic);
 			closeModal();
 		}
@@ -319,14 +191,10 @@
 
 		invalidApplicationName = !validateNameLength(appName, 'application');
 
-		const validGroupName = await validateGroupName();
-		if (!validGroupName) {
-			errorMessageGroup = errorMessages['group']['not_found'];
-			return;
+		if (!invalidApplicationName) {
+			dispatch('addApplication', newApplication);
+			closeModal();
 		}
-
-		dispatch('addApplication', newApplication);
-		closeModal();
 	};
 
 	const actionAddGroupEvent = async () => {
@@ -371,18 +239,6 @@
 			topicAdmin: selectedGroupMembership.topicAdmin,
 			applicationAdmin: selectedGroupMembership.applicationAdmin
 		});
-	};
-
-	const loadMoreResultsGroups = (e) => {
-		if (e.detail.inView && hasMoreGroups) {
-			groupResultPage++;
-			searchGroup(searchGroups);
-		}
-	};
-
-	const options = {
-		rootMargin: '20px',
-		unobserveOnEnter: true
 	};
 
 	const decodeToken = async (token) => {
@@ -622,87 +478,14 @@
 		{/if}
 
 		{#if group}
-			<form class="searchbox" style="margin-bottom: 0.7rem">
-				<input
-					id="group-input"
-					data-cy="group-input"
-					class="searchbox"
-					type="search"
-					placeholder="Group *"
-					disabled={noneditable}
-					class:invalid={errorMessageGroup?.length > 0}
-					bind:value={searchGroups}
-					on:keydown={(event) => {
-						searchGroupResults = [];
-						stopSearchingGroups = false;
-						hasMoreGroups = true;
-						groupResultPage = 0;
-
-						if (event.which === returnKey) {
-							errorMessageApplication = '';
-							document.activeElement.blur();
-							searchGroups = searchGroups?.trim();
-
-							if (actionAddUser) {
-								validateEmail(emailValue);
-								if (
-									!invalidEmail &&
-									emailValue.length >= minNameLength &&
-									searchGroups?.length >= searchStringLength
-								) {
-									actionAddUserEvent();
-								}
-							}
-
-							if (actionAddApplication) {
-								if (
-									appName?.length >= minNameLength &&
-									searchGroups?.length >= searchStringLength
-								) {
-									actionAddApplicationEvent();
-								}
-							}
-						}
-					}}
-					on:blur={() => {
-						searchGroups = searchGroups?.trim();
-						setTimeout(() => {
-							searchGroupsResultsVisible = false;
-						}, waitTime);
-					}}
-					on:focus={async () => {
-						searchGroupActive = true;
-						searchGroupResults = [];
-						errorMessageGroup = '';
-						selectedGroup = '';
-					}}
-					on:focusout={() => {
-						setTimeout(() => {
-							searchGroupsResultsVisible = false;
-							searchGroupResults = [];
-						}, waitTime);
-					}}
-					on:click={async () => {
-						searchGroupResults = [];
-						groupResultPage = 0;
-						hasMoreGroups = true;
-
-						searchGroupActive = true;
-						selectedGroup = '';
-						errorMessageApplication = '';
-						stopSearchingGroups = false;
-
-						if (searchGroupResults?.length > 0) {
-							searchGroupsResultsVisible = true;
-						}
-					}}
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
-						}, waitTime);
-					}}
+			{#if actionAddApplication}
+				<ComboBox
+					actionAddApplication={true}
+					on:selected-group={(e) => (selectedGroup = e.detail)}
 				/>
-			</form>
+			{:else}
+				<ComboBox on:selected-group={(e) => (selectedGroup = e.detail)} />
+			{/if}
 			<span
 				class="error-message"
 				style="	top: 12.7rem; right: 2.2rem"
@@ -710,47 +493,19 @@
 			>
 				{errorMessageGroup}
 			</span>
+		{/if}
 
-			{#if searchGroupsResultsVisible && errorMessageGroup?.length === 0 && errorMessageApplication?.length === 0}
-				<table
-					class="search-group"
-					class:hidden={searchGroupResults?.length === 0}
-					style="position: absolute; z-index: 100; display: block; overflow-y: auto; max-height: 13.3rem"
-					on:mouseenter={() => {
-						searchGroupsResultsMouseEnter = true;
-					}}
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!searchGroupsResultsMouseEnter) searchGroupsResultsVisible = false;
-						}, waitTime);
-						searchGroupsResultsMouseEnter = false;
-					}}
-					on:focusout={() => {
-						searchGroupsResultsVisible = false;
-						searchGroupsResultsMouseEnter = false;
-					}}
-				>
-					{#each searchGroupResults as result}
-						<tr>
-							<td
-								style="width: 14rem; padding-left: 0.5rem"
-								on:click={() => {
-									selectedSearchGroup(result.name, result.id);
-								}}
-								>{result.name}
-							</td>
-						</tr>
-					{/each}
-					<div use:inview={{ options }} on:change={loadMoreResultsGroups} />
-				</table>
-			{/if}
+		{#if noneditable}
+			<input
+				value={searchGroups}
+				disabled="true"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
+			/>
 
-			{#if noneditable}
-				<span
-					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3.6rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
-					>Group
-				</span>
-			{/if}
+			<span
+				style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
+				>Group
+			</span>
 		{/if}
 
 		{#if topicName}
@@ -848,8 +603,8 @@
 		<button
 			data-cy="button-add-user"
 			class="action-button"
-			class:action-button-invalid={invalidEmail || searchGroups?.length < 3}
-			disabled={invalidEmail || searchGroups?.length < 3}
+			class:action-button-invalid={invalidEmail || !selectedGroup}
+			disabled={invalidEmail || !selectedGroup}
 			on:click={() => actionAddUserEvent()}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
@@ -889,8 +644,8 @@
 		<button
 			data-cy="button-add-topic"
 			class="action-button"
-			class:action-button-invalid={newTopicName.length < minNameLength ||
-				searchGroups?.length < minNameLength}
+			disabled={newTopicName.length < minNameLength || !selectedGroup}
+			class:action-button-invalid={newTopicName.length < minNameLength || !selectedGroup}
 			on:click={() => {
 				actionAddTopicEvent();
 			}}
@@ -911,9 +666,8 @@
 		<button
 			data-cy="button-add-application"
 			class="action-button"
-			class:action-button-invalid={appName?.length < minNameLength ||
-				searchGroups?.length < minNameLength}
-			disabled={appName?.length < minNameLength || searchGroups?.length < minNameLength}
+			class:action-button-invalid={appName?.length < minNameLength || !selectedGroup}
+			disabled={appName?.length < minNameLength || !selectedGroup}
 			on:click={() => {
 				actionAddApplicationEvent();
 			}}
@@ -1168,6 +922,7 @@
 
 	.action-button-invalid {
 		color: grey;
+		cursor: default;
 	}
 
 	.admin-roles {
@@ -1258,10 +1013,6 @@
 		width: 79%;
 		border-color: rgba(0, 0, 0, 0.07);
 	}
-
-	/* input[type='checkbox'] {
-		height: 0.7rem;
-	} */
 
 	.button-disabled {
 		cursor: default;

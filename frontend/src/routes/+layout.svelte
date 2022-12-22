@@ -94,7 +94,6 @@
 		userEmail.set(res.data.username);
 
 		refreshPage.set(true);
-		console.log('is Admin? ', $isAdmin);
 	};
 
 	const refreshToken = async () => {

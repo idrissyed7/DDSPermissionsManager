@@ -14,16 +14,12 @@
         cy.get('td').contains('kstanley@test.test').siblings().find('[data-cy="edit-users-icon"]')
         .click();
 
-        cy.get(':nth-child(9) > .switch > .slider').click();
+        cy.get(':nth-child(8) > .switch > .slider').click();
 
         cy.get('[data-cy="save-edit-user"]').click();
 
         cy.wait(500);
 
-        // cy.get('tbody > :nth-child(1) > :nth-child(6) > center')
-
-        // cy.get('td').contains('kstanley@test.test').siblings().get('td').contains('✓'); //modify to check 2 ✓
-        // .should('have.length', 2);
         cy.get('[data-cy="users-table"]').contains('kstanley@test.test').siblings('[data-cy="is-application-admin"]').contains('✓');
         
     });
