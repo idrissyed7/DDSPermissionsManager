@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank;
 public class AdminDTO {
     private Long id;
     @NotBlank
-    @Email
+    @Email(regexp = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$")
     private String email;
 
     public AdminDTO(String email) {

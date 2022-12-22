@@ -13,7 +13,7 @@ public class User {
     private Long id;
 
     @NonNull
-    @Email
+    @Email(regexp = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$")
     @Column(unique = true)
     private String email;
 
