@@ -16,8 +16,11 @@
 
 	headerTitle.set('Home');
 	detailView.set();
+
+	// Delay the render of the Avatar dot to avoid flickering
 	setTimeout(() => renderAvatar.set(true), 40);
 
+	// UI optimization to avoid flickering
 	onDestroy(() => renderAvatar.set(false));
 </script>
 

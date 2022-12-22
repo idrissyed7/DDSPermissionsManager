@@ -383,7 +383,6 @@
 					actionEditUser={true}
 					email={true}
 					emailValue={selectedGroupMembership.userEmail}
-					group={true}
 					searchGroups={selectedGroupMembership.groupName}
 					adminRoles={true}
 					noneditable={true}
