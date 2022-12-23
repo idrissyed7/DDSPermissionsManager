@@ -65,6 +65,9 @@ public class GroupService {
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+            if (groupsList.isEmpty()) {
+                return Page.empty();
+            }
 
             if (filter == null) {
                 return groupRepository.findAllByIdIn(groupsList, pageable);
