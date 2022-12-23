@@ -24,6 +24,7 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
 	import userValidityCheck from '../../stores/userValidityCheck';
+	import curlCommands from '$lib/curlCommands.json';
 
 	export let data, errors;
 
@@ -89,10 +90,6 @@
 	let applicationsTotalPages, applicationsTotalSize;
 	let applicationsCurrentPage = 0;
 
-	// DropDowns
-	let applicationsDropDownVisible = false;
-	let applicationsDropDownMouseEnter = false;
-
 	// Applications SearchBox
 	let searchString;
 	let searchAppResults;
@@ -105,6 +102,7 @@
 	let generateBindTokenVisible = false;
 	let showCopyPasswordNotificationVisible = false;
 	let showCopyBindTokenNotificationVisible = false;
+	let copiedVisible = false;
 
 	// Timer
 	let timer;
@@ -405,6 +403,13 @@
 		}, fiveSeconds);
 	};
 
+	const showCopyCommand = (position) => {
+		copiedVisible = position;
+		setTimeout(() => {
+			copiedVisible = 0;
+		}, fiveSeconds);
+	};
+
 	const deselectAllApplicationsCheckboxes = () => {
 		applicationsAllRowsSelectedTrue = false;
 		applicationsRowsSelectedTrue = false;
@@ -580,7 +585,6 @@
 											style="margin-right: 0.5rem"
 											bind:indeterminate={applicationsRowsSelectedTrue}
 											on:click={(e) => {
-												applicationsDropDownVisible = false;
 												if (e.target.checked) {
 													applicationsRowsSelected = $applications;
 													applicationsRowsSelectedTrue = false;
@@ -612,7 +616,6 @@
 													class="apps-checkbox"
 													checked={applicationsAllRowsSelectedTrue}
 													on:change={(e) => {
-														applicationsDropDownVisible = false;
 														if (e.target.checked === true) {
 															applicationsRowsSelected.push(app);
 															// reactive statement
@@ -714,6 +717,7 @@
 						to create a new Application.
 					</p>
 				{/if}
+
 				{#await promiseDetail then _}
 					{#if $applications && applicationDetailVisible && !applicationListVisible}
 						<table style="width: 35rem; margin-top: 2rem">
@@ -763,16 +767,14 @@
 								<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated.</p>
 							{/if}
 						</table>
-						<div
-							style="font-size: 0.7rem; width:17.5rem; text-align:right; float: right; margin-top: 1rem"
-						>
+						<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
 							{#if $applicationPermission}
 								{$applicationPermission.length} of {$applicationPermission.length}
 							{:else}
 								0 of 0
 							{/if}
 						</div>
-						<!-- {#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === selectedAppGroupId))?.isApplicationAdmin || $isAdmin} -->
+
 						<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
 							<button
 								data-cy="generate-bind-token-button"
@@ -828,7 +830,7 @@
 								<img
 									src={copySVG}
 									alt="copy password"
-									height="29rem"
+									height="20rem"
 									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
 									on:click={() => {
 										copyPassword(selectedAppId);
@@ -845,29 +847,180 @@
 						{#if generateBindTokenVisible}
 							<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
 								Bind Token
+
+								<textarea
+									rows="5"
+									cols="50"
+									style="vertical-align: middle; width: 44.7rem; margin-left: 0.5rem; margin-top: 1rem; resize: none"
+									>{bindToken}</textarea
+								>
 								<img
 									src={copySVG}
 									alt="copy bind token"
-									height="29rem"
-									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem; cursor: pointer"
+									height="20rem"
+									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 0.5rem; cursor: pointer"
 									on:click={() => {
 										copyBindToken(selectedAppId);
 										showCopyBindTokenNotification();
 									}}
 								/>
-								<textarea
-									rows="4"
-									cols="50"
-									style="vertical-align: middle; width: 50vw; margin-top: 1rem"
-									>{bindToken}</textarea
-								>
 							</div>
 
 							{#if showCopyBindTokenNotificationVisible}
 								<div class="bubble">Bind Token Copied!</div>
 							{/if}
 						{/if}
-						<!-- {/if} -->
+						<div class="curl-commands">
+							<!-- svelte-ignore missing-declaration -->
+							<div class="section-title">1# Authenticate</div>
+							<section style="display:inline-flex;">
+								<textarea rows="1" style="width:50rem; resize: none"
+									>{curlCommands.codeOne}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeOne);
+										showCopyCommand(1);
+									}}
+								/>
+
+								{#if copiedVisible === 1}
+									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">
+								2# Show the token_info. We don't need to have this in this in the script.
+							</div>
+							<section style="display:inline-flex;">
+								<textarea rows="1" style="width:50rem; resize: none"
+									>{curlCommands.codeTwo}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeTwo);
+										showCopyCommand(2);
+									}}
+								/>
+
+								{#if copiedVisible === 2}
+									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">3# Download the Identity CA certificate.</div>
+							<section style="display:inline-flex;">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeThree}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeThree);
+										showCopyCommand(3);
+									}}
+								/>
+								{#if copiedVisible === 3}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">4# Download the Permissions CA certificate.</div>
+							<section style="display:inline-flex;">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeFour}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeFour);
+										showCopyCommand(4);
+									}}
+								/>
+
+								{#if copiedVisible === 4}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">5# Download the governance file.</div>
+							<section style="display:inline-flex;">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeFive}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeFive);
+										showCopyCommand(5);
+									}}
+								/>
+
+								{#if copiedVisible === 5}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">6# Download a key pair.</div>
+							<section style="display:inline-flex;">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeSix}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeSix);
+										showCopyCommand(6);
+									}}
+								/>
+
+								{#if copiedVisible === 6}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">7# Download a permissions document.</div>
+							<section style="display:inline-flex;">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeSeven}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeSeven);
+										showCopyCommand(7);
+									}}
+								/>
+
+								{#if copiedVisible === 7}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+						</div>
 					{/if}
 				{/await}
 			</div>
@@ -994,7 +1147,7 @@
 	}
 
 	.bubble {
-		position: relative;
+		position: absolute;
 		background: rgb(0, 0, 0);
 		color: #ffffff;
 		font-family: Arial;
@@ -1005,8 +1158,8 @@
 		height: 25px;
 		border-radius: 10px;
 		padding-top: 8px;
-		top: 1rem;
-		left: 0.75rem;
+		margin-top: 0.75rem;
+		left: 22.1rem;
 	}
 
 	.bubble:after {
@@ -1021,5 +1174,51 @@
 		top: -10px;
 		left: 26%;
 		margin-left: -20px;
+	}
+
+	.bubble-commands {
+		position: absolute;
+		background: rgb(0, 0, 0);
+		color: #ffffff;
+		font-size: 0.8rem;
+		vertical-align: middle;
+		text-align: center;
+		width: 4.5rem;
+		height: 1.5rem;
+		border-radius: 10px;
+		padding-top: 8px;
+		right: 11rem;
+	}
+
+	.bubble-commands:after {
+		content: '';
+		position: absolute;
+		display: block;
+		width: 0;
+		height: 0;
+		z-index: 1;
+		border-style: solid;
+		border-color: #000000 transparent;
+		top: 0.4rem;
+		left: 14%;
+		margin-left: -20px;
+		border-top: 10px solid transparent;
+		border-bottom: 10px solid transparent;
+		border-right: 10px solid black;
+	}
+
+	.curl-commands {
+		margin-top: 3rem;
+	}
+
+	section {
+		width: 58rem;
+	}
+
+	.section-title {
+		font-size: 1.1rem;
+		font-weight: 600;
+		margin-top: 1rem;
+		margin-bottom: 0.3rem;
 	}
 </style>
