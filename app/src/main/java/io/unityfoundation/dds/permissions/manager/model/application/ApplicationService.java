@@ -133,30 +133,53 @@ public class ApplicationService {
         this.jwtClaimsSetGenerator = jwtClaimsSetGenerator;
     }
 
-    public Page<ApplicationDTO> findAll(Pageable pageable, String filter) {
-        return getApplicationPage(pageable, filter).map(ApplicationDTO::new);
+    public Page<ApplicationDTO> findAll(Pageable pageable, String filter, Long groupId) {
+        return getApplicationPage(pageable, filter, groupId).map(ApplicationDTO::new);
     }
 
-    private Page<Application> getApplicationPage(Pageable pageable, String filter) {
+    private Page<Application> getApplicationPage(Pageable pageable, String filter, Long groupId) {
 
         if(!pageable.isSorted()) {
             pageable = pageable.order("name").order("permissionsGroup.name");
         }
 
+        List<Long> all;
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
-                return applicationRepository.findAll(pageable);
+                if (groupId == null) {
+                    return applicationRepository.findAll(pageable);
+                }
+                return applicationRepository.findAllByPermissionsGroupIdIn(List.of(groupId), pageable);
             }
 
-            return applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+            if (groupId == null) {
+                return applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+            }
+
+            all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
 
+            if (groups.isEmpty() || (groupId != null && !groups.contains(groupId))) {
+                return Page.empty();
+            }
+
+            if (groupId != null) {
+                // implies groupId exists in member's groups
+                groups = List.of(groupId);
+            }
+
             if (filter == null) {
                 return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
-            List<Long> all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            if (all.isEmpty()) {
+                return Page.empty();
+            }
 
             return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
         }

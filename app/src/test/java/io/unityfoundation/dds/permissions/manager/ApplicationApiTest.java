@@ -346,6 +346,62 @@ public class ApplicationApiTest {
         }
 
         @Test
+        void canListApplicationsWithGroupId(){
+            // Group - Applications
+            // ---
+            // PrimaryGroup - Xyz789, abc098
+            // SecondaryGroup - Abc123
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryOptional = response.getBody(Group.class);
+            assertTrue(secondaryOptional.isPresent());
+            Group secondaryGroup = secondaryOptional.get();
+
+            // create applications
+            response = createApplication("Xyz789", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("abc098", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Abc123", secondaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            // can list both applications
+            request = HttpRequest.GET("/applications?group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(2, applicationPage.get().getContent().size());
+
+            request = HttpRequest.GET("/applications?group="+secondaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+
+            // in addition to group, support filter param
+            request = HttpRequest.GET("/applications?filter=ABC098&group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+        }
+
+        @Test
         void canListAllApplicationsNameInAscendingOrderByDefault(){
             // Group - Applications
             // ---
@@ -944,6 +1000,81 @@ public class ApplicationApiTest {
                 String groupName = (String) map.get("groupName");
                 return Objects.equals(groupName, "SecondaryGroup");
             }));
+        }
+
+        @Test
+        void canListApplicationsWithGroupParameterLimitedToGroupMembership(){
+            // PrimaryGroup - TestApplicationOne, TestApplicationTwo
+            // SecondaryGroup - Three, Four
+
+            mockSecurityService.postConstruct();
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            response = createGroup("SecondaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> secondaryGroupOptional = response.getBody(Group.class);
+            assertTrue(secondaryGroupOptional.isPresent());
+
+            // get user
+            User justin = userRepository.findByEmail("jjones@test.test").get();
+
+            // add user to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail(justin.getEmail());
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            assertEquals(OK, response.getStatus());
+
+            response = createApplication("Three", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            response = createApplication("Four", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            // group search
+            request = HttpRequest.GET("/applications?group="+primaryGroup.getId());
+            Page page = blockingClient.retrieve(request, Page.class);
+            assertEquals(2, page.getContent().size());
+            List<Map> content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // filter param support
+            request = HttpRequest.GET("/applications?filter=applicationOne&group="+primaryGroup.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(1, page.getContent().size());
+            content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // negative scenarios
+            request = HttpRequest.GET("/applications?group="+secondaryGroupOptional.get().getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(0, page.getContent().size());
+
+            request = HttpRequest.GET("/applications?filter=three&group="+secondaryGroupOptional.get().getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(0, page.getContent().size());
         }
 
         @Test
