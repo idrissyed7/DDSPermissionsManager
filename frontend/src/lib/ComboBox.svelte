@@ -1,5 +1,5 @@
 <script>
-	import { tick, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import { isAdmin } from '../stores/authentication';
 	import groupAdminGroups from '../stores/groupAdminGroups';
@@ -7,8 +7,10 @@
 	import applicationAdminApplications from '../stores/applicationAdminApplications';
 	import { inview } from 'svelte-inview';
 	import { createEventDispatcher } from 'svelte';
+	import groupContext from '../stores/groupContext';
 
 	export let actionAddApplication = false;
+	export let isGroupContext = false;
 
 	const dispatch = createEventDispatcher();
 
@@ -58,7 +60,12 @@
 	}
 
 	onMount(async () => {
+		if (isGroupContext) document.querySelector('#combobox-1').placeholder = 'Select Group';
 		if (actionAddApplication) document.querySelector('#combobox-1').placeholder = 'Group **';
+		if (isGroupContext && $groupContext) {
+			selectedGroup = $groupContext;
+			searchGroups = selectedGroup.name;
+		}
 		await singleGroupCheck();
 	});
 
@@ -103,6 +110,7 @@
 				break;
 			case 'Enter':
 				selectedGroup = searchGroupResults[selected];
+				groupContext.set(selectedGroup);
 				searchGroups = searchGroupResults[selected].name;
 
 				dispatch('selected-group', selectedGroup.id);
@@ -169,36 +177,52 @@
 		aria-owns="listbox-1"
 		aria-haspopup="listbox"
 	>
-		<input
-			data-cy="group-input"
-			placeholder="Group *"
-			role="combobox"
-			id="combobox-1"
-			aria-autocomplete="list"
-			aria-controls="listbox-1"
-			aria-activedescendant={selected !== -1 ? `listbox-1-option-${selected}` : null}
-			bind:this={comboboxfilter}
-			on:keydown={handleKeyDown}
-			required
-			bind:value={searchGroups}
-			type="text"
-			on:focus={() => {
-				status = 'focus';
-				searchGroupResults = [];
-				searchGroupActive = true;
-				selectedGroup = '';
-			}}
-			on:click={() => {
-				searchGroupResults = [];
-				groupResultPage = 0;
-				hasMoreGroups = true;
-				searchGroupActive = true;
-				selectedGroup = '';
-				stopSearchingGroups = false;
-			}}
-			on:blur={() => (status = 'blur')}
-		/>
+		<div style="display:inline-flex">
+			<input
+				data-cy="group-input"
+				placeholder="Group *"
+				role="combobox"
+				id="combobox-1"
+				aria-autocomplete="list"
+				aria-controls="listbox-1"
+				aria-activedescendant={selected !== -1 ? `listbox-1-option-${selected}` : null}
+				bind:this={comboboxfilter}
+				on:keydown={handleKeyDown}
+				required
+				bind:value={searchGroups}
+				type="text"
+				on:focus={() => {
+					status = 'focus';
+					searchGroupResults = [];
+					searchGroupActive = true;
+					selectedGroup = '';
+				}}
+				on:click={() => {
+					searchGroupResults = [];
+					groupResultPage = 0;
+					hasMoreGroups = true;
+					searchGroupActive = true;
+					selectedGroup = '';
+					stopSearchingGroups = false;
+				}}
+				on:blur={() => {
+					status = 'blur';
+					if (!selectedGroup.name) groupContext.set();
+				}}
+			/>
 
+			{#if isGroupContext && selectedGroup}
+				<button
+					class="button-blue"
+					style="cursor: pointer; width: 3.6rem; height: 1.7rem; margin-top: 1.75rem; margin-left: 1rem "
+					on:click={() => {
+						selectedGroup = '';
+						groupContext.set();
+					}}
+					>Clear
+				</button>
+			{/if}
+		</div>
 		<div>
 			{#if searchGroupResults}
 				{#if status === 'focus' && searchGroupResults.length > 0}
@@ -214,6 +238,7 @@
 								on:mousedown={() => {
 									searchGroupActive = false;
 									selectedGroup = group;
+									groupContext.set(selectedGroup);
 									searchGroups = group.name;
 
 									dispatch('selected-group', selectedGroup.id);
