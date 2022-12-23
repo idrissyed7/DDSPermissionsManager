@@ -1,0 +1,15 @@
+{
+    "codeOne": "curl -c cookies.txt -H'Content-Type: application\/json' -d\"${json}\" ${DPM_URL}\/api\/login",
+
+    "codeTwo": "curl -b cookies.txt ${DPM_URL}\/api\/token_info",
+
+    "codeThree": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/identity_ca.pem > \"${directory}\/identity_ca.pem\"",
+
+    "codeFour": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/permissions_ca.pem > \"${directory}\/permissions_ca.pem\"",
+
+    "codeFive": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/governance.xml.p7s > \"${directory}\/governance.xml.p7s\"",
+
+    "codeSix": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/key_pair?nonce=NONCE > \"${directory}\/key-pair\"",
+
+    "codeSeven": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/permissions.xml.p7s?nonce=NONCE > \"${directory}\/permissions.xml.p7s\""
+}
