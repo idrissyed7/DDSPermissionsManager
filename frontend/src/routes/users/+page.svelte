@@ -296,7 +296,33 @@
 								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 							}
 						}}
+						on:mouseenter={() => {
+							if (superUsersRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-super-users');
+								setTimeout(() => {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}, 1000);
+							}
+						}}
+						on:mouseleave={() => {
+							if (superUsersRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-super-users');
+								setTimeout(() => {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}, 1000);
+							}
+						}}
 					/>
+
+					<span
+						id="delete-super-users"
+						class="tooltip-hidden"
+						style="margin-left: 9.5rem; margin-top: -1.8rem"
+						>Select super users to delete
+					</span>
+
 					<img
 						data-cy="add-super-user"
 						src={addSVG}
@@ -311,6 +337,8 @@
 							}
 						}}
 					/>
+
+					<!-- <span id="add-super-users" class="tooltip-hidden">Select rows to delete</span> -->
 
 					{#if $users && $users.length > 0}
 						<table data-cy="super-users-table" style="margin-top: 0.5rem">
@@ -491,12 +519,6 @@
 
 	.dot {
 		float: right;
-	}
-
-	.dropdown {
-		margin-top: 8.5rem;
-		margin-right: 9.2rem;
-		width: 13.5rem;
 	}
 
 	p {

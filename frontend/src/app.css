@@ -124,7 +124,6 @@ input.searchbox:disabled {
 	border-width: 1px;
 	width: 15rem;
 	height: 2.2rem;
-
 }
 
 table {
@@ -349,6 +348,24 @@ select:focus {
 
 .highlighted {
 	font-weight: 700;
+}
+
+.tooltip {
+    position: absolute;
+    visibility: visible;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    text-align: center;
+    line-height: 17px;
+    border-radius: 5px;
+    padding: 3px 5px 3px 5px;
+    font-size: 8.5pt;
+    z-index: 1;
+}
+
+.tooltip-hidden {
+    position: absolute;
+	visibility: hidden;
 }
 
 @-webkit-keyframes fadeIn {

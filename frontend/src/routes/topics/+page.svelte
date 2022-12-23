@@ -47,6 +47,13 @@
 		topicsAllRowsSelectedTrue = false;
 	}
 
+	// Messages
+	let deleteToolip;
+	let deleteMouseEnter = false;
+
+	let addTooltip;
+	let addMouseEnter = false;
+
 	// Promises
 	let promise;
 
@@ -396,7 +403,51 @@
 								if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 							}
 						}}
+						on:mouseenter={() => {
+							deleteMouseEnter = true;
+							if ($isAdmin || isTopicAdmin) {
+								if (topicsRowsSelected.length === 0) {
+									deleteToolip = 'Select topics to delete';
+									const tooltip = document.querySelector('#delete-topics');
+									setTimeout(() => {
+										if (deleteMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}
+							} else {
+								deleteToolip = 'Topic Admin permissions required';
+								const tooltip = document.querySelector('#delete-topics');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+										tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
+									}
+								}, 1000);
+							}
+						}}
+						on:mouseleave={() => {
+							deleteMouseEnter = false;
+							if (topicsRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-topics');
+								setTimeout(() => {
+									if (!deleteMouseEnter) {
+										tooltip.classList.add('tooltip-hidden');
+										tooltip.classList.remove('tooltip');
+									}
+								}, 1000);
+							}
+						}}
 					/>
+					<span
+						id="delete-topics"
+						class="tooltip-hidden"
+						style="margin-left: 12.2rem; margin-top: -1.8rem"
+						>{deleteToolip}
+					</span>
+
 					<img
 						data-cy="add-topic"
 						src={addSVG}
@@ -411,7 +462,36 @@
 								addTopicVisible = true;
 							}
 						}}
+						on:mouseenter={() => {
+							addMouseEnter = true;
+							if (!$isAdmin && !isTopicAdmin) {
+								addTooltip = 'Topic Admin permission required';
+								const tooltip = document.querySelector('#add-topics');
+								setTimeout(() => {
+									if (addMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, waitTime);
+							}
+						}}
+						on:mouseleave={() => {
+							addMouseEnter = false;
+							const tooltip = document.querySelector('#add-topics');
+							setTimeout(() => {
+								if (!addMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, waitTime);
+						}}
 					/>
+					<span
+						id="add-topics"
+						class="tooltip-hidden"
+						style="margin-left: 8rem; margin-top: -1.8rem"
+						>{addTooltip}
+					</span>
 
 					{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
 						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
@@ -500,6 +580,7 @@
 													height="27px"
 													style="vertical-align: -0.45rem"
 													alt="delete topic"
+													disabled={!$isAdmin || !isTopicAdmin}
 													on:click={() => {
 														if (!topicsRowsSelected.some((tpc) => tpc === topic))
 															topicsRowsSelected.push(topic);
