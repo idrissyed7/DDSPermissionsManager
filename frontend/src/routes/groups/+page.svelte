@@ -45,6 +45,13 @@
 		groupsAllRowsSelectedTrue = false;
 	}
 
+	// Messages
+	let deleteToolip;
+	let deleteMouseEnter = false;
+
+	let addTooltip;
+	let addMouseEnter = false;
+
 	// Promises
 	let promise;
 
@@ -332,7 +339,51 @@
 							if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
 						}
 					}}
+					on:mouseenter={() => {
+						deleteMouseEnter = true;
+						if ($isAdmin) {
+							deleteToolip = 'Select groups to delete';
+							if (groupsRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-groups');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, 1000);
+							}
+						} else {
+							deleteToolip = 'Super Admin permission required';
+							const tooltip = document.querySelector('#delete-groups');
+							setTimeout(() => {
+								if (deleteMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+									tooltip.setAttribute('style', 'margin-left:9.2rem; margin-top: -1.8rem');
+								}
+							}, 1000);
+						}
+					}}
+					on:mouseleave={() => {
+						deleteMouseEnter = false;
+
+						if (groupsRowsSelected.length === 0) {
+							const tooltip = document.querySelector('#delete-groups');
+							setTimeout(() => {
+								if (!deleteMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, 1000);
+						}
+					}}
 				/>
+				<span
+					id="delete-groups"
+					class="tooltip-hidden"
+					style="margin-left: 14.2rem; margin-top: -1.8rem"
+					>{deleteToolip}
+				</span>
 				<img
 					data-cy="add-group"
 					src={addSVG}
@@ -347,7 +398,36 @@
 							addGroupVisible = true;
 						}
 					}}
+					on:mouseenter={() => {
+						addMouseEnter = true;
+						if (!$isAdmin) {
+							addTooltip = 'Super Admin permission required';
+							const tooltip = document.querySelector('#add-applications');
+							setTimeout(() => {
+								if (addMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}
+							}, waitTime);
+						}
+					}}
+					on:mouseleave={() => {
+						addMouseEnter = false;
+						const tooltip = document.querySelector('#add-applications');
+						setTimeout(() => {
+							if (!addMouseEnter) {
+								tooltip.classList.add('tooltip-hidden');
+								tooltip.classList.remove('tooltip');
+							}
+						}, waitTime);
+					}}
 				/>
+				<span
+					id="add-applications"
+					class="tooltip-hidden"
+					style="margin-left: 7rem; margin-top: -1.8rem"
+					>{addTooltip}
+				</span>
 
 				{#if $groups}
 					{#if $groups.length > 0}

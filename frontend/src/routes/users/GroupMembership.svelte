@@ -28,6 +28,13 @@
 		usersAllRowsSelectedTrue = false;
 	}
 
+	// Messages
+	let deleteToolip;
+	let deleteMouseEnter = false;
+
+	let addTooltip;
+	let addMouseEnter = false;
+
 	// Promises
 	let promise;
 
@@ -278,7 +285,7 @@
 			searchGroupResults = await httpAdapter.get(
 				`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
 			);
-		}, 1000);
+		}, waitTime);
 	};
 
 	const errorMessage = (errMsg, errObj) => {
@@ -455,7 +462,50 @@
 							if (usersRowsSelected.length > 0) deleteSelectedGroupMembershipsVisible = true;
 						}
 					}}
+					on:mouseenter={() => {
+						deleteMouseEnter = true;
+						if ($isAdmin || isGroupAdmin) {
+							if (usersRowsSelected.length === 0) {
+								deleteToolip = 'Select users to delete';
+								const tooltip = document.querySelector('#delete-users');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, waitTime);
+							}
+						} else {
+							deleteToolip = 'Group Admin permissions required';
+							const tooltip = document.querySelector('#delete-users');
+							setTimeout(() => {
+								if (deleteMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+									tooltip.setAttribute('style', 'margin-left:26.3rem; margin-top: -1.8rem');
+								}
+							}, waitTime);
+						}
+					}}
+					on:mouseleave={() => {
+						deleteMouseEnter = false;
+
+						const tooltip = document.querySelector('#delete-users');
+						setTimeout(() => {
+							if (!deleteMouseEnter) {
+								tooltip.classList.add('tooltip-hidden');
+								tooltip.classList.remove('tooltip');
+							}
+						}, waitTime);
+					}}
 				/>
+				<span
+					id="delete-users"
+					class="tooltip-hidden"
+					style="margin-left: 28.5rem; margin-top: -1.8rem"
+					>{deleteToolip}
+				</span>
+
 				<img
 					data-cy="add-user"
 					src={addSVG}
@@ -470,7 +520,33 @@
 							addGroupMembershipVisible = true;
 						}
 					}}
+					on:mouseenter={() => {
+						addMouseEnter = true;
+						if (!$isAdmin && !isGroupAdmin) {
+							addTooltip = 'Group Admin permission required';
+							const tooltip = document.querySelector('#add-users');
+							setTimeout(() => {
+								if (addMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}
+							}, waitTime);
+						}
+					}}
+					on:mouseleave={() => {
+						addMouseEnter = false;
+						const tooltip = document.querySelector('#add-users');
+						setTimeout(() => {
+							if (!addMouseEnter) {
+								tooltip.classList.add('tooltip-hidden');
+								tooltip.classList.remove('tooltip');
+							}
+						}, waitTime);
+					}}
 				/>
+				<span id="add-users" class="tooltip-hidden" style="margin-left: 24rem; margin-top: -1.8rem"
+					>{addTooltip}
+				</span>
 
 				{#if $groupMembershipList && $groupMembershipList.length > 0}
 					<table

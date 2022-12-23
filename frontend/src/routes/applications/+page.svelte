@@ -54,6 +54,13 @@
 		applicationsAllRowsSelectedTrue = false;
 	}
 
+	// Messages
+	let deleteToolip;
+	let deleteMouseEnter = false;
+
+	let addTooltip;
+	let addMouseEnter = false;
+
 	// Promises
 	let promise, promiseDetail;
 
@@ -549,7 +556,51 @@
 								if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
 							}
 						}}
+						on:mouseenter={() => {
+							deleteMouseEnter = true;
+							if ($isAdmin || isApplicationAdmin) {
+								if (applicationsRowsSelected.length === 0) {
+									deleteToolip = 'Select applications to delete';
+									const tooltip = document.querySelector('#delete-applications');
+									setTimeout(() => {
+										if (deleteMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}
+							} else {
+								deleteToolip = 'Application Admin permissions required';
+								const tooltip = document.querySelector('#delete-applications');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+										tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
+									}
+								}, 1000);
+							}
+						}}
+						on:mouseleave={() => {
+							deleteMouseEnter = false;
+							if (applicationsRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-applications');
+								setTimeout(() => {
+									if (!deleteMouseEnter) {
+										tooltip.classList.add('tooltip-hidden');
+										tooltip.classList.remove('tooltip');
+									}
+								}, 1000);
+							}
+						}}
 					/>
+					<span
+						id="delete-applications"
+						class="tooltip-hidden"
+						style="margin-left: 11.3rem; margin-top: -1.8rem"
+						>{deleteToolip}
+					</span>
+
 					<img
 						data-cy="add-application"
 						src={addSVG}
@@ -564,7 +615,36 @@
 								addApplicationVisible = true;
 							}
 						}}
+						on:mouseenter={() => {
+							addMouseEnter = true;
+							if (!$isAdmin && !isApplicationAdmin) {
+								addTooltip = 'Application Admin permission required';
+								const tooltip = document.querySelector('#add-application');
+								setTimeout(() => {
+									if (addMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, waitTime);
+							}
+						}}
+						on:mouseleave={() => {
+							addMouseEnter = false;
+							const tooltip = document.querySelector('#add-application');
+							setTimeout(() => {
+								if (!addMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, waitTime);
+						}}
 					/>
+					<span
+						id="add-application"
+						class="tooltip-hidden"
+						style="margin-left: 8rem; margin-top: -1.8rem"
+						>{addTooltip}
+					</span>
 				{/if}
 
 				{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
@@ -1000,7 +1080,7 @@
 								{/if}
 							</section>
 							<div class="section-title">7# Download a permissions document.</div>
-							<section style="display:inline-flex;">
+							<section style="display:inline-flex">
 								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeSeven}</textarea
 								>
@@ -1137,10 +1217,10 @@
 		height: 2.2rem;
 	}
 
-	span {
+	/* span {
 		position: relative;
 		left: 0;
-	}
+	} */
 
 	p {
 		font-size: large;
