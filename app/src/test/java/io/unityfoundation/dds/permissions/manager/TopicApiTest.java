@@ -441,6 +441,83 @@ public class TopicApiTest {
         }
 
         @Test
+        void canLisTopicsWithGroupId(){
+            // Group - Topics
+            // ---
+            // Theta - Xyz789
+            // Zeta - Abc123
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            Group zeta = new Group("Zeta");
+            request = HttpRequest.POST("/groups/save", zeta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> zetaOptional = response.getBody(Group.class);
+            assertTrue(zetaOptional.isPresent());
+            zeta = zetaOptional.get();
+
+            // create topics
+            TopicDTO abcDTO = new TopicDTO();
+            abcDTO.setName("Abc123");
+            abcDTO.setKind(TopicKind.B);
+            abcDTO.setGroup(zeta.getId());
+
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", abcDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> abcDtoOptional = response.getBody(TopicDTO.class);
+            assertTrue(abcDtoOptional.isPresent());
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzDtoOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzDtoOptional.isPresent());
+
+            // can list both topics
+            request = HttpRequest.GET("/topics?group="+theta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            Map map = (Map) topicPage.get().getContent().get(0);
+            assertEquals(map.get("id"), xyzDtoOptional.get().getId().intValue());
+
+            request = HttpRequest.GET("/topics?group="+zeta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            map = (Map) topicPage.get().getContent().get(0);
+            assertEquals(map.get("id"), abcDtoOptional.get().getId().intValue());
+
+            // in addition to group, support filter param
+            request = HttpRequest.GET("/topics?filter=abc&group="+zeta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            map = (Map) topicPage.get().getContent().get(0);
+            assertEquals(map.get("id"), abcDtoOptional.get().getId().intValue());
+        }
+
+        @Test
         void canListAllTopicsNameInAscendingOrderByDefault(){
             // Group - Topics
             // ---
@@ -1141,6 +1218,102 @@ public class TopicApiTest {
             assertEquals(1, topicPage.get().getContent().size());
             expectedTopic = (Map) topicPage.get().getContent().get(0);
             assertEquals("Xyz789", expectedTopic.get("name"));
+        }
+
+        @Test
+        void canListTopicsWithGroupParameterLimitedToGroupMembership(){
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            // Group - Topics
+            // ---
+            // Theta - Xyz789
+            // Zeta - Abc123
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // add member to group
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(theta.getId());
+            dto.setEmail("jjones@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // other group
+            Group zeta = new Group("Zeta");
+            request = HttpRequest.POST("/groups/save", zeta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> zetaOptional = response.getBody(Group.class);
+            assertTrue(zetaOptional.isPresent());
+            zeta = zetaOptional.get();
+
+            // create topics
+            TopicDTO abcDTO = new TopicDTO();
+            abcDTO.setName("Abc123");
+            abcDTO.setKind(TopicKind.B);
+            abcDTO.setGroup(zeta.getId());
+
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", abcDTO);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzTopicOptional.isPresent());
+            TopicDTO xyzTopic = xyzTopicOptional.get();
+
+            loginAsNonAdmin();
+
+            // group search
+            request = HttpRequest.GET("/topics?group="+theta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Page> topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            Map expectedTopic = (Map) topicPage.get().getContent().get(0);
+            assertEquals("Xyz789", expectedTopic.get("name"));
+
+            // filter param support
+            request = HttpRequest.GET("/topics?filter=xyz&group="+theta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            expectedTopic = (Map) topicPage.get().getContent().get(0);
+            assertEquals("Xyz789", expectedTopic.get("name"));
+
+            // Negative cases
+            request = HttpRequest.GET("/topics?group="+zeta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(0, topicPage.get().getContent().size());
+
+            request = HttpRequest.GET("/topics?filter=abc&group="+zeta.getId());
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(0, topicPage.get().getContent().size());
         }
     }
 

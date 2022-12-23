@@ -74,6 +74,9 @@ public class ApplicationPermissionService {
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+            if (groups.isEmpty()) {
+                return Page.empty();
+            }
 
             List<Long> groupsApplications = applicationRepository.findIdByPermissionsGroupIdIn(groups);
             List<Long> groupsTopics = topicRepository.findIdByPermissionsGroupIdIn(groups);
