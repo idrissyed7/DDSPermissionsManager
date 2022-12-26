@@ -34,10 +34,10 @@ public class GroupMembershipController {
         this.groupUserService = groupUserService;
     }
 
-    @Get("{?filter}")
+    @Get("{?filter,group}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<GroupUserResponseDTO> index(@Valid Pageable pageable, @Nullable String filter) {
-        return groupUserService.findAll(pageable, filter);
+    public Page<GroupUserResponseDTO> index(@Valid Pageable pageable, @Nullable String filter, @Nullable Long group) {
+        return groupUserService.findAll(pageable, filter, group);
     }
 
     @Get("/user_validity")

@@ -33,9 +33,9 @@ public class TopicController {
     }
 
     @ExecuteOn(TaskExecutors.IO)
-    @Get("{?filter}")
-    public Page<TopicDTO> index(@Valid Pageable pageable, @Nullable String filter) {
-        return topicService.findAll(pageable, filter);
+    @Get("{?filter,group}")
+    public Page<TopicDTO> index(@Valid Pageable pageable, @Nullable String filter, @Nullable Long group) {
+        return topicService.findAll(pageable, filter, group);
     }
 
     @Get("kinds")

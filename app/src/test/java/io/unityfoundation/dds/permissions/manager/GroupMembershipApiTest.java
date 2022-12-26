@@ -384,6 +384,70 @@ public class GroupMembershipApiTest {
             assertEquals(1, page.getContent().size());
         }
 
+        @Test
+        public void canSeeAllMembershipsFilteredByGroup() {
+            // first group and member
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request, GroupUserDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserDTO> bobOptional = response.getBody(GroupUserDTO.class);
+            assertTrue(bobOptional.isPresent());
+
+            // other group and member
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request, GroupUserDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserDTO> robertOptional = response.getBody(GroupUserDTO.class);
+            assertTrue(robertOptional.isPresent());
+
+            // access both members via groups they belong to
+            request = HttpRequest.GET("/group_membership?group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            Page page = response.getBody(Page.class).get();
+            assertEquals(1, page.getContent().size());
+            Map map = (Map) page.getContent().get(0);
+            assertEquals(map.get("id"), bobOptional.get().getId().intValue());
+
+            request = HttpRequest.GET("/group_membership?group="+secondaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertEquals(1, page.getContent().size());
+            map = (Map) page.getContent().get(0);
+            assertEquals(map.get("id"), robertOptional.get().getId().intValue());
+
+            // support filter
+            request = HttpRequest.GET("/group_membership?filter=Bob.Builder@UnityFoundation&group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertEquals(1, page.getContent().size());
+            map = (Map) page.getContent().get(0);
+            assertEquals(map.get("id"), bobOptional.get().getId().intValue());
+
+            // negative (no results)
+            request = HttpRequest.GET("/group_membership?group="+-1);
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertEquals(0, page.getContent().size());
+        }
+
         // update
         @Test
         public void canUpdate() {
@@ -1049,6 +1113,70 @@ public class GroupMembershipApiTest {
             response = blockingClient.exchange(request, Page.class);
             Page page = response.getBody(Page.class).get();
             assertEquals(1, page.getContent().size());
+        }
+
+        @Test
+        public void canSeeCommonGroupMembershipsFilteredByGroup() {
+            mockSecurityService.postConstruct();
+
+            // first group and member
+            Group primaryGroup = new Group("PrimaryGroup");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", primaryGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryGroup.getId());
+            dto.setEmail("bob.builder@test.test");
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // other group and member
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = response.getBody(Group.class).get();
+
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // add non-admin test user
+            dto1.setEmail("jjones@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            // group search
+            request = HttpRequest.GET("/group_membership?group="+secondaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            Page page = response.getBody(Page.class).get();
+            assertEquals(2, page.getContent().size());
+
+            // filter param support
+            request = HttpRequest.GET("/group_membership?filter=The.GeneralContractor@UnityFoundation&group="+secondaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertEquals(1, page.getContent().size());
+
+            // Negative cases
+            request = HttpRequest.GET("/group_membership?group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertTrue(page.getContent().isEmpty());
+
+            request = HttpRequest.GET("/group_membership?filter=bob.builder@unityfoundation&group="+primaryGroup.getId());
+            response = blockingClient.exchange(request, Page.class);
+            page = response.getBody(Page.class).get();
+            assertTrue(page.getContent().isEmpty());
         }
 
 

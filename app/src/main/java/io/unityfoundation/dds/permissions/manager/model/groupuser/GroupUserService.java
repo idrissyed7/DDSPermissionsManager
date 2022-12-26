@@ -36,39 +36,56 @@ public class GroupUserService {
         this.securityUtil = securityUtil;
     }
 
-    public Page<GroupUserResponseDTO> findAll(Pageable pageable, String filter) {
-        return getGroupMembers(pageable, filter).map(GroupUserResponseDTO::new);
+    public Page<GroupUserResponseDTO> findAll(Pageable pageable, String filter, Long groupId) {
+        return getGroupMembers(pageable, filter, groupId).map(GroupUserResponseDTO::new);
     }
 
-    private Page<GroupUser> getGroupMembers(Pageable pageable, String filter) {
+    private Page<GroupUser> getGroupMembers(Pageable pageable, String filter, Long groupId) {
         if (!pageable.isSorted()) {
             pageable = pageable.order("permissionsUser.email").order("permissionsGroup.name");
         }
+
+        List<Long> all;
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
-                return groupUserRepository.findAll(pageable);
-            } else {
+                if (groupId == null) {
+                    return groupUserRepository.findAll(pageable);
+                }
+                return groupUserRepository.findAllByPermissionsGroupIdIn(List.of(groupId), pageable);
+            }
+            if (groupId == null) {
                 return groupUserRepository.findAllByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter,
                         filter, pageable);
             }
+
+            all = groupUserRepository
+                        .findIdByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter, filter);
+
+            return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-
             List<Long> groupsList = getAllGroupsUserIsAMemberOf(user.getId());
+
+            if (groupsList.isEmpty() || (groupId != null && !groupsList.contains(groupId))) {
+                return Page.empty();
+            }
+
+            if (groupId != null) {
+                // implies groupId exists in member's groups
+                groupsList = List.of(groupId);
+            }
 
             if (filter == null) {
                 return groupUserRepository.findAllByPermissionsGroupIdIn(groupsList, pageable);
-            } else {
-                List<Long> all = groupUserRepository
-                        .findIdByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter, filter);
-
-                return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, groupsList, pageable);
-
-                // more efficient if Or-And query worked
-                // return
-                // groupUserRepository.findAllByPermissionsGroupNameContainsOrPermissionsUserEmailContainsAndPermissionsGroupIdIn(filter,
-                // filter, groupsList, pageable);
             }
+
+            all = groupUserRepository
+                    .findIdByPermissionsGroupNameContainsIgnoreCaseOrPermissionsUserEmailContainsIgnoreCase(filter, filter);
+            if (all.isEmpty()) {
+                return Page.empty();
+            }
+
+            return groupUserRepository.findAllByIdInAndPermissionsGroupIdIn(all, groupsList, pageable);
         }
     }
 

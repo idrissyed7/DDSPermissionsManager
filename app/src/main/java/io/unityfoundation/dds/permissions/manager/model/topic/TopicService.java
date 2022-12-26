@@ -3,7 +3,6 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.HttpResponseFactory;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.security.authentication.AuthenticationException;
@@ -38,30 +37,53 @@ public class TopicService {
         this.applicationPermissionService = applicationPermissionService;
     }
 
-    public Page<TopicDTO> findAll(Pageable pageable, String filter) {
-        return getTopicPage(pageable, filter).map(TopicDTO::new);
+    public Page<TopicDTO> findAll(Pageable pageable, String filter, Long groupId) {
+        return getTopicPage(pageable, filter, groupId).map(TopicDTO::new);
     }
 
-    private Page<Topic> getTopicPage(Pageable pageable, String filter) {
+    private Page<Topic> getTopicPage(Pageable pageable, String filter, Long groupId) {
 
         if(!pageable.isSorted()) {
             pageable = pageable.order("name").order("permissionsGroup.name");
         }
 
+        List<Long> all;
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
-                return topicRepository.findAll(pageable);
+                if (groupId == null) {
+                    return topicRepository.findAll(pageable);
+                }
+                return topicRepository.findAllByPermissionsGroupIdIn(List.of(groupId), pageable);
             }
-            return topicRepository.findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+
+            if (groupId == null) {
+                return topicRepository.findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+            }
+
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+
+            return topicRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+
+            if (groups.isEmpty() || (groupId != null && !groups.contains(groupId))) {
+                return Page.empty();
+            }
+
+            if (groupId != null) {
+                // implies groupId exists in member's groups
+                groups = List.of(groupId);
+            }
 
             if (filter == null) {
                 return topicRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            List<Long> all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            if (all.isEmpty()) {
+                return Page.empty();
+            }
 
             return topicRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
         }
