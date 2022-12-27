@@ -7,6 +7,7 @@
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
 	import renderAvatar from '../stores/renderAvatar';
+	import ComboBox from './ComboBox.svelte';
 
 	export let avatarName;
 	export let userEmail;
@@ -37,6 +38,12 @@
 					alt="back to topics"
 					on:click={() => detailView.set('backToList')}
 				/>
+			{/if}
+
+			{#if $renderAvatar === true}
+				<div style="margin-top:-1.5rem; margin-left: -23rem">
+					<ComboBox isGroupContext={true} />
+				</div>
 			{/if}
 
 			<div class="header-title">
@@ -135,7 +142,7 @@
 		position: absolute;
 		left: 10%;
 		align-self: center;
-		margin-left: 0.5rem;
+		margin-left: -2rem;
 		font-size: 1.2rem;
 		letter-spacing: -0.02rem;
 	}
