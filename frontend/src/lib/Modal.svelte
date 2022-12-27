@@ -1,12 +1,13 @@
 <script>
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import closeSVG from '../icons/close.svg';
 	import Switch from './Switch.svelte';
 	import errorMessages from '$lib/errorMessages.json';
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
-	import ComboBox from './ComboBox.svelte';
+	import groupContext from '../stores/groupContext';
 
 	export let title;
 	export let email = false;
@@ -95,6 +96,10 @@
 	} else {
 		errorMessageAssociation.set([]);
 	}
+
+	onMount(() => {
+		if ($groupContext) selectedGroup = $groupContext.id;
+	});
 
 	const validateEmail = (input) => {
 		if (input.match(validRegex)) invalidEmail = false;
@@ -478,20 +483,18 @@
 		{/if}
 
 		{#if group}
-			{#if actionAddApplication}
-				<ComboBox
-					actionAddApplication={true}
-					on:selected-group={(e) => (selectedGroup = e.detail)}
-				/>
-			{:else}
-				<ComboBox on:selected-group={(e) => (selectedGroup = e.detail)} />
-			{/if}
+			<input
+				data-cy="group-name"
+				id="group-context"
+				readonly
+				disabled
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.5rem 2rem 1rem 0"
+				bind:value={$groupContext.name}
+			/>
+
 			<span
-				class="error-message"
-				style="	top: 12.7rem; right: 2.2rem"
-				class:hidden={errorMessageGroup?.length === 0}
-			>
-				{errorMessageGroup}
+				style="display: inline-flex; font-size: 0.65rem; position: relative; top: -4rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
+				>Group
 			</span>
 		{/if}
 

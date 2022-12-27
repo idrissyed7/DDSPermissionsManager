@@ -17,6 +17,15 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
+	import groupContext from '../../stores/groupContext';
+
+	// Group Context
+	$: if ($groupContext?.id) reloadGroupMemberships();
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		reloadGroupMemberships();
+	}
 
 	// Checkboxes selection
 	$: if ($groupMembershipList?.length === usersRowsSelected?.length) {
@@ -87,6 +96,7 @@
 	// Group Membership List
 	let groupMembershipListArray = [];
 
+	// Locks the background scroll when modal is open
 	$: if (
 		browser &&
 		(addGroupMembershipVisible ||
@@ -177,11 +187,16 @@
 				res = await httpAdapter.get(
 					`/group_membership?page=${page}&size=${groupMembershipsPerPage}&filter=${searchString}`
 				);
+			} else if ($groupContext) {
+				res = await httpAdapter.get(
+					`/group_membership?page=${page}&size=${groupMembershipsPerPage}&group=${$groupContext.id}`
+				);
 			} else {
 				res = await httpAdapter.get(
 					`/group_membership?page=${page}&size=${groupMembershipsPerPage}`
 				);
 			}
+
 			if (res.data) {
 				groupMembershipsTotalPages = res.data.totalPages;
 				groupMembershipsTotalSize = res.data.totalSize;
@@ -511,13 +526,13 @@
 					src={addSVG}
 					alt="options"
 					class="dot"
-					class:button-disabled={!$isAdmin && !isGroupAdmin}
+					class:button-disabled={(!$isAdmin && !isGroupAdmin) || !$groupContext}
 					on:click={() => {
-						if ($isAdmin || isGroupAdmin) addGroupMembershipVisible = true;
+						if ($isAdmin || isGroupAdmin) if ($groupContext) addGroupMembershipVisible = true;
 					}}
 					on:keydown={(event) => {
 						if (event.which === returnKey) {
-							addGroupMembershipVisible = true;
+							if ($isAdmin || isGroupAdmin) if ($groupContext) addGroupMembershipVisible = true;
 						}
 					}}
 					on:mouseenter={() => {
@@ -531,6 +546,16 @@
 									tooltip.classList.add('tooltip');
 								}
 							}, waitTime);
+						} else if (!$groupContext) {
+							addTooltip = 'Select a group to add a user';
+							const tooltip = document.querySelector('#add-users');
+							setTimeout(() => {
+								if (addMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+									tooltip.setAttribute('style', 'margin-left:25rem; margin-top: -1.8rem');
+								}
+							}, 1000);
 						}
 					}}
 					on:mouseleave={() => {

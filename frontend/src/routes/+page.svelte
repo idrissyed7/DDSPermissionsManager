@@ -48,10 +48,7 @@
 			</li>
 			<li>Find a <a href="/topics">topic</a> and grant access to an application</li>
 		</ul>
-		<p>
-			Applications can use credentials to authenticate and download documents for DDS Security. See
-			the README for more details.
-		</p>
+
 		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 	</div>
 {:else if $isAuthenticated === false && $loginCompleted !== null}

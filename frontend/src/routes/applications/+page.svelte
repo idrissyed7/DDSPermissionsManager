@@ -24,9 +24,18 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
 	import userValidityCheck from '../../stores/userValidityCheck';
+	import groupContext from '../../stores/groupContext';
 	import curlCommands from '$lib/curlCommands.json';
 
 	export let data, errors;
+
+	// Group Context
+	$: if ($groupContext?.id) reloadAllApps();
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		selectedGroup = '';
+		reloadAllApps();
+	}
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -35,6 +44,7 @@
 		}, waitTime);
 	}
 
+	// Locks the background scroll when modal is open
 	$: if (browser && (addApplicationVisible || deleteApplicationVisible || errorMessageVisible)) {
 		document.body.classList.add('modal-open');
 	} else if (
@@ -275,6 +285,10 @@
 			if (searchString && searchString.length >= searchStringLength) {
 				res = await httpAdapter.get(
 					`/applications?page=${page}&size=${applicationsPerPage}&filter=${searchString}`
+				);
+			} else if ($groupContext) {
+				res = await httpAdapter.get(
+					`/applications?page=${page}&size=${applicationsPerPage}&group=${$groupContext.id}`
 				);
 			} else {
 				res = await httpAdapter.get(`/applications?page=${page}&size=${applicationsPerPage}`);
@@ -606,13 +620,13 @@
 						src={addSVG}
 						alt="options"
 						class="dot"
-						class:button-disabled={!$isAdmin && !isApplicationAdmin}
+						class:button-disabled={(!$isAdmin && !isApplicationAdmin) || !$groupContext}
 						on:click={() => {
-							if ($isAdmin || isApplicationAdmin) addApplicationVisible = true;
+							if ($isAdmin || isApplicationAdmin) if ($groupContext) addApplicationVisible = true;
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								addApplicationVisible = true;
+								if ($isAdmin || isApplicationAdmin) if ($groupContext) addApplicationVisible = true;
 							}
 						}}
 						on:mouseenter={() => {
@@ -626,6 +640,15 @@
 										tooltip.classList.add('tooltip');
 									}
 								}, waitTime);
+							} else if (!$groupContext) {
+								addTooltip = 'Select a group to add an Application';
+								const tooltip = document.querySelector('#add-application');
+								setTimeout(() => {
+									if (addMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, 1000);
 							}
 						}}
 						on:mouseleave={() => {
@@ -679,8 +702,8 @@
 										/>
 									</td>
 								{/if}
-								<td style="line-height: 2.2rem">Application</td>
-								<td style="text-align:right; padding-right: 1rem">Group</td>
+								<td style="line-height: 2.2rem; min-width: 7rem">Application</td>
+								<td>Group</td>
 							</tr>
 						</thead>
 
@@ -714,7 +737,7 @@
 											</td>
 										{/if}
 										<td
-											style="cursor: pointer; line-height: 2.2rem"
+											style="cursor: pointer; line-height: 2.2rem; width: max-content"
 											on:click={() => {
 												applicationDetailId = app.id;
 												ApplicationDetailGroupId = app.group;
@@ -730,7 +753,7 @@
 											}}
 											>{app.name}
 										</td>
-										<td style="padding-right: 1rem; text-align: right">{app.groupName}</td>
+										<td style="padding-left: 0.5rem">{app.groupName}</td>
 
 										{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
 											<td
@@ -1216,11 +1239,6 @@
 	tr {
 		height: 2.2rem;
 	}
-
-	/* span {
-		position: relative;
-		left: 0;
-	} */
 
 	p {
 		font-size: large;

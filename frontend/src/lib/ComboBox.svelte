@@ -1,13 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../appconfig';
-	import { isAdmin } from '../stores/authentication';
-	import groupAdminGroups from '../stores/groupAdminGroups';
-	import topicAdminTopics from '../stores/topicAdminTopics';
-	import applicationAdminApplications from '../stores/applicationAdminApplications';
 	import { inview } from 'svelte-inview';
 	import { createEventDispatcher } from 'svelte';
 	import groupContext from '../stores/groupContext';
+	// import { isAdmin } from '../stores/authentication';
+	// import groupAdminGroups from '../stores/groupAdminGroups';
+	// import topicAdminTopics from '../stores/topicAdminTopics';
+	// import applicationAdminApplications from '../stores/applicationAdminApplications';
 
 	export let actionAddApplication = false;
 	export let isGroupContext = false;
@@ -33,8 +33,12 @@
 	let hasMoreGroups = true;
 	let stopSearchingGroups = false;
 	let timer;
-	let singleGroup;
 	let selectedGroup;
+
+	$: if ($groupContext) {
+		selectedGroup = $groupContext;
+		searchGroups = selectedGroup.name;
+	}
 
 	// If the user does not select any of the available groups, we clear the filter on blur
 	$: if (status === 'blur' && !selectedGroup) searchGroups = '';
@@ -61,27 +65,22 @@
 
 	onMount(async () => {
 		if (isGroupContext) document.querySelector('#combobox-1').placeholder = 'Select Group';
+
 		if (actionAddApplication) document.querySelector('#combobox-1').placeholder = 'Group **';
-		if (isGroupContext && $groupContext) {
+
+		if ($groupContext) {
 			selectedGroup = $groupContext;
 			searchGroups = selectedGroup.name;
 		}
+
 		await singleGroupCheck();
 	});
 
 	const searchGroup = async (searchGroupStr) => {
 		let res;
-		if ($isAdmin) {
-			res = await httpAdapter.get(
-				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-			);
-		} else if ($groupAdminGroups?.length > 0 && actionAddUser && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=GROUP_ADMIN`);
-		} else if ($topicAdminTopics?.length > 0 && actionAddTopic && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=TOPIC_ADMIN`);
-		} else if ($applicationAdminApplications?.length > 0 && actionAddApplication && !$isAdmin) {
-			res = await httpAdapter.get(`/groups/search/${searchGroupStr}?role=APPLICATION_ADMIN`);
-		}
+		res = await httpAdapter.get(
+			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+		);
 
 		if (res.data.content) previousLength = res.data.content.length;
 
@@ -109,11 +108,13 @@
 				comboboxfilter.blur();
 				break;
 			case 'Enter':
+				if (selected === -1) return;
+
 				selectedGroup = searchGroupResults[selected];
 				groupContext.set(selectedGroup);
-				searchGroups = searchGroupResults[selected].name;
+				searchGroups = searchGroupResults[selected]?.name;
 
-				dispatch('selected-group', selectedGroup.id);
+				dispatch('selected-group', selectedGroup?.id);
 
 				comboboxfilter.blur();
 				break;
@@ -132,7 +133,7 @@
 				} else {
 					selected = 0;
 				}
-				list.querySelector(`#listbox-1-option-${selected}`).scrollIntoView(false);
+				list?.querySelector(`#listbox-1-option-${selected}`).scrollIntoView(false);
 
 				break;
 		}
@@ -163,9 +164,10 @@
 			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}`
 		);
 		if (res.data.content?.length === 1) {
-			singleGroup = res.data.content;
 			searchGroupActive = false;
-			searchGroups = singleGroup[0].name;
+			selectedGroup = res.data.content;
+			searchGroups = selectedGroup[0].name;
+			groupContext.set(...res.data.content);
 		}
 	};
 </script>
@@ -211,13 +213,14 @@
 				}}
 			/>
 
-			{#if isGroupContext && selectedGroup}
+			{#if (isGroupContext && selectedGroup) || $groupContext}
 				<button
 					class="button-blue"
 					style="cursor: pointer; width: 3.6rem; height: 1.7rem; margin-top: 1.75rem; margin-left: 1rem "
 					on:click={() => {
 						selectedGroup = '';
-						groupContext.set();
+						searchGroups = '';
+						groupContext.set('clear');
 					}}
 					>Clear
 				</button>

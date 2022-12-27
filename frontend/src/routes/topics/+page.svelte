@@ -21,8 +21,17 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
+	import groupContext from '../../stores/groupContext';
 
 	export let data, errors;
+
+	// Group Context
+	$: if ($groupContext?.id) reloadAllTopics();
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		reloadAllTopics();
+	}
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -31,6 +40,7 @@
 		}, waitTime);
 	}
 
+	// Locks the background scroll when modal is open
 	$: if (browser && (addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
 		document.body.classList.add('modal-open');
 	} else if (browser && !(addTopicVisible || deleteTopicVisible || errorMessageVisible)) {
@@ -210,6 +220,10 @@
 			if (searchString && searchString.length >= searchStringLength) {
 				res = await httpAdapter.get(
 					`/topics?page=${page}&size=${topicsPerPage}&filter=${searchString}`
+				);
+			} else if ($groupContext) {
+				res = await httpAdapter.get(
+					`/topics?page=${page}&size=${topicsPerPage}&group=${$groupContext.id}`
 				);
 			} else {
 				res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
@@ -453,13 +467,13 @@
 						src={addSVG}
 						alt="options"
 						class="dot"
-						class:button-disabled={!$isAdmin && !isTopicAdmin}
+						class:button-disabled={(!$isAdmin && !isTopicAdmin) || !$groupContext}
 						on:click={() => {
-							if ($isAdmin || isTopicAdmin) addTopicVisible = true;
+							if ($isAdmin || isTopicAdmin) if ($groupContext) addTopicVisible = true;
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								addTopicVisible = true;
+								if ($isAdmin || isTopicAdmin) if ($groupContext) addTopicVisible = true;
 							}
 						}}
 						on:mouseenter={() => {
@@ -473,6 +487,16 @@
 										tooltip.classList.add('tooltip');
 									}
 								}, waitTime);
+							} else if (!$groupContext) {
+								addTooltip = 'Select a group to add a Topic';
+								const tooltip = document.querySelector('#add-topics');
+								setTimeout(() => {
+									if (addMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+										tooltip.setAttribute('style', 'margin-left:8.6rem; margin-top: -1.8rem');
+									}
+								}, 1000);
 							}
 						}}
 						on:mouseleave={() => {
@@ -521,8 +545,8 @@
 											/>
 										</td>
 									{/if}
-									<td>Topic</td>
-									<td style="text-align:right; padding-right: 1rem;">Group</td>
+									<td style="min-width: 7rem">Topic</td>
+									<td>Group</td>
 								</tr>
 							</thead>
 							<tbody>
@@ -569,7 +593,7 @@
 											>{topic.name}
 										</td>
 
-										<td style="text-align:right; padding-right: 1rem">{topic.groupName}</td>
+										<td style="padding-left: 0.5rem">{topic.groupName}</td>
 
 										{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
