@@ -11,18 +11,18 @@ describe('Applications Capabilities', () => {
     it('should add a new application', () => {
         cy.visit('/applications');
 
-        cy.get('[data-cy="add-application"]')
-        .click();
-
-        cy.get('[data-cy="application-name"]')
-        .type("Test Application");
-
         cy.get('[data-cy="group-input"]')
         .type("alpha");
         
         cy.wait(500);
         
         cy.get('[data-cy="group-input"]').type('{downArrow}').type('{enter}');
+        
+        cy.get('[data-cy="add-application"]')
+        .click();
+
+        cy.get('[data-cy="application-name"]')
+        .type("Test Application");
 
         cy.get('[data-cy="button-add-application"]')
         .click();

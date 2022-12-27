@@ -58,7 +58,7 @@ describe('Group Capabilities', () => {
     it('should navigate to the link', () => {
         cy.visit('/groups');
 
-        cy.get('[data-cy="groups-table"] > tbody > tr:nth-child(1) > td:nth-child(3)')
+        cy.get('[data-cy="groups-table"] > tbody > tr:nth-child(1) > td:nth-child(4)')
         .click();
         
         cy.get('.header-title').contains('Users')   

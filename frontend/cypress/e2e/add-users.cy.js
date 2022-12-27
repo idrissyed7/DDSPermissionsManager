@@ -9,18 +9,18 @@
  it('should add a new user', () => {
         cy.visit('/users');
 
+        cy.get('[data-cy="group-input"]')
+        .type("alpha");
+        
+        cy.wait(500);
+
+        cy.get('[data-cy="group-input"]').type('{downArrow}').type('{enter}');
+        
         cy.get('[data-cy="add-user"]')
         .click();
 
         cy.get('[data-cy="email-input"]')
         .type("user@email.com");
-
-        cy.get('[data-cy="group-input"]')
-        .type("alpha");
-        
-        cy.wait(500);
-        
-        cy.get('[data-cy="group-input"]').type('{downArrow}').type('{enter}');
 
         cy.get('[data-cy="button-add-user"]')
         .click();
