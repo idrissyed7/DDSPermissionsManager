@@ -2,12 +2,19 @@
 	import DDSLock from '../icons/ddslock.png';
 	import logoutSVG from '../icons/logout.svg';
 	import { goto } from '$app/navigation';
-	import { isAuthenticated } from '../stores/authentication';
+	import { isAuthenticated, isAdmin } from '../stores/authentication';
+	import { httpAdapter } from '../appconfig';
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
+	import groupsSVG from '../icons/groups.svg';
+	import topicsSVG from '../icons/topics.svg';
+	import appsSVG from '../icons/apps.svg';
+	import groupContext from '../stores/groupContext';
 	import renderAvatar from '../stores/renderAvatar';
 	import ComboBox from './ComboBox.svelte';
+	import refreshPage from '../stores/refreshPage';
+	import permissionBadges from '../stores/permissionBadges';
 
 	export let avatarName;
 	export let userEmail;
@@ -16,38 +23,225 @@
 	let topicsHeader = 'Topics';
 	let applicationsHeader = 'Applications';
 
+	// Constants
 	const waitTime = 1000;
 	const returnKey = 13;
 
+	// Tooltip
+	let isGroupAdminToolip, isTopicAdminTooltip, isApplicationAdminTooltip;
+	let isGroupAdminMouseEnter = false;
+	let isTopicAdminMouseEnter = false;
+	let isApplicationAdminMouseEnter = false;
+
+	// Avatar
 	let avatarDropdownMouseEnter = false;
 	let avatarDropdownVisible = false;
 
+	// Group Context Badges
+	let permissionsForGroupContext;
+	let isGroupAdminInContext, isTopicAdminInContext, isApplicationAdminInContext;
+
+	// Reactive statements
+	$: if ($groupContext?.id) getPermissionsForGroupContext();
+	$: if ($refreshPage && $groupContext?.id) getPermissionsForGroupContext();
+	$: if ($groupContext === 'clear') {
+		isGroupAdminInContext = false;
+		isTopicAdminInContext = false;
+		isApplicationAdminInContext = false;
+		groupContext.set();
+	}
+
 	detailView.set();
+
+	const getPermissionsForGroupContext = async () => {
+		permissionsForGroupContext = await httpAdapter.get(
+			`/group_membership?page=0&size=1&filter=${userEmail}&group=${$groupContext.id}`
+		);
+
+		if (permissionsForGroupContext?.data?.content || $isAdmin) {
+			permissionsForGroupContext = permissionsForGroupContext.data.content;
+
+			if ((permissionsForGroupContext && permissionsForGroupContext[0].groupAdmin) || $isAdmin) {
+				isGroupAdminInContext = true;
+				isGroupAdminToolip = 'Group Admin Permissions';
+			} else {
+				isGroupAdminInContext = false;
+				isGroupAdminToolip = 'Contact your Admin to become a Group Admin';
+			}
+			if ((permissionsForGroupContext && permissionsForGroupContext[0].topicAdmin) || $isAdmin) {
+				isTopicAdminInContext = true;
+				isTopicAdminTooltip = 'Topic Admin Permissions';
+			} else {
+				isTopicAdminInContext = false;
+				isTopicAdminTooltip = 'Contact your Admin to become a Topic Admin';
+			}
+			if (
+				(permissionsForGroupContext && permissionsForGroupContext[0].applicationAdmin) ||
+				$isAdmin
+			) {
+				isApplicationAdminInContext = true;
+				isApplicationAdminTooltip = 'Application Admin Permissions';
+			} else {
+				isApplicationAdminInContext = false;
+				isApplicationAdminTooltip = 'Contact your Admin to become an Application Admin';
+			}
+		}
+
+		permissionBadges.set({
+			isGroupAdminInContext: isGroupAdminInContext,
+			isTopicAdminInContext: isTopicAdminInContext,
+			isApplicationAdminInContext: isApplicationAdminInContext,
+			isGroupAdminToolip: isGroupAdminToolip,
+			isTopicAdminTooltip: isTopicAdminTooltip,
+			isApplicationAdminTooltip: isApplicationAdminTooltip
+		});
+	};
 </script>
 
 <header>
 	<div class="header-bar">
-		<img src={DDSLock} alt="logo" class="logo" />
-		<div class="logo-text">DDS Permissions Manager</div>
+		<div style="display:inline-flex">
+			<div style="display:inline-flex">
+				<img src={DDSLock} alt="logo" class="logo" />
+				<div class="logo-text">DDS Permissions Manager</div>
+			</div>
+
+			{#if $isAuthenticated}
+				{#if $renderAvatar === true}
+					{#await permissionsForGroupContext then _}
+						{#key $refreshPage}
+							<div
+								class:permission-badges={$groupContext?.id}
+								class:permission-badges-hidden={!$groupContext?.id}
+							>
+								<img
+									src={groupsSVG}
+									alt="Group Admin"
+									width="23rem"
+									height="23rem"
+									class:permission-badges-green={isGroupAdminInContext || $isAdmin}
+									class:permission-badges-grey={!isGroupAdminInContext && !$isAdmin}
+									on:mouseenter={() => {
+										isGroupAdminMouseEnter = true;
+										const tooltip = document.querySelector('#is-group-admin');
+										setTimeout(() => {
+											if (isGroupAdminMouseEnter) {
+												tooltip.classList.remove('tooltip-hidden');
+												tooltip.classList.add('tooltip');
+											}
+										}, 1000);
+									}}
+									on:mouseleave={() => {
+										isGroupAdminMouseEnter = false;
+										const tooltip = document.querySelector('#is-group-admin');
+										setTimeout(() => {
+											if (!isGroupAdminMouseEnter) {
+												tooltip.classList.add('tooltip-hidden');
+												tooltip.classList.remove('tooltip');
+											}
+										}, 1000);
+									}}
+								/>
+
+								<span
+									id="is-group-admin"
+									class="tooltip-hidden"
+									style="margin-top: 1.8rem; margin-left: -5rem"
+									>{isGroupAdminToolip}
+								</span>
+
+								<img
+									src={topicsSVG}
+									alt="Topic Admin"
+									width="23rem"
+									height="23rem"
+									class:permission-badges-green={isTopicAdminInContext || $isAdmin}
+									class:permission-badges-grey={!isTopicAdminInContext && !$isAdmin}
+									on:mouseenter={() => {
+										isTopicAdminMouseEnter = true;
+										const tooltip = document.querySelector('#is-topic-admin');
+										setTimeout(() => {
+											if (isTopicAdminMouseEnter) {
+												tooltip.classList.remove('tooltip-hidden');
+												tooltip.classList.add('tooltip');
+											}
+										}, 1000);
+									}}
+									on:mouseleave={() => {
+										isTopicAdminMouseEnter = false;
+										const tooltip = document.querySelector('#is-topic-admin');
+										setTimeout(() => {
+											if (!isTopicAdminMouseEnter) {
+												tooltip.classList.add('tooltip-hidden');
+												tooltip.classList.remove('tooltip');
+											}
+										}, 1000);
+									}}
+								/>
+
+								<span
+									id="is-topic-admin"
+									class="tooltip-hidden"
+									style="margin-top: 1.8rem; margin-left: -5rem"
+									>{isTopicAdminTooltip}
+								</span>
+
+								<img
+									src={appsSVG}
+									alt="Application Admin"
+									width="23rem"
+									height="23rem"
+									class:permission-badges-green={isApplicationAdminInContext || $isAdmin}
+									class:permission-badges-grey={!isApplicationAdminInContext && !$isAdmin}
+									on:mouseenter={() => {
+										isApplicationAdminMouseEnter = true;
+										const tooltip = document.querySelector('#is-application-admin');
+										setTimeout(() => {
+											if (isApplicationAdminMouseEnter) {
+												tooltip.classList.remove('tooltip-hidden');
+												tooltip.classList.add('tooltip');
+											}
+										}, 1000);
+									}}
+									on:mouseleave={() => {
+										isApplicationAdminMouseEnter = false;
+										const tooltip = document.querySelector('#is-application-admin');
+										setTimeout(() => {
+											if (!isApplicationAdminMouseEnter) {
+												tooltip.classList.add('tooltip-hidden');
+												tooltip.classList.remove('tooltip');
+											}
+										}, 1000);
+									}}
+								/>
+
+								<span
+									id="is-application-admin"
+									class="tooltip-hidden"
+									style="margin-top: 1.8rem; margin-left: -5rem"
+									>{isApplicationAdminTooltip}
+								</span>
+							</div>
+						{/key}
+					{/await}
+					<div class="combobox">
+						<ComboBox isGroupContext={true} />
+					</div>
+				{/if}
+			{/if}
+		</div>
 
 		{#if $isAuthenticated}
-			{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader}
-				<img
-					class="go-back"
-					src={pagebackwardsSVG}
-					alt="back to topics"
-					on:click={() => detailView.set('backToList')}
-				/>
-			{/if}
-
-			{#if $renderAvatar === true}
-				<div style="margin-top:-1.5rem; margin-left: -23rem">
-					<ComboBox isGroupContext={true} />
-				</div>
-			{/if}
-
 			<div class="header-title">
-				{$headerTitle}
+				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader}
+					<img
+						class="go-back"
+						src={pagebackwardsSVG}
+						alt="back to topics"
+						on:click={() => detailView.set('backToList')}
+					/>
+				{/if}
+				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
 			</div>
 
 			{#if $renderAvatar === true}
@@ -119,6 +313,10 @@
 {/if}
 
 <style>
+	.combobox {
+		margin: -1.5rem;
+	}
+
 	table > tr > td {
 		line-height: 2.4rem;
 		padding: 0 1rem 0 1rem;
@@ -139,19 +337,15 @@
 	}
 
 	.logo-text {
-		position: absolute;
-		left: 10%;
 		align-self: center;
-		margin-left: -2rem;
+		margin-left: 1rem;
 		font-size: 1.2rem;
 		letter-spacing: -0.02rem;
 	}
 
 	.header-title {
-		position: absolute;
-		left: max(50%, 50% + 4.5rem);
-		align-self: center;
 		font-size: 1.2rem;
+		margin: auto;
 	}
 
 	.icon-logout {
@@ -194,10 +388,8 @@
 	}
 
 	.go-back {
-		position: absolute;
-		left: min(43%, 41%);
-		align-self: center;
-		margin-left: 8rem;
+		vertical-align: middle;
+		margin-left: 2rem;
 		cursor: pointer;
 		width: 30px;
 		height: 30px;

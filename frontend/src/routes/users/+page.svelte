@@ -6,7 +6,6 @@
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import userValidityCheck from '../../stores/userValidityCheck';
-	import urlparameters from '../../stores/urlparameters';
 	import refreshPage from '../../stores/refreshPage';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
@@ -121,7 +120,6 @@
 
 	onDestroy(() => {
 		renderAvatar.set(false);
-		urlparameters.set([]);
 	});
 
 	const errorMessage = (errMsg, errObj) => {
