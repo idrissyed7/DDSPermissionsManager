@@ -31,11 +31,7 @@
 
 	// Group Context
 	$: if ($groupContext?.id) reloadAllApps();
-	$: if ($groupContext === 'clear') {
-		groupContext.set();
-		selectedGroup = '';
-		reloadAllApps();
-	}
+	else reloadAllApps();
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -190,10 +186,7 @@
 			if ($isAdmin || isApplicationAdmin) {
 				addApplicationVisible = true;
 			} else {
-				errorMessage(
-					'Only Application Admins can create applications.',
-					'Contact your Group Admin.'
-				);
+				errorMessage('Only Application Admins can add new Applications.', 'Contact your Admin.');
 			}
 		}
 	});
@@ -803,6 +796,9 @@
 													}}
 												/>
 											</td>
+										{:else}
+											<td />
+											<td />
 										{/if}
 									</tr>
 								{/each}

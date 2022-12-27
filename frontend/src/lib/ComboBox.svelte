@@ -3,11 +3,8 @@
 	import { httpAdapter } from '../appconfig';
 	import { inview } from 'svelte-inview';
 	import { createEventDispatcher } from 'svelte';
+	import refreshPage from '../stores/refreshPage';
 	import groupContext from '../stores/groupContext';
-	// import { isAdmin } from '../stores/authentication';
-	// import groupAdminGroups from '../stores/groupAdminGroups';
-	// import topicAdminTopics from '../stores/topicAdminTopics';
-	// import applicationAdminApplications from '../stores/applicationAdminApplications';
 
 	export let actionAddApplication = false;
 	export let isGroupContext = false;
@@ -35,6 +32,8 @@
 	let timer;
 	let selectedGroup;
 
+	$: if ($refreshPage) singleGroupCheck();
+
 	$: if ($groupContext) {
 		selectedGroup = $groupContext;
 		searchGroups = selectedGroup.name;
@@ -61,6 +60,11 @@
 		if (status === 'blur' && selected !== -1) {
 			selected = -1;
 		}
+	}
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		selectedGroup = '';
 	}
 
 	onMount(async () => {

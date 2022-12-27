@@ -27,11 +27,7 @@
 
 	// Group Context
 	$: if ($groupContext?.id) reloadAllTopics();
-
-	$: if ($groupContext === 'clear') {
-		groupContext.set();
-		reloadAllTopics();
-	}
+	else reloadAllTopics();
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -157,7 +153,7 @@
 			if ($isAdmin || isTopicAdmin) {
 				addTopicVisible = true;
 			} else {
-				errorMessage('Only Topic Admins can create topics.', 'Contact your Group Admin.');
+				errorMessage('Only Topic Admins can add new Topics.', 'Contact your Admin.');
 			}
 		}
 	});
@@ -612,6 +608,8 @@
 													}}
 												/>
 											</td>
+										{:else}
+											<td />
 										{/if}
 									</tr>
 								{/each}

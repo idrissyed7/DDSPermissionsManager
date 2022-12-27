@@ -21,11 +21,7 @@
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
-
-	$: if ($groupContext === 'clear') {
-		groupContext.set();
-		reloadGroupMemberships();
-	}
+	else reloadGroupMemberships();
 
 	// Checkboxes selection
 	$: if ($groupMembershipList?.length === usersRowsSelected?.length) {
@@ -173,6 +169,15 @@
 	onMount(async () => {
 		if ($urlparameters?.type === 'prepopulate') {
 			searchString = $urlparameters.data;
+		}
+
+		if ($urlparameters === 'create') {
+			if ($isAdmin || $groupAdminGroups?.some((group) => group.groupName === $groupContext.name)) {
+				addGroupMembershipVisible = true;
+				urlparameters.set();
+			} else {
+				errorMessage('Only Group Admins can add new Users.', 'Contact your Admin.');
+			}
 		}
 
 		refreshPage.set();
