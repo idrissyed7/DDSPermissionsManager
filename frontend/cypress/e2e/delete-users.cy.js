@@ -6,7 +6,7 @@
         cy.wait('@tokenInfo');
     });
 
-it('should delete montesm@test.test', () => {
+it('should delete user montesm@test.test', () => {
         cy.visit('/users');
 
         cy.wait(1200);
