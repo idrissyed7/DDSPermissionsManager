@@ -552,33 +552,29 @@
 													tabindex="-1"
 													style="vertical-align: middle"
 													href="/users"
-													on:click={() =>
-														urlparameters.set({ type: 'prepopulate', data: group.name })}
-													>{group.membershipCount}</a
+													on:click={() => groupContext.set(group)}>{group.membershipCount}</a
 												>
 											</center>
 										</td>
+
 										<td style="width: max-content">
 											<center>
 												<a
 													tabindex="-1"
 													style="vertical-align: middle"
 													href="/topics"
-													on:click={() =>
-														urlparameters.set({ type: 'prepopulate', data: group.name })}
-													>{group.topicCount}</a
+													on:click={() => groupContext.set(group)}>{group.topicCount}</a
 												>
 											</center>
 										</td>
+
 										<td style="width: max-content">
 											<center>
 												<a
 													tabindex="-1"
 													style="vertical-align: middle"
 													href="/applications"
-													on:click={() =>
-														urlparameters.set({ type: 'prepopulate', data: group.name })}
-													>{group.applicationCount}</a
+													on:click={() => groupContext.set(group)}>{group.applicationCount}</a
 												>
 											</center>
 										</td>
@@ -589,6 +585,7 @@
 											style="margin-left: -36.5rem; margin-top: -1rem"
 											>{activateToolip}
 										</span>
+
 										{#if $isAdmin}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
