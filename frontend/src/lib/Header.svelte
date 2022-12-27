@@ -195,7 +195,7 @@
 
 	.go-back {
 		position: absolute;
-		left: min(40%, 30%);
+		left: min(43%, 41%);
 		align-self: center;
 		margin-left: 8rem;
 		cursor: pointer;

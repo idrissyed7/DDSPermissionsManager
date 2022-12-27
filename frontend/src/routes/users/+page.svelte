@@ -31,6 +31,7 @@
 		}, waitTime);
 	}
 
+	// Locks the background scroll when modal is open
 	$: if (browser && (addSuperUserVisible || deleteSuperUserVisible)) {
 		document.body.classList.add('modal-open');
 	} else if (browser && !(addSuperUserVisible || deleteSuperUserVisible)) {
@@ -173,7 +174,7 @@
 				email: userEmail
 			})
 			.catch((err) => {
-				errorMessage('Error Saving Super Admin', err.message);
+				errorMessage('Error Saving Super User', err.message);
 			});
 
 		userValidityCheck.set(true);
