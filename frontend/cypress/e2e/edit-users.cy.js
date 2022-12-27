@@ -6,10 +6,10 @@
         cy.wait('@tokenInfo');
     });
  
- it('should add a new user', () => {
+ it('should edit the user', () => {
         cy.visit('/users');
 
-        cy.wait(300);
+        cy.wait(1200);
 
         cy.get('td').contains('kstanley@test.test').siblings().find('[data-cy="edit-users-icon"]')
         .click();
@@ -18,7 +18,7 @@
 
         cy.get('[data-cy="save-edit-user"]').click();
 
-        cy.wait(500);
+        cy.wait(700);
 
         cy.get('[data-cy="users-table"]').contains('kstanley@test.test').siblings('[data-cy="is-application-admin"]').contains('✓');
         
