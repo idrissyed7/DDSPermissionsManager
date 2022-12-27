@@ -9,9 +9,7 @@
  it('should edit the user', () => {
         cy.visit('/users');
 
-        cy.wait(1200);
-
-        cy.get('td').contains('kstanley@test.test').siblings().find('[data-cy="edit-users-icon"]')
+        cy.get('[data-cy="users-table"]').contains('kstanley@test.test').siblings().find('[data-cy="edit-users-icon"]')
         .click();
 
         cy.get(':nth-child(8) > .switch > .slider').click();
