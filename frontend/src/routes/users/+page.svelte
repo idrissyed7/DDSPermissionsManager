@@ -337,8 +337,6 @@
 						}}
 					/>
 
-					<!-- <span id="add-super-users" class="tooltip-hidden">Select rows to delete</span> -->
-
 					{#if $users && $users.length > 0}
 						<table data-cy="super-users-table" style="margin-top: 0.5rem">
 							<thead>
