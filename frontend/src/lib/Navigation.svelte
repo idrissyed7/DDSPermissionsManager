@@ -9,9 +9,9 @@
 
 <nav>
 	<ul>
-		<li class:active={$page.url.pathname === '/'}>
-			<a sveltekit:prefetch href="/">
-				<img src={homeSVG} alt="home" class="menu-icon" />Home
+		<li class:active={$page.url.pathname === '/groups/'}>
+			<a sveltekit:prefetch href="/groups">
+				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
 			</a>
 		</li>
 
@@ -30,12 +30,6 @@
 		<li class:active={$page.url.pathname === '/applications/'}>
 			<a sveltekit:prefetch href="/applications">
 				<img src={appsSVG} alt="applications" class="menu-icon" />Applications
-			</a>
-		</li>
-
-		<li class:active={$page.url.pathname === '/groups/'}>
-			<a sveltekit:prefetch href="/groups">
-				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
 			</a>
 		</li>
 	</ul>

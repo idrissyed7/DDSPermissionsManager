@@ -61,4 +61,21 @@ describe('Applications Capabilities', () => {
         cy.get('td').should('not.eq', 'New Application');
         
         });
+
+    it('should copy the first curl command in application details', () => {
+        cy.visit('/applications');
+
+        cy.get('td').contains('Application One')
+        .click();
+
+        cy.get('[data-cy="curl-command-1-copy"]')
+        .click();
+
+        cy.window().then((win) => {
+            win.navigator.clipboard.readText().then((text) => {
+              text.should("eq", "curl -c cookies.txt -H'Content-Type: application\/json' -d\"${json}\" ${DPM_URL}/api/login");
+            });
+          });
+
+    });
 });

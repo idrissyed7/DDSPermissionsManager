@@ -954,6 +954,7 @@
 									>{bindToken}</textarea
 								>
 								<img
+									data-cy="bind-token-copy"
 									src={copySVG}
 									alt="copy bind token"
 									height="20rem"
@@ -966,7 +967,7 @@
 							</div>
 
 							{#if showCopyBindTokenNotificationVisible}
-								<div class="bubble">Bind Token Copied!</div>
+								<div class="bubble-bind-token">Bind Token Copied!</div>
 							{/if}
 						{/if}
 						<div class="curl-commands">
@@ -977,6 +978,7 @@
 									>{curlCommands.codeOne}</textarea
 								>
 								<img
+									data-cy="curl-command-1-copy"
 									src={copySVG}
 									alt="copy code"
 									width="20rem"
@@ -1270,18 +1272,50 @@
 		margin-left: -20px;
 	}
 
-	.bubble-commands {
+	.bubble-bind-token {
+		position: relative;
+		background: rgb(0, 0, 0);
+		color: #ffffff;
+		font-family: Arial;
+		font-size: 15px;
+		vertical-align: middle;
+		text-align: center;
+		width: 10.2rem;
+		height: 25px;
+		border-radius: 10px;
+		padding-top: 8px;
+		margin-top: 0.75rem;
+		float: right;
+		right: 4rem;
+	}
+
+	.bubble-bind-token:after {
+		content: '';
 		position: absolute;
+		display: block;
+		width: 0;
+		z-index: 1;
+		border-style: solid;
+		border-color: #000000 transparent;
+		border-width: 0 10px 10px;
+		top: -10px;
+		left: 26%;
+		margin-left: -20px;
+	}
+
+	.bubble-commands {
+		position: relative;
 		background: rgb(0, 0, 0);
 		color: #ffffff;
 		font-size: 0.8rem;
-		vertical-align: middle;
 		text-align: center;
 		width: 4.5rem;
-		height: 1.5rem;
+		height: 1.3rem;
 		border-radius: 10px;
-		padding-top: 8px;
-		right: 11rem;
+		padding-top: 0.1rem;
+		margin-left: 0.7rem;
+		text-align: center;
+		padding-top: 0.3rem;
 	}
 
 	.bubble-commands:after {
@@ -1293,8 +1327,8 @@
 		z-index: 1;
 		border-style: solid;
 		border-color: #000000 transparent;
-		top: 0.4rem;
-		left: 14%;
+		top: 0.2rem;
+		left: 17%;
 		margin-left: -20px;
 		border-top: 10px solid transparent;
 		border-bottom: 10px solid transparent;

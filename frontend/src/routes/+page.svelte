@@ -1,24 +1,27 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
-	import { onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
-	import headerTitle from '../stores/headerTitle';
-	import detailView from '../stores/detailView';
-	import urlparameters from '../stores/urlparameters';
 	import wavesSVG from '../icons/waves.svg';
 	import googleSVG from '../icons/google.svg';
 	import loginCompleted from '../stores/loginCompleted';
 	import renderAvatar from '../stores/renderAvatar';
+	// import headerTitle from '../stores/headerTitle';
+	// import detailView from '../stores/detailView';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 
 	export let data, errors;
 
-	headerTitle.set('Home');
-	detailView.set();
+	// headerTitle.set('Home');
+	// detailView.set();
 
 	// Delay the render of the Avatar dot to avoid flickering
 	setTimeout(() => renderAvatar.set(true), 40);
+
+	onMount(() => {
+		if ($isAuthenticated) goto('/groups', true);
+	});
 
 	// UI optimization to avoid flickering
 	onDestroy(() => renderAvatar.set(false));
@@ -29,29 +32,7 @@
 	<meta name="description" content="Permissions Manager" />
 </svelte:head>
 
-{#if $isAuthenticated}
-	<div class="content">
-		<h1>Welcome to the DDS Permissions Manager!</h1>
-		<h2>To get started</h2>
-		<ul>
-			<li>
-				<a href="/users">Add topic, application, and group admins</a> to one of your groups
-			</li>
-			<li>
-				Create a <a href="/topics" on:click={() => urlparameters.set('create')}>topic</a>
-			</li>
-			<li>
-				Create an <a href="/applications" on:click={() => urlparameters.set('create')}
-					>application</a
-				>
-				and generate credentials
-			</li>
-			<li>Find a <a href="/topics">topic</a> and grant access to an application</li>
-		</ul>
-
-		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
-	</div>
-{:else if $isAuthenticated === false && $loginCompleted !== null}
+{#if $isAuthenticated === false && $loginCompleted !== null}
 	<center>
 		<h1>DDS Permissions Manager</h1>
 	</center>

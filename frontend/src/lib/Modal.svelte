@@ -854,6 +854,7 @@
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
 			autofocus
+			data-cy="add-application-topic-association"
 			class="action-button"
 			disabled={bindToken === undefined || accessTypeSelection?.length === 0 || invalidToken}
 			class:button-disabled={bindToken === undefined ||

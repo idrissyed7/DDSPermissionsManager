@@ -516,6 +516,7 @@
 
 										<td style="text-align: center; cursor: pointer">
 											<img
+												data-cy="activate-group-context"
 												src={groupSVG}
 												alt="select group"
 												width="27rem"
