@@ -168,7 +168,6 @@
 			anyApplicationCanRead: anyApplicationCanRead,
 			selectedApplicationList: selectedApplicationList
 		};
-
 		invalidTopic = !validateNameLength(newTopicName, 'topic');
 		if (invalidTopic) {
 			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
@@ -343,11 +342,12 @@
 
 					if (event.which === returnKey) {
 						newTopicName = newTopicName.trim();
-						invalidTopic = !validateNameLength(newTopicName);
+						actionAddTopicEvent();
 					}
 				}}
 				on:click={() => {
 					errorMessageTopic = '';
+					errorMessageName = '';
 				}}
 			/>
 		{/if}
@@ -359,6 +359,16 @@
 				class:hidden={errorMessageTopic?.length === 0}
 			>
 				{errorMessageTopic}
+			</span>
+		{/if}
+
+		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Topic' && errorMessageName?.length > 0}
+			<span
+				class="error-message"
+				style="	top: 9.6rem; right: 2.2rem"
+				class:hidden={errorMessageName?.length === 0}
+			>
+				{errorMessageName}
 			</span>
 		{/if}
 
@@ -379,7 +389,7 @@
 					errorMessageApplication = '';
 					if (event.which === returnKey) {
 						appName = appName.trim();
-						if (searchGroups?.length >= searchStringLength) actionAddApplicationEvent();
+						actionAddApplicationEvent();
 					}
 				}}
 				on:click={() => {

@@ -18,6 +18,8 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
 	import groupContext from '../../stores/groupContext';
+	import showSelectGroupContext from '../../stores/showSelectGroupContext';
+	import errorMessages from '$lib/errorMessages.json';
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
@@ -314,6 +316,21 @@
 		errorMessageVisible = true;
 	};
 
+	const errorMessageClear = () => {
+		errorMessageVisible = false;
+		errorMsg = '';
+		errorObject = '';
+	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject
+			.substring(0, errorObject.lastIndexOf('.'))
+			.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		const code = errorObject.substring(errorObject.lastIndexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
+
 	const updateGroupMembershipSelection = (selectedGM) => {
 		updateGroupMembershipVisible = true;
 		selectedGroupMembership.userEmail = selectedGM.userEmail;
@@ -337,14 +354,19 @@
 		};
 		try {
 			await httpAdapter.put(`/group_membership`, data);
+			updateGroupMembershipVisible = false;
+
+			userValidityCheck.set(true);
+
+			await reloadGroupMemberships();
 		} catch (err) {
-			console.error('Error Updating Group Membership', err.message);
+			updateGroupMembershipVisible = false;
+			const decodedError = decodeError(Object.create(...err.response.data));
+			errorMessage(
+				'Error Updating Group Membership',
+				errorMessages[decodedError.category][decodedError.code]
+			);
 		}
-		updateGroupMembershipVisible = false;
-
-		userValidityCheck.set(true);
-
-		await reloadGroupMemberships();
 	};
 
 	const deleteSelectedGroupMemberships = async () => {
@@ -354,13 +376,13 @@
 					data: { id: groupMembership.groupMembershipId }
 				});
 			}
+
+			userValidityCheck.set(true);
+
+			await reloadGroupMemberships();
 		} catch (err) {
-			errorMessage('Error Deleting Users', err.message);
+			errorMessage('Error Deleting Users', errorMessages['group_membership']['not_found']);
 		}
-
-		userValidityCheck.set(true);
-
-		await reloadGroupMemberships();
 	};
 
 	const deselectAllGroupMembershipCheckboxes = () => {
@@ -381,6 +403,16 @@
 {#key $refreshPage}
 	{#if $isAuthenticated}
 		{#await promise then _}
+			{#if errorMessageVisible}
+				<Modal
+					title={errorMsg}
+					errorMsg={true}
+					errorDescription={errorObject}
+					closeModalText={'Close'}
+					on:cancel={() => errorMessageClear()}
+				/>
+			{/if}
+
 			{#if addGroupMembershipVisible}
 				<Modal
 					title="Add User"
@@ -725,13 +757,19 @@
 					</table>
 				{:else}
 					<p>
-						No users found.&nbsp;<span
+						No Users Found.
+						<br />
+						Select a group and then
+						<span
 							class="link"
-							on:click={() => (addGroupMembershipVisible = true)}
+							on:click={() => {
+								if ($groupContext) addGroupMembershipVisible = true;
+								else showSelectGroupContext.set(true);
+							}}
 						>
-							Click here
+							click here
 						</span>
-						to create a new user.
+						to create a new User.
 					</p>
 				{/if}
 

@@ -10,11 +10,13 @@
 	import groupsSVG from '../icons/groups.svg';
 	import topicsSVG from '../icons/topics.svg';
 	import appsSVG from '../icons/apps.svg';
+	import selectPromptSVG from '../icons/selectPrompt.svg';
 	import groupContext from '../stores/groupContext';
 	import renderAvatar from '../stores/renderAvatar';
 	import ComboBox from './ComboBox.svelte';
 	import refreshPage from '../stores/refreshPage';
 	import permissionBadges from '../stores/permissionBadges';
+	import showSelectGroupContext from '../stores/showSelectGroupContext';
 
 	export let avatarName;
 	export let userEmail;
@@ -50,6 +52,12 @@
 		isApplicationAdminInContext = false;
 		groupContext.set();
 	}
+
+	// Shows the select group context prompt briefly and then removes the prompt
+	$: if ($showSelectGroupContext)
+		setTimeout(() => {
+			showSelectGroupContext.set(false);
+		}, waitTime * 2);
 
 	detailView.set();
 
@@ -224,6 +232,17 @@
 							</div>
 						{/key}
 					{/await}
+
+					<img
+						src={selectPromptSVG}
+						alt="select group"
+						width="35rem"
+						height="35rem"
+						class:show-prompt-hidden={!$showSelectGroupContext}
+						class:show-prompt={$showSelectGroupContext}
+						class:bounce={$showSelectGroupContext}
+					/>
+
 					<div class="combobox">
 						<ComboBox isGroupContext={true} />
 					</div>
@@ -405,5 +424,56 @@
 	a:hover {
 		text-decoration: none;
 		color: unset;
+	}
+
+	@-webkit-keyframes bounce {
+		0%,
+		20%,
+		50%,
+		80%,
+		100% {
+			-webkit-transform: translateY(0);
+		}
+		40% {
+			-webkit-transform: translateY(-30px);
+		}
+		60% {
+			-webkit-transform: translateY(-15px);
+		}
+	}
+
+	.show-prompt-hidden {
+		margin: auto 2rem;
+		visibility: hidden;
+	}
+
+	.show-prompt {
+		margin: auto 2rem;
+		filter: invert(14%) sepia(79%) saturate(5378%) hue-rotate(0deg) brightness(78%) contrast(124%);
+		-webkit-animation-duration: 1.1s;
+		animation-duration: 1.1s;
+		-webkit-animation-fill-mode: both;
+		animation-fill-mode: both;
+	}
+
+	@keyframes bounce {
+		0%,
+		20%,
+		50%,
+		80%,
+		100% {
+			transform: translateX(0);
+		}
+		40% {
+			transform: translateX(-20px);
+		}
+		60% {
+			transform: translateX(-15px);
+		}
+	}
+
+	.bounce {
+		-webkit-animation-name: bounce;
+		animation-name: bounce;
 	}
 </style>

@@ -20,6 +20,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import renderAvatar from '../../stores/renderAvatar';
 	import userEmail from '../../stores/userEmail';
+	import errorMessages from '$lib/errorMessages.json';
 
 	export let data, errors;
 
@@ -52,10 +53,6 @@
 
 	// Constants
 	const returnKey = 13;
-
-	// DropDowns
-	let superUsersDropDownVisible = false;
-	let superUsersDropDownMouseEnter = false;
 
 	// Tables
 	let superUsersRowsSelected = [];
@@ -128,6 +125,12 @@
 		errorMessageVisible = true;
 	};
 
+	const errorMessageClear = () => {
+		errorMessageVisible = false;
+		errorMsg = '';
+		errorObject = '';
+	};
+
 	const searchUser = async (searchString) => {
 		searchUserResults = await httpAdapter.get(
 			`/admins?page=0&size=${superUsersPerPage}&filter=${searchString}`
@@ -181,10 +184,15 @@
 	const deleteSelectedSuperUsers = async () => {
 		try {
 			for (const superUser of superUsersRowsSelected) {
-				await httpAdapter.put(`/admins/remove_admin/${superUser.id}`, {});
+				await httpAdapter.put(`/admins/remove_admin/${superUser.id}`);
 			}
 		} catch (err) {
-			errorMessage('Error Deleting Super User', err.message);
+			const decodedError = decodeError(Object.create(...err.response.data));
+
+			errorMessage(
+				'Error Deleting Super User',
+				errorMessages[decodedError.category][decodedError.code]
+			);
 		}
 
 		superUsersRowsSelected = [];
@@ -205,6 +213,13 @@
 		checkboxes = Array.from(checkboxes);
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
 </script>
 
 <svelte:head>
@@ -218,6 +233,16 @@
 		<GroupMembership />
 
 		{#await promise then _}
+			{#if errorMessageVisible}
+				<Modal
+					title={errorMsg}
+					errorMsg={true}
+					errorDescription={errorObject}
+					closeModalText={'Close'}
+					on:cancel={() => errorMessageClear()}
+				/>
+			{/if}
+
 			{#if $isAdmin}
 				{#if addSuperUserVisible}
 					<Modal
@@ -349,7 +374,6 @@
 											style="margin-right: 0.5rem"
 											bind:indeterminate={superUsersRowsSelectedTrue}
 											on:click={(e) => {
-												superUsersDropDownVisible = false;
 												if (e.target.checked) {
 													superUsersRowsSelected = $users;
 													superUsersRowsSelectedTrue = false;
@@ -377,7 +401,6 @@
 												class="super-user-checkbox"
 												checked={superUsersAllRowsSelectedTrue}
 												on:change={(e) => {
-													superUsersDropDownVisible = false;
 													if (e.target.checked === true) {
 														superUsersRowsSelected.push(user);
 														// reactive statement
