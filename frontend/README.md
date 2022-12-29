@@ -98,6 +98,12 @@ This screen is composed of two components: `/users/+page.svelte` which provides 
 Every time the user changes permissions in the `Users` screen, the `refreshToken` function is called.
 This will refresh the JWT token (reading the JWT_REFRESH_TOKEN cookie) and re-rendering the whole UI to accomodate the new permissions.
 
+### Applications & Topics Screen
+
+Both of these screens have a 'detail view' of the table items.
+Topic details is a separate component called `TopicDetails.svelte` within `/src/routes/topics`.
+In the case of Application details, it's embedded within the main application component located at `/src/routes/applications/+page.svelte`.
+
 ### Infinite scrolling
 
 Implemented with `svelte-inview` plugin.
