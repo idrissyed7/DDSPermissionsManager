@@ -11,14 +11,14 @@ describe('title should say DDS Permissions Manager', () => {
     it('should have correct title', () => {
         cy.get('title')
         .invoke('text')
-        .should('equal', 'DDS Permissions Manager');
+        .should('equal', 'Groups | DDS Permissions Manager');
         
     });
 
     it('should have correct h1', () => {
         cy.get('h1')
         .invoke('text')
-        .should('equal', 'Welcome to the DDS Permissions Manager!');
+        .should('equal', 'Groups');
         
     });
 
@@ -49,13 +49,4 @@ describe('title should say DDS Permissions Manager', () => {
         .invoke('text')
         .should('equal', 'Applications');
     });
-
-    it('should load Groups screen', () => {
-        cy.visit('/groups');
-
-        cy.get('[data-cy="groups"]')
-        .invoke('text')
-        .should('equal', 'Groups');
-    });
-
 });
