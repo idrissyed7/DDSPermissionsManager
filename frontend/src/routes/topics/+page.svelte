@@ -22,6 +22,7 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
+	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 
 	export let data, errors;
 
@@ -182,9 +183,9 @@
 	};
 
 	const errorMessageClear = () => {
+		errorMessageVisible = false;
 		errorMsg = '';
 		errorObject = '';
-		errorMessageVisible = false;
 	};
 
 	const loadTopic = () => {
@@ -196,9 +197,7 @@
 	const deleteSelectedTopics = async () => {
 		try {
 			for (const topic of topicsRowsSelected) {
-				await httpAdapter.post(`/topics/delete/${topic.id}`, {
-					id: topic.id
-				});
+				await httpAdapter.post(`/topics/delete/${topic.id}`);
 			}
 		} catch (err) {
 			errorMessage('Error Deleting Topic', err.message);
@@ -617,10 +616,19 @@
 						</table>
 					{:else if !topicDetailVisible}
 						<p>
-							No Topics Found.&nbsp;<span class="link" on:click={() => (addTopicVisible = true)}>
-								Click here
+							No Topics Found.
+							<br />
+							Select a group and then
+							<span
+								class="link"
+								on:click={() => {
+									if ($groupContext) addTopicVisible = true;
+									else showSelectGroupContext.set(true);
+								}}
+							>
+								click here
 							</span>
-							to create a new Topic.
+							to create a new Topics.
 						</p>
 					{/if}
 				</div>

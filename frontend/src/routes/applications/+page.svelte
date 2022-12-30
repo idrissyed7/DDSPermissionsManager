@@ -26,6 +26,7 @@
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import groupContext from '../../stores/groupContext';
 	import curlCommands from '$lib/curlCommands.json';
+	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 
 	export let data, errors;
 
@@ -202,6 +203,12 @@
 		errorMessageVisible = true;
 	};
 
+	const errorMessageClear = () => {
+		errorMessageVisible = false;
+		errorMsg = '';
+		errorObject = '';
+	};
+
 	const searchApp = async (searchString) => {
 		searchAppResults = await httpAdapter.get(
 			`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
@@ -258,12 +265,14 @@
 	const deleteSelectedApplications = async () => {
 		try {
 			for (const app of applicationsRowsSelected) {
-				await httpAdapter.post(`/applications/delete/${app.id}`, {
-					id: app.id
-				});
+				await httpAdapter.post(`/applications/delete/${app.id}`);
 			}
 		} catch (err) {
-			errorMessage('Error Deleting Application', err.message);
+			const decodedError = decodeError(Object.create(...err.response.data));
+			errorMessage(
+				'Error Deleting Application',
+				errorMessages[decodedError.category][decodedError.code]
+			);
 		}
 
 		selectedAppId = '';
@@ -464,10 +473,10 @@
 					errorMsg={true}
 					errorDescription={errorObject}
 					closeModalText={'Close'}
-					on:cancel={() => (errorMessageVisible = false)}
+					on:cancel={() => errorMessageClear()}
 					on:keydown={(event) => {
 						if (event.which === returnKey) {
-							errorMessageVisible = false;
+							errorMessageClear();
 						}
 					}}
 				/>
@@ -807,11 +816,17 @@
 					</table>
 				{:else if !applicationDetailVisible && applicationListVisible}
 					<p>
-						No Applications Found.&nbsp;<span
+						No Applications Found.
+						<br />
+						Select a group and then
+						<span
 							class="link"
-							on:click={() => (addApplicationVisible = true)}
+							on:click={() => {
+								if ($groupContext) addApplicationVisible = true;
+								else showSelectGroupContext.set(true);
+							}}
 						>
-							Click here
+							click here
 						</span>
 						to create a new Application.
 					</p>

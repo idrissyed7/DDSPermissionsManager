@@ -147,9 +147,9 @@
 	};
 
 	const errorMessageClear = () => {
+		errorMessageVisible = false;
 		errorMsg = '';
 		errorObject = '';
-		errorMessageVisible = false;
 	};
 
 	const reloadAllGroups = async (page = 0) => {
@@ -211,13 +211,12 @@
 	const deleteSelectedGroups = async () => {
 		try {
 			for (const group of groupsRowsSelected) {
-				await httpAdapter.post(`/groups/delete/${group.id}`, {
-					id: group.id
-				});
+				// await httpAdapter.post(`/groups/delete/${group.id}`);
+				await httpAdapter.post(`/groups/delete/15`);
 			}
 		} catch (err) {
 			deleteGroupVisible = false;
-			errorMessage('Error Deleting Group', err.message);
+			errorMessage('Error Deleting Group', err.response.data);
 		}
 	};
 
