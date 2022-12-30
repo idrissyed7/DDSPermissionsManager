@@ -86,7 +86,7 @@
 			res = await httpAdapter.get(`/groups?page=${groupResultPage}&size=2`);
 
 			// If this user belong to only one group
-			if (res.data.content?.length === 1) {
+			if (res.data?.content?.length === 1) {
 				searchGroupActive = false;
 				selectedGroup = res.data.content;
 				searchGroups = selectedGroup[0].name;
