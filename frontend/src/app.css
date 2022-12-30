@@ -356,11 +356,20 @@ select:focus {
 }
 
 .permission-badges {
-	margin: auto 2rem;
+	margin: auto -3rem auto 2rem;
 }
 
 .permission-badges-hidden {
-	margin: auto 2rem;
+	margin: auto -3rem auto 2rem;
+	visibility: hidden;
+}
+
+.permission-badges-table {
+	margin: auto 2rem auto 2rem;
+}
+
+.permission-badges-table-hidden {
+	margin: auto 2rem auto 2rem;
 	visibility: hidden;
 }
 

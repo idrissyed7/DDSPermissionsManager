@@ -5,6 +5,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import refreshPage from '../stores/refreshPage';
 	import groupContext from '../stores/groupContext';
+	import singleGroupCheck from '../stores/singleGroupCheck';
+	import isSingleGroup from '../stores/isSingleGroup';
 
 	export let actionAddApplication = false;
 	export let isGroupContext = false;
@@ -24,20 +26,20 @@
 
 	// SearchBox
 	let searchGroups = '';
-	let searchGroupResults;
 	let searchGroupActive = false;
+	let searchGroupResults;
 	let groupResultPage = 0;
 	let hasMoreGroups = true;
 	let stopSearchingGroups = false;
 	let timer;
 	let selectedGroup;
 
-	$: if ($refreshPage) singleGroupCheck();
+	$: if ($refreshPage && $singleGroupCheck !== 'checked') searchGroup('singleGroupCheck');
 
 	$: if ($groupContext) {
 		selectedGroup = $groupContext;
 		searchGroups = selectedGroup.name;
-	}
+	} else selectedGroup = '';
 
 	// If the user does not select any of the available groups, we clear the filter on blur
 	$: if (status === 'blur' && !selectedGroup) searchGroups = '';
@@ -62,29 +64,42 @@
 		}
 	}
 
-	$: if ($groupContext === 'clear') {
-		groupContext.set();
-		selectedGroup = '';
-	}
-
 	onMount(async () => {
+		// Changes the text in the Modal's group field placeholder
 		if (isGroupContext) document.querySelector('#combobox-1').placeholder = 'Select Group';
-
 		if (actionAddApplication) document.querySelector('#combobox-1').placeholder = 'Group **';
 
+		// Keeps the state of the group context when changing pages
 		if ($groupContext) {
 			selectedGroup = $groupContext;
 			searchGroups = selectedGroup.name;
 		}
-
-		await singleGroupCheck();
+		if ($singleGroupCheck !== 'checked') await searchGroup('singleGroupCheck');
 	});
 
 	const searchGroup = async (searchGroupStr) => {
 		let res;
-		res = await httpAdapter.get(
-			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
-		);
+
+		if (searchGroupStr === 'singleGroupCheck') {
+			singleGroupCheck.set('checked');
+
+			res = await httpAdapter.get(`/groups?page=${groupResultPage}&size=2`);
+
+			// If this user belong to only one group
+			if (res.data.content?.length === 1) {
+				searchGroupActive = false;
+				selectedGroup = res.data.content;
+				searchGroups = selectedGroup[0].name;
+				isSingleGroup.set(true);
+				groupContext.set(...res.data.content);
+
+				return;
+			} else return;
+		} else {
+			res = await httpAdapter.get(
+				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
+			);
+		}
 
 		if (res.data.content) previousLength = res.data.content.length;
 
@@ -162,18 +177,6 @@
 		rootMargin: '20px',
 		unobserveOnEnter: true
 	};
-
-	const singleGroupCheck = async () => {
-		const res = await httpAdapter.get(
-			`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}`
-		);
-		if (res.data.content?.length === 1) {
-			searchGroupActive = false;
-			selectedGroup = res.data.content;
-			searchGroups = selectedGroup[0].name;
-			groupContext.set(...res.data.content);
-		}
-	};
 </script>
 
 <div class="container">
@@ -217,7 +220,7 @@
 				}}
 			/>
 
-			{#if (isGroupContext && selectedGroup) || $groupContext}
+			{#if ((isGroupContext && selectedGroup) || $groupContext) && !$isSingleGroup}
 				<button
 					class="button-blue"
 					style="cursor: pointer; width: 3.6rem; height: 1.7rem; margin-top: 1.75rem; margin-left: 1rem "

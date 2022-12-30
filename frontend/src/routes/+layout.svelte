@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
 	import refreshPage from '../stores/refreshPage';
+	import lastRefresh from '../stores/lastRefresh';
 	import permissionsByGroup from '../stores/permissionsByGroup';
 	import groupAdminGroups from '../stores/groupAdminGroups';
 	import topicAdminTopics from '../stores/topicAdminTopics';
@@ -23,11 +24,13 @@
 
 	let userLoggedCookie;
 	let reminderMessageVisible = false;
+	let timer;
 
 	// Extend Session
 	let reminderMsg, reminderObject;
 
 	const userValidityInterval = 180000; // 3 minutes
+	const sixtyMin = 3600000;
 
 	let avatarName;
 
@@ -45,7 +48,7 @@
 
 	onMount(async () => {
 		document.body.addEventListener('click', userClicked);
-		lastActivity.set(Date.now());
+		userClicked();
 		userLoggedCookie = document.cookie;
 		if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {
 			userLoggedCookie = userLoggedCookie.substring(
@@ -61,6 +64,9 @@
 
 	const userClicked = () => {
 		lastActivity.set(Date.now());
+
+		clearTimeout(timer);
+		timer = setTimeout(() => goto('/api/logout', true), sixtyMin);
 	};
 
 	const reminderMessage = (remMsg, remObj) => {
@@ -93,7 +99,8 @@
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 		userEmail.set(res.data.username);
 
-		refreshPage.set(true);
+		refreshPage.set(Date.now());
+		if ($lastRefresh === null) lastRefresh.set($refreshPage);
 	};
 
 	const refreshToken = async () => {

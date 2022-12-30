@@ -106,13 +106,10 @@
 		detailView.set();
 
 		if ($isAdmin) {
-			promise = reloadAllSuperUsers();
+			promise = await reloadAllSuperUsers();
 		}
 
 		setTimeout(() => renderAvatar.set(true), 40);
-
-		const groupsData = await httpAdapter.get(`/groups`);
-		groups.set(groupsData.data.content);
 	});
 
 	onDestroy(() => {

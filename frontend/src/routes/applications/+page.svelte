@@ -27,12 +27,19 @@
 	import groupContext from '../../stores/groupContext';
 	import curlCommands from '$lib/curlCommands.json';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
+	import singleGroupCheck from '../../stores/singleGroupCheck';
 
 	export let data, errors;
 
 	// Group Context
 	$: if ($groupContext?.id) reloadAllApps();
-	else reloadAllApps();
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		singleGroupCheck.set();
+		selectedGroup = '';
+		reloadAllApps();
+	}
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -173,7 +180,7 @@
 
 		headerTitle.set('Applications');
 
-		promise = reloadAllApps();
+		promise = await reloadAllApps();
 
 		setTimeout(() => renderAvatar.set(true), 40);
 
@@ -561,7 +568,10 @@
 						src={deleteSVG}
 						alt="options"
 						class="dot"
-						class:button-disabled={(!$isAdmin && !isApplicationAdmin) ||
+						class:button-disabled={(!$isAdmin &&
+							!$permissionsByGroup.find(
+								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+							)) ||
 							applicationsRowsSelected.length === 0}
 						style="margin-left: 0.5rem"
 						on:click={() => {
@@ -574,7 +584,12 @@
 						}}
 						on:mouseenter={() => {
 							deleteMouseEnter = true;
-							if ($isAdmin || isApplicationAdmin) {
+							if (
+								$isAdmin ||
+								$permissionsByGroup.find(
+									(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+								)
+							) {
 								if (applicationsRowsSelected.length === 0) {
 									deleteToolip = 'Select applications to delete';
 									const tooltip = document.querySelector('#delete-applications');
@@ -622,18 +637,55 @@
 						src={addSVG}
 						alt="options"
 						class="dot"
-						class:button-disabled={(!$isAdmin && !isApplicationAdmin) || !$groupContext}
+						class:button-disabled={(!$isAdmin &&
+							!$permissionsByGroup.find(
+								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+							)) ||
+							!$groupContext}
 						on:click={() => {
-							if ($isAdmin || isApplicationAdmin) if ($groupContext) addApplicationVisible = true;
+							if (
+								$groupContext &&
+								($isAdmin ||
+									$permissionsByGroup.find(
+										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+									))
+							) {
+								addApplicationVisible = true;
+							} else if (
+								!$groupContext &&
+								($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+							)
+								showSelectGroupContext.set(true);
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								if ($isAdmin || isApplicationAdmin) if ($groupContext) addApplicationVisible = true;
+								if (
+									$groupContext &&
+									($isAdmin ||
+										$permissionsByGroup.find(
+											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+										))
+								) {
+									addApplicationVisible = true;
+								} else if (
+									!$groupContext &&
+									($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+								)
+									showSelectGroupContext.set(true);
 							}
 						}}
 						on:mouseenter={() => {
 							addMouseEnter = true;
-							if (!$isAdmin && !isApplicationAdmin) {
+							if (
+								(!$isAdmin &&
+									$groupContext &&
+									!$permissionsByGroup.find(
+										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+									)) ||
+								(!$isAdmin &&
+									!$groupContext &&
+									!$permissionsByGroup.some((gm) => gm.isApplicationAdmin === true))
+							) {
 								addTooltip = 'Application Admin permission required';
 								const tooltip = document.querySelector('#add-application');
 								setTimeout(() => {
@@ -642,7 +694,10 @@
 										tooltip.classList.add('tooltip');
 									}
 								}, waitTime);
-							} else if (!$groupContext) {
+							} else if (
+								!$groupContext &&
+								$permissionsByGroup.some((gm) => gm.isApplicationAdmin === true)
+							) {
 								addTooltip = 'Select a group to add an Application';
 								const tooltip = document.querySelector('#add-application');
 								setTimeout(() => {
@@ -681,7 +736,7 @@
 					>
 						<thead>
 							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-								{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
+								{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
 									<td>
 										<input
 											tabindex="-1"
@@ -713,7 +768,7 @@
 							<tbody>
 								{#each $applications as app, i}
 									<tr>
-										{#if (isApplicationAdmin || $isAdmin) && !applicationDetailVisible}
+										{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
 											<td style="width: 2rem">
 												<input
 													tabindex="-1"
@@ -818,17 +873,32 @@
 					<p>
 						No Applications Found.
 						<br />
-						Select a group and then
-						<span
-							class="link"
-							on:click={() => {
-								if ($groupContext) addApplicationVisible = true;
-								else showSelectGroupContext.set(true);
-							}}
-						>
-							click here
-						</span>
-						to create a new Application.
+						{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
+							Select a group and then
+							<span
+								class="link"
+								on:click={() => {
+									if (
+										$groupContext &&
+										($permissionsByGroup.find(
+											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+										) ||
+											$isAdmin)
+									)
+										addApplicationVisible = true;
+									else if (
+										!$groupContext &&
+										($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+									)
+										showSelectGroupContext.set(true);
+								}}
+							>
+								click here
+							</span>
+							to create a new Application.
+						{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)}
+							Select a group to get started.
+						{/if}
 					</p>
 				{/if}
 
