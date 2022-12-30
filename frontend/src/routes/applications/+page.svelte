@@ -569,7 +569,7 @@
 						alt="options"
 						class="dot"
 						class:button-disabled={(!$isAdmin &&
-							!$permissionsByGroup.find(
+							!$permissionsByGroup?.find(
 								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 							)) ||
 							applicationsRowsSelected.length === 0}
@@ -586,7 +586,7 @@
 							deleteMouseEnter = true;
 							if (
 								$isAdmin ||
-								$permissionsByGroup.find(
+								$permissionsByGroup?.find(
 									(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 								)
 							) {
@@ -638,7 +638,7 @@
 						alt="options"
 						class="dot"
 						class:button-disabled={(!$isAdmin &&
-							!$permissionsByGroup.find(
+							!$permissionsByGroup?.find(
 								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 							)) ||
 							!$groupContext}
@@ -646,14 +646,14 @@
 							if (
 								$groupContext &&
 								($isAdmin ||
-									$permissionsByGroup.find(
+									$permissionsByGroup?.find(
 										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 									))
 							) {
 								addApplicationVisible = true;
 							} else if (
 								!$groupContext &&
-								($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+								($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 							)
 								showSelectGroupContext.set(true);
 						}}
@@ -662,14 +662,14 @@
 								if (
 									$groupContext &&
 									($isAdmin ||
-										$permissionsByGroup.find(
+										$permissionsByGroup?.find(
 											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 										))
 								) {
 									addApplicationVisible = true;
 								} else if (
 									!$groupContext &&
-									($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+									($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 								)
 									showSelectGroupContext.set(true);
 							}
@@ -679,12 +679,12 @@
 							if (
 								(!$isAdmin &&
 									$groupContext &&
-									!$permissionsByGroup.find(
+									!$permissionsByGroup?.find(
 										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 									)) ||
 								(!$isAdmin &&
 									!$groupContext &&
-									!$permissionsByGroup.some((gm) => gm.isApplicationAdmin === true))
+									!$permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true))
 							) {
 								addTooltip = 'Application Admin permission required';
 								const tooltip = document.querySelector('#add-application');
@@ -696,7 +696,7 @@
 								}, waitTime);
 							} else if (
 								!$groupContext &&
-								$permissionsByGroup.some((gm) => gm.isApplicationAdmin === true)
+								($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 							) {
 								addTooltip = 'Select a group to add an Application';
 								const tooltip = document.querySelector('#add-application');
@@ -880,7 +880,7 @@
 								on:click={() => {
 									if (
 										$groupContext &&
-										($permissionsByGroup.find(
+										($permissionsByGroup?.find(
 											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 										) ||
 											$isAdmin)
@@ -888,7 +888,7 @@
 										addApplicationVisible = true;
 									else if (
 										!$groupContext &&
-										($permissionsByGroup.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+										($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 									)
 										showSelectGroupContext.set(true);
 								}}

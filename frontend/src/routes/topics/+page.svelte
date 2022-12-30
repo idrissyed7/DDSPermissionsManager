@@ -153,7 +153,7 @@
 		setTimeout(() => renderAvatar.set(true), 40);
 
 		if ($permissionsByGroup) {
-			isTopicAdmin = $permissionsByGroup.some(
+			isTopicAdmin = $permissionsByGroup?.some(
 				(groupPermission) => groupPermission.isTopicAdmin === true
 			);
 		}
@@ -471,7 +471,7 @@
 						alt="options"
 						class="dot"
 						class:button-disabled={(!$isAdmin &&
-							!$permissionsByGroup.find(
+							!$permissionsByGroup?.find(
 								(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 							)) ||
 							!$groupContext}
@@ -479,14 +479,14 @@
 							if (
 								$groupContext &&
 								($isAdmin ||
-									$permissionsByGroup.find(
+									$permissionsByGroup?.find(
 										(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 									))
 							) {
 								addTopicVisible = true;
 							} else if (
 								!$groupContext &&
-								($permissionsByGroup.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+								($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
 							)
 								showSelectGroupContext.set(true);
 						}}
@@ -495,14 +495,14 @@
 								if (
 									$groupContext &&
 									($isAdmin ||
-										$permissionsByGroup.find(
+										$permissionsByGroup?.find(
 											(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 										))
 								) {
 									addTopicVisible = true;
 								} else if (
 									!$groupContext &&
-									($permissionsByGroup.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+									($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
 								)
 									showSelectGroupContext.set(true);
 							}
@@ -512,12 +512,12 @@
 							if (
 								(!$isAdmin &&
 									$groupContext &&
-									!$permissionsByGroup.find(
+									!$permissionsByGroup?.find(
 										(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 									)) ||
 								(!$isAdmin &&
 									!$groupContext &&
-									!$permissionsByGroup.some((gm) => gm.isTopicAdmin === true))
+									!$permissionsByGroup?.some((gm) => gm.isTopicAdmin === true))
 							) {
 								addTooltip = 'Topic Admin permission required';
 								const tooltip = document.querySelector('#add-topics');
@@ -529,7 +529,7 @@
 								}, waitTime);
 							} else if (
 								!$groupContext &&
-								$permissionsByGroup.some((gm) => gm.isTopicAdmin === true)
+								($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
 							) {
 								addTooltip = 'Select a group to add a Topic';
 								const tooltip = document.querySelector('#add-topics');
@@ -666,14 +666,14 @@
 						<p>
 							No Topics Found.
 							<br />
-							{#if $groupContext && ($permissionsByGroup.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
+							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
 								Select a group and then
 								<span
 									class="link"
 									on:click={() => {
 										if (
 											$groupContext &&
-											($permissionsByGroup.find(
+											($permissionsByGroup?.find(
 												(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 											) ||
 												$isAdmin)
@@ -681,7 +681,7 @@
 											addTopicVisible = true;
 										else if (
 											!$groupContext &&
-											($permissionsByGroup.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+											($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
 										)
 											showSelectGroupContext.set(true);
 									}}
