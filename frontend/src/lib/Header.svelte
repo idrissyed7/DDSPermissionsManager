@@ -15,6 +15,7 @@
 	import renderAvatar from '../stores/renderAvatar';
 	import ComboBox from './ComboBox.svelte';
 	import refreshPage from '../stores/refreshPage';
+	import lastRefresh from '../stores/lastRefresh';
 	import permissionBadges from '../stores/permissionBadges';
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
 
@@ -45,12 +46,15 @@
 
 	// Reactive statements
 	$: if ($groupContext?.id) getPermissionsForGroupContext();
-	$: if ($refreshPage && $groupContext?.id) getPermissionsForGroupContext();
-	$: if ($groupContext === 'clear') {
+	else {
 		isGroupAdminInContext = false;
 		isTopicAdminInContext = false;
 		isApplicationAdminInContext = false;
-		groupContext.set();
+	}
+
+	$: if ($refreshPage !== $lastRefresh && $groupContext?.id) {
+		getPermissionsForGroupContext();
+		lastRefresh.set($refreshPage);
 	}
 
 	// Shows the select group context prompt briefly and then removes the prompt

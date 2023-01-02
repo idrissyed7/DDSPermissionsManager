@@ -51,9 +51,8 @@
 
 	// Constants
 	const returnKey = 13;
-	const groupsDropdownSuggestion = 7;
+	const groupsToCompare = 7;
 	const minNameLength = 3;
-	const searchStringLength = 3;
 
 	// Forms
 	let selectedIsGroupAdmin = false;
@@ -111,11 +110,45 @@
 
 	const validateTopicName = async () => {
 		const res = await httpAdapter.get(
-			`/topics?page=0&size=${groupsDropdownSuggestion}&filter=${newTopicName}`
+			`/topics?page=0&size=${groupsToCompare}&filter=${newTopicName}`
 		);
 		if (
 			newTopicName?.length > 0 &&
 			res.data.content?.some((topic) => topic.name.toUpperCase() === newTopicName.toUpperCase())
+		) {
+			return false;
+		} else {
+			return true;
+		}
+	};
+
+	const validateApplicationName = async () => {
+		const res = await httpAdapter.get(
+			`/applications?page=0&size=${groupsToCompare}&filter=${appName}`
+		);
+		if (
+			appName?.length > 0 &&
+			res.data.content?.some(
+				(application) => application.name.toUpperCase() === appName.toUpperCase()
+			)
+		) {
+			return false;
+		} else {
+			return true;
+		}
+	};
+
+	const validateGroupMembership = async () => {
+		const res = await httpAdapter.get(
+			`/group_membership?page=0&size=${groupsToCompare}&filter=${emailValue}`
+		);
+		if (
+			emailValue?.length > 0 &&
+			res.data.content?.some(
+				(user) =>
+					user.permissionsUserEmail.toUpperCase() === emailValue.toUpperCase() &&
+					user.permissionsGroup === $groupContext.id
+			)
 		) {
 			return false;
 		} else {
@@ -149,7 +182,13 @@
 
 		validateEmail(emailValue);
 
-		if (!invalidEmail) dispatch('addGroupMembership', newGroupMembership);
+		const validGroupMembership = await validateGroupMembership();
+		if (!validGroupMembership) {
+			errorMessageEmail = errorMessages['group_membership']['exists'];
+			return;
+		}
+
+		if (!invalidEmail && validGroupMembership) dispatch('addGroupMembership', newGroupMembership);
 	};
 
 	const actionAddSuperUserEvent = () => {
@@ -195,7 +234,13 @@
 
 		invalidApplicationName = !validateNameLength(appName, 'application');
 
-		if (!invalidApplicationName) {
+		const validApplication = await validateApplicationName();
+		if (!validApplication) {
+			errorMessageApplication = errorMessages['application']['exists'];
+			return;
+		}
+
+		if (!invalidApplicationName && validApplication) {
 			dispatch('addApplication', newApplication);
 			closeModal();
 		}
@@ -209,7 +254,7 @@
 		};
 
 		const res = await httpAdapter.get(
-			`/groups?page=0&size=${groupsDropdownSuggestion}&filter=${newGroupName}`
+			`/groups?page=0&size=${groupsToCompare}&filter=${newGroupName}`
 		);
 
 		if (res.data.content) {
@@ -406,6 +451,16 @@
 				class:hidden={errorMessageName?.length === 0}
 			>
 				{errorMessageName}
+			</span>
+		{/if}
+
+		{#if errorMessageApplication?.substring(0, errorMessageApplication?.indexOf(' ')) === 'Application' && errorMessageApplication?.length > 0}
+			<span
+				class="error-message"
+				style="	top: 9.6rem; right: 2.3rem"
+				class:hidden={errorMessageApplication?.length === 0}
+			>
+				{errorMessageApplication}
 			</span>
 		{/if}
 

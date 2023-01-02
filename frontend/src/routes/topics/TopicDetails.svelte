@@ -2,7 +2,6 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
-	// import permissionsByGroup from '../../stores/permissionsByGroup';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
 	import headerTitle from '../../stores/headerTitle';
@@ -250,7 +249,10 @@
 							alt="remove application"
 							style="background-color: transparent; cursor: pointer; scale: 50%; margin-right: -1rem"
 							on:click={async () => {
-								promise = deleteTopicApplicationAssociation(application.id, application.topicId);
+								promise = await deleteTopicApplicationAssociation(
+									application.id,
+									application.topicId
+								);
 							}}
 						/>
 					</div>

@@ -24,8 +24,16 @@
 	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
 	import permissionBadges from '../../stores/permissionBadges';
+	import singleGroupCheck from '../../stores/singleGroupCheck';
 
-	export let data, errors;
+	export let data;
+	export let errors;
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		singleGroupCheck.set();
+		reloadAllGroups();
+	}
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -122,7 +130,8 @@
 		headerTitle.set('Groups');
 		detailView.set();
 
-		promise = reloadAllGroups();
+		promise = await reloadAllGroups();
+
 		setTimeout(() => renderAvatar.set(true), 40);
 	});
 
@@ -205,14 +214,15 @@
 			});
 
 		await reloadAllGroups();
+
 		editGroupVisible = false;
 	};
 
 	const deleteSelectedGroups = async () => {
 		try {
+			groupContext.set();
 			for (const group of groupsRowsSelected) {
-				// await httpAdapter.post(`/groups/delete/${group.id}`);
-				await httpAdapter.post(`/groups/delete/15`);
+				await httpAdapter.post(`/groups/delete/${group.id}`);
 			}
 		} catch (err) {
 			deleteGroupVisible = false;
@@ -270,6 +280,7 @@
 					on:deleteGroups={async () => {
 						await deleteSelectedGroups();
 						reloadAllGroups();
+
 						deselectAllGroupsCheckboxes();
 						deleteGroupVisible = false;
 					}}
@@ -360,6 +371,9 @@
 									if (deleteMouseEnter) {
 										tooltip.classList.remove('tooltip-hidden');
 										tooltip.classList.add('tooltip');
+										if ($groupContext === null || $groupContext === undefined)
+											tooltip.setAttribute('style', 'margin-left:13.2rem; margin-top: -1.8rem');
+										else tooltip.setAttribute('style', 'margin-left:32rem; margin-top: -1.8rem');
 									}
 								}, 1000);
 							}
@@ -392,7 +406,7 @@
 				<span
 					id="delete-groups"
 					class="tooltip-hidden"
-					style="margin-left: 14.2rem; margin-top: -1.8rem"
+					style="margin-left: 33.2rem; margin-top: -1.8rem"
 					>{deleteToolip}
 				</span>
 				<img
@@ -556,8 +570,8 @@
 										{#if $groupContext?.name && group.name === $groupContext.name}
 											<td>
 												<div
-													class:permission-badges={$groupContext?.id}
-													class:permission-badges-hidden={!$groupContext?.id}
+													class:permission-badges-table={$groupContext?.id}
+													class:permission-badges-table-hidden={!$groupContext?.id}
 													style="display:inline-flex; vertical-align:middle; justify-content: center"
 												>
 													<img
@@ -688,8 +702,8 @@
 										{#if $groupContext?.name && group.name === $groupContext.name}
 											<td>
 												<div
-													class:permission-badges={$groupContext?.id}
-													class:permission-badges-hidden={!$groupContext?.id}
+													class:permission-badges-table={$groupContext?.id}
+													class:permission-badges-table-hidden={!$groupContext?.id}
 													style="display:inline-flex; vertical-align:middle; justify-content: center"
 												>
 													<img

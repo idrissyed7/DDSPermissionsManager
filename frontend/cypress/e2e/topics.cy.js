@@ -51,7 +51,8 @@ describe('Topics Capabilities', () => {
         cy.get('[data-cy="button-add-topic"]')
         .click();
 
-        cy.get('.header-title').contains('Test Topic Beta')   
+        cy.get('.header-title')
+        .contains('Test Topic Beta')   
 
     });
 

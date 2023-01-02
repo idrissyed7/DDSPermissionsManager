@@ -20,10 +20,17 @@
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import errorMessages from '$lib/errorMessages.json';
+	import singleGroupCheck from '../../stores/singleGroupCheck';
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
-	else reloadGroupMemberships();
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		singleGroupCheck.set();
+		selectedGroup = '';
+		reloadGroupMemberships();
+	}
 
 	// Checkboxes selection
 	$: if ($groupMembershipList?.length === usersRowsSelected?.length) {
@@ -48,9 +55,6 @@
 	// Constants
 	const returnKey = 13;
 	const waitTime = 1000;
-
-	// DropDowns
-	let usersDropDownVisible = false;
 
 	// Modals
 	let addGroupMembershipVisible = false;
@@ -182,9 +186,7 @@
 			}
 		}
 
-		refreshPage.set();
-
-		promise = reloadGroupMemberships();
+		promise = await reloadGroupMemberships();
 	});
 
 	const reloadGroupMemberships = async (page = 0) => {
@@ -261,8 +263,11 @@
 				if (err.response.status === 403) {
 					errorMessage('Error Saving Group Membership', err.message);
 				} else if (err.response.status === 400 || 401) {
-					// err.message = 'Group Membership already exists.';
-					errorMessage('Error Adding Group Membership', err.message);
+					const decodedError = decodeError(Object.create(...err.response.data));
+					errorMessage(
+						'Error Adding Group Membership',
+						errorMessages[decodedError.category][decodedError.code]
+					);
 				}
 			});
 
@@ -524,6 +529,8 @@
 									if (deleteMouseEnter) {
 										tooltip.classList.remove('tooltip-hidden');
 										tooltip.classList.add('tooltip');
+										if ($groupMembershipList === undefined)
+											tooltip.setAttribute('style', 'margin-left:10.5rem; margin-top: -1.8rem');
 									}
 								}, waitTime);
 							}
@@ -565,7 +572,10 @@
 					class="dot"
 					class:button-disabled={(!$isAdmin && !isGroupAdmin) || !$groupContext}
 					on:click={() => {
-						if ($isAdmin || isGroupAdmin) if ($groupContext) addGroupMembershipVisible = true;
+						if ($isAdmin || isGroupAdmin) {
+							if ($groupContext) addGroupMembershipVisible = true;
+							else showSelectGroupContext.set(true);
+						}
 					}}
 					on:keydown={(event) => {
 						if (event.which === returnKey) {
@@ -583,14 +593,17 @@
 									tooltip.classList.add('tooltip');
 								}
 							}, waitTime);
-						} else if (!$groupContext) {
-							addTooltip = 'Select a group to add a user';
+						} else if (!$groupContext && $isAdmin) {
+							addTooltip = 'Select a group to add a User';
 							const tooltip = document.querySelector('#add-users');
 							setTimeout(() => {
 								if (addMouseEnter) {
 									tooltip.classList.remove('tooltip-hidden');
 									tooltip.classList.add('tooltip');
 									tooltip.setAttribute('style', 'margin-left:25rem; margin-top: -1.8rem');
+
+									if ($groupMembershipList === undefined)
+										tooltip.setAttribute('style', 'margin-left:7rem; margin-top: -1.8rem');
 								}
 							}, 1000);
 						}
@@ -626,7 +639,6 @@
 											style="margin-right: 0.5rem"
 											bind:indeterminate={usersRowsSelectedTrue}
 											on:click={(e) => {
-												usersDropDownVisible = false;
 												if (e.target.checked) {
 													usersRowsSelected = $groupMembershipList;
 													usersRowsSelectedTrue = false;
@@ -667,7 +679,6 @@
 												class="group-membership-checkbox"
 												checked={usersAllRowsSelectedTrue}
 												on:change={(e) => {
-													usersDropDownVisible = false;
 													if (e.target.checked === true) {
 														usersRowsSelected.push(groupMembership);
 														// reactive statement

@@ -23,12 +23,20 @@
 	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
+	import singleGroupCheck from '../../stores/singleGroupCheck';
 
-	export let data, errors;
+	export let data;
+	export let errors;
 
 	// Group Context
 	$: if ($groupContext?.id) reloadAllTopics();
-	else reloadAllTopics();
+
+	$: if ($groupContext === 'clear') {
+		groupContext.set();
+		singleGroupCheck.set();
+		selectedGroup = '';
+		reloadAllTopics();
+	}
 
 	// Redirects the User to the Login screen if not authenticated
 	$: if (browser) {
@@ -140,12 +148,12 @@
 		detailView.set('first run');
 
 		headerTitle.set('Topics');
-		promise = reloadAllTopics();
+		promise = await reloadAllTopics();
 
 		setTimeout(() => renderAvatar.set(true), 40);
 
 		if ($permissionsByGroup) {
-			isTopicAdmin = $permissionsByGroup.some(
+			isTopicAdmin = $permissionsByGroup?.some(
 				(groupPermission) => groupPermission.isTopicAdmin === true
 			);
 		}
@@ -462,18 +470,55 @@
 						src={addSVG}
 						alt="options"
 						class="dot"
-						class:button-disabled={(!$isAdmin && !isTopicAdmin) || !$groupContext}
+						class:button-disabled={(!$isAdmin &&
+							!$permissionsByGroup?.find(
+								(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+							)) ||
+							!$groupContext}
 						on:click={() => {
-							if ($isAdmin || isTopicAdmin) if ($groupContext) addTopicVisible = true;
+							if (
+								$groupContext &&
+								($isAdmin ||
+									$permissionsByGroup?.find(
+										(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+									))
+							) {
+								addTopicVisible = true;
+							} else if (
+								!$groupContext &&
+								($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+							)
+								showSelectGroupContext.set(true);
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								if ($isAdmin || isTopicAdmin) if ($groupContext) addTopicVisible = true;
+								if (
+									$groupContext &&
+									($isAdmin ||
+										$permissionsByGroup?.find(
+											(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+										))
+								) {
+									addTopicVisible = true;
+								} else if (
+									!$groupContext &&
+									($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+								)
+									showSelectGroupContext.set(true);
 							}
 						}}
 						on:mouseenter={() => {
 							addMouseEnter = true;
-							if (!$isAdmin && !isTopicAdmin) {
+							if (
+								(!$isAdmin &&
+									$groupContext &&
+									!$permissionsByGroup?.find(
+										(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+									)) ||
+								(!$isAdmin &&
+									!$groupContext &&
+									!$permissionsByGroup?.some((gm) => gm.isTopicAdmin === true))
+							) {
 								addTooltip = 'Topic Admin permission required';
 								const tooltip = document.querySelector('#add-topics');
 								setTimeout(() => {
@@ -482,7 +527,10 @@
 										tooltip.classList.add('tooltip');
 									}
 								}, waitTime);
-							} else if (!$groupContext) {
+							} else if (
+								!$groupContext &&
+								($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+							) {
 								addTooltip = 'Select a group to add a Topic';
 								const tooltip = document.querySelector('#add-topics');
 								setTimeout(() => {
@@ -516,7 +564,7 @@
 						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-									{#if isTopicAdmin || $isAdmin}
+									{#if $permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin}
 										<td style="line-height: 1rem;">
 											<input
 												tabindex="-1"
@@ -547,7 +595,7 @@
 							<tbody>
 								{#each $topics as topic, i}
 									<tr>
-										{#if isTopicAdmin || $isAdmin}
+										{#if $permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin}
 											<td style="line-height: 1rem; width: 2rem; ">
 												<input
 													tabindex="-1"
@@ -618,17 +666,32 @@
 						<p>
 							No Topics Found.
 							<br />
-							Select a group and then
-							<span
-								class="link"
-								on:click={() => {
-									if ($groupContext) addTopicVisible = true;
-									else showSelectGroupContext.set(true);
-								}}
-							>
-								click here
-							</span>
-							to create a new Topics.
+							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
+								Select a group and then
+								<span
+									class="link"
+									on:click={() => {
+										if (
+											$groupContext &&
+											($permissionsByGroup?.find(
+												(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+											) ||
+												$isAdmin)
+										)
+											addTopicVisible = true;
+										else if (
+											!$groupContext &&
+											($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
+										)
+											showSelectGroupContext.set(true);
+									}}
+								>
+									click here
+								</span>
+								to create a new Topics.
+							{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)}
+								Select a group to get started.
+							{/if}
 						</p>
 					{/if}
 				</div>
