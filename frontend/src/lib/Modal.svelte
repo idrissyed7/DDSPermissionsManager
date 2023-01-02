@@ -113,7 +113,6 @@
 			`/topics?page=0&size=${groupsToCompare}&filter=${newTopicName}`
 		);
 
-		console.log('validate topic name', res.data);
 		if (
 			newTopicName?.length > 0 &&
 			res.data.content?.some(
