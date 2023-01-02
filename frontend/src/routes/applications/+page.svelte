@@ -1057,7 +1057,7 @@
 						{/if}
 						<div class="curl-commands">
 							<!-- svelte-ignore missing-declaration -->
-							<div class="section-title">1# Authenticate</div>
+							<div class="section-title">Export the password from "Generate Password"</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
 									>{curlCommands.codeOne}</textarea
@@ -1079,14 +1079,13 @@
 									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">
-								2# Show the token_info. We don't need to have this in this in the script.
-							</div>
+							<div class="section-title">Export an alphanumeric nonce</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
 									>{curlCommands.codeTwo}</textarea
 								>
 								<img
+									data-cy="curl-command-2-copy"
 									src={copySVG}
 									alt="copy code"
 									width="20rem"
@@ -1102,12 +1101,13 @@
 									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">3# Download the Identity CA certificate.</div>
+							<div class="section-title">Authenticate</div>
 							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
+								<textarea rows="1" style="width:50rem; resize: none"
 									>{curlCommands.codeThree}</textarea
 								>
 								<img
+									data-cy="curl-command-3-copy"
 									src={copySVG}
 									alt="copy code"
 									width="20rem"
@@ -1118,11 +1118,12 @@
 										showCopyCommand(3);
 									}}
 								/>
+
 								{#if copiedVisible === 3}
-									<div class="bubble-commands">Copied!</div>
+									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">4# Download the Permissions CA certificate.</div>
+							<div class="section-title">Download the Identity CA certificate</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeFour}</textarea
@@ -1138,12 +1139,11 @@
 										showCopyCommand(4);
 									}}
 								/>
-
 								{#if copiedVisible === 4}
 									<div class="bubble-commands">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">5# Download the governance file.</div>
+							<div class="section-title">Download the Permissions CA certificate</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeFive}</textarea
@@ -1164,7 +1164,7 @@
 									<div class="bubble-commands">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">6# Download a key pair.</div>
+							<div class="section-title">Download the governance file</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeSix}</textarea
@@ -1185,8 +1185,8 @@
 									<div class="bubble-commands">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">7# Download a permissions document.</div>
-							<section style="display:inline-flex">
+							<div class="section-title">Download a key pair</div>
+							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeSeven}</textarea
 								>
@@ -1203,6 +1203,27 @@
 								/>
 
 								{#if copiedVisible === 7}
+									<div class="bubble-commands">Copied!</div>
+								{/if}
+							</section>
+							<div class="section-title">Download a permissions document</div>
+							<section style="display:inline-flex">
+								<textarea rows="2" style="width:50rem; resize: none"
+									>{curlCommands.codeEight}</textarea
+								>
+								<img
+									src={copySVG}
+									alt="copy code"
+									width="20rem"
+									height="20rem"
+									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+									on:click={() => {
+										navigator.clipboard.writeText(curlCommands.codeEight);
+										showCopyCommand(8);
+									}}
+								/>
+
+								{#if copiedVisible === 8}
 									<div class="bubble-commands">Copied!</div>
 								{/if}
 							</section>
