@@ -680,7 +680,7 @@
 								>
 									Click here
 								</span>
-								to create a new Topics.
+								to create a new Topic.
 							{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)}
 								Select a group to get started.
 							{/if}
