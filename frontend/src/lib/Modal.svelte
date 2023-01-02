@@ -112,9 +112,15 @@
 		const res = await httpAdapter.get(
 			`/topics?page=0&size=${groupsToCompare}&filter=${newTopicName}`
 		);
+
+		console.log('validate topic name', res.data);
 		if (
 			newTopicName?.length > 0 &&
-			res.data.content?.some((topic) => topic.name.toUpperCase() === newTopicName.toUpperCase())
+			res.data.content?.some(
+				(topic) =>
+					topic.name.toUpperCase() === newTopicName.toUpperCase() &&
+					topic.groupName.toUpperCase() === $groupContext.name.toUpperCase()
+			)
 		) {
 			return false;
 		} else {
@@ -207,6 +213,7 @@
 			anyApplicationCanRead: anyApplicationCanRead,
 			selectedApplicationList: selectedApplicationList
 		};
+
 		invalidTopic = !validateNameLength(newTopicName, 'topic');
 		if (invalidTopic) {
 			errorMessageName = errorMessages['topic']['name.cannot_be_less_than_three_characters'];
@@ -577,11 +584,44 @@
 		{/if}
 
 		{#if topicName}
-			<div style="display:flex; align-items: center; margin-top: 1rem">
-				<span style="font-size:0.9rem; width: 9rem; margin-right: 0.5rem; ">
+			<div style="display:flex; align-items: center">
+				<!-- <span style="font-size:0.9rem; width: 9rem; margin-right: 0.5rem; ">
 					Any application can read topic:
-				</span>
-				<Switch bind:checked={anyApplicationCanRead} />
+				</span> -->
+				<!-- <Switch bind:checked={anyApplicationCanRead} /> -->
+				<fieldset>
+					<legend style="font-size:0.85rem">Any application can read topic:</legend>
+
+					<div style="display:inline">
+						<label for="anyApplicationOption1" style="font-size:0.8rem">
+							<input
+								type="radio"
+								style="height:0.8rem; width:0.8rem"
+								id="anyApplicationOption1"
+								name="anyApplicationCanRead"
+								bind:group={anyApplicationCanRead}
+								value={false}
+								checked
+							/>
+							This topic requires each application to be authorized in order to read and to write it.</label
+						>
+					</div>
+
+					<div>
+						<label for="anyApplicationOption2" style="font-size:0.8rem">
+							<input
+								type="radio"
+								style="height:0.8rem; width:0.8rem; margin-top: 1rem"
+								id="anyApplicationOption2"
+								name="anyApplicationCanRead"
+								bind:group={anyApplicationCanRead}
+								value={true}
+							/>
+							This topic requires each application to be authorized in order to write it, but any application
+							may read it.
+						</label>
+					</div>
+				</fieldset>
 			</div>
 		{/if}
 
@@ -714,9 +754,7 @@
 			class="action-button"
 			disabled={newTopicName.length < minNameLength || !selectedGroup}
 			class:action-button-invalid={newTopicName.length < minNameLength || !selectedGroup}
-			on:click={() => {
-				actionAddTopicEvent();
-			}}
+			on:click={() => actionAddTopicEvent()}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					actionAddTopicEvent();

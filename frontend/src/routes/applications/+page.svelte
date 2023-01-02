@@ -874,7 +874,6 @@
 						No Applications Found.
 						<br />
 						{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
-							Select a group and then
 							<span
 								class="link"
 								on:click={() => {
@@ -893,7 +892,7 @@
 										showSelectGroupContext.set(true);
 								}}
 							>
-								click here
+								Click here
 							</span>
 							to create a new Application.
 						{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)}

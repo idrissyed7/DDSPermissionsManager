@@ -290,13 +290,6 @@
 			errorMessage('Error Adding Topic', errorMessages['topic']['exists']);
 		}
 	};
-
-	const decodeError = (errorObject) => {
-		errorObject = errorObject.code.replaceAll('-', '_');
-		const cat = errorObject.substring(0, errorObject.indexOf('.'));
-		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
-		return { category: cat, code: code };
-	};
 </script>
 
 <svelte:head>
@@ -667,7 +660,6 @@
 							No Topics Found.
 							<br />
 							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
-								Select a group and then
 								<span
 									class="link"
 									on:click={() => {
@@ -686,7 +678,7 @@
 											showSelectGroupContext.set(true);
 									}}
 								>
-									click here
+									Click here
 								</span>
 								to create a new Topics.
 							{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)}

@@ -21,6 +21,7 @@
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import errorMessages from '$lib/errorMessages.json';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
@@ -766,11 +767,15 @@
 							{/each}
 						</tbody>
 					</table>
-				{:else}
+				{:else if !$groupContext}
 					<p>
 						No Users Found.
 						<br />
-						Select a group and then
+						Select a group to get started.
+					</p>
+				{:else if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isGroupAdmin === true) || $isAdmin)}
+					<p>
+						No Users Found. <br />
 						<span
 							class="link"
 							on:click={() => {
@@ -778,7 +783,7 @@
 								else showSelectGroupContext.set(true);
 							}}
 						>
-							click here
+							Click here
 						</span>
 						to create a new User.
 					</p>
