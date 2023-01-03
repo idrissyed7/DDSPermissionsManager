@@ -6,15 +6,10 @@
 	import googleSVG from '../icons/google.svg';
 	import loginCompleted from '../stores/loginCompleted';
 	import renderAvatar from '../stores/renderAvatar';
-	// import headerTitle from '../stores/headerTitle';
-	// import detailView from '../stores/detailView';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 
 	export let data, errors;
-
-	// headerTitle.set('Home');
-	// detailView.set();
 
 	// Delay the render of the Avatar dot to avoid flickering
 	setTimeout(() => renderAvatar.set(true), 40);
@@ -77,34 +72,11 @@
 		padding-left: 2rem;
 	}
 
-	h2 {
-		font-size: 1.7rem;
-		margin-bottom: 2rem;
-		margin-left: 2rem;
-		text-align: unset;
-	}
-
-	li {
-		font-size: 1.1rem;
-		margin-left: 1.5rem;
-		margin-bottom: 1rem;
-	}
-
-	p {
-		font-size: 0.9rem;
-		margin-top: 3rem;
-		margin-left: 3rem;
-	}
-
 	hr {
 		margin: 1.5rem 1.3rem 1.8rem 1.3rem;
 		border-color: rgba(0, 0, 0, 0.15);
 		border-style: solid;
 		border-width: 0.05rem;
-	}
-
-	.content {
-		width: max-content;
 	}
 
 	.container-box {

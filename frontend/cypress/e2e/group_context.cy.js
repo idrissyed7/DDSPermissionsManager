@@ -10,11 +10,10 @@ describe('Group Context capabilities', () => {
 
     it('should activate a new group context', () => {
 
-        // cy.get('[data-cy="activate-group-context"]')
-        cy.get('td').contains('Gamma').siblings().find('[data-cy="activate-group-context"]')
+        cy.get('[data-cy="activate-group-context0"]')
         .click();
 
-        cy.get('[data-cy="group-input"]').should('have.value', 'Gamma');
+        cy.get('[data-cy="group-input"]').should('have.value', 'Alpha');
 
     });
 });

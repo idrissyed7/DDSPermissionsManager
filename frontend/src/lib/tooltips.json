@@ -1,0 +1,14 @@
+{
+    "isGroupAdmin": "Group Admin Permission",
+    "isNotGroupAdmin": "Contact your Admin to become a Group Admin",
+    "isTopicAdmin": "Topic Admin Permission",
+    "isNotTopicAdmin": "Contact your Admin to become a Topic Admin",
+    "isApplicationAdmin": "Application Admin Permission",
+    "isNotApplicationAdmin": "Contact your Admin to become an Application Admin",
+    "createUserAllowed": "Create a new User in ",
+    "createUserNotAllowed": "Group Admin permission required",
+    "createTopicAllowed": "Create a new Topic in ",
+    "createTopicNotAllowed": "Topic Admin permission required",
+    "createApplicationAllowed": "Create a new Application in ",
+    "createApplicationNotAllowed": "Application Admin permission required"
+}
