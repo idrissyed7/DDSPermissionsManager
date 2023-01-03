@@ -1102,7 +1102,7 @@
 							</section>
 							<div class="section-title">Authenticate</div>
 							<section style="display:inline-flex;">
-								<textarea rows="1" style="width:50rem; resize: none"
+								<textarea rows="2" style="width:50rem; resize: none"
 									>{curlCommands.codeThree}</textarea
 								>
 								<img

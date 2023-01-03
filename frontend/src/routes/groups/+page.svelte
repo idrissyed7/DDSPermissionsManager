@@ -553,7 +553,7 @@
 
 										<td style="text-align: center; cursor: pointer">
 											<img
-												data-cy="activate-group-context"
+												data-cy="activate-group-context{i}"
 												src={groupSVG}
 												alt="select group"
 												width="27rem"
@@ -919,7 +919,7 @@
 										{#if $isAdmin}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
-													data-cy="edit-group-icon"
+													data-cy="edit-group-icon-{group.name}"
 													src={editSVG}
 													alt="edit group"
 													style="cursor: pointer; vertical-align: -0.25rem"
@@ -935,7 +935,7 @@
 
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
 												<img
-													data-cy="delete-group-icon"
+													data-cy="delete-group-icon-{group.name}"
 													src={deleteSVG}
 													alt="delete group"
 													style="cursor: pointer; vertical-align: -0.5rem"
