@@ -18,6 +18,7 @@
 	import lastRefresh from '../stores/lastRefresh';
 	import permissionBadges from '../stores/permissionBadges';
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
+	import tooltips from '$lib/tooltips.json';
 
 	export let avatarName;
 	export let userEmail;
@@ -75,27 +76,27 @@
 
 			if ((permissionsForGroupContext && permissionsForGroupContext[0].groupAdmin) || $isAdmin) {
 				isGroupAdminInContext = true;
-				isGroupAdminToolip = 'Group Admin Permissions';
+				isGroupAdminToolip = tooltips['isGroupAdmin'];
 			} else {
 				isGroupAdminInContext = false;
-				isGroupAdminToolip = 'Contact your Admin to become a Group Admin';
+				isGroupAdminToolip = tooltips['isNotGroupAdmin'];
 			}
 			if ((permissionsForGroupContext && permissionsForGroupContext[0].topicAdmin) || $isAdmin) {
 				isTopicAdminInContext = true;
-				isTopicAdminTooltip = 'Topic Admin Permissions';
+				isTopicAdminTooltip = tooltips['isTopicAdmin'];
 			} else {
 				isTopicAdminInContext = false;
-				isTopicAdminTooltip = 'Contact your Admin to become a Topic Admin';
+				isTopicAdminTooltip = tooltips['isNotTopicAdmin'];
 			}
 			if (
 				(permissionsForGroupContext && permissionsForGroupContext[0].applicationAdmin) ||
 				$isAdmin
 			) {
 				isApplicationAdminInContext = true;
-				isApplicationAdminTooltip = 'Application Admin Permissions';
+				isApplicationAdminTooltip = tooltips['isApplicationAdmin'];
 			} else {
 				isApplicationAdminInContext = false;
-				isApplicationAdminTooltip = 'Contact your Admin to become an Application Admin';
+				isApplicationAdminTooltip = tooltips['isNotApplicationAdmin'];
 			}
 		}
 

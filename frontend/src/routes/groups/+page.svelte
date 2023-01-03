@@ -25,6 +25,8 @@
 	import groupContext from '../../stores/groupContext';
 	import permissionBadges from '../../stores/permissionBadges';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
+	import userEmail from '../../stores/userEmail';
+	import tooltips from '$lib/tooltips.json';
 
 	export let data;
 	export let errors;
@@ -67,9 +69,15 @@
 	let addMouseEnter = false;
 
 	let activateToolip = 'Select this group as context';
-	let activateMouseEnter = new Array($groups?.length).fill(false);
 
-	let createUserMouseEnter, createTopicMouseEnter, createApplicationMouseEnter;
+	let activateMouseEnter = new Array($groups?.length).fill(false);
+	let isGroupAdminMouseEnter = new Array($groups?.length).fill(false);
+	let isTopicAdminMouseEnter = new Array($groups?.length).fill(false);
+	let isApplicationAdminMouseEnter = new Array($groups?.length).fill(false);
+
+	let createUserMouseEnter = new Array($groups?.length).fill(false);
+	let createTopicMouseEnter = new Array($groups?.length).fill(false);
+	let createApplicationMouseEnter = new Array($groups?.length).fill(false);
 
 	// Promises
 	let promise;
@@ -96,6 +104,7 @@
 	let groupsRowsSelected = [];
 	let groupsRowsSelectedTrue = false;
 	let groupsAllRowsSelectedTrue = false;
+	let permissionsForAllGroups = [];
 
 	// Pagination
 	let groupsPerPage = 10;
@@ -105,11 +114,6 @@
 	// Selection
 	let selectedGroupId;
 	let selectedGroupName;
-
-	// Tooltip
-	let isGroupAdminMouseEnter = false;
-	let isTopicAdminMouseEnter = false;
-	let isApplicationAdminMouseEnter = false;
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -129,6 +133,8 @@
 	onMount(async () => {
 		headerTitle.set('Groups');
 		detailView.set();
+
+		await getPermissionsForAllGroups();
 
 		promise = await reloadAllGroups();
 
@@ -228,6 +234,26 @@
 			deleteGroupVisible = false;
 			errorMessage('Error Deleting Group', err.response.data);
 		}
+	};
+
+	const getPermissionsForAllGroups = async () => {
+		if ($userEmail)
+			permissionsForAllGroups = await httpAdapter.get(
+				`/group_membership?page=0&size=${groupsPerPage}&filter=${$userEmail}`
+			);
+
+		if (permissionsForAllGroups?.data?.content)
+			permissionsForAllGroups = permissionsForAllGroups.data.content;
+	};
+
+	const findPermission = (group, permissionType) => {
+		if ($isAdmin) return true;
+		else if (permissionsForAllGroups) {
+			return permissionsForAllGroups.find(
+				(groupPermission) =>
+					groupPermission.permissionsGroup === group.id && groupPermission[permissionType] === true
+			);
+		} else return false;
 	};
 
 	const deselectAllGroupsCheckboxes = () => {
@@ -488,10 +514,8 @@
 									{/if}
 									<td style="width: 5rem; text-align:center">Activate</td>
 									<td style="min-width: 7rem">Group</td>
-									{#if $groupContext?.id}
-										<td style="text-align:center">Permissions</td>
-										<td style="text-align:center">Create</td>
-									{/if}
+									<td style="text-align:center">Permissions</td>
+									<td style="text-align:center; width: 7rem">Create</td>
 									<td style="width: 4rem; text-align:center">Users</td>
 									<td style="width: 4rem; text-align:center">Topics</td>
 									<td style="width: 4rem; text-align:right; padding-right: 1rem">Applications</td>
@@ -535,8 +559,6 @@
 												width="27rem"
 												height="27rem"
 												style="vertical-align: middle;cursor: pointer"
-												class:context-selected={group.name === $groupContext?.name}
-												class:context-deselected={group.name !== $groupContext?.name}
 												on:click={() => {
 													if (!$groupContext) groupContext.set(group);
 													else groupContext.set('clear');
@@ -570,294 +592,288 @@
 											{group.name}
 										</td>
 
-										{#if $groupContext?.name && group.name === $groupContext.name}
-											<td>
-												<div
-													class:permission-badges-table={$groupContext?.id}
-													class:permission-badges-table-hidden={!$groupContext?.id}
-													style="display:inline-flex; vertical-align:middle; justify-content: center"
+										<td>
+											<div
+												style="display:inline-flex; vertical-align:middle; justify-content: center"
+											>
+												<img
+													src={groupSVG}
+													id="#is-group-admin-groups{i}"
+													alt="Group Admin"
+													width="23rem"
+													height="23rem"
+													style="margin-right: 0.4rem"
+													class:permission-badges-green={findPermission(group, 'groupAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'groupAdmin')}
+													on:mouseenter={() => {
+														isGroupAdminMouseEnter[i] = true;
+														const tooltip = document.querySelector(`#is-group-admin-groups${i}`);
+														setTimeout(() => {
+															if (isGroupAdminMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
+															}
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														isGroupAdminMouseEnter[i] = false;
+														const tooltip = document.querySelector(`#is-group-admin-groups${i}`);
+														setTimeout(() => {
+															if (!isGroupAdminMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
+															}
+														}, 1000);
+													}}
+												/>
+
+												<span
+													id="is-group-admin-groups{i}"
+													class="tooltip-hidden"
+													style="margin-top: 1.8rem; margin-left: -4rem"
+													>{#if findPermission(group, 'groupAdmin')}
+														{tooltips['isGroupAdmin']}
+													{:else}
+														{tooltips['isNotGroupAdmin']}
+													{/if}
+												</span>
+
+												<img
+													src={topicsSVG}
+													alt="Topic Admin"
+													width="23rem"
+													height="23rem"
+													style="margin-right: 0.2rem"
+													class:permission-badges-green={findPermission(group, 'topicAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'topicAdmin')}
+													on:mouseenter={() => {
+														isTopicAdminMouseEnter[i] = true;
+														const tooltip = document.querySelector(`#is-topic-admin-groups${i}`);
+														setTimeout(() => {
+															if (isTopicAdminMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
+															}
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														isTopicAdminMouseEnter[i] = false;
+														const tooltip = document.querySelector(`#is-topic-admin-groups${i}`);
+														setTimeout(() => {
+															if (!isTopicAdminMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
+															}
+														}, 1000);
+													}}
+												/>
+
+												<span
+													id="is-topic-admin-groups{i}"
+													class="tooltip-hidden"
+													style="margin-top: 1.8rem"
+													>{#if findPermission(group, 'topicAdmin')}
+														{tooltips['isTopicAdmin']}
+													{:else}
+														{tooltips['isNotTopicAdmin']}
+													{/if}
+												</span>
+
+												<img
+													src={appsSVG}
+													alt="Application Admin"
+													width="23rem"
+													height="23rem"
+													class:permission-badges-green={findPermission(group, 'applicationAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'applicationAdmin')}
+													on:mouseenter={() => {
+														isApplicationAdminMouseEnter[i] = true;
+														const tooltip = document.querySelector(
+															`#is-application-admin-groups${i}`
+														);
+														setTimeout(() => {
+															if (isApplicationAdminMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
+															}
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														isApplicationAdminMouseEnter[i] = false;
+														const tooltip = document.querySelector(
+															`#is-application-admin-groups${i}`
+														);
+														setTimeout(() => {
+															if (!isApplicationAdminMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
+															}
+														}, 1000);
+													}}
+												/>
+
+												<span
+													id="is-application-admin-groups{i}"
+													class="tooltip-hidden"
+													style="margin-top: 1.8rem; margin-left: 3rem"
+													>{#if findPermission(group, 'applicationAdmin')}
+														{tooltips['isApplicationAdmin']}
+													{:else}
+														{tooltips['isNotApplicationAdmin']}
+													{/if}
+												</span>
+											</div>
+										</td>
+
+										<td>
+											<div
+												style="display:inline-flex; vertical-align:middle; justify-content: center; width: 7rem"
+											>
+												<img
+													src={groupSVG}
+													alt="create new user"
+													width="23rem"
+													height="23rem"
+													style="margin-right: 0.4rem"
+													class:permission-badges-blue={findPermission(group, 'groupAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'groupAdmin')}
+													disabled={!findPermission(group, 'groupAdmin')}
+													on:mouseenter={() => {
+														createUserMouseEnter[i] = true;
+														const tooltip = document.querySelector(`#user-create${i}`);
+														setTimeout(() => {
+															if (createUserMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
+															}
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														createUserMouseEnter[i] = false;
+														const tooltip = document.querySelector(`#user-create${i}`);
+														setTimeout(() => {
+															if (!createUserMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
+															}
+														}, 1000);
+													}}
+													on:click={() => {
+														if (findPermission(group, 'groupAdmin')) {
+															groupContext.set(group);
+															urlparameters.set('create');
+															goto(`/users`, true);
+														}
+													}}
+												/>
+
+												<span
+													id="user-create{i}"
+													class="tooltip-hidden"
+													style="margin-top: 1.8rem; margin-left: -3rem"
 												>
-													<img
-														src={groupSVG}
-														alt="Group Admin"
-														width="23rem"
-														height="23rem"
-														style="margin-right: 0.4rem"
-														class:permission-badges-green={$permissionBadges?.isGroupAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isGroupAdminInContext &&
-															!$isAdmin}
-														on:mouseenter={() => {
-															isGroupAdminMouseEnter = true;
-															const tooltip = document.querySelector('#is-group-admin-groups');
-															setTimeout(() => {
-																if (isGroupAdminMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															isGroupAdminMouseEnter = false;
-															const tooltip = document.querySelector('#is-group-admin-groups');
-															setTimeout(() => {
-																if (!isGroupAdminMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-													/>
+													{#if findPermission(group, 'groupAdmin')}
+														{tooltips['createUserAllowed']} {group.name}
+													{:else}
+														{tooltips['createUserNotAllowed']}
+													{/if}
+												</span>
 
-													<span
-														id="is-group-admin-groups"
-														class="tooltip-hidden"
-														style="margin-top: 1.8rem; margin-left: -4rem"
-														>{$permissionBadges?.isGroupAdminToolip}
-													</span>
-
-													<img
-														src={topicsSVG}
-														alt="Topic Admin"
-														width="23rem"
-														height="23rem"
-														style="margin-right: 0.2rem"
-														class:permission-badges-green={$permissionBadges?.isTopicAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isTopicAdminInContext &&
-															!$isAdmin}
-														on:mouseenter={() => {
-															isTopicAdminMouseEnter = true;
-															const tooltip = document.querySelector('#is-topic-admin-groups');
-															setTimeout(() => {
-																if (isTopicAdminMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															isTopicAdminMouseEnter = false;
-															const tooltip = document.querySelector('#is-topic-admin-groups');
-															setTimeout(() => {
-																if (!isTopicAdminMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-													/>
-
-													<span
-														id="is-topic-admin-groups"
-														class="tooltip-hidden"
-														style="margin-top: 1.8rem"
-														>{$permissionBadges?.isTopicAdminTooltip}
-													</span>
-
-													<img
-														src={appsSVG}
-														alt="Application Admin"
-														width="23rem"
-														height="23rem"
-														class:permission-badges-green={$permissionBadges?.isApplicationAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isApplicationAdminInContext &&
-															!$isAdmin}
-														on:mouseenter={() => {
-															isApplicationAdminMouseEnter = true;
-															const tooltip = document.querySelector(
-																'#is-application-admin-groups'
-															);
-															setTimeout(() => {
-																if (isApplicationAdminMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															isApplicationAdminMouseEnter = false;
-															const tooltip = document.querySelector(
-																'#is-application-admin-groups'
-															);
-															setTimeout(() => {
-																if (!isApplicationAdminMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-													/>
-
-													<span
-														id="is-application-admin-groups"
-														class="tooltip-hidden"
-														style="margin-top: 1.8rem; margin-left: 3rem"
-														>{$permissionBadges?.isApplicationAdminTooltip}
-													</span>
-												</div>
-											</td>
-										{:else if $groupContext}
-											<td /><td />
-										{/if}
-
-										{#if $groupContext?.name && group.name === $groupContext.name}
-											<td>
-												<div
-													class:permission-badges-table={$groupContext?.id}
-													class:permission-badges-table-hidden={!$groupContext?.id}
-													style="display:inline-flex; vertical-align:middle; justify-content: center"
-												>
-													<img
-														src={groupSVG}
-														alt="create new user"
-														width="23rem"
-														height="23rem"
-														style="margin-right: 0.4rem"
-														class:permission-badges-blue={$permissionBadges?.isGroupAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isGroupAdminInContext &&
-															!$isAdmin}
-														disabled={!$permissionBadges?.isGroupAdminInContext && !$isAdmin}
-														on:mouseenter={() => {
-															createUserMouseEnter = true;
-															const tooltip = document.querySelector('#user-create');
-															setTimeout(() => {
-																if (createUserMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															createUserMouseEnter = false;
-															const tooltip = document.querySelector('#user-create');
-															setTimeout(() => {
-																if (!createUserMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-														on:click={() => {
-															if ($permissionBadges?.isGroupAdminInContext || $isAdmin) {
-																urlparameters.set('create');
-																goto(`/users`, true);
+												<img
+													src={topicsSVG}
+													alt="create new topic"
+													width="23rem"
+													height="23rem"
+													style="margin-right: 0.2rem"
+													class:permission-badges-blue={findPermission(group, 'topicAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'topicAdmin')}
+													disabled={!findPermission(group, 'topicAdmin')}
+													on:mouseenter={() => {
+														createTopicMouseEnter[i] = true;
+														const tooltip = document.querySelector(`#topic-create${i}`);
+														setTimeout(() => {
+															if (createTopicMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
 															}
-														}}
-													/>
-
-													<span
-														id="user-create"
-														class="tooltip-hidden"
-														style="margin-top: 1.8rem; margin-left: -3rem"
-													>
-														{#if $permissionBadges?.isGroupAdminInContext || $isAdmin}
-															Create a new User in {group.name}
-														{:else if !$permissionBadges?.isGroupAdminInContext && !$isAdmin}
-															Group Admin permission required
-														{/if}
-													</span>
-
-													<img
-														src={topicsSVG}
-														alt="create new topic"
-														width="23rem"
-														height="23rem"
-														style="margin-right: 0.2rem"
-														class:permission-badges-blue={$permissionBadges?.isTopicAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isTopicAdminInContext &&
-															!$isAdmin}
-														disabled={!$permissionBadges?.isTopicAdminInContext && !$isAdmin}
-														on:mouseenter={() => {
-															createTopicMouseEnter = true;
-															const tooltip = document.querySelector('#topic-create');
-															setTimeout(() => {
-																if (createTopicMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															createTopicMouseEnter = false;
-															const tooltip = document.querySelector('#topic-create');
-															setTimeout(() => {
-																if (!createTopicMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-														on:click={() => {
-															if ($permissionBadges?.isTopicAdminInContext || $isAdmin) {
-																urlparameters.set('create');
-																goto(`/topics`, true);
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														createTopicMouseEnter[i] = false;
+														const tooltip = document.querySelector(`#topic-create${i}`);
+														setTimeout(() => {
+															if (!createTopicMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
 															}
-														}}
-													/>
+														}, 1000);
+													}}
+													on:click={() => {
+														if (findPermission(group, 'topicAdmin')) {
+															groupContext.set(group);
+															urlparameters.set('create');
+															goto(`/topics`, true);
+														}
+													}}
+												/>
 
-													<span id="topic-create" class="tooltip-hidden" style="margin-top: 1.8rem"
-														>{#if $permissionBadges?.isTopicAdminInContext || $isAdmin}
-															Create a new Topic in {group.name}
-														{:else if !$permissionBadges?.isTopicAdminInContext && !$isAdmin}
-															Topic Admin permission required
-														{/if}
-													</span>
+												<span id="topic-create{i}" class="tooltip-hidden" style="margin-top: 1.8rem"
+													>{#if findPermission(group, 'topicAdmin')}
+														{tooltips['createTopicAllowed']} {group.name}
+													{:else}
+														{tooltips['createTopicNotAllowed']}
+													{/if}
+												</span>
 
-													<img
-														src={appsSVG}
-														alt="create application"
-														width="23rem"
-														height="23rem"
-														class:permission-badges-blue={$permissionBadges?.isApplicationAdminInContext ||
-															$isAdmin}
-														class:permission-badges-grey={!$permissionBadges?.isApplicationAdminInContext &&
-															!$isAdmin}
-														disabled={!$permissionBadges?.isApplicationAdminInContext && !$isAdmin}
-														on:mouseenter={() => {
-															createApplicationMouseEnter = true;
-															const tooltip = document.querySelector('#application-create');
-															setTimeout(() => {
-																if (createApplicationMouseEnter) {
-																	tooltip.classList.remove('tooltip-hidden');
-																	tooltip.classList.add('tooltip');
-																}
-															}, 1000);
-														}}
-														on:mouseleave={() => {
-															createApplicationMouseEnter = false;
-															const tooltip = document.querySelector('#application-create');
-															setTimeout(() => {
-																if (!createApplicationMouseEnter) {
-																	tooltip.classList.add('tooltip-hidden');
-																	tooltip.classList.remove('tooltip');
-																}
-															}, 1000);
-														}}
-														on:click={() => {
-															if ($permissionBadges?.isApplicationAdminInContext || $isAdmin) {
-																urlparameters.set('create');
-																goto(`/applications`, true);
+												<img
+													src={appsSVG}
+													alt="create application"
+													width="23rem"
+													height="23rem"
+													class:permission-badges-blue={findPermission(group, 'applicationAdmin')}
+													class:permission-badges-grey={!findPermission(group, 'applicationAdmin')}
+													disabled={!findPermission(group, 'applicationAdmin')}
+													on:mouseenter={() => {
+														createApplicationMouseEnter[i] = true;
+														const tooltip = document.querySelector(`#application-create${i}`);
+														setTimeout(() => {
+															if (createApplicationMouseEnter[i]) {
+																tooltip.classList.remove('tooltip-hidden');
+																tooltip.classList.add('tooltip');
 															}
-														}}
-													/>
+														}, 1000);
+													}}
+													on:mouseleave={() => {
+														createApplicationMouseEnter[i] = false;
+														const tooltip = document.querySelector(`#application-create${i}`);
+														setTimeout(() => {
+															if (!createApplicationMouseEnter[i]) {
+																tooltip.classList.add('tooltip-hidden');
+																tooltip.classList.remove('tooltip');
+															}
+														}, 1000);
+													}}
+													on:click={() => {
+														if (findPermission(group, 'applicationAdmin')) {
+															groupContext.set(group);
+															urlparameters.set('create');
+															goto(`/applications`, true);
+														}
+													}}
+												/>
 
-													<span
-														id="application-create"
-														class="tooltip-hidden"
-														style="margin-top: 1.8rem; margin-left: 3rem"
-														>{#if $permissionBadges?.isApplicationAdminInContext || $isAdmin}
-															Create a new Application in {group.name}
-														{:else if !$permissionBadges?.isApplicationcAdminInContext && !$isAdmin}
-															Application Admin permission required
-														{/if}
-													</span>
-												</div>
-											</td>
-										{/if}
+												<span
+													id="application-create{i}"
+													class="tooltip-hidden"
+													style="margin-top: 1.8rem; margin-left: 3rem"
+													>{#if findPermission(group, 'applicationAdmin')}
+														{tooltips['createApplicationAllowed']} {group.name}
+													{:else}
+														{tooltips['createApplicationNotAllowed']}
+													{/if}
+												</span>
+											</div>
+										</td>
 
 										<td style="width: max-content">
 											<center>
@@ -1044,7 +1060,7 @@
 	}
 
 	.activate-context {
-		margin-left: -48.24rem;
+		margin-left: -43.24rem;
 		margin-top: -1rem;
 	}
 
