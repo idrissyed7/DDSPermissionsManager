@@ -7,6 +7,7 @@
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
+	import editSVG from '../icons/edit.svg';
 	import groupsSVG from '../icons/groups.svg';
 	import topicsSVG from '../icons/topics.svg';
 	import appsSVG from '../icons/apps.svg';
@@ -18,6 +19,7 @@
 	import lastRefresh from '../stores/lastRefresh';
 	import permissionBadges from '../stores/permissionBadges';
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
+	import editAppName from '../stores/editAppName';
 	import tooltips from '$lib/tooltips.json';
 
 	export let avatarName;
@@ -266,6 +268,15 @@
 					/>
 				{/if}
 				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
+				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName}
+					<img
+						src={editSVG}
+						alt="edit application"
+						width="20rem"
+						style="vertical-align:middle; margin-left: 1.5rem"
+						on:click={() => editAppName.set('edit')}
+					/>
+				{/if}
 			</div>
 
 			{#if $renderAvatar === true}

@@ -14,6 +14,7 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
+	import detailSVG from '../../icons/detail.svg';
 	import addSVG from '../../icons/add.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
@@ -614,6 +615,7 @@
 												/>
 											</td>
 										{/if}
+
 										<td
 											style="cursor: pointer; width: max-content"
 											on:click={() => {
@@ -631,26 +633,49 @@
 
 										<td style="padding-left: 0.5rem">{topic.groupName}</td>
 
-										{#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)}
-											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-												<img
-													data-cy="delete-topic-icon"
-													src={deleteSVG}
-													width="27px"
-													height="27px"
-													style="vertical-align: -0.45rem"
-													alt="delete topic"
-													disabled={!$isAdmin || !isTopicAdmin}
-													on:click={() => {
-														if (!topicsRowsSelected.some((tpc) => tpc === topic))
-															topicsRowsSelected.push(topic);
-														deleteTopicVisible = true;
-													}}
-												/>
-											</td>
-										{:else}
+										<!-- {#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)} -->
+										<td style="cursor: pointer; width:1rem">
+											<img
+												data-cy="detail-application-icon"
+												src={detailSVG}
+												height="18rem"
+												width="18rem"
+												alt="edit user"
+												style="vertical-align: -0.2rem"
+												on:click={() => {
+													selectedTopicId = topic.id;
+													loadTopic();
+												}}
+												on:keydown={(event) => {
+													if (event.which === returnKey) {
+														selectedTopicId = topic.id;
+														loadTopic();
+													}
+												}}
+											/>
+										</td>
+
+										<td
+											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
+										>
+											<img
+												data-cy="delete-topic-icon"
+												src={deleteSVG}
+												width="27px"
+												height="27px"
+												style="vertical-align: -0.45rem"
+												alt="delete topic"
+												disabled={!$isAdmin || !isTopicAdmin}
+												on:click={() => {
+													if (!topicsRowsSelected.some((tpc) => tpc === topic))
+														topicsRowsSelected.push(topic);
+													deleteTopicVisible = true;
+												}}
+											/>
+										</td>
+										<!-- {:else}
 											<td />
-										{/if}
+										{/if} -->
 									</tr>
 								{/each}
 							</tbody>
