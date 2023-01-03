@@ -64,7 +64,7 @@
 
 	// Bind Token
 	let bindToken;
-	let tokenApplicationName, tokenApplicationGroup;
+	let tokenApplicationName, tokenApplicationGroup, tokenApplicationEmail;
 	let invalidToken = false;
 
 	// Error Handling
@@ -310,6 +310,7 @@
 
 		tokenApplicationName = res.appName;
 		tokenApplicationGroup = res.groupName;
+		tokenApplicationEmail = res.email;
 	};
 </script>
 
@@ -652,11 +653,11 @@
 		{/if}
 
 		{#if actionAssociateApplication}
-			<input
+			<textarea
 				data-cy="bind-token-input"
-				style="margin-top: 0.5rem; margin-bottom: 1.5rem"
-				class="searchbox"
+				style="margin-top: 0.5rem; margin-bottom: 1.5rem; width: 13.5rem"
 				type="search"
+				rows="13"
 				placeholder="Bind Token"
 				bind:value={bindToken}
 				on:keydown={(event) => {
@@ -681,19 +682,17 @@
 			</select>
 
 			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
-				<div style="font-size:0.9rem; margin-top: 2rem">Application Name:</div>
-				<div style="font-size:1rem; margin-top: 0.5rem">
-					<strong>{tokenApplicationName}</strong>
+				<div style="font-size:1rem; margin-top: 1rem">
+					<strong>{tokenApplicationName}</strong> ({tokenApplicationGroup})
 				</div>
-				<div style="font-size:0.9rem; margin-top: 1rem">Application Group:</div>
-				<div style="font-size:1rem; margin-top: 0.5rem">
-					<strong>{tokenApplicationGroup}</strong>
+				<div style="font-size:0.8rem; margin-top: 0.5rem">
+					from {tokenApplicationEmail}
 				</div>
 			{/if}
 			{#if $errorMessageAssociation}
 				<span
 					class="error-message"
-					style="	top: 10.1rem; right: 2.2rem"
+					style="	top: 21rem; right: 2.3rem"
 					class:hidden={$errorMessageAssociation?.length === 0}
 				>
 					{$errorMessageAssociation}
