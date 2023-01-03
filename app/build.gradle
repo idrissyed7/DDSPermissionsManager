@@ -25,7 +25,7 @@ dependencies {
     implementation("io.micronaut.problem:micronaut-problem-json")
     implementation("io.micronaut.security:micronaut-security-jwt")
     implementation("io.micronaut.security:micronaut-security-oauth2")
-    implementation("io.micronaut.sql:micronaut-jdbc-tomcat")
+    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
     implementation("io.swagger.core.v3:swagger-annotations")
     implementation("jakarta.annotation:jakarta.annotation-api")
     runtimeOnly("ch.qos.logback:logback-classic")
