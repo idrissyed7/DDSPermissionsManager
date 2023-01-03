@@ -537,7 +537,10 @@
 												style="vertical-align: middle;cursor: pointer"
 												class:context-selected={group.name === $groupContext?.name}
 												class:context-deselected={group.name !== $groupContext?.name}
-												on:click={() => groupContext.set(group)}
+												on:click={() => {
+													if (!$groupContext) groupContext.set(group);
+													else groupContext.set('clear');
+												}}
 												on:mouseenter={() => {
 													activateMouseEnter[i] = true;
 													const tooltip = document.querySelector(`#activate-groups${i}`);
