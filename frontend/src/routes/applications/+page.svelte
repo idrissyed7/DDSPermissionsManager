@@ -8,6 +8,7 @@
 	import refreshPage from '../../stores/refreshPage';
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
+	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
 	import headerTitle from '../../stores/headerTitle';
@@ -86,6 +87,14 @@
 
 	// Authentication
 	let isApplicationAdmin = false;
+
+	// Curl Commands
+	let curlCommandsDecodedCodeThree,
+		curlCommandsDecodedCodeFour,
+		curlCommandsDecodedCodeFive,
+		curlCommandsDecodedCodeSix,
+		curlCommandsDecodedCodeSeven,
+		curlCommandsDecodedCodeEight;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -214,6 +223,37 @@
 		errorMessageVisible = false;
 		errorMsg = '';
 		errorObject = '';
+	};
+
+	const curlCommandsDecode = () => {
+		curlCommandsDecodedCodeThree = curlCommands['codeThree']
+			.replace('${APP_ID}', `${selectedAppId}`)
+			.replace('${DPM_URL}', `${$page.url.protocol}//${$page.url.host}`);
+
+		curlCommandsDecodedCodeFour = curlCommands['codeFour'].replace(
+			'${DPM_URL}',
+			`${$page.url.protocol}//${$page.url.host}`
+		);
+
+		curlCommandsDecodedCodeFive = curlCommands['codeFive'].replace(
+			'${DPM_URL}',
+			`${$page.url.protocol}//${$page.url.host}`
+		);
+
+		curlCommandsDecodedCodeSix = curlCommands['codeSix'].replace(
+			'${DPM_URL}',
+			`${$page.url.protocol}//${$page.url.host}`
+		);
+
+		curlCommandsDecodedCodeSeven = curlCommands['codeSeven'].replace(
+			'${DPM_URL}',
+			`${$page.url.protocol}//${$page.url.host}`
+		);
+
+		curlCommandsDecodedCodeEight = curlCommands['codeEight'].replace(
+			'${DPM_URL}',
+			`${$page.url.protocol}//${$page.url.host}`
+		);
 	};
 
 	const searchApp = async (searchString) => {
@@ -348,6 +388,7 @@
 		selectedAppGroupName = appDetail.data.groupName;
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
+		curlCommandsDecode();
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -1103,7 +1144,7 @@
 							<div class="section-title">Authenticate</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeThree}</textarea
+									>{curlCommandsDecodedCodeThree}</textarea
 								>
 								<img
 									data-cy="curl-command-3-copy"
@@ -1113,7 +1154,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeThree);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeThree);
 										showCopyCommand(3);
 									}}
 								/>
@@ -1125,7 +1166,7 @@
 							<div class="section-title">Download the Identity CA certificate</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeFour}</textarea
+									>{curlCommandsDecodedCodeFour}</textarea
 								>
 								<img
 									src={copySVG}
@@ -1134,7 +1175,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeFour);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeFour);
 										showCopyCommand(4);
 									}}
 								/>
@@ -1145,7 +1186,7 @@
 							<div class="section-title">Download the Permissions CA certificate</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeFive}</textarea
+									>{curlCommandsDecodedCodeFive}</textarea
 								>
 								<img
 									src={copySVG}
@@ -1154,7 +1195,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeFive);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeFive);
 										showCopyCommand(5);
 									}}
 								/>
@@ -1166,7 +1207,7 @@
 							<div class="section-title">Download the governance file</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeSix}</textarea
+									>{curlCommandsDecodedCodeSix}</textarea
 								>
 								<img
 									src={copySVG}
@@ -1175,7 +1216,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeSix);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeSix);
 										showCopyCommand(6);
 									}}
 								/>
@@ -1187,7 +1228,7 @@
 							<div class="section-title">Download a key pair</div>
 							<section style="display:inline-flex;">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeSeven}</textarea
+									>{curlCommandsDecodedCodeSeven}</textarea
 								>
 								<img
 									src={copySVG}
@@ -1196,7 +1237,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeSeven);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeSeven);
 										showCopyCommand(7);
 									}}
 								/>
@@ -1208,7 +1249,7 @@
 							<div class="section-title">Download a permissions document</div>
 							<section style="display:inline-flex">
 								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommands.codeEight}</textarea
+									>{curlCommandsDecodedCodeEight}</textarea
 								>
 								<img
 									src={copySVG}
@@ -1217,7 +1258,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeEight);
+										navigator.clipboard.writeText(curlCommandsDecodedCodeEight);
 										showCopyCommand(8);
 									}}
 								/>
