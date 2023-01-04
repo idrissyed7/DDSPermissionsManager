@@ -35,6 +35,8 @@ describe('Applications Capabilities', () => {
 
         cy.get('td').contains('Test Application')
         .click();
+
+        cy.wait(500);
         
         cy.get('[data-cy="edit-application-icon"]')
         .click({force: true});

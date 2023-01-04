@@ -308,7 +308,8 @@
 					/>
 				{/if}
 				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
-				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications/'}
+
+				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications'}
 					<img
 						data-cy="edit-application-icon"
 						src={editSVG}
