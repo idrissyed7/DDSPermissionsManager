@@ -2,6 +2,7 @@
 	import DDSLock from '../icons/ddslock.png';
 	import logoutSVG from '../icons/logout.svg';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
 	import headerTitle from '../stores/headerTitle';
@@ -21,6 +22,8 @@
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
 	import editAppName from '../stores/editAppName';
 	import tooltips from '$lib/tooltips.json';
+	import urlparameters from '../stores/urlparameters';
+	import createItem from '../stores/createItem';
 
 	export let avatarName;
 	export let userEmail;
@@ -134,10 +137,13 @@
 									alt="Group Admin"
 									width="23rem"
 									height="23rem"
-									class:permission-badges-green={isGroupAdminInContext || $isAdmin}
+									class:permission-badges-blue={isGroupAdminInContext || $isAdmin}
 									class:permission-badges-grey={!isGroupAdminInContext && !$isAdmin}
 									on:mouseenter={() => {
 										isGroupAdminMouseEnter = true;
+										if (isGroupAdminInContext || $isAdmin)
+											isGroupAdminToolip = tooltips['createUserAllowed'] + $groupContext.name;
+										else isGroupAdminToolip = tooltips['createUserNotAllowed'];
 										const tooltip = document.querySelector('#is-group-admin');
 										setTimeout(() => {
 											if (isGroupAdminMouseEnter) {
@@ -156,6 +162,15 @@
 											}
 										}, 1000);
 									}}
+									on:click={() => {
+										if (isGroupAdminInContext || $isAdmin) {
+											if ($page.url.pathname === '/users/') createItem.set('user');
+											else {
+												urlparameters.set('create');
+												goto(`/users`, true);
+											}
+										}
+									}}
 								/>
 
 								<span
@@ -170,10 +185,13 @@
 									alt="Topic Admin"
 									width="23rem"
 									height="23rem"
-									class:permission-badges-green={isTopicAdminInContext || $isAdmin}
+									class:permission-badges-blue={isTopicAdminInContext || $isAdmin}
 									class:permission-badges-grey={!isTopicAdminInContext && !$isAdmin}
 									on:mouseenter={() => {
 										isTopicAdminMouseEnter = true;
+										if (isTopicAdminInContext || $isAdmin)
+											isTopicAdminTooltip = tooltips['createTopicAllowed'] + $groupContext.name;
+										else isTopicAdminTooltip = tooltips['createTopicNotAllowed'];
 										const tooltip = document.querySelector('#is-topic-admin');
 										setTimeout(() => {
 											if (isTopicAdminMouseEnter) {
@@ -192,6 +210,15 @@
 											}
 										}, 1000);
 									}}
+									on:click={() => {
+										if (isTopicAdminInContext || $isAdmin) {
+											if ($page.url.pathname === '/topics/') createItem.set('topic');
+											else {
+												urlparameters.set('create');
+												goto(`/topics`, true);
+											}
+										}
+									}}
 								/>
 
 								<span
@@ -206,10 +233,14 @@
 									alt="Application Admin"
 									width="23rem"
 									height="23rem"
-									class:permission-badges-green={isApplicationAdminInContext || $isAdmin}
+									class:permission-badges-blue={isApplicationAdminInContext || $isAdmin}
 									class:permission-badges-grey={!isApplicationAdminInContext && !$isAdmin}
 									on:mouseenter={() => {
 										isApplicationAdminMouseEnter = true;
+										if (isApplicationAdminInContext || $isAdmin)
+											isApplicationAdminTooltip =
+												tooltips['createApplicationAllowed'] + $groupContext.name;
+										else isApplicationAdminTooltip = tooltips['createApplicationNotAllowed'];
 										const tooltip = document.querySelector('#is-application-admin');
 										setTimeout(() => {
 											if (isApplicationAdminMouseEnter) {
@@ -227,6 +258,15 @@
 												tooltip.classList.remove('tooltip');
 											}
 										}, 1000);
+									}}
+									on:click={() => {
+										if (isApplicationAdminInContext || $isAdmin) {
+											if ($page.url.pathname === '/applications/') createItem.set('application');
+											else {
+												urlparameters.set('create');
+												goto(`/applications`, true);
+											}
+										}
 									}}
 								/>
 
@@ -268,7 +308,7 @@
 					/>
 				{/if}
 				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
-				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName}
+				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications/'}
 					<img
 						data-cy="edit-application-icon"
 						src={editSVG}

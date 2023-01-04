@@ -1,14 +1,8 @@
 {
-    "isGroupAdmin": "Group Admin Permission",
-    "isNotGroupAdmin": "Contact your Admin to become a Group Admin",
-    "isTopicAdmin": "Topic Admin Permission",
-    "isNotTopicAdmin": "Contact your Admin to become a Topic Admin",
-    "isApplicationAdmin": "Application Admin Permission",
-    "isNotApplicationAdmin": "Contact your Admin to become an Application Admin",
     "createUserAllowed": "Create a new User in ",
-    "createUserNotAllowed": "Group Admin permission required",
+    "createUserNotAllowed": "Contact your Admin to become a Group Admin",
     "createTopicAllowed": "Create a new Topic in ",
-    "createTopicNotAllowed": "Topic Admin permission required",
+    "createTopicNotAllowed": "Contact your Admin to become a Topic Admin",
     "createApplicationAllowed": "Create a new Application in ",
-    "createApplicationNotAllowed": "Application Admin permission required"
+    "createApplicationNotAllowed": "Contact your Admin to become an Application Admin"
 }

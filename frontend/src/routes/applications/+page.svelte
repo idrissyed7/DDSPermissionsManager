@@ -30,6 +30,7 @@
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import editAppName from '../../stores/editAppName';
+	import createItem from '../../stores/createItem';
 
 	export let data, errors;
 
@@ -41,6 +42,12 @@
 		singleGroupCheck.set();
 		selectedGroup = '';
 		reloadAllApps();
+	}
+
+	// Permission Badges Create
+	$: if ($createItem === 'application') {
+		createItem.set(false);
+		addApplicationVisible = true;
 	}
 
 	// Redirects the User to the Login screen if not authenticated
