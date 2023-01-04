@@ -398,8 +398,8 @@
 										tooltip.classList.remove('tooltip-hidden');
 										tooltip.classList.add('tooltip');
 										if ($groupContext === null || $groupContext === undefined)
-											tooltip.setAttribute('style', 'margin-left:13.2rem; margin-top: -1.8rem');
-										else tooltip.setAttribute('style', 'margin-left:32rem; margin-top: -1.8rem');
+											tooltip.setAttribute('style', 'margin-left:20rem; margin-top: -1.8rem');
+										else tooltip.setAttribute('style', 'margin-left:20rem; margin-top: -1.8rem');
 									}
 								}, 1000);
 							}
@@ -931,12 +931,12 @@
 	}
 
 	.activate-context {
-		margin-left: -43.24rem;
+		margin-left: -37rem;
 		margin-top: -1rem;
 	}
 
 	.activate-no-context {
-		margin-left: -34.5rem;
+		margin-left: -37rem;
 		margin-top: -1rem;
 	}
 
