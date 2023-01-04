@@ -11,7 +11,7 @@
 
     "codeSix": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/governance.xml.p7s > governance.xml.p7s",
 
-    "codeSeven": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/key_pair?nonce=NONCE > key-pair",
+    "codeSeven": "curl --silent -b cookies.txt ${DPM_URL}\/api\/applications\/key_pair?nonce=$APP_NONCE > key-pair",
 
     "codeEight": "curl --silent -b cookies.txt \"${DPM_URL}\/api\/applications\/permissions.xml.p7s?nonce=$APP_NONCE\" > permissions.xml.p7s"
 }
