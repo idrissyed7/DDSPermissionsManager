@@ -25,6 +25,7 @@
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
+	import createItem from '../../stores/createItem';
 
 	export let data;
 	export let errors;
@@ -37,6 +38,12 @@
 		singleGroupCheck.set();
 		selectedGroup = '';
 		reloadAllTopics();
+	}
+
+	// Permission Badges Create
+	$: if ($createItem === 'topic') {
+		createItem.set(false);
+		addTopicVisible = true;
 	}
 
 	// Redirects the User to the Login screen if not authenticated

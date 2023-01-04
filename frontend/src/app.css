@@ -194,7 +194,9 @@ select:focus {
 	font-size: 0.9rem;
 	cursor: pointer;
 	filter: invert();
-	background-color: #c7a35a;
+	background-color: #ff9900;
+	/* background-color: #c7a35a; */
+	
 }
 
 .pagination-image {
@@ -233,7 +235,7 @@ select:focus {
 
 .button-blue {
 	color: white; 
-	background-color: #385ca5; 
+	background-color: #0066FF; 
 	border-radius: 25px; 
 	border-style: solid; 
 	border-color: transparent; 
@@ -373,12 +375,8 @@ select:focus {
 	visibility: hidden;
 }
 
-.permission-badges-green {
-	filter: invert(40%) sepia(91%) saturate(1093%) hue-rotate(87deg) brightness(90%) contrast(110%);
-}
-
 .permission-badges-blue {
-	filter: invert(7%) sepia(100%) saturate(7486%) hue-rotate(248deg) brightness(102%) contrast(142%);
+	filter: invert(44%) sepia(100%) saturate(6476%) hue-rotate(212deg) brightness(103%) contrast(103%);
 	cursor: pointer;
 }
 

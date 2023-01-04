@@ -12,6 +12,9 @@
 	import deleteSVG from '../../icons/delete.svg';
 	import addSVG from '../../icons/add.svg';
 	import editSVG from '../../icons/edit.svg';
+	import groupsSVG from '../../icons/groups.svg';
+	import topicsSVG from '../../icons/topics.svg';
+	import appsSVG from '../../icons/apps.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
 	import pagefirstSVG from '../../icons/pagefirst.svg';
@@ -22,6 +25,7 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
+	import createItem from '../../stores/createItem';
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
@@ -31,6 +35,12 @@
 		singleGroupCheck.set();
 		selectedGroup = '';
 		reloadGroupMemberships();
+	}
+
+	// Permission Badges Create
+	$: if ($createItem === 'user') {
+		createItem.set(false);
+		addGroupMembershipVisible = true;
 	}
 
 	// Checkboxes selection
@@ -701,7 +711,14 @@
 									<td style="width:fit-content">{groupMembership.groupName}</td>
 									<td>
 										<center>
-											{#if groupMembership.groupAdmin}&check;
+											{#if groupMembership.groupAdmin}
+												<img
+													src={groupsSVG}
+													alt="group admin"
+													width="21rem"
+													height="21rem"
+													style="vertical-align:middle"
+												/>
 											{:else}
 												-
 											{/if}
@@ -709,7 +726,14 @@
 									</td>
 									<td>
 										<center
-											>{#if groupMembership.topicAdmin}&check;
+											>{#if groupMembership.topicAdmin}
+												<img
+													src={topicsSVG}
+													alt="topic admin"
+													width="21rem"
+													height="21rem"
+													style="vertical-align:middle"
+												/>
 											{:else}
 												-
 											{/if}
@@ -717,7 +741,14 @@
 									</td>
 									<td data-cy="is-application-admin">
 										<center
-											>{#if groupMembership.applicationAdmin}&check;
+											>{#if groupMembership.applicationAdmin}
+												<img
+													src={appsSVG}
+													alt="application admin"
+													width="21rem"
+													height="21rem"
+													style="vertical-align:middle"
+												/>
 											{:else}
 												-
 											{/if}

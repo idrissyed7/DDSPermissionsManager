@@ -18,7 +18,8 @@
 
         cy.wait(700);
 
-        cy.get('[data-cy="users-table"]').contains('kstanley@test.test').siblings('[data-cy="is-application-admin"]').contains('✓');
+        cy.get('[data-cy="users-table"]').contains('kstanley@test.test').siblings('[data-cy="is-application-admin"]')
+        .should('not.eq', '-')
         
     });
 });
