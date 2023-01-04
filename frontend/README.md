@@ -49,7 +49,7 @@ VITE_BACKEND_URL=http://localhost:8080/api (for example)
 
 ### Authentication
 
-Is handled by `/stores/authentication.js` which is a set of derived stores that looks into `token_info` and concludes whether the user `isAuthenticated` and determines if the user `isAdmin`.
+It's handled by `/stores/authentication.js` which is a set of derived stores that looks into `token_info` and concludes whether the user `isAuthenticated` and determines if the user `isAdmin`.
 
 In `+layout.svelte`, we keep a record of the last click the user triggered on the screen, and if the user is not active for more than 1hr, we automatically log them out.
 In the case the user is active within the hour (which is the expiration time of the JWT token), we automatically refresh the token for them, extending the session.

@@ -7,6 +7,7 @@
 	import groupContext from '../stores/groupContext';
 	import singleGroupCheck from '../stores/singleGroupCheck';
 	import isSingleGroup from '../stores/isSingleGroup';
+	import contextMessage from '../stores/contextMessage';
 
 	export let actionAddApplication = false;
 	export let isGroupContext = false;
@@ -36,10 +37,16 @@
 
 	$: if ($refreshPage && $singleGroupCheck !== 'checked') searchGroup('singleGroupCheck');
 
-	$: if ($groupContext) {
+	$: if ($contextMessage) {
+		contextMessage.set(false);
 		selectedGroup = $groupContext;
 		searchGroups = selectedGroup.name;
-	} else selectedGroup = '';
+	}
+
+	$: if (!$groupContext) {
+		searchGroups = '';
+		selectedGroup = '';
+	}
 
 	// If the user does not select any of the available groups, we clear the filter on blur
 	$: if (status === 'blur' && !selectedGroup) searchGroups = '';
@@ -80,6 +87,11 @@
 	const searchGroup = async (searchGroupStr) => {
 		let res;
 
+		if (searchGroupStr === 'allgroups')
+			res = await httpAdapter.get(
+				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}`
+			);
+
 		if (searchGroupStr === 'singleGroupCheck') {
 			singleGroupCheck.set('checked');
 
@@ -95,7 +107,7 @@
 
 				return;
 			} else return;
-		} else {
+		} else if (searchGroupStr !== 'allgroups' && searchGroupStr !== 'singleGroupCheck') {
 			res = await httpAdapter.get(
 				`/groups?page=${groupResultPage}&size=${groupsDropdownSuggestion}&filter=${searchGroupStr}`
 			);
@@ -128,12 +140,10 @@
 				break;
 			case 'Enter':
 				if (selected === -1) return;
-
 				selectedGroup = searchGroupResults[selected];
 				groupContext.set(selectedGroup);
 				searchGroups = searchGroupResults[selected]?.name;
-
-				dispatch('selected-group', selectedGroup?.id);
+				searchGroupActive = false;
 
 				comboboxfilter.blur();
 				break;
@@ -155,10 +165,29 @@
 				list?.querySelector(`#listbox-1-option-${selected}`).scrollIntoView(false);
 
 				break;
+			case 'Backspace':
+				const searchInput = searchGroups.slice(0, searchGroups.length - 1);
+
+				if (searchInput?.length >= searchStringLength) {
+					searchGroupResults = [];
+
+					searchGroup(searchInput);
+				} else if (searchInput?.length > 0 && searchInput?.length < searchStringLength) {
+					searchGroupResults = [];
+				} else {
+					searchGroupResults = [];
+					searchGroup('allgroups');
+				}
 		}
 
 		// Resume group search
-		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter' && e.key !== 'Escape') {
+		if (
+			e.key !== 'ArrowDown' &&
+			e.key !== 'ArrowUp' &&
+			e.key !== 'Enter' &&
+			e.key !== 'Escape' &&
+			e.key !== 'Backspace'
+		) {
 			searchGroupResults = [];
 			stopSearchingGroups = false;
 			hasMoreGroups = true;
@@ -213,6 +242,7 @@
 					searchGroupActive = true;
 					selectedGroup = '';
 					stopSearchingGroups = false;
+					if (searchGroups?.length === 0) searchGroup('allgroups');
 				}}
 				on:blur={() => {
 					status = 'blur';

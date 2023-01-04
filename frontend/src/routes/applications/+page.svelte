@@ -14,7 +14,7 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
-	import editSVG from '../../icons/edit.svg';
+	import detailSVG from '../../icons/detail.svg';
 	import addSVG from '../../icons/add.svg';
 	import pageforwardSVG from '../../icons/pageforward.svg';
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
@@ -29,6 +29,7 @@
 	import curlCommands from '$lib/curlCommands.json';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
+	import editAppName from '../../stores/editAppName';
 
 	export let data, errors;
 
@@ -67,6 +68,13 @@
 		applicationsRowsSelectedTrue = true;
 	} else {
 		applicationsAllRowsSelectedTrue = false;
+	}
+
+	$: if ($editAppName === 'edit') {
+		previousAppName = $headerTitle;
+		editApplicationNameVisible = true;
+	} else if ($editAppName === true) {
+		editApplicationNameVisible = false;
 	}
 
 	// Messages
@@ -140,7 +148,6 @@
 	// App
 	let applicationListVisible = true;
 	let appName;
-	let editAppName;
 	let selectedGroup = '';
 
 	// Selection
@@ -374,7 +381,8 @@
 			});
 
 		reloadAllApps();
-		editAppName = false;
+
+		canEditAppName();
 	};
 
 	const loadApplicationDetail = async (appId, groupId) => {
@@ -386,9 +394,23 @@
 		selectedAppGroupId = groupId;
 		selectedAppName = appDetail.data.name;
 		selectedAppGroupName = appDetail.data.groupName;
+
+		canEditAppName();
+
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
 		curlCommandsDecode();
+	};
+
+	const canEditAppName = () => {
+		if (
+			($permissionsByGroup &&
+				$permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group)
+					?.isApplicationAdmin) ||
+			$isAdmin
+		)
+			editAppName.set(true);
+		else editAppName.set(false);
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -569,7 +591,8 @@
 					on:cancel={() => (editApplicationNameVisible = false)}
 					on:saveNewAppName={(e) => {
 						saveNewAppName(e.detail.newAppName);
-						editApplicationNameVisible = false;
+						canEditAppName();
+						headerTitle.set(e.detail.newAppName);
 					}}
 				/>
 			{/if}
@@ -834,6 +857,7 @@
 												/>
 											</td>
 										{/if}
+
 										<td
 											style="cursor: pointer; line-height: 2.2rem; width: max-content"
 											on:click={() => {
@@ -851,60 +875,58 @@
 											}}
 											>{app.name}
 										</td>
+
 										<td style="padding-left: 0.5rem">{app.groupName}</td>
 
-										{#if ($permissionsByGroup && $permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group))?.isApplicationAdmin || $isAdmin}
-											<td
-												style="cursor: pointer; width:1rem"
+										<td style="cursor: pointer; width:1rem">
+											<img
+												data-cy="detail-application-icon"
+												src={detailSVG}
+												height="18rem"
+												width="18rem"
+												style="margin-left: 2rem; vertical-align: -0.1rem"
+												alt="edit user"
+												on:click={() => {
+													applicationDetailId = app.id;
+													ApplicationDetailGroupId = app.group;
+
+													loadApplicationDetail(app.id, app.group);
+													headerTitle.set(app.name);
+													detailView.set(true);
+												}}
 												on:keydown={(event) => {
 													if (event.which === returnKey) {
-														editApplicationNameVisible = true;
+														loadApplicationDetail(app.id, app.group);
 													}
 												}}
-											>
-												<img
-													data-cy="edit-application-icon"
-													src={editSVG}
-													height="17rem"
-													width="17rem"
-													style="margin-left: 2rem"
-													alt="edit user"
-													on:click={() => {
-														previousAppName = app.name;
-														selectedAppGroupId = app.group;
-														selectedAppId = app.id;
-														editApplicationNameVisible = true;
-													}}
-												/>
-											</td>
+											/>
+										</td>
 
-											<td
-												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
-											>
-												<img
-													data-cy="delete-application-icon"
-													src={deleteSVG}
-													alt="delete application"
-													width="27rem"
-													style="cursor: pointer"
-													on:click={() => {
-														selectedAppId = app.id;
-														selectedAppName = app.name;
-														deleteApplicationVisible = true;
-													}}
-													on:click={() => {
-														if (
-															!applicationsRowsSelected.some((application) => application === app)
-														)
-															applicationsRowsSelected.push(app);
-														deleteApplicationVisible = true;
-													}}
-												/>
-											</td>
-										{:else}
+										<td
+											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
+										>
+											<img
+												data-cy="delete-application-icon"
+												src={deleteSVG}
+												alt="delete application"
+												width="27rem"
+												style="cursor: pointer"
+												on:click={() => {
+													selectedAppId = app.id;
+													selectedAppName = app.name;
+													deleteApplicationVisible = true;
+												}}
+												on:click={() => {
+													if (!applicationsRowsSelected.some((application) => application === app))
+														applicationsRowsSelected.push(app);
+													deleteApplicationVisible = true;
+												}}
+											/>
+										</td>
+										<!-- {:else}
 											<td />
 											<td />
-										{/if}
+										{/if} -->
 									</tr>
 								{/each}
 							</tbody>
