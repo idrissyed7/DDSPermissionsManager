@@ -23,10 +23,11 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
-	import permissionBadges from '../../stores/permissionBadges';
+	// import permissionBadges from '../../stores/permissionBadges';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import userEmail from '../../stores/userEmail';
 	import tooltips from '$lib/tooltips.json';
+	import contextMessage from '../../stores/contextMessage';
 
 	export let data;
 	export let errors;
@@ -560,8 +561,13 @@
 												height="27rem"
 												style="vertical-align: middle;cursor: pointer"
 												on:click={() => {
-													if (!$groupContext) groupContext.set(group);
-													else groupContext.set('clear');
+													if (!$groupContext) {
+														groupContext.set(group);
+														contextMessage.set(true);
+													} else if ($groupContext !== group) {
+														groupContext.set(group);
+														contextMessage.set(true);
+													} else groupContext.set('clear');
 												}}
 												on:mouseenter={() => {
 													activateMouseEnter[i] = true;

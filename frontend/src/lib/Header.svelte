@@ -270,6 +270,7 @@
 				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
 				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName}
 					<img
+						data-cy="edit-application-icon"
 						src={editSVG}
 						alt="edit application"
 						width="20rem"

@@ -585,13 +585,7 @@
 
 		{#if topicName}
 			<div style="display:flex; align-items: center">
-				<!-- <span style="font-size:0.9rem; width: 9rem; margin-right: 0.5rem; ">
-					Any application can read topic:
-				</span> -->
-				<!-- <Switch bind:checked={anyApplicationCanRead} /> -->
 				<fieldset>
-					<legend style="font-size:0.85rem">Any application can read topic:</legend>
-
 					<div style="display:inline">
 						<label for="anyApplicationOption1" style="font-size:0.8rem">
 							<input

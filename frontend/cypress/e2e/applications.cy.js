@@ -33,8 +33,11 @@ describe('Applications Capabilities', () => {
     it('should edit the name of the second application', () => {
         cy.visit('/applications');
 
-        cy.get('td').contains('Test Application').siblings().find('[data-cy="edit-application-icon"]')
+        cy.get('td').contains('Test Application')
         .click();
+        
+        cy.get('[data-cy="edit-application-icon"]')
+        .click({force: true});
 
         cy.get('[data-cy="application-name"]')
         .clear()
@@ -42,6 +45,8 @@ describe('Applications Capabilities', () => {
 
         cy.get('[data-cy="save-application"]')
         .click();
+
+        cy.visit('/applications');
 
         cy.get('td').should('not.eq', 'Test Application');
 
