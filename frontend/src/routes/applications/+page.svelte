@@ -23,7 +23,6 @@
 	import lockSVG from '../../icons/lock.svg';
 	import copySVG from '../../icons/copy.svg';
 	import errorMessages from '$lib/errorMessages.json';
-	import renderAvatar from '../../stores/renderAvatar';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import groupContext from '../../stores/groupContext';
 	import curlCommands from '$lib/curlCommands.json';
@@ -194,6 +193,40 @@
 		appName = '';
 	}
 
+	const reloadAllApps = async (page = 0) => {
+		try {
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/applications?page=${page}&size=${applicationsPerPage}&filter=${searchString}`
+				);
+			} else if ($groupContext) {
+				res = await httpAdapter.get(
+					`/applications?page=${page}&size=${applicationsPerPage}&group=${$groupContext.id}`
+				);
+			} else {
+				res = await httpAdapter.get(`/applications?page=${page}&size=${applicationsPerPage}`);
+			}
+
+			if (res.data) {
+				applicationsTotalPages = res.data.totalPages;
+				applicationsTotalSize = res.data.totalSize;
+			}
+			applications.set(res.data.content);
+			applicationsCurrentPage = page;
+		} catch (err) {
+			userValidityCheck.set(true);
+			applications.set();
+			errorMessage('Error Loading Applications', err.message);
+		}
+	};
+
+	const initializeApplications = async () => {
+		promise = await reloadAllApps();
+	};
+
+	initializeApplications();
+
 	onMount(async () => {
 		if ($urlparameters?.type === 'prepopulate') {
 			searchString = $urlparameters.data;
@@ -202,10 +235,6 @@
 		detailView.set('first run');
 
 		headerTitle.set('Applications');
-
-		promise = await reloadAllApps();
-
-		setTimeout(() => renderAvatar.set(true), 40);
 
 		if ($permissionsByGroup) {
 			isApplicationAdmin = $permissionsByGroup.some(
@@ -222,10 +251,7 @@
 		}
 	});
 
-	onDestroy(() => {
-		renderAvatar.set(false);
-		urlparameters.set([]);
-	});
+	onDestroy(() => urlparameters.set([]));
 
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -340,34 +366,6 @@
 		selectedAppName = '';
 
 		returnToAppsList();
-	};
-
-	const reloadAllApps = async (page = 0) => {
-		try {
-			let res;
-			if (searchString && searchString.length >= searchStringLength) {
-				res = await httpAdapter.get(
-					`/applications?page=${page}&size=${applicationsPerPage}&filter=${searchString}`
-				);
-			} else if ($groupContext) {
-				res = await httpAdapter.get(
-					`/applications?page=${page}&size=${applicationsPerPage}&group=${$groupContext.id}`
-				);
-			} else {
-				res = await httpAdapter.get(`/applications?page=${page}&size=${applicationsPerPage}`);
-			}
-
-			if (res.data) {
-				applicationsTotalPages = res.data.totalPages;
-				applicationsTotalSize = res.data.totalSize;
-			}
-			applications.set(res.data.content);
-			applicationsCurrentPage = page;
-		} catch (err) {
-			userValidityCheck.set(true);
-			applications.set();
-			errorMessage('Error Loading Applications', err.message);
-		}
 	};
 
 	const saveNewAppName = async (newAppName) => {
@@ -644,7 +642,7 @@
 								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
 							)) ||
 							applicationsRowsSelected.length === 0}
-						style="margin-left: 0.5rem"
+						style="margin-left: 0.5rem; margin-right: 1rem"
 						on:click={() => {
 							if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
 						}}
@@ -798,7 +796,7 @@
 					</span>
 				{/if}
 
-				{#if $applications && $applications.length > 0 && applicationListVisible && !applicationDetailVisible}
+				{#if $applications?.length > 0 && applicationListVisible && !applicationDetailVisible}
 					<table
 						data-cy="applications-table"
 						class="main-table"
@@ -930,10 +928,6 @@
 												}}
 											/>
 										</td>
-										<!-- {:else}
-											<td />
-											<td />
-										{/if} -->
 									</tr>
 								{/each}
 							</tbody>
@@ -1302,96 +1296,103 @@
 			</div>
 
 			{#if !applicationDetailVisible}
-				<div class="pagination">
-					<span>Rows per page</span>
-					<select
-						tabindex="-1"
-						on:change={(e) => {
-							applicationsPerPage = e.target.value;
-							reloadAllApps();
-						}}
-						name="RowsPerPage"
-					>
-						<option value="10">10</option>
-						<option value="25">25</option>
-						<option value="50">50</option>
-						<option value="75">75</option>
-						<option value="100">100&nbsp;</option>
-					</select>
-					<span style="margin: 0 2rem 0 2rem">
-						{#if applicationsTotalSize > 0}
-							{1 + applicationsCurrentPage * applicationsPerPage}
-						{:else}
-							0
-						{/if}
-						- {Math.min(applicationsPerPage * (applicationsCurrentPage + 1), applicationsTotalSize)}
-						of
-						{applicationsTotalSize}
-					</span>
-					<img
-						src={pagefirstSVG}
-						alt="first page"
-						class="pagination-image"
-						class:disabled-img={applicationsCurrentPage === 0}
-						on:click={() => {
-							deselectAllApplicationsCheckboxes();
-							if (applicationsCurrentPage > 0) {
-								applicationsCurrentPage = 0;
+				{#if applicationsTotalSize !== undefined && applicationsTotalSize != NaN}
+					<div class="pagination">
+						<span>Rows per page</span>
+						<select
+							tabindex="-1"
+							on:change={(e) => {
+								applicationsPerPage = e.target.value;
 								reloadAllApps();
-							}
-						}}
-					/>
-					<img
-						src={pagebackwardsSVG}
-						alt="previous page"
-						class="pagination-image"
-						class:disabled-img={applicationsCurrentPage === 0}
-						on:click={() => {
-							deselectAllApplicationsCheckboxes();
-							if (applicationsCurrentPage > 0) {
-								applicationsCurrentPage--;
-								reloadAllApps(applicationsCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pageforwardSVG}
-						alt="next page"
-						class="pagination-image"
-						class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
-							$applications?.length === undefined}
-						on:click={() => {
-							deselectAllApplicationsCheckboxes();
-							if (applicationsCurrentPage + 1 < applicationsTotalPages) {
-								applicationsCurrentPage++;
-								reloadAllApps(applicationsCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pagelastSVG}
-						alt="last page"
-						class="pagination-image"
-						class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
-							$applications?.length === undefined}
-						on:click={() => {
-							deselectAllApplicationsCheckboxes();
-							if (applicationsCurrentPage < applicationsTotalPages) {
-								applicationsCurrentPage = applicationsTotalPages - 1;
-								reloadAllApps(applicationsCurrentPage);
-							}
-						}}
-					/>
-				</div>
+							}}
+							name="RowsPerPage"
+						>
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50">50</option>
+							<option value="75">75</option>
+							<option value="100">100&nbsp;</option>
+						</select>
+
+						<span style="margin: 0 2rem 0 2rem">
+							{#if applicationsTotalSize > 0}
+								{1 + applicationsCurrentPage * applicationsPerPage}
+							{:else}
+								0
+							{/if}
+							- {Math.min(
+								applicationsPerPage * (applicationsCurrentPage + 1),
+								applicationsTotalSize
+							)}
+							of
+							{applicationsTotalSize}
+						</span>
+
+						<img
+							src={pagefirstSVG}
+							alt="first page"
+							class="pagination-image"
+							class:disabled-img={applicationsCurrentPage === 0}
+							on:click={() => {
+								deselectAllApplicationsCheckboxes();
+								if (applicationsCurrentPage > 0) {
+									applicationsCurrentPage = 0;
+									reloadAllApps();
+								}
+							}}
+						/>
+						<img
+							src={pagebackwardsSVG}
+							alt="previous page"
+							class="pagination-image"
+							class:disabled-img={applicationsCurrentPage === 0}
+							on:click={() => {
+								deselectAllApplicationsCheckboxes();
+								if (applicationsCurrentPage > 0) {
+									applicationsCurrentPage--;
+									reloadAllApps(applicationsCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pageforwardSVG}
+							alt="next page"
+							class="pagination-image"
+							class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+								$applications?.length === undefined}
+							on:click={() => {
+								deselectAllApplicationsCheckboxes();
+								if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+									applicationsCurrentPage++;
+									reloadAllApps(applicationsCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pagelastSVG}
+							alt="last page"
+							class="pagination-image"
+							class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+								$applications?.length === undefined}
+							on:click={() => {
+								deselectAllApplicationsCheckboxes();
+								if (applicationsCurrentPage < applicationsTotalPages) {
+									applicationsCurrentPage = applicationsTotalPages - 1;
+									reloadAllApps(applicationsCurrentPage);
+								}
+							}}
+						/>
+					</div>
+					<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+				{/if}
 			{/if}
-			<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 		{/await}
 	{/if}
 {/key}
 
 <style>
 	.content {
-		width: fit-content;
+		width: 100%;
 		min-width: 32rem;
 		margin-right: 1rem;
 	}

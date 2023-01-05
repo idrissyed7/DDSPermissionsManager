@@ -5,21 +5,14 @@
 	import wavesSVG from '../icons/waves.svg';
 	import googleSVG from '../icons/google.svg';
 	import loginCompleted from '../stores/loginCompleted';
-	import renderAvatar from '../stores/renderAvatar';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 
 	export let data, errors;
 
-	// Delay the render of the Avatar dot to avoid flickering
-	setTimeout(() => renderAvatar.set(true), 40);
-
 	onMount(() => {
 		if ($isAuthenticated) goto('/groups', true);
 	});
-
-	// UI optimization to avoid flickering
-	onDestroy(() => renderAvatar.set(false));
 </script>
 
 <svelte:head>

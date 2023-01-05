@@ -21,12 +21,12 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import errorMessages from '$lib/errorMessages.json';
-	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import userEmail from '../../stores/userEmail';
 	import tooltips from '$lib/tooltips.json';
 	import contextMessage from '../../stores/contextMessage';
+	import userValidityCheck from '../../stores/userValidityCheck';
 
 	export let data;
 	export let errors;
@@ -71,9 +71,6 @@
 	let activateToolip = 'Select this group as context';
 
 	let activateMouseEnter = new Array($groups?.length).fill(false);
-	let isGroupAdminMouseEnter = new Array($groups?.length).fill(false);
-	let isTopicAdminMouseEnter = new Array($groups?.length).fill(false);
-	let isApplicationAdminMouseEnter = new Array($groups?.length).fill(false);
 
 	let createUserMouseEnter = new Array($groups?.length).fill(false);
 	let createTopicMouseEnter = new Array($groups?.length).fill(false);
@@ -130,18 +127,51 @@
 		}, waitTime);
 	}
 
+	const reloadAllGroups = async (page = 0) => {
+		try {
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/groups?page=${page}&size=${groupsPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
+			}
+			if (res.data) {
+				groupsTotalPages = res.data.totalPages;
+				groupsTotalSize = res.data.totalSize;
+			}
+			groups.set(res.data.content);
+			groupsTotalPages = res.data.totalPages;
+			groupsCurrentPage = page;
+		} catch (err) {
+			userValidityCheck.set(true);
+
+			errorMessage('Error Loading Groups', err.message);
+		}
+	};
+
+	const getPermissionsForAllGroups = async () => {
+		if ($userEmail)
+			permissionsForAllGroups = await httpAdapter.get(
+				`/group_membership?page=0&size=${groupsPerPage}&filter=${$userEmail}`
+			);
+
+		if (permissionsForAllGroups?.data?.content)
+			permissionsForAllGroups = permissionsForAllGroups.data.content;
+	};
+
+	const initializeGroups = async () => {
+		promise = await reloadAllGroups();
+		await getPermissionsForAllGroups();
+	};
+
+	initializeGroups();
+
 	onMount(async () => {
 		headerTitle.set('Groups');
 		detailView.set();
-
-		await getPermissionsForAllGroups();
-
-		promise = await reloadAllGroups();
-
-		setTimeout(() => renderAvatar.set(true), 40);
 	});
-
-	onDestroy(() => renderAvatar.set(false));
 
 	const searchGroups = async (searchStr) => {
 		const res = await httpAdapter.get(`/groups?page=0&size=${groupsPerPage}&filter=${searchStr}`);
@@ -165,30 +195,6 @@
 		errorMessageVisible = false;
 		errorMsg = '';
 		errorObject = '';
-	};
-
-	const reloadAllGroups = async (page = 0) => {
-		try {
-			let res;
-			if (searchString && searchString.length >= searchStringLength) {
-				res = await httpAdapter.get(
-					`/groups?page=${page}&size=${groupsPerPage}&filter=${searchString}`
-				);
-			} else {
-				res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
-			}
-			if (res.data) {
-				groupsTotalPages = res.data.totalPages;
-				groupsTotalSize = res.data.totalSize;
-			}
-			groups.set(res.data.content);
-			groupsTotalPages = res.data.totalPages;
-			groupsCurrentPage = page;
-		} catch (err) {
-			userValidityCheck.set(true);
-
-			errorMessage('Error Loading Groups', err.message);
-		}
 	};
 
 	const addGroup = async (newGroupName) => {
@@ -234,16 +240,6 @@
 			deleteGroupVisible = false;
 			errorMessage('Error Deleting Group', err.response.data);
 		}
-	};
-
-	const getPermissionsForAllGroups = async () => {
-		if ($userEmail)
-			permissionsForAllGroups = await httpAdapter.get(
-				`/group_membership?page=0&size=${groupsPerPage}&filter=${$userEmail}`
-			);
-
-		if (permissionsForAllGroups?.data?.content)
-			permissionsForAllGroups = permissionsForAllGroups.data.content;
 	};
 
 	const findPermission = (group, permissionType) => {
@@ -378,7 +374,7 @@
 					alt="options"
 					class="dot"
 					class:button-disabled={!$isAdmin || groupsRowsSelected.length === 0}
-					style="margin-left: 0.5rem"
+					style="margin-left: 0.5rem; margin-right: 1rem"
 					on:click={() => {
 						if (groupsRowsSelected.length > 0) deleteGroupVisible = true;
 					}}
@@ -480,350 +476,348 @@
 					>{addTooltip}
 				</span>
 
-				{#if $groups}
-					{#if $groups.length > 0}
-						<table
-							class="main"
-							data-cy="groups-table"
-							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
-						>
-							<thead>
-								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+				{#if $groups?.length > 0}
+					<table
+						class="main"
+						data-cy="groups-table"
+						style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
+					>
+						<thead>
+							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+								{#if $isAdmin}
+									<td>
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="groups-checkbox"
+											style="margin-right: 0.5rem; vertical-align: middle;"
+											bind:indeterminate={groupsRowsSelectedTrue}
+											on:click={(e) => {
+												if (e.target.checked) {
+													groupsRowsSelected = $groups;
+													groupsRowsSelectedTrue = false;
+													groupsAllRowsSelectedTrue = true;
+												} else {
+													groupsAllRowsSelectedTrue = false;
+													groupsRowsSelectedTrue = false;
+													groupsRowsSelected = [];
+												}
+											}}
+											checked={groupsAllRowsSelectedTrue}
+										/>
+									</td>
+								{/if}
+								<td style="width: 5rem; text-align:center">Activate</td>
+								<td style="min-width: 7rem">Group</td>
+								<td style="text-align:center; width: 7rem">Create</td>
+								<td style="width: 4rem; text-align:center">Users</td>
+								<td style="width: 4rem; text-align:center">Topics</td>
+								<td style="width: 4rem; text-align:right; padding-right: 1rem">Applications</td>
+							</tr>
+						</thead>
+						<tbody>
+							{#each $groups as group, i}
+								<tr>
 									{#if $isAdmin}
-										<td>
+										<td style="width: 2rem">
 											<input
 												tabindex="-1"
 												type="checkbox"
 												class="groups-checkbox"
-												style="margin-right: 0.5rem; vertical-align: middle;"
-												bind:indeterminate={groupsRowsSelectedTrue}
-												on:click={(e) => {
-													if (e.target.checked) {
-														groupsRowsSelected = $groups;
-														groupsRowsSelectedTrue = false;
-														groupsAllRowsSelectedTrue = true;
+												style="vertical-align: middle;"
+												checked={groupsAllRowsSelectedTrue}
+												on:change={(e) => {
+													if (e.target.checked === true) {
+														groupsRowsSelected.push(group);
+														// reactive statement
+														groupsRowsSelected = groupsRowsSelected;
+														groupsRowsSelectedTrue = true;
 													} else {
-														groupsAllRowsSelectedTrue = false;
-														groupsRowsSelectedTrue = false;
-														groupsRowsSelected = [];
+														groupsRowsSelected = groupsRowsSelected.filter(
+															(selection) => selection !== group
+														);
+														if (groupsRowsSelected.length === 0) {
+															groupsRowsSelectedTrue = false;
+														}
 													}
 												}}
-												checked={groupsAllRowsSelectedTrue}
 											/>
 										</td>
 									{/if}
-									<td style="width: 5rem; text-align:center">Activate</td>
-									<td style="min-width: 7rem">Group</td>
-									<td style="text-align:center; width: 7rem">Create</td>
-									<td style="width: 4rem; text-align:center">Users</td>
-									<td style="width: 4rem; text-align:center">Topics</td>
-									<td style="width: 4rem; text-align:right; padding-right: 1rem">Applications</td>
-								</tr>
-							</thead>
-							<tbody>
-								{#each $groups as group, i}
-									<tr>
-										{#if $isAdmin}
-											<td style="width: 2rem">
-												<input
-													tabindex="-1"
-													type="checkbox"
-													class="groups-checkbox"
-													style="vertical-align: middle;"
-													checked={groupsAllRowsSelectedTrue}
-													on:change={(e) => {
-														if (e.target.checked === true) {
-															groupsRowsSelected.push(group);
-															// reactive statement
-															groupsRowsSelected = groupsRowsSelected;
-															groupsRowsSelectedTrue = true;
-														} else {
-															groupsRowsSelected = groupsRowsSelected.filter(
-																(selection) => selection !== group
-															);
-															if (groupsRowsSelected.length === 0) {
-																groupsRowsSelectedTrue = false;
-															}
-														}
-													}}
-												/>
-											</td>
-										{/if}
 
-										<td style="text-align: center; cursor: pointer">
+									<td style="text-align: center; cursor: pointer">
+										<img
+											data-cy="activate-group-context{i}"
+											src={groupSVG}
+											alt="select group"
+											width="27rem"
+											height="27rem"
+											style="vertical-align: middle;cursor: pointer"
+											on:click={() => {
+												if (!$groupContext) {
+													groupContext.set(group);
+													contextMessage.set(true);
+												} else if ($groupContext !== group) {
+													groupContext.set(group);
+													contextMessage.set(true);
+												} else groupContext.set('clear');
+											}}
+											on:mouseenter={() => {
+												activateMouseEnter[i] = true;
+												const tooltip = document.querySelector(`#activate-groups${i}`);
+												setTimeout(() => {
+													if (activateMouseEnter[i]) {
+														tooltip.classList.remove('tooltip-hidden');
+														tooltip.classList.add('tooltip');
+													}
+												}, waitTime);
+											}}
+											on:mouseleave={() => {
+												activateMouseEnter[i] = false;
+												const tooltip = document.querySelector(`#activate-groups${i}`);
+												setTimeout(() => {
+													if (!activateMouseEnter[i]) {
+														tooltip.classList.add('tooltip-hidden');
+														tooltip.classList.remove('tooltip');
+													}
+												}, waitTime);
+											}}
+										/>
+									</td>
+									<td
+										style="width: max-content"
+										class:highlighted={group.name === $groupContext?.name}
+									>
+										{group.name}
+									</td>
+
+									<td>
+										<div
+											style="display:inline-flex; vertical-align:middle; justify-content: center; width: 7rem"
+										>
 											<img
-												data-cy="activate-group-context{i}"
 												src={groupSVG}
-												alt="select group"
-												width="27rem"
-												height="27rem"
-												style="vertical-align: middle;cursor: pointer"
-												on:click={() => {
-													if (!$groupContext) {
-														groupContext.set(group);
-														contextMessage.set(true);
-													} else if ($groupContext !== group) {
-														groupContext.set(group);
-														contextMessage.set(true);
-													} else groupContext.set('clear');
-												}}
+												alt="create new user"
+												width="23rem"
+												height="23rem"
+												style="margin-right: 0.4rem"
+												class:permission-badges-blue={findPermission(group, 'groupAdmin')}
+												class:permission-badges-grey={!findPermission(group, 'groupAdmin')}
+												disabled={!findPermission(group, 'groupAdmin')}
 												on:mouseenter={() => {
-													activateMouseEnter[i] = true;
-													const tooltip = document.querySelector(`#activate-groups${i}`);
+													createUserMouseEnter[i] = true;
+													const tooltip = document.querySelector(`#user-create${i}`);
 													setTimeout(() => {
-														if (activateMouseEnter[i]) {
+														if (createUserMouseEnter[i]) {
 															tooltip.classList.remove('tooltip-hidden');
 															tooltip.classList.add('tooltip');
 														}
-													}, waitTime);
+													}, 1000);
 												}}
 												on:mouseleave={() => {
-													activateMouseEnter[i] = false;
-													const tooltip = document.querySelector(`#activate-groups${i}`);
+													createUserMouseEnter[i] = false;
+													const tooltip = document.querySelector(`#user-create${i}`);
 													setTimeout(() => {
-														if (!activateMouseEnter[i]) {
+														if (!createUserMouseEnter[i]) {
 															tooltip.classList.add('tooltip-hidden');
 															tooltip.classList.remove('tooltip');
 														}
-													}, waitTime);
+													}, 1000);
+												}}
+												on:click={() => {
+													if (findPermission(group, 'groupAdmin')) {
+														groupContext.set(group);
+														urlparameters.set('create');
+														goto(`/users`, true);
+													}
+												}}
+											/>
+
+											<span
+												id="user-create{i}"
+												class="tooltip-hidden"
+												style="margin-top: 1.8rem; margin-left: -3rem"
+											>
+												{#if findPermission(group, 'groupAdmin')}
+													{tooltips['createUserAllowed']} {group.name}
+												{:else}
+													{tooltips['createUserNotAllowed']}
+												{/if}
+											</span>
+
+											<img
+												src={topicsSVG}
+												alt="create new topic"
+												width="23rem"
+												height="23rem"
+												style="margin-right: 0.2rem"
+												class:permission-badges-blue={findPermission(group, 'topicAdmin')}
+												class:permission-badges-grey={!findPermission(group, 'topicAdmin')}
+												disabled={!findPermission(group, 'topicAdmin')}
+												on:mouseenter={() => {
+													createTopicMouseEnter[i] = true;
+													const tooltip = document.querySelector(`#topic-create${i}`);
+													setTimeout(() => {
+														if (createTopicMouseEnter[i]) {
+															tooltip.classList.remove('tooltip-hidden');
+															tooltip.classList.add('tooltip');
+														}
+													}, 1000);
+												}}
+												on:mouseleave={() => {
+													createTopicMouseEnter[i] = false;
+													const tooltip = document.querySelector(`#topic-create${i}`);
+													setTimeout(() => {
+														if (!createTopicMouseEnter[i]) {
+															tooltip.classList.add('tooltip-hidden');
+															tooltip.classList.remove('tooltip');
+														}
+													}, 1000);
+												}}
+												on:click={() => {
+													if (findPermission(group, 'topicAdmin')) {
+														groupContext.set(group);
+														urlparameters.set('create');
+														goto(`/topics`, true);
+													}
+												}}
+											/>
+
+											<span id="topic-create{i}" class="tooltip-hidden" style="margin-top: 1.8rem"
+												>{#if findPermission(group, 'topicAdmin')}
+													{tooltips['createTopicAllowed']} {group.name}
+												{:else}
+													{tooltips['createTopicNotAllowed']}
+												{/if}
+											</span>
+
+											<img
+												src={appsSVG}
+												alt="create application"
+												width="23rem"
+												height="23rem"
+												class:permission-badges-blue={findPermission(group, 'applicationAdmin')}
+												class:permission-badges-grey={!findPermission(group, 'applicationAdmin')}
+												disabled={!findPermission(group, 'applicationAdmin')}
+												on:mouseenter={() => {
+													createApplicationMouseEnter[i] = true;
+													const tooltip = document.querySelector(`#application-create${i}`);
+													setTimeout(() => {
+														if (createApplicationMouseEnter[i]) {
+															tooltip.classList.remove('tooltip-hidden');
+															tooltip.classList.add('tooltip');
+														}
+													}, 1000);
+												}}
+												on:mouseleave={() => {
+													createApplicationMouseEnter[i] = false;
+													const tooltip = document.querySelector(`#application-create${i}`);
+													setTimeout(() => {
+														if (!createApplicationMouseEnter[i]) {
+															tooltip.classList.add('tooltip-hidden');
+															tooltip.classList.remove('tooltip');
+														}
+													}, 1000);
+												}}
+												on:click={() => {
+													if (findPermission(group, 'applicationAdmin')) {
+														groupContext.set(group);
+														urlparameters.set('create');
+														goto(`/applications`, true);
+													}
+												}}
+											/>
+
+											<span
+												id="application-create{i}"
+												class="tooltip-hidden"
+												style="margin-top: 1.8rem; margin-left: 3rem"
+												>{#if findPermission(group, 'applicationAdmin')}
+													{tooltips['createApplicationAllowed']} {group.name}
+												{:else}
+													{tooltips['createApplicationNotAllowed']}
+												{/if}
+											</span>
+										</div>
+									</td>
+
+									<td style="width: max-content">
+										<center>
+											<a
+												tabindex="-1"
+												style="vertical-align: middle"
+												href="/users"
+												on:click={() => groupContext.set(group)}>{group.membershipCount}</a
+											>
+										</center>
+									</td>
+
+									<td style="width: max-content">
+										<center>
+											<a
+												tabindex="-1"
+												style="vertical-align: middle"
+												href="/topics"
+												on:click={() => groupContext.set(group)}>{group.topicCount}</a
+											>
+										</center>
+									</td>
+
+									<td style="width: max-content">
+										<center>
+											<a
+												tabindex="-1"
+												style="vertical-align: middle"
+												href="/applications"
+												on:click={() => groupContext.set(group)}>{group.applicationCount}</a
+											>
+										</center>
+									</td>
+
+									<span
+										id="activate-groups{i}"
+										class="tooltip-hidden"
+										class:activate-no-context={!$groupContext?.id}
+										class:activate-context={$groupContext?.id}
+										>{activateToolip}
+									</span>
+
+									{#if $isAdmin}
+										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+											<img
+												data-cy="edit-group-icon-{group.name}"
+												src={editSVG}
+												alt="edit group"
+												style="cursor: pointer; vertical-align: -0.25rem"
+												height="17rem"
+												width="17rem"
+												on:click={() => {
+													editGroupVisible = true;
+													selectedGroupId = group.id;
+													selectedGroupName = group.name;
 												}}
 											/>
 										</td>
-										<td
-											style="width: max-content"
-											class:highlighted={group.name === $groupContext?.name}
-										>
-											{group.name}
+
+										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+											<img
+												data-cy="delete-group-icon-{group.name}"
+												src={deleteSVG}
+												alt="delete group"
+												style="cursor: pointer; vertical-align: -0.5rem"
+												height="27rem"
+												on:click={() => {
+													if (!groupsRowsSelected.some((grp) => grp === group))
+														groupsRowsSelected.push(group);
+													deleteGroupVisible = true;
+												}}
+											/>
 										</td>
-
-										<td>
-											<div
-												style="display:inline-flex; vertical-align:middle; justify-content: center; width: 7rem"
-											>
-												<img
-													src={groupSVG}
-													alt="create new user"
-													width="23rem"
-													height="23rem"
-													style="margin-right: 0.4rem"
-													class:permission-badges-blue={findPermission(group, 'groupAdmin')}
-													class:permission-badges-grey={!findPermission(group, 'groupAdmin')}
-													disabled={!findPermission(group, 'groupAdmin')}
-													on:mouseenter={() => {
-														createUserMouseEnter[i] = true;
-														const tooltip = document.querySelector(`#user-create${i}`);
-														setTimeout(() => {
-															if (createUserMouseEnter[i]) {
-																tooltip.classList.remove('tooltip-hidden');
-																tooltip.classList.add('tooltip');
-															}
-														}, 1000);
-													}}
-													on:mouseleave={() => {
-														createUserMouseEnter[i] = false;
-														const tooltip = document.querySelector(`#user-create${i}`);
-														setTimeout(() => {
-															if (!createUserMouseEnter[i]) {
-																tooltip.classList.add('tooltip-hidden');
-																tooltip.classList.remove('tooltip');
-															}
-														}, 1000);
-													}}
-													on:click={() => {
-														if (findPermission(group, 'groupAdmin')) {
-															groupContext.set(group);
-															urlparameters.set('create');
-															goto(`/users`, true);
-														}
-													}}
-												/>
-
-												<span
-													id="user-create{i}"
-													class="tooltip-hidden"
-													style="margin-top: 1.8rem; margin-left: -3rem"
-												>
-													{#if findPermission(group, 'groupAdmin')}
-														{tooltips['createUserAllowed']} {group.name}
-													{:else}
-														{tooltips['createUserNotAllowed']}
-													{/if}
-												</span>
-
-												<img
-													src={topicsSVG}
-													alt="create new topic"
-													width="23rem"
-													height="23rem"
-													style="margin-right: 0.2rem"
-													class:permission-badges-blue={findPermission(group, 'topicAdmin')}
-													class:permission-badges-grey={!findPermission(group, 'topicAdmin')}
-													disabled={!findPermission(group, 'topicAdmin')}
-													on:mouseenter={() => {
-														createTopicMouseEnter[i] = true;
-														const tooltip = document.querySelector(`#topic-create${i}`);
-														setTimeout(() => {
-															if (createTopicMouseEnter[i]) {
-																tooltip.classList.remove('tooltip-hidden');
-																tooltip.classList.add('tooltip');
-															}
-														}, 1000);
-													}}
-													on:mouseleave={() => {
-														createTopicMouseEnter[i] = false;
-														const tooltip = document.querySelector(`#topic-create${i}`);
-														setTimeout(() => {
-															if (!createTopicMouseEnter[i]) {
-																tooltip.classList.add('tooltip-hidden');
-																tooltip.classList.remove('tooltip');
-															}
-														}, 1000);
-													}}
-													on:click={() => {
-														if (findPermission(group, 'topicAdmin')) {
-															groupContext.set(group);
-															urlparameters.set('create');
-															goto(`/topics`, true);
-														}
-													}}
-												/>
-
-												<span id="topic-create{i}" class="tooltip-hidden" style="margin-top: 1.8rem"
-													>{#if findPermission(group, 'topicAdmin')}
-														{tooltips['createTopicAllowed']} {group.name}
-													{:else}
-														{tooltips['createTopicNotAllowed']}
-													{/if}
-												</span>
-
-												<img
-													src={appsSVG}
-													alt="create application"
-													width="23rem"
-													height="23rem"
-													class:permission-badges-blue={findPermission(group, 'applicationAdmin')}
-													class:permission-badges-grey={!findPermission(group, 'applicationAdmin')}
-													disabled={!findPermission(group, 'applicationAdmin')}
-													on:mouseenter={() => {
-														createApplicationMouseEnter[i] = true;
-														const tooltip = document.querySelector(`#application-create${i}`);
-														setTimeout(() => {
-															if (createApplicationMouseEnter[i]) {
-																tooltip.classList.remove('tooltip-hidden');
-																tooltip.classList.add('tooltip');
-															}
-														}, 1000);
-													}}
-													on:mouseleave={() => {
-														createApplicationMouseEnter[i] = false;
-														const tooltip = document.querySelector(`#application-create${i}`);
-														setTimeout(() => {
-															if (!createApplicationMouseEnter[i]) {
-																tooltip.classList.add('tooltip-hidden');
-																tooltip.classList.remove('tooltip');
-															}
-														}, 1000);
-													}}
-													on:click={() => {
-														if (findPermission(group, 'applicationAdmin')) {
-															groupContext.set(group);
-															urlparameters.set('create');
-															goto(`/applications`, true);
-														}
-													}}
-												/>
-
-												<span
-													id="application-create{i}"
-													class="tooltip-hidden"
-													style="margin-top: 1.8rem; margin-left: 3rem"
-													>{#if findPermission(group, 'applicationAdmin')}
-														{tooltips['createApplicationAllowed']} {group.name}
-													{:else}
-														{tooltips['createApplicationNotAllowed']}
-													{/if}
-												</span>
-											</div>
-										</td>
-
-										<td style="width: max-content">
-											<center>
-												<a
-													tabindex="-1"
-													style="vertical-align: middle"
-													href="/users"
-													on:click={() => groupContext.set(group)}>{group.membershipCount}</a
-												>
-											</center>
-										</td>
-
-										<td style="width: max-content">
-											<center>
-												<a
-													tabindex="-1"
-													style="vertical-align: middle"
-													href="/topics"
-													on:click={() => groupContext.set(group)}>{group.topicCount}</a
-												>
-											</center>
-										</td>
-
-										<td style="width: max-content">
-											<center>
-												<a
-													tabindex="-1"
-													style="vertical-align: middle"
-													href="/applications"
-													on:click={() => groupContext.set(group)}>{group.applicationCount}</a
-												>
-											</center>
-										</td>
-
-										<span
-											id="activate-groups{i}"
-											class="tooltip-hidden"
-											class:activate-no-context={!$groupContext?.id}
-											class:activate-context={$groupContext?.id}
-											>{activateToolip}
-										</span>
-
-										{#if $isAdmin}
-											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-												<img
-													data-cy="edit-group-icon-{group.name}"
-													src={editSVG}
-													alt="edit group"
-													style="cursor: pointer; vertical-align: -0.25rem"
-													height="17rem"
-													width="17rem"
-													on:click={() => {
-														editGroupVisible = true;
-														selectedGroupId = group.id;
-														selectedGroupName = group.name;
-													}}
-												/>
-											</td>
-
-											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-												<img
-													data-cy="delete-group-icon-{group.name}"
-													src={deleteSVG}
-													alt="delete group"
-													style="cursor: pointer; vertical-align: -0.5rem"
-													height="27rem"
-													on:click={() => {
-														if (!groupsRowsSelected.some((grp) => grp === group))
-															groupsRowsSelected.push(group);
-														deleteGroupVisible = true;
-													}}
-												/>
-											</td>
-										{/if}
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					{/if}
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				{:else}
 					<p>
 						No Groups Found.&nbsp;<span class="link" on:click={() => (addGroupVisible = true)}>
@@ -834,94 +828,96 @@
 				{/if}
 			</div>
 
-			<div class="pagination">
-				<span>Rows per page</span>
-				<select
-					tabindex="-1"
-					on:change={(e) => {
-						groupsPerPage = e.target.value;
-						reloadAllGroups();
-					}}
-					name="RowsPerPage"
-				>
-					<option value="10">10</option>
-					<option value="25">25</option>
-					<option value="50">50</option>
-					<option value="75">75</option>
-					<option value="100">100&nbsp;</option>
-				</select>
-				<span style="margin: 0 2rem 0 2rem">
-					{#if groupsTotalSize > 0}
-						{1 + groupsCurrentPage * groupsPerPage}
-					{:else}
-						0
-					{/if}
-					- {Math.min(groupsPerPage * (groupsCurrentPage + 1), groupsTotalSize)} of
-					{groupsTotalSize}
-				</span>
-				<img
-					src={pagefirstSVG}
-					alt="first page"
-					class="pagination-image"
-					class:disabled-img={groupsCurrentPage === 0}
-					on:click={() => {
-						deselectAllGroupsCheckboxes();
-						if (groupsCurrentPage > 0) {
-							groupsCurrentPage = 0;
+			{#if groupsTotalSize !== undefined && groupsTotalSize != NaN}
+				<div class="pagination">
+					<span>Rows per page</span>
+					<select
+						tabindex="-1"
+						on:change={(e) => {
+							groupsPerPage = e.target.value;
 							reloadAllGroups();
-						}
-					}}
-				/>
-				<img
-					src={pagebackwardsSVG}
-					alt="previous page"
-					class="pagination-image"
-					class:disabled-img={groupsCurrentPage === 0}
-					on:click={() => {
-						deselectAllGroupsCheckboxes();
-						if (groupsCurrentPage > 0) {
-							groupsCurrentPage--;
-							reloadAllGroups(groupsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pageforwardSVG}
-					alt="next page"
-					class="pagination-image"
-					class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
-						$groups?.length === undefined}
-					on:click={() => {
-						deselectAllGroupsCheckboxes();
-						if (groupsCurrentPage + 1 < groupsTotalPages) {
-							groupsCurrentPage++;
-							reloadAllGroups(groupsCurrentPage);
-						}
-					}}
-				/>
-				<img
-					src={pagelastSVG}
-					alt="last page"
-					class="pagination-image"
-					class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
-						$groups?.length === undefined}
-					on:click={() => {
-						deselectAllGroupsCheckboxes();
-						if (groupsCurrentPage < groupsTotalPages) {
-							groupsCurrentPage = groupsTotalPages - 1;
-							reloadAllGroups(groupsCurrentPage);
-						}
-					}}
-				/>
-			</div>
-			<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+						}}
+						name="RowsPerPage"
+					>
+						<option value="10">10</option>
+						<option value="25">25</option>
+						<option value="50">50</option>
+						<option value="75">75</option>
+						<option value="100">100&nbsp;</option>
+					</select>
+					<span style="margin: 0 2rem 0 2rem">
+						{#if groupsTotalSize > 0}
+							{1 + groupsCurrentPage * groupsPerPage}
+						{:else}
+							0
+						{/if}
+						- {Math.min(groupsPerPage * (groupsCurrentPage + 1), groupsTotalSize)} of
+						{groupsTotalSize}
+					</span>
+					<img
+						src={pagefirstSVG}
+						alt="first page"
+						class="pagination-image"
+						class:disabled-img={groupsCurrentPage === 0}
+						on:click={() => {
+							deselectAllGroupsCheckboxes();
+							if (groupsCurrentPage > 0) {
+								groupsCurrentPage = 0;
+								reloadAllGroups();
+							}
+						}}
+					/>
+					<img
+						src={pagebackwardsSVG}
+						alt="previous page"
+						class="pagination-image"
+						class:disabled-img={groupsCurrentPage === 0}
+						on:click={() => {
+							deselectAllGroupsCheckboxes();
+							if (groupsCurrentPage > 0) {
+								groupsCurrentPage--;
+								reloadAllGroups(groupsCurrentPage);
+							}
+						}}
+					/>
+					<img
+						src={pageforwardSVG}
+						alt="next page"
+						class="pagination-image"
+						class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+							$groups?.length === undefined}
+						on:click={() => {
+							deselectAllGroupsCheckboxes();
+							if (groupsCurrentPage + 1 < groupsTotalPages) {
+								groupsCurrentPage++;
+								reloadAllGroups(groupsCurrentPage);
+							}
+						}}
+					/>
+					<img
+						src={pagelastSVG}
+						alt="last page"
+						class="pagination-image"
+						class:disabled-img={groupsCurrentPage + 1 === groupsTotalPages ||
+							$groups?.length === undefined}
+						on:click={() => {
+							deselectAllGroupsCheckboxes();
+							if (groupsCurrentPage < groupsTotalPages) {
+								groupsCurrentPage = groupsTotalPages - 1;
+								reloadAllGroups(groupsCurrentPage);
+							}
+						}}
+					/>
+				</div>
+				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+			{/if}
 		{/await}
 	{/if}
 {/key}
 
 <style>
 	.content {
-		width: fit-content;
+		width: 100%;
 		min-width: 32rem;
 		margin-right: 1rem;
 	}
