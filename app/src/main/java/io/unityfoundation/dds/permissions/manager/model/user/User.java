@@ -19,6 +19,8 @@ public class User {
 
     private boolean admin = false;
 
+    private Long permissionsLastUpdated = System.currentTimeMillis();
+
     public User() {
     }
 
@@ -54,5 +56,13 @@ public class User {
 
     public void setAdmin(boolean admin) {
         this.admin = admin;
+    }
+
+    public Long getPermissionsLastUpdated() {
+        return permissionsLastUpdated;
+    }
+
+    public void setPermissionsLastUpdated(Long lastPermissionsUpdated) {
+        this.permissionsLastUpdated = lastPermissionsUpdated;
     }
 }
