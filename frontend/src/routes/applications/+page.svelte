@@ -266,31 +266,31 @@
 	};
 
 	const curlCommandsDecode = () => {
-		curlCommandsDecodedCodeThree = curlCommands['codeThree']
+		curlCommandsDecodedCodeThree = curlCommands['authenticate']
 			.replace('${APP_ID}', `${selectedAppId}`)
 			.replace('${DPM_URL}', `${$page.url.protocol}//${$page.url.host}`);
 
-		curlCommandsDecodedCodeFour = curlCommands['codeFour'].replace(
+		curlCommandsDecodedCodeFour = curlCommands['identityCa'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeFive = curlCommands['codeFive'].replace(
+		curlCommandsDecodedCodeFive = curlCommands['permissionsCa'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeSix = curlCommands['codeSix'].replace(
+		curlCommandsDecodedCodeSix = curlCommands['governance'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeSeven = curlCommands['codeSeven'].replace(
+		curlCommandsDecodedCodeSeven = curlCommands['keyPair'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeEight = curlCommands['codeEight'].replace(
+		curlCommandsDecodedCodeEight = curlCommands['permissionsFile'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
@@ -1123,7 +1123,7 @@
 							<div class="section-title">Export the password from "Generate Password"</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeOne}</textarea
+									>{curlCommands.appPassword}</textarea
 								>
 								<img
 									data-cy="curl-command-1-copy"
@@ -1133,7 +1133,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeOne);
+										navigator.clipboard.writeText(curlCommands.appPassword);
 										showCopyCommand(1);
 									}}
 								/>
@@ -1145,7 +1145,7 @@
 							<div class="section-title">Export an alphanumeric nonce</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeTwo}</textarea
+									>{curlCommands.appNonce}</textarea
 								>
 								<img
 									data-cy="curl-command-2-copy"
@@ -1155,7 +1155,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeTwo);
+										navigator.clipboard.writeText(curlCommands.appNonce);
 										showCopyCommand(2);
 									}}
 								/>
