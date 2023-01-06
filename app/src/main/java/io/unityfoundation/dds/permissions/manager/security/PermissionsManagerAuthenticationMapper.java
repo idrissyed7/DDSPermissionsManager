@@ -64,6 +64,7 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
         List<Map<String, Object>> permissions = groupUserService.getAllPermissionsPerGroupUserIsMemberOf(user.getId());
         attributes.put("name", userEmail);
         attributes.put("permissionsByGroup", permissions);
+        attributes.put("permissionsLastUpdated", user.getPermissionsLastUpdated());
         return attributes;
     }
 }

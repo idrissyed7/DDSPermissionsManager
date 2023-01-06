@@ -5,6 +5,7 @@ import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
@@ -23,10 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -1304,6 +1302,179 @@ public class GroupMembershipApiTest {
             request = HttpRequest.GET("/group_membership/user_validity");
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
+        }
+
+        @Test
+        public void shouldHaveGroupPermissionsUpdatedIfAdminUpdatesMembership() {
+            mockSecurityService.postConstruct();
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // group
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = (Group) response.getBody(Group.class).get();
+
+            // memberships
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            dto1.setEmail("robert.the.generalcontractor@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            // add non-admin test user
+            dto1.setEmail("jjones@test.test");
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserResponseDTO> membershipOptional = response.getBody(GroupUserResponseDTO.class);
+            assertTrue(membershipOptional.isPresent());
+            GroupUserResponseDTO membership = membershipOptional.get();
+            assertFalse(membership.isGroupAdmin());
+            assertFalse(membership.isApplicationAdmin());
+            assertFalse(membership.isTopicAdmin());
+
+            loginAsNonAdmin();
+
+            // check value is initialized and what is retrieved is value in db
+            request = HttpRequest.GET("/group_membership/user_validity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Map> mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            Map map = mapOptional.get();
+            Long permissionsLastUpdated = (Long) map.get("permissionsLastUpdated");
+            assertNotNull(permissionsLastUpdated);
+
+            request = HttpRequest.GET("/group_membership/user_validity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            map = mapOptional.get();
+            Long permissionsLastUpdatedDupRequest = (Long) map.get("permissionsLastUpdated");
+            assertEquals(permissionsLastUpdated, permissionsLastUpdatedDupRequest);
+
+            // assert permissions are indeed false from /group_membership/user_validity endpoint
+            ArrayList<Map> permissionsByGroup = (ArrayList<Map>) map.get("permissionsByGroup");
+            assertEquals(1, permissionsByGroup.size());
+            Map userValidityPermissions = permissionsByGroup.get(0);
+            assertFalse((Boolean) userValidityPermissions.get("isGroupAdmin"));
+            assertFalse((Boolean) userValidityPermissions.get("isTopicAdmin"));
+            assertFalse((Boolean) userValidityPermissions.get("isApplicationAdmin"));
+
+            // update permissions
+            mockSecurityService.postConstruct();
+            dto1.setId(membership.getId());
+            dto1.setGroupAdmin(true);
+            dto1.setTopicAdmin(true);
+            request = HttpRequest.PUT("/group_membership", dto1);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserResponseDTO> updatedMembershipOptional = response.getBody(GroupUserResponseDTO.class);
+            assertTrue(updatedMembershipOptional.isPresent());
+            GroupUserResponseDTO updatedMembership = updatedMembershipOptional.get();
+            assertTrue(updatedMembership.isGroupAdmin());
+            assertTrue(updatedMembership.isTopicAdmin());
+            assertFalse(updatedMembership.isApplicationAdmin());
+
+            // check permissions as affected user and respective updated permissions
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/group_membership/user_validity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            map = mapOptional.get();
+            Long permissionsLastUpdatedChanged = (Long) map.get("permissionsLastUpdated");
+            assertNotNull(permissionsLastUpdated);
+            assertNotEquals(permissionsLastUpdated, permissionsLastUpdatedChanged);
+
+            permissionsByGroup = (ArrayList<Map>) map.get("permissionsByGroup");
+            assertEquals(1, permissionsByGroup.size());
+            userValidityPermissions = permissionsByGroup.get(0);
+            assertTrue((Boolean) userValidityPermissions.get("isGroupAdmin"));
+            assertTrue((Boolean) userValidityPermissions.get("isTopicAdmin"));
+            assertFalse((Boolean) userValidityPermissions.get("isApplicationAdmin"));
+        }
+
+        @Test
+        public void shouldHaveGroupPermissionsUpdatedIfAdminDeletesMembership() {
+            mockSecurityService.postConstruct();
+
+            HttpRequest request;
+            HttpResponse response;
+
+            // group
+            Group primaryGroup = new Group("PrimaryGroup");
+            request = HttpRequest.POST("/groups/save", primaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            primaryGroup = (Group) response.getBody(Group.class).get();
+
+            Group secondaryGroup = new Group("SecondaryGroup");
+            request = HttpRequest.POST("/groups/save", secondaryGroup);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            secondaryGroup = (Group) response.getBody(Group.class).get();
+
+            // memberships
+            GroupUserDTO dto1 = new GroupUserDTO();
+            dto1.setPermissionsGroup(primaryGroup.getId());
+            dto1.setEmail("jjones@test.test");
+
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            dto1.setPermissionsGroup(secondaryGroup.getId());
+            request = HttpRequest.POST("/group_membership", dto1);
+            response = blockingClient.exchange(request, GroupUserResponseDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<GroupUserResponseDTO> membershipOptional = response.getBody(GroupUserResponseDTO.class);
+            assertTrue(membershipOptional.isPresent());
+            GroupUserResponseDTO membership = membershipOptional.get();
+
+            // check validity payload
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/group_membership/user_validity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Map> mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            Map map = mapOptional.get();
+            Long permissionsLastUpdated = (Long) map.get("permissionsLastUpdated");
+            assertNotNull(permissionsLastUpdated);
+            ArrayList<Map> permissionsByGroup = (ArrayList<Map>) map.get("permissionsByGroup");
+            assertEquals(2, permissionsByGroup.size());
+
+            // delete membership
+            mockSecurityService.postConstruct();
+            request = HttpRequest.DELETE("/group_membership", Map.of("id", membership.getId()));
+            response = blockingClient.exchange(request);
+            assertEquals(HttpStatus.OK, response.getStatus());
+
+            // check permissions as affected user and respective timestamp
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/group_membership/user_validity");
+            response = blockingClient.exchange(request, Map.class);
+            assertEquals(OK, response.getStatus());
+            mapOptional = response.getBody(Map.class);
+            assertTrue(mapOptional.isPresent());
+            map = mapOptional.get();
+            Long permissionsLastUpdatedChanged = (Long) map.get("permissionsLastUpdated");
+            assertNotNull(permissionsLastUpdated);
+            assertNotEquals(permissionsLastUpdated, permissionsLastUpdatedChanged);
+
+            permissionsByGroup = (ArrayList<Map>) map.get("permissionsByGroup");
+            assertEquals(1, permissionsByGroup.size());
         }
 
     }

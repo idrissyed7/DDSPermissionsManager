@@ -267,31 +267,31 @@
 	};
 
 	const curlCommandsDecode = () => {
-		curlCommandsDecodedCodeThree = curlCommands['codeThree']
+		curlCommandsDecodedCodeThree = curlCommands['authenticate']
 			.replace('${APP_ID}', `${selectedAppId}`)
 			.replace('${DPM_URL}', `${$page.url.protocol}//${$page.url.host}`);
 
-		curlCommandsDecodedCodeFour = curlCommands['codeFour'].replace(
+		curlCommandsDecodedCodeFour = curlCommands['identityCa'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeFive = curlCommands['codeFive'].replace(
+		curlCommandsDecodedCodeFive = curlCommands['permissionsCa'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeSix = curlCommands['codeSix'].replace(
+		curlCommandsDecodedCodeSix = curlCommands['governance'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeSeven = curlCommands['codeSeven'].replace(
+		curlCommandsDecodedCodeSeven = curlCommands['keyPair'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
 
-		curlCommandsDecodedCodeEight = curlCommands['codeEight'].replace(
+		curlCommandsDecodedCodeEight = curlCommands['permissionsFile'].replace(
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
@@ -1121,10 +1121,16 @@
 						{/if}
 						<div class="curl-commands">
 							<!-- svelte-ignore missing-declaration -->
-							<div class="section-title">Export the password from "Generate Password"</div>
+                                                        <div>
+                                                        The following commands show how to authenticate and download DDS Security Documents from the DDS Permissions Manager API using curl.
+                                                        The APP_PASSWORD is the password created by clicking "Generate Password" above.
+                                                        The NONCE is an alphanumeric string used to differentiate instances of the same application.
+                                                        </div>
+
+							<div class="section-title">Export the password</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeOne}</textarea
+									>{curlCommands.appPassword}</textarea
 								>
 								<img
 									data-cy="curl-command-1-copy"
@@ -1134,7 +1140,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeOne);
+										navigator.clipboard.writeText(curlCommands.appPassword);
 										showCopyCommand(1);
 									}}
 								/>
@@ -1143,10 +1149,10 @@
 									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">Export an alphanumeric nonce</div>
+							<div class="section-title">Export the nonce</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeTwo}</textarea
+									>{curlCommands.appNonce}</textarea
 								>
 								<img
 									data-cy="curl-command-2-copy"
@@ -1156,7 +1162,7 @@
 									height="20rem"
 									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
 									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeTwo);
+										navigator.clipboard.writeText(curlCommands.appNonce);
 										showCopyCommand(2);
 									}}
 								/>

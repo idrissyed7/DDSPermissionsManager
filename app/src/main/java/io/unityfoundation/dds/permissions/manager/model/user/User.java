@@ -1,6 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.user;
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.data.annotation.DateUpdated;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
@@ -18,6 +19,9 @@ public class User {
     private String email;
 
     private boolean admin = false;
+
+    @DateUpdated
+    private Long permissionsLastUpdated;
 
     public User() {
     }
@@ -54,5 +58,13 @@ public class User {
 
     public void setAdmin(boolean admin) {
         this.admin = admin;
+    }
+
+    public Long getPermissionsLastUpdated() {
+        return permissionsLastUpdated;
+    }
+
+    public void setPermissionsLastUpdated(Long lastPermissionsUpdated) {
+        this.permissionsLastUpdated = lastPermissionsUpdated;
     }
 }
