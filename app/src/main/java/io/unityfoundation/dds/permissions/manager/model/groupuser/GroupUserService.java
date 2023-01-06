@@ -196,6 +196,10 @@ public class GroupUserService {
         groupUser.setTopicAdmin(groupUserDTO.isTopicAdmin());
         groupUser.setApplicationAdmin(groupUserDTO.isApplicationAdmin());
 
+        User user = groupUser.getPermissionsUser();
+        user.setPermissionsLastUpdated(System.currentTimeMillis());
+        userRepository.update(user);
+
         return groupUserRepository.update(groupUser);
     }
 
@@ -219,6 +223,9 @@ public class GroupUserService {
         int countByPermissionsUser = groupUserRepository.countByPermissionsUserId(user.getId());
         if (!user.isAdmin() && countByPermissionsUser == 0) {
             userRepository.delete(user);
+        } else {
+            user.setPermissionsLastUpdated(System.currentTimeMillis());
+            userRepository.update(user);
         }
 
         return HttpResponse.ok();
@@ -282,6 +289,7 @@ public class GroupUserService {
         attributes.put("permissionsByGroup", permissions);
         attributes.put("id", user.getId());
         attributes.put("isAdmin", user.isAdmin());
+        attributes.put("permissionsLastUpdated", user.getPermissionsLastUpdated());
 
         return HttpResponse.ok(attributes);
     }
