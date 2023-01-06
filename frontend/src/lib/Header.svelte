@@ -14,7 +14,6 @@
 	import appsSVG from '../icons/apps.svg';
 	import selectPromptSVG from '../icons/selectPrompt.svg';
 	import groupContext from '../stores/groupContext';
-	import renderAvatar from '../stores/renderAvatar';
 	import ComboBox from './ComboBox.svelte';
 	import refreshPage from '../stores/refreshPage';
 	import lastRefresh from '../stores/lastRefresh';
@@ -119,181 +118,183 @@
 <header>
 	<div class="header-bar">
 		<div style="display:inline-flex">
-			<div style="display:inline-flex">
-				<img src={DDSLock} alt="logo" class="logo" />
-				<div class="logo-text">DDS Permissions Manager</div>
-			</div>
-
 			{#if $isAuthenticated}
-				{#if $renderAvatar === true}
-					{#await permissionsForGroupContext then _}
-						{#key $refreshPage}
-							<div
-								class:permission-badges={$groupContext?.id}
-								class:permission-badges-hidden={!$groupContext?.id}
-							>
-								<img
-									src={groupsSVG}
-									alt="Group Admin"
-									width="23rem"
-									height="23rem"
-									class:permission-badges-blue={isGroupAdminInContext || $isAdmin}
-									class:permission-badges-grey={!isGroupAdminInContext && !$isAdmin}
-									on:mouseenter={() => {
-										isGroupAdminMouseEnter = true;
-										if (isGroupAdminInContext || $isAdmin)
-											isGroupAdminToolip = tooltips['createUserAllowed'] + $groupContext.name;
-										else isGroupAdminToolip = tooltips['createUserNotAllowed'];
-										const tooltip = document.querySelector('#is-group-admin');
-										setTimeout(() => {
-											if (isGroupAdminMouseEnter) {
-												tooltip.classList.remove('tooltip-hidden');
-												tooltip.classList.add('tooltip');
-											}
-										}, 1000);
-									}}
-									on:mouseleave={() => {
-										isGroupAdminMouseEnter = false;
-										const tooltip = document.querySelector('#is-group-admin');
-										setTimeout(() => {
-											if (!isGroupAdminMouseEnter) {
-												tooltip.classList.add('tooltip-hidden');
-												tooltip.classList.remove('tooltip');
-											}
-										}, 1000);
-									}}
-									on:click={() => {
-										if (isGroupAdminInContext || $isAdmin) {
-											if ($page.url.pathname === '/users/') createItem.set('user');
-											else {
-												urlparameters.set('create');
-												goto(`/users`, true);
-											}
-										}
-									}}
-								/>
-
-								<span
-									id="is-group-admin"
-									class="tooltip-hidden"
-									style="margin-top: 1.8rem; margin-left: -5rem"
-									>{isGroupAdminToolip}
-								</span>
-
-								<img
-									src={topicsSVG}
-									alt="Topic Admin"
-									width="23rem"
-									height="23rem"
-									class:permission-badges-blue={isTopicAdminInContext || $isAdmin}
-									class:permission-badges-grey={!isTopicAdminInContext && !$isAdmin}
-									on:mouseenter={() => {
-										isTopicAdminMouseEnter = true;
-										if (isTopicAdminInContext || $isAdmin)
-											isTopicAdminTooltip = tooltips['createTopicAllowed'] + $groupContext.name;
-										else isTopicAdminTooltip = tooltips['createTopicNotAllowed'];
-										const tooltip = document.querySelector('#is-topic-admin');
-										setTimeout(() => {
-											if (isTopicAdminMouseEnter) {
-												tooltip.classList.remove('tooltip-hidden');
-												tooltip.classList.add('tooltip');
-											}
-										}, 1000);
-									}}
-									on:mouseleave={() => {
-										isTopicAdminMouseEnter = false;
-										const tooltip = document.querySelector('#is-topic-admin');
-										setTimeout(() => {
-											if (!isTopicAdminMouseEnter) {
-												tooltip.classList.add('tooltip-hidden');
-												tooltip.classList.remove('tooltip');
-											}
-										}, 1000);
-									}}
-									on:click={() => {
-										if (isTopicAdminInContext || $isAdmin) {
-											if ($page.url.pathname === '/topics/') createItem.set('topic');
-											else {
-												urlparameters.set('create');
-												goto(`/topics`, true);
-											}
-										}
-									}}
-								/>
-
-								<span
-									id="is-topic-admin"
-									class="tooltip-hidden"
-									style="margin-top: 1.8rem; margin-left: -5rem"
-									>{isTopicAdminTooltip}
-								</span>
-
-								<img
-									src={appsSVG}
-									alt="Application Admin"
-									width="23rem"
-									height="23rem"
-									class:permission-badges-blue={isApplicationAdminInContext || $isAdmin}
-									class:permission-badges-grey={!isApplicationAdminInContext && !$isAdmin}
-									on:mouseenter={() => {
-										isApplicationAdminMouseEnter = true;
-										if (isApplicationAdminInContext || $isAdmin)
-											isApplicationAdminTooltip =
-												tooltips['createApplicationAllowed'] + $groupContext.name;
-										else isApplicationAdminTooltip = tooltips['createApplicationNotAllowed'];
-										const tooltip = document.querySelector('#is-application-admin');
-										setTimeout(() => {
-											if (isApplicationAdminMouseEnter) {
-												tooltip.classList.remove('tooltip-hidden');
-												tooltip.classList.add('tooltip');
-											}
-										}, 1000);
-									}}
-									on:mouseleave={() => {
-										isApplicationAdminMouseEnter = false;
-										const tooltip = document.querySelector('#is-application-admin');
-										setTimeout(() => {
-											if (!isApplicationAdminMouseEnter) {
-												tooltip.classList.add('tooltip-hidden');
-												tooltip.classList.remove('tooltip');
-											}
-										}, 1000);
-									}}
-									on:click={() => {
-										if (isApplicationAdminInContext || $isAdmin) {
-											if ($page.url.pathname === '/applications/') createItem.set('application');
-											else {
-												urlparameters.set('create');
-												goto(`/applications`, true);
-											}
-										}
-									}}
-								/>
-
-								<span
-									id="is-application-admin"
-									class="tooltip-hidden"
-									style="margin-top: 1.8rem; margin-left: -5rem"
-									>{isApplicationAdminTooltip}
-								</span>
-							</div>
-						{/key}
-					{/await}
-
-					<img
-						src={selectPromptSVG}
-						alt="select group"
-						width="35rem"
-						height="35rem"
-						class:show-prompt-hidden={!$showSelectGroupContext}
-						class:show-prompt={$showSelectGroupContext}
-						class:bounce={$showSelectGroupContext}
-					/>
-
-					<div class="combobox">
-						<ComboBox isGroupContext={true} />
+				{#await permissionsForGroupContext then _}
+					<div style="display:inline-flex">
+						<img src={DDSLock} alt="logo" class="logo" />
+						<div class="logo-text">DDS Permissions Manager</div>
 					</div>
-				{/if}
+					{#key $refreshPage}
+						<div
+							class:permission-badges={$groupContext?.id}
+							class:permission-badges-hidden={!$groupContext?.id}
+						>
+							<img
+								src={groupsSVG}
+								alt="Group Admin"
+								width="23rem"
+								height="23rem"
+								class:permission-badges-blue={isGroupAdminInContext || $isAdmin}
+								class:permission-badges-grey={!isGroupAdminInContext && !$isAdmin}
+								on:mouseenter={() => {
+									isGroupAdminMouseEnter = true;
+									if (isGroupAdminInContext || $isAdmin)
+										isGroupAdminToolip = tooltips['createUserAllowed'] + $groupContext.name;
+									else isGroupAdminToolip = tooltips['createUserNotAllowed'];
+									const tooltip = document.querySelector('#is-group-admin');
+									setTimeout(() => {
+										if (isGroupAdminMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}}
+								on:mouseleave={() => {
+									isGroupAdminMouseEnter = false;
+									const tooltip = document.querySelector('#is-group-admin');
+									setTimeout(() => {
+										if (!isGroupAdminMouseEnter) {
+											tooltip.classList.add('tooltip-hidden');
+											tooltip.classList.remove('tooltip');
+										}
+									}, 1000);
+								}}
+								on:click={() => {
+									if (isGroupAdminInContext || $isAdmin) {
+										if ($page.url.pathname === '/users/') createItem.set('user');
+										else {
+											urlparameters.set('create');
+											goto(`/users`, true);
+										}
+									}
+								}}
+							/>
+
+							<span
+								id="is-group-admin"
+								class="tooltip-hidden"
+								style="margin-top: 1.8rem; margin-left: -5rem"
+								>{isGroupAdminToolip}
+							</span>
+
+							<img
+								src={topicsSVG}
+								alt="Topic Admin"
+								width="23rem"
+								height="23rem"
+								class:permission-badges-blue={isTopicAdminInContext || $isAdmin}
+								class:permission-badges-grey={!isTopicAdminInContext && !$isAdmin}
+								on:mouseenter={() => {
+									isTopicAdminMouseEnter = true;
+									if (isTopicAdminInContext || $isAdmin)
+										isTopicAdminTooltip = tooltips['createTopicAllowed'] + $groupContext.name;
+									else isTopicAdminTooltip = tooltips['createTopicNotAllowed'];
+									const tooltip = document.querySelector('#is-topic-admin');
+									setTimeout(() => {
+										if (isTopicAdminMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}}
+								on:mouseleave={() => {
+									isTopicAdminMouseEnter = false;
+									const tooltip = document.querySelector('#is-topic-admin');
+									setTimeout(() => {
+										if (!isTopicAdminMouseEnter) {
+											tooltip.classList.add('tooltip-hidden');
+											tooltip.classList.remove('tooltip');
+										}
+									}, 1000);
+								}}
+								on:click={() => {
+									if (isTopicAdminInContext || $isAdmin) {
+										if ($page.url.pathname === '/topics/') createItem.set('topic');
+										else {
+											urlparameters.set('create');
+											goto(`/topics`, true);
+										}
+									}
+								}}
+							/>
+
+							<span
+								id="is-topic-admin"
+								class="tooltip-hidden"
+								style="margin-top: 1.8rem; margin-left: -5rem"
+								>{isTopicAdminTooltip}
+							</span>
+
+							<img
+								src={appsSVG}
+								alt="Application Admin"
+								width="23rem"
+								height="23rem"
+								class:permission-badges-blue={isApplicationAdminInContext || $isAdmin}
+								class:permission-badges-grey={!isApplicationAdminInContext && !$isAdmin}
+								on:mouseenter={() => {
+									isApplicationAdminMouseEnter = true;
+									if (isApplicationAdminInContext || $isAdmin)
+										isApplicationAdminTooltip =
+											tooltips['createApplicationAllowed'] + $groupContext.name;
+									else isApplicationAdminTooltip = tooltips['createApplicationNotAllowed'];
+									const tooltip = document.querySelector('#is-application-admin');
+									setTimeout(() => {
+										if (isApplicationAdminMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}}
+								on:mouseleave={() => {
+									isApplicationAdminMouseEnter = false;
+									const tooltip = document.querySelector('#is-application-admin');
+									setTimeout(() => {
+										if (!isApplicationAdminMouseEnter) {
+											tooltip.classList.add('tooltip-hidden');
+											tooltip.classList.remove('tooltip');
+										}
+									}, 1000);
+								}}
+								on:click={() => {
+									if (isApplicationAdminInContext || $isAdmin) {
+										if ($page.url.pathname === '/applications/') createItem.set('application');
+										else {
+											urlparameters.set('create');
+											goto(`/applications`, true);
+										}
+									}
+								}}
+							/>
+
+							<span
+								id="is-application-admin"
+								class="tooltip-hidden"
+								style="margin-top: 1.8rem; margin-left: -5rem"
+								>{isApplicationAdminTooltip}
+							</span>
+						</div>
+					{/key}
+				{/await}
+
+				<img
+					src={selectPromptSVG}
+					alt="select group"
+					width="35rem"
+					height="35rem"
+					class:show-prompt-hidden={!$showSelectGroupContext}
+					class:show-prompt={$showSelectGroupContext}
+					class:bounce={$showSelectGroupContext}
+				/>
+
+				<div class="combobox">
+					<ComboBox isGroupContext={true} />
+				</div>
+			{:else}
+				<div style="display:inline-flex">
+					<img src={DDSLock} alt="logo" class="logo" />
+					<div class="logo-text">DDS Permissions Manager</div>
+				</div>
 			{/if}
 		</div>
 
@@ -307,6 +308,7 @@
 						on:click={() => detailView.set('backToList')}
 					/>
 				{/if}
+
 				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
 
 				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications'}
@@ -321,28 +323,26 @@
 				{/if}
 			</div>
 
-			{#if $renderAvatar === true}
-				<div
-					data-cy="avatar-dropdown"
-					tabindex="0"
-					class="dot"
-					on:mouseenter={() => (avatarDropdownMouseEnter = true)}
-					on:mouseleave={() => {
-						setTimeout(() => {
-							if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
-						}, waitTime);
-						avatarDropdownMouseEnter = false;
-					}}
-					on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							avatarDropdownVisible = !avatarDropdownVisible;
-						}
-					}}
-				>
-					{avatarName}
-				</div>
-			{/if}
+			<div
+				data-cy="avatar-dropdown"
+				tabindex="0"
+				class="dot"
+				on:mouseenter={() => (avatarDropdownMouseEnter = true)}
+				on:mouseleave={() => {
+					setTimeout(() => {
+						if (!avatarDropdownMouseEnter) avatarDropdownVisible = false;
+					}, waitTime);
+					avatarDropdownMouseEnter = false;
+				}}
+				on:click={() => (avatarDropdownVisible = !avatarDropdownVisible)}
+				on:keydown={(event) => {
+					if (event.which === returnKey) {
+						avatarDropdownVisible = !avatarDropdownVisible;
+					}
+				}}
+			>
+				{avatarName}
+			</div>
 		{/if}
 	</div>
 </header>
@@ -418,6 +418,7 @@
 		margin-left: 1rem;
 		font-size: 1.2rem;
 		letter-spacing: -0.02rem;
+		min-width: max-content;
 	}
 
 	.header-title {
@@ -439,6 +440,7 @@
 		right: 1vw;
 		height: 2.4rem;
 		width: 2.4rem;
+		min-width: 2.4rem;
 		border-radius: 50%;
 		font-weight: 600;
 		font-size: 0.9rem;

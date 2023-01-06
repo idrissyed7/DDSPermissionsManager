@@ -21,7 +21,6 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import errorMessages from '$lib/errorMessages.json';
-	import renderAvatar from '../../stores/renderAvatar';
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
@@ -148,6 +147,45 @@
 		returnToTopicsList();
 	}
 
+	const reloadAllTopics = async (page = 0) => {
+		try {
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/topics?page=${page}&size=${topicsPerPage}&filter=${searchString}`
+				);
+			} else if ($groupContext) {
+				res = await httpAdapter.get(
+					`/topics?page=${page}&size=${topicsPerPage}&group=${$groupContext.id}`
+				);
+			} else {
+				res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
+			}
+			if (res.data) {
+				topicsTotalPages = res.data.totalPages;
+				topicsTotalSize = res.data.totalSize;
+			}
+			topics.set(res.data.content);
+			topicsCurrentPage = page;
+		} catch (err) {
+			userValidityCheck.set(true);
+
+			errorMessage('Error Loading Topics', err.message);
+		}
+	};
+
+	const initializeTopics = async () => {
+		promise = await reloadAllTopics();
+
+		if ($permissionsByGroup) {
+			isTopicAdmin = $permissionsByGroup?.some(
+				(groupPermission) => groupPermission.isTopicAdmin === true
+			);
+		}
+	};
+
+	initializeTopics();
+
 	onMount(async () => {
 		if ($urlparameters?.type === 'prepopulate') {
 			searchString = $urlparameters.data;
@@ -156,15 +194,6 @@
 		detailView.set('first run');
 
 		headerTitle.set('Topics');
-		promise = await reloadAllTopics();
-
-		setTimeout(() => renderAvatar.set(true), 40);
-
-		if ($permissionsByGroup) {
-			isTopicAdmin = $permissionsByGroup?.some(
-				(groupPermission) => groupPermission.isTopicAdmin === true
-			);
-		}
 
 		if ($urlparameters === 'create') {
 			if ($isAdmin || isTopicAdmin) {
@@ -175,10 +204,7 @@
 		}
 	});
 
-	onDestroy(() => {
-		renderAvatar.set(false);
-		urlparameters.set([]);
-	});
+	onDestroy(() => urlparameters.set([]));
 
 	const searchTopics = async (searchStr) => {
 		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
@@ -223,33 +249,6 @@
 	const returnToTopicsList = () => {
 		topicDetailVisible = false;
 		topicsListVisible = true;
-	};
-
-	const reloadAllTopics = async (page = 0) => {
-		try {
-			let res;
-			if (searchString && searchString.length >= searchStringLength) {
-				res = await httpAdapter.get(
-					`/topics?page=${page}&size=${topicsPerPage}&filter=${searchString}`
-				);
-			} else if ($groupContext) {
-				res = await httpAdapter.get(
-					`/topics?page=${page}&size=${topicsPerPage}&group=${$groupContext.id}`
-				);
-			} else {
-				res = await httpAdapter.get(`/topics?page=${page}&size=${topicsPerPage}`);
-			}
-			if (res.data) {
-				topicsTotalPages = res.data.totalPages;
-				topicsTotalSize = res.data.totalSize;
-			}
-			topics.set(res.data.content);
-			topicsCurrentPage = page;
-		} catch (err) {
-			userValidityCheck.set(true);
-
-			errorMessage('Error Loading Topics', err.message);
-		}
 	};
 
 	const deselectAllTopicsCheckboxes = () => {
@@ -412,7 +411,7 @@
 						alt="options"
 						class="dot"
 						class:button-disabled={(!$isAdmin && !isTopicAdmin) || topicsRowsSelected.length === 0}
-						style="margin-left: 0.5rem"
+						style="margin-left: 0.5rem; margin-right: 1rem"
 						on:click={() => {
 							if (topicsRowsSelected.length > 0) deleteTopicVisible = true;
 						}}
@@ -561,7 +560,7 @@
 						>{addTooltip}
 					</span>
 
-					{#if $topics && $topics.length > 0 && topicsListVisible && !topicDetailVisible}
+					{#if $topics?.length > 0 && topicsListVisible && !topicDetailVisible}
 						<table data-cy="topics-table" class="main" style="margin-top: 0.5rem">
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
@@ -640,7 +639,6 @@
 
 										<td style="padding-left: 0.5rem">{topic.groupName}</td>
 
-										<!-- {#if $isAdmin || $permissionsByGroup?.find((Topic) => Topic.groupId === topic.group && Topic.isTopicAdmin === true)} -->
 										<td style="cursor: pointer; width:1rem">
 											<img
 												data-cy="detail-application-icon"
@@ -680,9 +678,6 @@
 												}}
 											/>
 										</td>
-										<!-- {:else}
-											<td />
-										{/if} -->
 									</tr>
 								{/each}
 							</tbody>
@@ -720,87 +715,91 @@
 					{/if}
 				</div>
 
-				<div class="pagination">
-					<span>Rows per page</span>
-					<select
-						tabindex="-1"
-						on:change={(e) => {
-							topicsPerPage = e.target.value;
-							reloadAllTopics();
-						}}
-						name="RowsPerPage"
-					>
-						<option value="10">10</option>
-						<option value="25">25</option>
-						<option value="50">50</option>
-						<option value="75">75</option>
-						<option value="100">100&nbsp;</option>
-					</select>
-					<span style="margin: 0 2rem 0 2rem">
-						{#if topicsTotalSize > 0}
-							{1 + topicsCurrentPage * topicsPerPage}
-						{:else}
-							0
-						{/if}
-						- {Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
-						{topicsTotalSize}
-					</span>
-					<img
-						src={pagefirstSVG}
-						alt="first page"
-						class="pagination-image"
-						class:disabled-img={topicsCurrentPage === 0}
-						on:click={() => {
-							deselectAllTopicsCheckboxes();
-							if (topicsCurrentPage > 0) {
-								topicsCurrentPage = 0;
+				{#if topicsTotalSize !== undefined && topicsTotalSize != NaN}
+					<div class="pagination">
+						<span>Rows per page</span>
+						<select
+							tabindex="-1"
+							on:change={(e) => {
+								topicsPerPage = e.target.value;
 								reloadAllTopics();
-							}
-						}}
-					/>
-					<img
-						src={pagebackwardsSVG}
-						alt="previous page"
-						class="pagination-image"
-						class:disabled-img={topicsCurrentPage === 0}
-						on:click={() => {
-							deselectAllTopicsCheckboxes();
-							if (topicsCurrentPage > 0) {
-								topicsCurrentPage--;
-								reloadAllTopics(topicsCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pageforwardSVG}
-						alt="next page"
-						class="pagination-image"
-						class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
-							$topics?.length === undefined}
-						on:click={() => {
-							deselectAllTopicsCheckboxes();
-							if (topicsCurrentPage + 1 < topicsTotalPages) {
-								topicsCurrentPage++;
-								reloadAllTopics(topicsCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pagelastSVG}
-						alt="last page"
-						class="pagination-image"
-						class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
-							$topics?.length === undefined}
-						on:click={() => {
-							deselectAllTopicsCheckboxes();
-							if (topicsCurrentPage < topicsTotalPages) {
-								topicsCurrentPage = topicsTotalPages - 1;
-								reloadAllTopics(topicsCurrentPage);
-							}
-						}}
-					/>
-				</div>
-				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+							}}
+							name="RowsPerPage"
+						>
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50">50</option>
+							<option value="75">75</option>
+							<option value="100">100&nbsp;</option>
+						</select>
+
+						<span style="margin: 0 2rem 0 2rem">
+							{#if topicsTotalSize > 0}
+								{1 + topicsCurrentPage * topicsPerPage}
+							{:else}
+								0
+							{/if}
+							- {Math.min(topicsPerPage * (topicsCurrentPage + 1), topicsTotalSize)} of
+							{topicsTotalSize}
+						</span>
+
+						<img
+							src={pagefirstSVG}
+							alt="first page"
+							class="pagination-image"
+							class:disabled-img={topicsCurrentPage === 0}
+							on:click={() => {
+								deselectAllTopicsCheckboxes();
+								if (topicsCurrentPage > 0) {
+									topicsCurrentPage = 0;
+									reloadAllTopics();
+								}
+							}}
+						/>
+						<img
+							src={pagebackwardsSVG}
+							alt="previous page"
+							class="pagination-image"
+							class:disabled-img={topicsCurrentPage === 0}
+							on:click={() => {
+								deselectAllTopicsCheckboxes();
+								if (topicsCurrentPage > 0) {
+									topicsCurrentPage--;
+									reloadAllTopics(topicsCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pageforwardSVG}
+							alt="next page"
+							class="pagination-image"
+							class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+								$topics?.length === undefined}
+							on:click={() => {
+								deselectAllTopicsCheckboxes();
+								if (topicsCurrentPage + 1 < topicsTotalPages) {
+									topicsCurrentPage++;
+									reloadAllTopics(topicsCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pagelastSVG}
+							alt="last page"
+							class="pagination-image"
+							class:disabled-img={topicsCurrentPage + 1 === topicsTotalPages ||
+								$topics?.length === undefined}
+							on:click={() => {
+								deselectAllTopicsCheckboxes();
+								if (topicsCurrentPage < topicsTotalPages) {
+									topicsCurrentPage = topicsTotalPages - 1;
+									reloadAllTopics(topicsCurrentPage);
+								}
+							}}
+						/>
+					</div>
+					<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+				{/if}
 			{/if}
 		{/await}
 	{/if}
@@ -817,8 +816,8 @@
 	}
 
 	.content {
-		width: fit-content;
-		min-width: 32rem;
+		width: 100%;
+		min-width: fit-content;
 		margin-right: 1rem;
 	}
 

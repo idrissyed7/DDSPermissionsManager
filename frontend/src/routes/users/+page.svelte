@@ -18,7 +18,6 @@
 	import pagebackwardsSVG from '../../icons/pagebackwards.svg';
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
-	import renderAvatar from '../../stores/renderAvatar';
 	import userEmail from '../../stores/userEmail';
 	import errorMessages from '$lib/errorMessages.json';
 
@@ -101,19 +100,38 @@
 		}, waitTime);
 	}
 
+	const reloadAllSuperUsers = async (page = 0) => {
+		try {
+			let res;
+			if (searchString && searchString.length >= searchStringLength) {
+				res = await httpAdapter.get(
+					`/admins?page=${page}&size=${superUsersPerPage}&filter=${searchString}`
+				);
+			} else {
+				res = await httpAdapter.get(`/admins?page=${page}&size=${superUsersPerPage}`);
+			}
+			if (res.data) {
+				superUsersTotalPages = res.data.totalPages;
+				superUsersTotalSize = res.data.totalSize;
+			}
+			users.set(res.data.content);
+			superUsersCurrentPage = page;
+		} catch (err) {
+			userValidityCheck.set(true);
+
+			errorMessage('Error Loading Super Admins', err.message);
+		}
+	};
+
+	const initializeSuperUsers = async () => {
+		if ($isAdmin) promise = await reloadAllSuperUsers();
+	};
+
+	initializeSuperUsers();
+
 	onMount(async () => {
 		headerTitle.set('Users');
 		detailView.set();
-
-		if ($isAdmin) {
-			promise = await reloadAllSuperUsers();
-		}
-
-		setTimeout(() => renderAvatar.set(true), 40);
-	});
-
-	onDestroy(() => {
-		renderAvatar.set(false);
 	});
 
 	const errorMessage = (errMsg, errObj) => {
@@ -141,29 +159,6 @@
 		if (searchUserResults.data.totalSize !== undefined)
 			superUsersTotalSize = searchUserResults.data.totalSize;
 		superUsersCurrentPage = 0;
-	};
-
-	const reloadAllSuperUsers = async (page = 0) => {
-		try {
-			let res;
-			if (searchString && searchString.length >= searchStringLength) {
-				res = await httpAdapter.get(
-					`/admins?page=${page}&size=${superUsersPerPage}&filter=${searchString}`
-				);
-			} else {
-				res = await httpAdapter.get(`/admins?page=${page}&size=${superUsersPerPage}`);
-			}
-			if (res.data) {
-				superUsersTotalPages = res.data.totalPages;
-				superUsersTotalSize = res.data.totalSize;
-			}
-			users.set(res.data.content);
-			superUsersCurrentPage = page;
-		} catch (err) {
-			userValidityCheck.set(true);
-
-			errorMessage('Error Loading Super Admins', err.message);
-		}
 	};
 
 	const addSuperUser = async (userEmail) => {
@@ -359,7 +354,7 @@
 						}}
 					/>
 
-					{#if $users && $users.length > 0}
+					{#if $users?.length > 0}
 						<table data-cy="super-users-table" style="margin-top: 0.5rem">
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
@@ -437,88 +432,90 @@
 					{/if}
 				</div>
 
-				<div class="pagination">
-					<span>Rows per page</span>
-					<select
-						tabindex="-1"
-						on:change={(e) => {
-							superUsersPerPage = e.target.value;
-							reloadAllSuperUsers();
-						}}
-						name="RowsPerPage"
-					>
-						<option value="10">10</option>
-						<option value="25">25</option>
-						<option value="50">50</option>
-						<option value="75">75</option>
-						<option value="100">100&nbsp;</option>
-					</select>
-					<span style="margin: 0 2rem 0 2rem">
-						{#if superUsersTotalSize > 0}
-							{1 + superUsersCurrentPage * superUsersPerPage}
-						{:else}
-							0
-						{/if}
-						- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), superUsersTotalSize)} of
-						{superUsersTotalSize}
-					</span>
-					<img
-						src={pagefirstSVG}
-						alt="first page"
-						class="pagination-image"
-						class:disabled-img={superUsersCurrentPage === 0}
-						on:click={() => {
-							deselectAllSuperUsersCheckboxes();
-							if (superUsersCurrentPage > 0) {
-								superUsersCurrentPage = 0;
+				{#if superUsersTotalSize !== undefined && superUsersTotalSize != NaN}
+					<div class="pagination">
+						<span>Rows per page</span>
+						<select
+							tabindex="-1"
+							on:change={(e) => {
+								superUsersPerPage = e.target.value;
 								reloadAllSuperUsers();
-							}
-						}}
-					/>
-					<img
-						src={pagebackwardsSVG}
-						alt="previous page"
-						class="pagination-image"
-						class:disabled-img={superUsersCurrentPage === 0}
-						on:click={() => {
-							deselectAllSuperUsersCheckboxes();
-							if (superUsersCurrentPage > 0) {
-								superUsersCurrentPage--;
-								reloadAllSuperUsers(superUsersCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pageforwardSVG}
-						alt="next page"
-						class="pagination-image"
-						class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
-							$users?.length === undefined}
-						on:click={() => {
-							deselectAllSuperUsersCheckboxes();
-							if (superUsersCurrentPage + 1 < superUsersTotalPages) {
-								superUsersCurrentPage++;
-								reloadAllSuperUsers(superUsersCurrentPage);
-							}
-						}}
-					/>
-					<img
-						src={pagelastSVG}
-						alt="last page"
-						class="pagination-image"
-						class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
-							$users?.length === undefined}
-						on:click={() => {
-							deselectAllSuperUsersCheckboxes();
-							if (superUsersCurrentPage < superUsersTotalPages) {
-								superUsersCurrentPage = superUsersTotalPages - 1;
-								reloadAllSuperUsers(superUsersCurrentPage);
-							}
-						}}
-					/>
-				</div>
+							}}
+							name="RowsPerPage"
+						>
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50">50</option>
+							<option value="75">75</option>
+							<option value="100">100&nbsp;</option>
+						</select>
+						<span style="margin: 0 2rem 0 2rem">
+							{#if superUsersTotalSize > 0}
+								{1 + superUsersCurrentPage * superUsersPerPage}
+							{:else}
+								0
+							{/if}
+							- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), superUsersTotalSize)} of
+							{superUsersTotalSize}
+						</span>
+						<img
+							src={pagefirstSVG}
+							alt="first page"
+							class="pagination-image"
+							class:disabled-img={superUsersCurrentPage === 0}
+							on:click={() => {
+								deselectAllSuperUsersCheckboxes();
+								if (superUsersCurrentPage > 0) {
+									superUsersCurrentPage = 0;
+									reloadAllSuperUsers();
+								}
+							}}
+						/>
+						<img
+							src={pagebackwardsSVG}
+							alt="previous page"
+							class="pagination-image"
+							class:disabled-img={superUsersCurrentPage === 0}
+							on:click={() => {
+								deselectAllSuperUsersCheckboxes();
+								if (superUsersCurrentPage > 0) {
+									superUsersCurrentPage--;
+									reloadAllSuperUsers(superUsersCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pageforwardSVG}
+							alt="next page"
+							class="pagination-image"
+							class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+								$users?.length === undefined}
+							on:click={() => {
+								deselectAllSuperUsersCheckboxes();
+								if (superUsersCurrentPage + 1 < superUsersTotalPages) {
+									superUsersCurrentPage++;
+									reloadAllSuperUsers(superUsersCurrentPage);
+								}
+							}}
+						/>
+						<img
+							src={pagelastSVG}
+							alt="last page"
+							class="pagination-image"
+							class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+								$users?.length === undefined}
+							on:click={() => {
+								deselectAllSuperUsersCheckboxes();
+								if (superUsersCurrentPage < superUsersTotalPages) {
+									superUsersCurrentPage = superUsersTotalPages - 1;
+									reloadAllSuperUsers(superUsersCurrentPage);
+								}
+							}}
+						/>
+					</div>
+				{/if}
+				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 			{/if}
-			<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 		{/await}
 	{/if}
 {/key}
