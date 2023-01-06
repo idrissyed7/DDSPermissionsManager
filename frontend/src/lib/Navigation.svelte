@@ -5,29 +5,39 @@
 	import topicsSVG from '../icons/topics.svg';
 	import appsSVG from '../icons/apps.svg';
 	import { page } from '$app/stores';
+	import preload from '../stores/preload';
 </script>
 
 <nav>
 	<ul>
-		<li class:active={$page.url.pathname === '/groups/'}>
+		<li
+			class:active={$page.url.pathname === '/groups/'}
+			on:mouseenter={() => preload.set('groups')}
+		>
 			<a sveltekit:prefetch href="/groups">
 				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
 			</a>
 		</li>
 
-		<li class:active={$page.url.pathname === '/users/'}>
+		<li class:active={$page.url.pathname === '/users/'} on:mouseenter={() => preload.set('users')}>
 			<a sveltekit:prefetch href="/users">
 				<img src={usersSVG} alt="users" class="menu-icon" />Users
 			</a>
 		</li>
 
-		<li class:active={$page.url.pathname === '/topics/'}>
+		<li
+			class:active={$page.url.pathname === '/topics/'}
+			on:mouseenter={() => preload.set('topics')}
+		>
 			<a sveltekit:prefetch href="/topics">
 				<img src={topicsSVG} alt="topics" class="menu-icon" />Topics
 			</a>
 		</li>
 
-		<li class:active={$page.url.pathname === '/applications/'}>
+		<li
+			class:active={$page.url.pathname === '/applications/'}
+			on:mouseenter={() => preload.set('applications')}
+		>
 			<a sveltekit:prefetch href="/applications">
 				<img src={appsSVG} alt="applications" class="menu-icon" />Applications
 			</a>

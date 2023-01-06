@@ -30,6 +30,7 @@
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import editAppName from '../../stores/editAppName';
 	import createItem from '../../stores/createItem';
+	import preload from '../../stores/preload';
 
 	export let data, errors;
 
@@ -225,7 +226,7 @@
 		promise = await reloadAllApps();
 	};
 
-	initializeApplications();
+	$: if ($preload === 'applications') initializeApplications();
 
 	onMount(async () => {
 		if ($urlparameters?.type === 'prepopulate') {

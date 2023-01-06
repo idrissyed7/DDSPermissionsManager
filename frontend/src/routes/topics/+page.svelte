@@ -25,6 +25,7 @@
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import createItem from '../../stores/createItem';
+	import preload from '../../stores/preload';
 
 	export let data;
 	export let errors;
@@ -184,7 +185,7 @@
 		}
 	};
 
-	initializeTopics();
+	$: if ($preload === 'topics') initializeTopics();
 
 	onMount(async () => {
 		if ($urlparameters?.type === 'prepopulate') {

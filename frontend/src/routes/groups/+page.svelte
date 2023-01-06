@@ -27,6 +27,7 @@
 	import tooltips from '$lib/tooltips.json';
 	import contextMessage from '../../stores/contextMessage';
 	import userValidityCheck from '../../stores/userValidityCheck';
+	import preload from '../../stores/preload';
 
 	export let data;
 	export let errors;
@@ -166,7 +167,7 @@
 		await getPermissionsForAllGroups();
 	};
 
-	initializeGroups();
+	$: if ($preload === 'groups') initializeGroups();
 
 	onMount(async () => {
 		headerTitle.set('Groups');

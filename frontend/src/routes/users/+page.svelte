@@ -20,6 +20,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
 	import errorMessages from '$lib/errorMessages.json';
+	import preload from '../../stores/preload';
 
 	export let data, errors;
 
@@ -127,7 +128,7 @@
 		if ($isAdmin) promise = await reloadAllSuperUsers();
 	};
 
-	initializeSuperUsers();
+	$: if ($preload === 'users') initializeSuperUsers();
 
 	onMount(async () => {
 		headerTitle.set('Users');
