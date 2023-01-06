@@ -1120,7 +1120,13 @@
 						{/if}
 						<div class="curl-commands">
 							<!-- svelte-ignore missing-declaration -->
-							<div class="section-title">Export the password from "Generate Password"</div>
+                                                        <div>
+                                                        The following commands show how to authenticate and download DDS Security Documents from the DDS Permissions Manager API using curl.
+                                                        The APP_PASSWORD is the password created by clicking "Generate Password" above.
+                                                        The NONCE is an alphanumeric string used to differentiate instances of the same application.
+                                                        </div>
+
+							<div class="section-title">Export the password</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
 									>{curlCommands.appPassword}</textarea
@@ -1142,7 +1148,7 @@
 									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
 								{/if}
 							</section>
-							<div class="section-title">Export an alphanumeric nonce</div>
+							<div class="section-title">Export the nonce</div>
 							<section style="display:inline-flex;">
 								<textarea rows="1" style="width:50rem; resize: none"
 									>{curlCommands.appNonce}</textarea
