@@ -2,16 +2,36 @@
 	import { isAuthenticated } from '../stores/authentication';
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { httpAdapter } from '../appconfig';
 	import wavesSVG from '../icons/waves.svg';
 	import googleSVG from '../icons/google.svg';
 	import loginCompleted from '../stores/loginCompleted';
+	import groups from '../stores/groups';
+	import groupsTotalPages from '../stores/groupsTotalPages';
+	import groupsTotalSize from '../stores/groupsTotalSize';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
+	const itemsPerPage = 10;
 
 	export let data, errors;
 
-	onMount(() => {
-		if ($isAuthenticated) goto('/groups', true);
+	const preloadGroups = async (page = 0) => {
+		const res = await httpAdapter.get(`/groups?page=${page}&size=${itemsPerPage}`);
+
+		if (res.data) {
+			groupsTotalPages.set(res.data.totalPages);
+			groupsTotalSize.set(res.data.totalSize);
+		}
+
+		groups.set(res.data.content);
+		groupsTotalPages.set(res.data.totalPages);
+	};
+
+	onMount(async () => {
+		if ($isAuthenticated) {
+			await preloadGroups();
+			goto('/groups', true);
+		}
 	});
 </script>
 

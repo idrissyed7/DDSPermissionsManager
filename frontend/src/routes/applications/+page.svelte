@@ -2,7 +2,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
-	import urlparameters from '../../stores/urlparameters';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import applicationPermission from '../../stores/applicationPermission';
 	import refreshPage from '../../stores/refreshPage';
@@ -30,7 +29,8 @@
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import editAppName from '../../stores/editAppName';
 	import createItem from '../../stores/createItem';
-	import preload from '../../stores/preload';
+	import applicationsTotalPages from '../../stores/applicationsTotalPages';
+	import applicationsTotalSize from '../../stores/applicationsTotalSize';
 
 	export let data, errors;
 
@@ -131,10 +131,6 @@
 	let applicationsAllRowsSelectedTrue = false;
 	let applicationsPerPage = 10;
 
-	//Pagination
-	let applicationsTotalPages, applicationsTotalSize;
-	let applicationsCurrentPage = 0;
-
 	// Applications SearchBox
 	let searchString;
 	let searchAppResults;
@@ -157,6 +153,9 @@
 	let appName;
 	let selectedGroup = '';
 
+	// Pagination
+	let applicationsCurrentPage = 0;
+
 	// Selection
 	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
 
@@ -174,7 +173,7 @@
 	}
 
 	// Search Feature
-	$: if (searchString?.trim().length >= searchStringLength && $urlparameters === null) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchApp(searchString.trim());
@@ -210,8 +209,8 @@
 			}
 
 			if (res.data) {
-				applicationsTotalPages = res.data.totalPages;
-				applicationsTotalSize = res.data.totalSize;
+				applicationsTotalPages.set(res.data.totalPages);
+				applicationsTotalSize.set(res.data.totalSize);
 			}
 			applications.set(res.data.content);
 			applicationsCurrentPage = page;
@@ -222,37 +221,19 @@
 		}
 	};
 
-	const initializeApplications = async () => {
-		promise = await reloadAllApps();
-	};
-
-	$: if ($preload === 'applications') initializeApplications();
-
 	onMount(async () => {
-		if ($urlparameters?.type === 'prepopulate') {
-			searchString = $urlparameters.data;
-		}
-
 		detailView.set('first run');
 
 		headerTitle.set('Applications');
+
+		if (document.querySelector('.content') == null) promise = await reloadAllApps();
 
 		if ($permissionsByGroup) {
 			isApplicationAdmin = $permissionsByGroup.some(
 				(groupPermission) => groupPermission.isApplicationAdmin === true
 			);
 		}
-
-		if ($urlparameters === 'create') {
-			if ($isAdmin || isApplicationAdmin) {
-				addApplicationVisible = true;
-			} else {
-				errorMessage('Only Application Admins can add new Applications.', 'Contact your Admin.');
-			}
-		}
 	});
-
-	onDestroy(() => urlparameters.set([]));
 
 	const errorMessage = (errMsg, errObj) => {
 		errorMsg = errMsg;
@@ -306,9 +287,9 @@
 		} else {
 			applications.set([]);
 		}
-		applicationsTotalPages = searchAppResults.data.totalPages;
+		applicationsTotalPages.set(searchAppResults.data.totalPages);
 		if (searchAppResults.data.totalSize !== undefined)
-			applicationsTotalSize = searchAppResults.data.totalSize;
+			applicationsTotalSize.set(searchAppResults.data.totalSize);
 		applicationsCurrentPage = 0;
 	};
 
@@ -603,132 +584,117 @@
 				/>
 			{/if}
 
-			<div class="content">
-				{#if !applicationDetailVisible}
-					<h1 data-cy="applications">Applications</h1>
+			{#if $applicationsTotalSize !== undefined && $applicationsTotalSize != NaN}
+				<div class="content">
+					{#if !applicationDetailVisible}
+						<h1 data-cy="applications">Applications</h1>
 
-					<form class="searchbox">
-						<input
-							data-cy="search-applications-table"
-							class="searchbox"
-							type="search"
-							placeholder="Search"
-							bind:value={searchString}
-							on:blur={() => {
-								searchString = searchString?.trim();
+						<form class="searchbox">
+							<input
+								data-cy="search-applications-table"
+								class="searchbox"
+								type="search"
+								placeholder="Search"
+								bind:value={searchString}
+								on:blur={() => {
+									searchString = searchString?.trim();
+								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										document.activeElement.blur();
+										searchString = searchString?.trim();
+									}
+								}}
+							/>
+						</form>
+
+						{#if searchString?.length > 0}
+							<button
+								class="button-blue"
+								style="cursor: pointer; width: 4rem; height: 2.1rem"
+								on:click={() => (searchString = '')}>Clear</button
+							>
+						{/if}
+
+						<img
+							src={deleteSVG}
+							alt="options"
+							class="dot"
+							class:button-disabled={(!$isAdmin &&
+								!$permissionsByGroup?.find(
+									(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+								)) ||
+								applicationsRowsSelected.length === 0}
+							style="margin-left: 0.5rem; margin-right: 1rem"
+							on:click={() => {
+								if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
 							}}
 							on:keydown={(event) => {
 								if (event.which === returnKey) {
-									document.activeElement.blur();
-									searchString = searchString?.trim();
+									if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
 								}
 							}}
-						/>
-					</form>
-
-					{#if searchString?.length > 0}
-						<button
-							class="button-blue"
-							style="cursor: pointer; width: 4rem; height: 2.1rem"
-							on:click={() => (searchString = '')}>Clear</button
-						>
-					{/if}
-
-					<img
-						src={deleteSVG}
-						alt="options"
-						class="dot"
-						class:button-disabled={(!$isAdmin &&
-							!$permissionsByGroup?.find(
-								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-							)) ||
-							applicationsRowsSelected.length === 0}
-						style="margin-left: 0.5rem; margin-right: 1rem"
-						on:click={() => {
-							if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								if (applicationsRowsSelected.length > 0) deleteApplicationVisible = true;
-							}
-						}}
-						on:mouseenter={() => {
-							deleteMouseEnter = true;
-							if (
-								$isAdmin ||
-								$permissionsByGroup?.find(
-									(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-								)
-							) {
-								if (applicationsRowsSelected.length === 0) {
-									deleteToolip = 'Select applications to delete';
+							on:mouseenter={() => {
+								deleteMouseEnter = true;
+								if (
+									$isAdmin ||
+									$permissionsByGroup?.find(
+										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+									)
+								) {
+									if (applicationsRowsSelected.length === 0) {
+										deleteToolip = 'Select applications to delete';
+										const tooltip = document.querySelector('#delete-applications');
+										setTimeout(() => {
+											if (deleteMouseEnter) {
+												tooltip.classList.remove('tooltip-hidden');
+												tooltip.classList.add('tooltip');
+											}
+										}, 1000);
+									}
+								} else {
+									deleteToolip = 'Application Admin permissions required';
 									const tooltip = document.querySelector('#delete-applications');
 									setTimeout(() => {
 										if (deleteMouseEnter) {
 											tooltip.classList.remove('tooltip-hidden');
 											tooltip.classList.add('tooltip');
+											tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
 										}
 									}, 1000);
 								}
-							} else {
-								deleteToolip = 'Application Admin permissions required';
-								const tooltip = document.querySelector('#delete-applications');
-								setTimeout(() => {
-									if (deleteMouseEnter) {
-										tooltip.classList.remove('tooltip-hidden');
-										tooltip.classList.add('tooltip');
-										tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
-									}
-								}, 1000);
-							}
-						}}
-						on:mouseleave={() => {
-							deleteMouseEnter = false;
-							if (applicationsRowsSelected.length === 0) {
-								const tooltip = document.querySelector('#delete-applications');
-								setTimeout(() => {
-									if (!deleteMouseEnter) {
-										tooltip.classList.add('tooltip-hidden');
-										tooltip.classList.remove('tooltip');
-									}
-								}, 1000);
-							}
-						}}
-					/>
-					<span
-						id="delete-applications"
-						class="tooltip-hidden"
-						style="margin-left: 11.3rem; margin-top: -1.8rem"
-						>{deleteToolip}
-					</span>
+							}}
+							on:mouseleave={() => {
+								deleteMouseEnter = false;
+								if (applicationsRowsSelected.length === 0) {
+									const tooltip = document.querySelector('#delete-applications');
+									setTimeout(() => {
+										if (!deleteMouseEnter) {
+											tooltip.classList.add('tooltip-hidden');
+											tooltip.classList.remove('tooltip');
+										}
+									}, 1000);
+								}
+							}}
+						/>
+						<span
+							id="delete-applications"
+							class="tooltip-hidden"
+							style="margin-left: 11.3rem; margin-top: -1.8rem"
+							>{deleteToolip}
+						</span>
 
-					<img
-						data-cy="add-application"
-						src={addSVG}
-						alt="options"
-						class="dot"
-						class:button-disabled={(!$isAdmin &&
-							!$permissionsByGroup?.find(
-								(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-							)) ||
-							!$groupContext}
-						on:click={() => {
-							if (
-								$groupContext &&
-								($isAdmin ||
-									$permissionsByGroup?.find(
-										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-									))
-							) {
-								addApplicationVisible = true;
-							} else if (
-								!$groupContext &&
-								($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
-							)
-								showSelectGroupContext.set(true);
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
+						<img
+							data-cy="add-application"
+							src={addSVG}
+							alt="options"
+							class="dot"
+							class:button-disabled={(!$isAdmin &&
+								!$permissionsByGroup?.find(
+									(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+								)) ||
+								!$groupContext}
+							on:click={() => {
 								if (
 									$groupContext &&
 									($isAdmin ||
@@ -742,156 +708,147 @@
 									($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 								)
 									showSelectGroupContext.set(true);
-							}
-						}}
-						on:mouseenter={() => {
-							addMouseEnter = true;
-							if (
-								(!$isAdmin &&
-									$groupContext &&
-									!$permissionsByGroup?.find(
-										(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-									)) ||
-								(!$isAdmin &&
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									if (
+										$groupContext &&
+										($isAdmin ||
+											$permissionsByGroup?.find(
+												(gm) =>
+													gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+											))
+									) {
+										addApplicationVisible = true;
+									} else if (
+										!$groupContext &&
+										($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+									)
+										showSelectGroupContext.set(true);
+								}
+							}}
+							on:mouseenter={() => {
+								addMouseEnter = true;
+								if (
+									(!$isAdmin &&
+										$groupContext &&
+										!$permissionsByGroup?.find(
+											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+										)) ||
+									(!$isAdmin &&
+										!$groupContext &&
+										!$permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true))
+								) {
+									addTooltip = 'Application Admin permission required';
+									const tooltip = document.querySelector('#add-application');
+									setTimeout(() => {
+										if (addMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, waitTime);
+								} else if (
 									!$groupContext &&
-									!$permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true))
-							) {
-								addTooltip = 'Application Admin permission required';
+									($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
+								) {
+									addTooltip = 'Select a group to add an Application';
+									const tooltip = document.querySelector('#add-application');
+									setTimeout(() => {
+										if (addMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}
+							}}
+							on:mouseleave={() => {
+								addMouseEnter = false;
 								const tooltip = document.querySelector('#add-application');
 								setTimeout(() => {
-									if (addMouseEnter) {
-										tooltip.classList.remove('tooltip-hidden');
-										tooltip.classList.add('tooltip');
+									if (!addMouseEnter) {
+										tooltip.classList.add('tooltip-hidden');
+										tooltip.classList.remove('tooltip');
 									}
 								}, waitTime);
-							} else if (
-								!$groupContext &&
-								($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
-							) {
-								addTooltip = 'Select a group to add an Application';
-								const tooltip = document.querySelector('#add-application');
-								setTimeout(() => {
-									if (addMouseEnter) {
-										tooltip.classList.remove('tooltip-hidden');
-										tooltip.classList.add('tooltip');
-									}
-								}, 1000);
-							}
-						}}
-						on:mouseleave={() => {
-							addMouseEnter = false;
-							const tooltip = document.querySelector('#add-application');
-							setTimeout(() => {
-								if (!addMouseEnter) {
-									tooltip.classList.add('tooltip-hidden');
-									tooltip.classList.remove('tooltip');
-								}
-							}, waitTime);
-						}}
-					/>
-					<span
-						id="add-application"
-						class="tooltip-hidden"
-						style="margin-left: 8rem; margin-top: -1.8rem"
-						>{addTooltip}
-					</span>
-				{/if}
+							}}
+						/>
+						<span
+							id="add-application"
+							class="tooltip-hidden"
+							style="margin-left: 8rem; margin-top: -1.8rem"
+							>{addTooltip}
+						</span>
+					{/if}
 
-				{#if $applications?.length > 0 && applicationListVisible && !applicationDetailVisible}
-					<table
-						data-cy="applications-table"
-						class="main-table"
-						style="margin-top: 0.5rem"
-						class:application-table-admin={isApplicationAdmin || $isAdmin}
-					>
-						<thead>
-							<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-								{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
-									<td>
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="apps-checkbox"
-											style="margin-right: 0.5rem"
-											bind:indeterminate={applicationsRowsSelectedTrue}
-											on:click={(e) => {
-												if (e.target.checked) {
-													applicationsRowsSelected = $applications;
-													applicationsRowsSelectedTrue = false;
-													applicationsAllRowsSelectedTrue = true;
-												} else {
-													applicationsAllRowsSelectedTrue = false;
-													applicationsRowsSelectedTrue = false;
-													applicationsRowsSelected = [];
-												}
-											}}
-											checked={applicationsAllRowsSelectedTrue}
-										/>
-									</td>
-								{/if}
-								<td style="line-height: 2.2rem; min-width: 7rem">Application</td>
-								<td>Group</td>
-							</tr>
-						</thead>
-
-						{#if $applications.length > 0}
-							<tbody>
-								{#each $applications as app, i}
-									<tr>
-										{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
-											<td style="width: 2rem">
-												<input
-													tabindex="-1"
-													type="checkbox"
-													class="apps-checkbox"
-													checked={applicationsAllRowsSelectedTrue}
-													on:change={(e) => {
-														if (e.target.checked === true) {
-															applicationsRowsSelected.push(app);
-															// reactive statement
-															applicationsRowsSelected = applicationsRowsSelected;
-															applicationsRowsSelectedTrue = true;
-														} else {
-															applicationsRowsSelected = applicationsRowsSelected.filter(
-																(selection) => selection !== app
-															);
-															if (applicationsRowsSelected.length === 0) {
-																applicationsRowsSelectedTrue = false;
-															}
-														}
-													}}
-												/>
-											</td>
-										{/if}
-
-										<td
-											style="cursor: pointer; line-height: 2.2rem; width: max-content"
-											on:click={() => {
-												applicationDetailId = app.id;
-												ApplicationDetailGroupId = app.group;
-
-												loadApplicationDetail(app.id, app.group);
-												headerTitle.set(app.name);
-												detailView.set(true);
-											}}
-											on:keydown={(event) => {
-												if (event.which === returnKey) {
-													loadApplicationDetail(app.id, app.group);
-												}
-											}}
-											>{app.name}
+					{#if $applications?.length > 0 && applicationListVisible && !applicationDetailVisible}
+						<table
+							data-cy="applications-table"
+							class="main-table"
+							style="margin-top: 0.5rem"
+							class:application-table-admin={isApplicationAdmin || $isAdmin}
+						>
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+									{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
+										<td>
+											<input
+												tabindex="-1"
+												type="checkbox"
+												class="apps-checkbox"
+												style="margin-right: 0.5rem"
+												bind:indeterminate={applicationsRowsSelectedTrue}
+												on:click={(e) => {
+													if (e.target.checked) {
+														applicationsRowsSelected = $applications;
+														applicationsRowsSelectedTrue = false;
+														applicationsAllRowsSelectedTrue = true;
+													} else {
+														applicationsAllRowsSelectedTrue = false;
+														applicationsRowsSelectedTrue = false;
+														applicationsRowsSelected = [];
+													}
+												}}
+												checked={applicationsAllRowsSelectedTrue}
+											/>
 										</td>
+									{/if}
+									<td style="line-height: 2.2rem; min-width: 7rem">Application</td>
+									<td>Group</td>
+								</tr>
+							</thead>
 
-										<td style="padding-left: 0.5rem">{app.groupName}</td>
+							{#if $applications.length > 0}
+								<tbody>
+									{#each $applications as app, i}
+										<tr>
+											{#if ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin) && !applicationDetailVisible}
+												<td style="width: 2rem">
+													<input
+														tabindex="-1"
+														type="checkbox"
+														class="apps-checkbox"
+														checked={applicationsAllRowsSelectedTrue}
+														on:change={(e) => {
+															if (e.target.checked === true) {
+																applicationsRowsSelected.push(app);
+																// reactive statement
+																applicationsRowsSelected = applicationsRowsSelected;
+																applicationsRowsSelectedTrue = true;
+															} else {
+																applicationsRowsSelected = applicationsRowsSelected.filter(
+																	(selection) => selection !== app
+																);
+																if (applicationsRowsSelected.length === 0) {
+																	applicationsRowsSelectedTrue = false;
+																}
+															}
+														}}
+													/>
+												</td>
+											{/if}
 
-										<td style="cursor: pointer; width:1rem">
-											<img
-												data-cy="detail-application-icon"
-												src={detailSVG}
-												height="18rem"
-												width="18rem"
-												style="margin-left: 2rem; vertical-align: -0.1rem"
-												alt="edit user"
+											<td
+												style="cursor: pointer; line-height: 2.2rem; width: max-content"
 												on:click={() => {
 													applicationDetailId = app.id;
 													ApplicationDetailGroupId = app.group;
@@ -905,399 +862,429 @@
 														loadApplicationDetail(app.id, app.group);
 													}
 												}}
-											/>
-										</td>
+												>{app.name}
+											</td>
 
-										<td
-											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
-										>
-											<img
-												data-cy="delete-application-icon"
-												src={deleteSVG}
-												alt="delete application"
-												width="27rem"
-												style="cursor: pointer"
-												on:click={() => {
-													selectedAppId = app.id;
-													selectedAppName = app.name;
-													deleteApplicationVisible = true;
-												}}
-												on:click={() => {
-													if (!applicationsRowsSelected.some((application) => application === app))
-														applicationsRowsSelected.push(app);
-													deleteApplicationVisible = true;
-												}}
-											/>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						{/if}
-					</table>
-				{:else if !applicationDetailVisible && applicationListVisible}
-					<p>
-						No Applications Found.
-						<br />
-						{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
-							<span
-								class="link"
-								on:click={() => {
-									if (
-										$groupContext &&
-										($permissionsByGroup?.find(
-											(gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
-										) ||
-											$isAdmin)
-									)
-										addApplicationVisible = true;
-									else if (
-										!$groupContext &&
-										($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
-									)
-										showSelectGroupContext.set(true);
-								}}
-							>
-								Click here
-							</span>
-							to create a new Application.
-						{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)}
-							Select a group to get started.
-						{/if}
-					</p>
-				{/if}
+											<td style="padding-left: 0.5rem">{app.groupName}</td>
 
-				{#await promiseDetail then _}
-					{#if $applications && applicationDetailVisible && !applicationListVisible}
-						<table style="width: 35rem; margin-top: 2rem">
-							<thead>
-								<tr style="border-width: 0px">
-									<td>Group</td>
-									<td>Topic</td>
-									<td>Access</td>
-									{#if isApplicationAdmin || $isAdmin}
-										<td />
-									{/if}
-								</tr>
-							</thead>
-							{#if $applicationPermission}
-								{#each $applicationPermission as appPermission}
-									<tbody>
-										<tr style="line-height: 2rem">
-											<td>
-												{appPermission.topicGroup}
+											<td style="cursor: pointer; width:1rem">
+												<img
+													data-cy="detail-application-icon"
+													src={detailSVG}
+													height="18rem"
+													width="18rem"
+													style="margin-left: 2rem; vertical-align: -0.1rem"
+													alt="edit user"
+													on:click={() => {
+														applicationDetailId = app.id;
+														ApplicationDetailGroupId = app.group;
+
+														loadApplicationDetail(app.id, app.group);
+														headerTitle.set(app.name);
+														detailView.set(true);
+													}}
+													on:keydown={(event) => {
+														if (event.which === returnKey) {
+															loadApplicationDetail(app.id, app.group);
+														}
+													}}
+												/>
 											</td>
-											<td>
-												{appPermission.topicName}
+
+											<td
+												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
+											>
+												<img
+													data-cy="delete-application-icon"
+													src={deleteSVG}
+													alt="delete application"
+													width="27rem"
+													style="cursor: pointer"
+													on:click={() => {
+														selectedAppId = app.id;
+														selectedAppName = app.name;
+														deleteApplicationVisible = true;
+													}}
+													on:click={() => {
+														if (
+															!applicationsRowsSelected.some((application) => application === app)
+														)
+															applicationsRowsSelected.push(app);
+														deleteApplicationVisible = true;
+													}}
+												/>
 											</td>
-											<td>
-												{appPermission.accessType === 'READ_WRITE'
-													? 'READ & WRITE'
-													: appPermission.accessType}
-											</td>
-											{#if isApplicationAdmin || $isAdmin}
-												<td>
-													<img
-														src={deleteSVG}
-														alt="delete topic"
-														height="23px"
-														width="23px"
-														style="vertical-align: -0.4rem; float: right; cursor: pointer"
-														on:click={() => {
-															deleteTopicApplicationAssociation(appPermission.id);
-														}}
-													/>
-												</td>
-											{/if}
 										</tr>
-									</tbody>
-								{/each}
-							{:else}
-								<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated.</p>
+									{/each}
+								</tbody>
 							{/if}
 						</table>
-						<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
-							{#if $applicationPermission}
-								{$applicationPermission.length} of {$applicationPermission.length}
-							{:else}
-								0 of 0
+					{:else if !applicationDetailVisible && applicationListVisible}
+						<p>
+							No Applications Found.
+							<br />
+							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
+								<span
+									class="link"
+									on:click={() => {
+										if (
+											$groupContext &&
+											($permissionsByGroup?.find(
+												(gm) =>
+													gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true
+											) ||
+												$isAdmin)
+										)
+											addApplicationVisible = true;
+										else if (
+											!$groupContext &&
+											($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) ||
+												$isAdmin)
+										)
+											showSelectGroupContext.set(true);
+									}}
+								>
+									Click here
+								</span>
+								to create a new Application.
+							{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)}
+								Select a group to get started.
 							{/if}
-						</div>
+						</p>
+					{/if}
 
-						<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
-							<button
-								data-cy="generate-bind-token-button"
-								style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
-								class="button-blue"
-								class:button-disabled={!isApplicationAdmin && !$isAdmin}
-								disabled={!isApplicationAdmin && !$isAdmin}
-								on:click={() => generateBindToken(selectedAppId)}
-							>
-								<img
-									src={lockSVG}
-									alt="generate bind token"
-									height="20rem"
-									style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-								/>
-								<span style="vertical-align: middle">Generate Bind Token</span>
-							</button>
+					{#await promiseDetail then _}
+						{#if $applications && applicationDetailVisible && !applicationListVisible}
+							<table style="width: 35rem; margin-top: 2rem">
+								<thead>
+									<tr style="border-width: 0px">
+										<td>Group</td>
+										<td>Topic</td>
+										<td>Access</td>
+										{#if isApplicationAdmin || $isAdmin}
+											<td />
+										{/if}
+									</tr>
+								</thead>
+								{#if $applicationPermission}
+									{#each $applicationPermission as appPermission}
+										<tbody>
+											<tr style="line-height: 2rem">
+												<td>
+													{appPermission.topicGroup}
+												</td>
+												<td>
+													{appPermission.topicName}
+												</td>
+												<td>
+													{appPermission.accessType === 'READ_WRITE'
+														? 'READ & WRITE'
+														: appPermission.accessType}
+												</td>
+												{#if isApplicationAdmin || $isAdmin}
+													<td>
+														<img
+															src={deleteSVG}
+															alt="delete topic"
+															height="23px"
+															width="23px"
+															style="vertical-align: -0.4rem; float: right; cursor: pointer"
+															on:click={() => {
+																deleteTopicApplicationAssociation(appPermission.id);
+															}}
+														/>
+													</td>
+												{/if}
+											</tr>
+										</tbody>
+									{/each}
+								{:else}
+									<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated.</p>
+								{/if}
+							</table>
+							<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
+								{#if $applicationPermission}
+									{$applicationPermission.length} of {$applicationPermission.length}
+								{:else}
+									0 of 0
+								{/if}
+							</div>
 
-							<button
-								data-cy="generate-password-button"
-								style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
-								class="button-blue"
-								class:button-disabled={!isApplicationAdmin && !$isAdmin}
-								disabled={!isApplicationAdmin && !$isAdmin}
-								on:click={() => generatePassword(selectedAppId)}
-							>
-								<img
-									src={lockSVG}
-									alt="generate password"
-									height="20rem"
-									style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-								/>
-								<span style="vertical-align: middle">Generate Password</span>
-							</button>
-						</div>
-						<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
-							Username: <span style="font-weight: 300">{selectedAppId}</span>
-						</div>
-						<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
-							Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
-						</div>
+							<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
+								<button
+									data-cy="generate-bind-token-button"
+									style="width: 13.5rem; height: 3rem; padding: 0 1rem; margin: 4rem 1rem;"
+									class="button-blue"
+									class:button-disabled={!isApplicationAdmin && !$isAdmin}
+									disabled={!isApplicationAdmin && !$isAdmin}
+									on:click={() => generateBindToken(selectedAppId)}
+								>
+									<img
+										src={lockSVG}
+										alt="generate bind token"
+										height="20rem"
+										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+									/>
+									<span style="vertical-align: middle">Generate Bind Token</span>
+								</button>
 
-						{#if generateCredentialsVisible}
-							<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
-							<div
-								style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
-								on:click={() => {
-									copyPassword(selectedAppId);
-									showCopyPasswordNotification();
-								}}
-							>
-								<span data-cy="generated-password" style="vertical-align: middle">{password}</span>
-								<img
-									src={copySVG}
-									alt="copy password"
-									height="20rem"
-									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+								<button
+									data-cy="generate-password-button"
+									style="width: 13.5rem; height: 3rem; margin-top: 4rem; padding: 0 1rem;"
+									class="button-blue"
+									class:button-disabled={!isApplicationAdmin && !$isAdmin}
+									disabled={!isApplicationAdmin && !$isAdmin}
+									on:click={() => generatePassword(selectedAppId)}
+								>
+									<img
+										src={lockSVG}
+										alt="generate password"
+										height="20rem"
+										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+									/>
+									<span style="vertical-align: middle">Generate Password</span>
+								</button>
+							</div>
+							<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
+								Username: <span style="font-weight: 300">{selectedAppId}</span>
+							</div>
+							<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
+								Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
+							</div>
+
+							{#if generateCredentialsVisible}
+								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
+								<div
+									style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
 									on:click={() => {
 										copyPassword(selectedAppId);
 										showCopyPasswordNotification();
 									}}
-								/>
-							</div>
+								>
+									<span data-cy="generated-password" style="vertical-align: middle">{password}</span
+									>
+									<img
+										src={copySVG}
+										alt="copy password"
+										height="20rem"
+										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 1rem"
+										on:click={() => {
+											copyPassword(selectedAppId);
+											showCopyPasswordNotification();
+										}}
+									/>
+								</div>
 
-							{#if showCopyPasswordNotificationVisible}
-								<div class="bubble">Password Copied!</div>
+								{#if showCopyPasswordNotificationVisible}
+									<div class="bubble">Password Copied!</div>
+								{/if}
 							{/if}
-						{/if}
 
-						{#if generateBindTokenVisible}
-							<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
-								Bind Token
+							{#if generateBindTokenVisible}
+								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
+									Bind Token
 
-								<textarea
-									rows="5"
-									cols="50"
-									style="vertical-align: middle; width: 44.7rem; margin-left: 0.5rem; margin-top: 1rem; resize: none"
-									>{bindToken}</textarea
-								>
-								<img
-									data-cy="bind-token-copy"
-									src={copySVG}
-									alt="copy bind token"
-									height="20rem"
-									style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 0.5rem; cursor: pointer"
-									on:click={() => {
-										copyBindToken(selectedAppId);
-										showCopyBindTokenNotification();
-									}}
-								/>
-							</div>
+									<textarea
+										rows="5"
+										cols="50"
+										style="vertical-align: middle; width: 44.7rem; margin-left: 0.5rem; margin-top: 1rem; resize: none"
+										>{bindToken}</textarea
+									>
+									<img
+										data-cy="bind-token-copy"
+										src={copySVG}
+										alt="copy bind token"
+										height="20rem"
+										style="transform: scaleY(-1); filter: contrast(25%); vertical-align: middle; margin-left: 0.5rem; cursor: pointer"
+										on:click={() => {
+											copyBindToken(selectedAppId);
+											showCopyBindTokenNotification();
+										}}
+									/>
+								</div>
 
-							{#if showCopyBindTokenNotificationVisible}
-								<div class="bubble-bind-token">Bind Token Copied!</div>
+								{#if showCopyBindTokenNotificationVisible}
+									<div class="bubble-bind-token">Bind Token Copied!</div>
+								{/if}
 							{/if}
+							<div class="curl-commands">
+								<!-- svelte-ignore missing-declaration -->
+								<div class="section-title">Export the password from "Generate Password"</div>
+								<section style="display:inline-flex;">
+									<textarea rows="1" style="width:50rem; resize: none"
+										>{curlCommands.codeOne}</textarea
+									>
+									<img
+										data-cy="curl-command-1-copy"
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommands.codeOne);
+											showCopyCommand(1);
+										}}
+									/>
+
+									{#if copiedVisible === 1}
+										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Export an alphanumeric nonce</div>
+								<section style="display:inline-flex;">
+									<textarea rows="1" style="width:50rem; resize: none"
+										>{curlCommands.codeTwo}</textarea
+									>
+									<img
+										data-cy="curl-command-2-copy"
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommands.codeTwo);
+											showCopyCommand(2);
+										}}
+									/>
+
+									{#if copiedVisible === 2}
+										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Authenticate</div>
+								<section style="display:inline-flex;">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeThree}</textarea
+									>
+									<img
+										data-cy="curl-command-3-copy"
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeThree);
+											showCopyCommand(3);
+										}}
+									/>
+
+									{#if copiedVisible === 3}
+										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Download the Identity CA certificate</div>
+								<section style="display:inline-flex;">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeFour}</textarea
+									>
+									<img
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeFour);
+											showCopyCommand(4);
+										}}
+									/>
+									{#if copiedVisible === 4}
+										<div class="bubble-commands">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Download the Permissions CA certificate</div>
+								<section style="display:inline-flex;">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeFive}</textarea
+									>
+									<img
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeFive);
+											showCopyCommand(5);
+										}}
+									/>
+
+									{#if copiedVisible === 5}
+										<div class="bubble-commands">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Download the governance file</div>
+								<section style="display:inline-flex;">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeSix}</textarea
+									>
+									<img
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeSix);
+											showCopyCommand(6);
+										}}
+									/>
+
+									{#if copiedVisible === 6}
+										<div class="bubble-commands">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Download a key pair</div>
+								<section style="display:inline-flex;">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeSeven}</textarea
+									>
+									<img
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeSeven);
+											showCopyCommand(7);
+										}}
+									/>
+
+									{#if copiedVisible === 7}
+										<div class="bubble-commands">Copied!</div>
+									{/if}
+								</section>
+								<div class="section-title">Download a permissions document</div>
+								<section style="display:inline-flex">
+									<textarea rows="2" style="width:50rem; resize: none"
+										>{curlCommandsDecodedCodeEight}</textarea
+									>
+									<img
+										src={copySVG}
+										alt="copy code"
+										width="20rem"
+										height="20rem"
+										style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
+										on:click={() => {
+											navigator.clipboard.writeText(curlCommandsDecodedCodeEight);
+											showCopyCommand(8);
+										}}
+									/>
+
+									{#if copiedVisible === 8}
+										<div class="bubble-commands">Copied!</div>
+									{/if}
+								</section>
+							</div>
 						{/if}
-						<div class="curl-commands">
-							<!-- svelte-ignore missing-declaration -->
-							<div class="section-title">Export the password from "Generate Password"</div>
-							<section style="display:inline-flex;">
-								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeOne}</textarea
-								>
-								<img
-									data-cy="curl-command-1-copy"
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeOne);
-										showCopyCommand(1);
-									}}
-								/>
+					{/await}
+				</div>
 
-								{#if copiedVisible === 1}
-									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Export an alphanumeric nonce</div>
-							<section style="display:inline-flex;">
-								<textarea rows="1" style="width:50rem; resize: none"
-									>{curlCommands.codeTwo}</textarea
-								>
-								<img
-									data-cy="curl-command-2-copy"
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommands.codeTwo);
-										showCopyCommand(2);
-									}}
-								/>
-
-								{#if copiedVisible === 2}
-									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Authenticate</div>
-							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeThree}</textarea
-								>
-								<img
-									data-cy="curl-command-3-copy"
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeThree);
-										showCopyCommand(3);
-									}}
-								/>
-
-								{#if copiedVisible === 3}
-									<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Download the Identity CA certificate</div>
-							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeFour}</textarea
-								>
-								<img
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeFour);
-										showCopyCommand(4);
-									}}
-								/>
-								{#if copiedVisible === 4}
-									<div class="bubble-commands">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Download the Permissions CA certificate</div>
-							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeFive}</textarea
-								>
-								<img
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeFive);
-										showCopyCommand(5);
-									}}
-								/>
-
-								{#if copiedVisible === 5}
-									<div class="bubble-commands">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Download the governance file</div>
-							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeSix}</textarea
-								>
-								<img
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeSix);
-										showCopyCommand(6);
-									}}
-								/>
-
-								{#if copiedVisible === 6}
-									<div class="bubble-commands">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Download a key pair</div>
-							<section style="display:inline-flex;">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeSeven}</textarea
-								>
-								<img
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeSeven);
-										showCopyCommand(7);
-									}}
-								/>
-
-								{#if copiedVisible === 7}
-									<div class="bubble-commands">Copied!</div>
-								{/if}
-							</section>
-							<div class="section-title">Download a permissions document</div>
-							<section style="display:inline-flex">
-								<textarea rows="2" style="width:50rem; resize: none"
-									>{curlCommandsDecodedCodeEight}</textarea
-								>
-								<img
-									src={copySVG}
-									alt="copy code"
-									width="20rem"
-									height="20rem"
-									style="margin-left: 0.5rem; cursor: pointer; transform: scaleY(-1); filter: contrast(25%);"
-									on:click={() => {
-										navigator.clipboard.writeText(curlCommandsDecodedCodeEight);
-										showCopyCommand(8);
-									}}
-								/>
-
-								{#if copiedVisible === 8}
-									<div class="bubble-commands">Copied!</div>
-								{/if}
-							</section>
-						</div>
-					{/if}
-				{/await}
-			</div>
-
-			{#if !applicationDetailVisible}
-				{#if applicationsTotalSize !== undefined && applicationsTotalSize != NaN}
+				{#if !applicationDetailVisible}
 					<div class="pagination">
 						<span>Rows per page</span>
 						<select
@@ -1316,17 +1303,17 @@
 						</select>
 
 						<span style="margin: 0 2rem 0 2rem">
-							{#if applicationsTotalSize > 0}
+							{#if $applicationsTotalSize > 0}
 								{1 + applicationsCurrentPage * applicationsPerPage}
 							{:else}
 								0
 							{/if}
 							- {Math.min(
 								applicationsPerPage * (applicationsCurrentPage + 1),
-								applicationsTotalSize
+								$applicationsTotalSize
 							)}
 							of
-							{applicationsTotalSize}
+							{$applicationsTotalSize}
 						</span>
 
 						<img
@@ -1359,11 +1346,11 @@
 							src={pageforwardSVG}
 							alt="next page"
 							class="pagination-image"
-							class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+							class:disabled-img={applicationsCurrentPage + 1 === $applicationsTotalPages ||
 								$applications?.length === undefined}
 							on:click={() => {
 								deselectAllApplicationsCheckboxes();
-								if (applicationsCurrentPage + 1 < applicationsTotalPages) {
+								if (applicationsCurrentPage + 1 < $applicationsTotalPages) {
 									applicationsCurrentPage++;
 									reloadAllApps(applicationsCurrentPage);
 								}
@@ -1373,12 +1360,12 @@
 							src={pagelastSVG}
 							alt="last page"
 							class="pagination-image"
-							class:disabled-img={applicationsCurrentPage + 1 === applicationsTotalPages ||
+							class:disabled-img={applicationsCurrentPage + 1 === $applicationsTotalPages ||
 								$applications?.length === undefined}
 							on:click={() => {
 								deselectAllApplicationsCheckboxes();
-								if (applicationsCurrentPage < applicationsTotalPages) {
-									applicationsCurrentPage = applicationsTotalPages - 1;
+								if (applicationsCurrentPage < $applicationsTotalPages) {
+									applicationsCurrentPage = $applicationsTotalPages - 1;
 									reloadAllApps(applicationsCurrentPage);
 								}
 							}}

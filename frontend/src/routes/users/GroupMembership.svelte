@@ -3,7 +3,6 @@
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import { browser } from '$app/env';
-	import urlparameters from '../../stores/urlparameters';
 	import groupAdminGroups from '../../stores/groupAdminGroups';
 	import groupMembershipList from '../../stores/groupMembershipList';
 	import userValidityCheck from '../../stores/userValidityCheck';
@@ -26,6 +25,8 @@
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import createItem from '../../stores/createItem';
+	import groupMembershipsTotalPages from '../../stores/groupMembershipsTotalPages';
+	import groupMembershipsTotalSize from '../../stores/groupMembershipsTotalSize';
 
 	// Group Context
 	$: if ($groupContext?.id) reloadGroupMemberships();
@@ -100,7 +101,6 @@
 
 	// Pagination
 	let groupMembershipsPerPage = 10;
-	let groupMembershipsTotalPages, groupMembershipsTotalSize;
 	let groupMembershipsCurrentPage = 0;
 
 	// Error Handling
@@ -129,7 +129,7 @@
 	}
 
 	// Search Group Membership Feature
-	$: if (searchString?.trim().length >= searchStringLength && $urlparameters === null) {
+	$: if (searchString?.trim().length >= searchStringLength) {
 		searchGroupActive = false;
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -201,8 +201,8 @@
 			}
 
 			if (res.data) {
-				groupMembershipsTotalPages = res.data.totalPages;
-				groupMembershipsTotalSize = res.data.totalSize;
+				groupMembershipsTotalPages.set(res.data.totalPages);
+				groupMembershipsTotalSize.set(res.data.totalSize);
 			}
 			if (res.data.content) {
 				createGroupMembershipList(res.data.content, res.data.totalPages);
@@ -239,30 +239,14 @@
 		groupMembershipList.set(groupMembershipListArray);
 
 		groupMembershipListArray = [];
-		groupMembershipsTotalPages = totalPages;
-		if (totalSize !== undefined) groupMembershipsTotalSize = totalSize;
+		groupMembershipsTotalPages.set(totalPages);
+		if (totalSize !== undefined) groupMembershipsTotalSize.set(totalSize);
 		groupMembershipsCurrentPage = 0;
 	};
 
-	const initializeGM = async () => {
-		promise = await reloadGroupMemberships();
-	};
-
-	initializeGM();
-
 	onMount(async () => {
-		if ($urlparameters?.type === 'prepopulate') {
-			searchString = $urlparameters.data;
-		}
-
-		if ($urlparameters === 'create') {
-			if ($isAdmin || $groupAdminGroups?.some((group) => group.groupName === $groupContext.name)) {
-				addGroupMembershipVisible = true;
-				urlparameters.set();
-			} else {
-				errorMessage('Only Group Admins can add new Users.', 'Contact your Admin.');
-			}
-		}
+		if (document.querySelector('#group-memberships-table') == null)
+			promise = await reloadGroupMemberships();
 	});
 
 	const addGroupMembership = async (
@@ -641,6 +625,7 @@
 				{#if $groupMembershipList?.length > 0}
 					<table
 						data-cy="users-table"
+						id="group-memberships-table"
 						style="margin-top:0.5rem; min-width: 50rem; width:max-content"
 					>
 						<thead>
@@ -827,7 +812,7 @@
 				<br />
 			</div>
 
-			{#if groupMembershipsTotalSize !== undefined && groupMembershipsTotalSize != NaN}
+			{#if $groupMembershipsTotalSize !== undefined && $groupMembershipsTotalSize != NaN}
 				<div class="pagination">
 					<span>Rows per page</span>
 					<select
@@ -846,15 +831,15 @@
 						<option value="100">100&nbsp;</option>
 					</select>
 					<span style="margin: 0 2rem 0 2rem">
-						{#if groupMembershipsTotalSize > 0}
+						{#if $groupMembershipsTotalSize > 0}
 							{1 + groupMembershipsCurrentPage * groupMembershipsPerPage}
 						{:else}
 							0
 						{/if}
 						- {Math.min(
 							groupMembershipsPerPage * (groupMembershipsCurrentPage + 1),
-							groupMembershipsTotalSize
-						)} of {groupMembershipsTotalSize}
+							$groupMembershipsTotalSize
+						)} of {$groupMembershipsTotalSize}
 					</span>
 					<img
 						src={pagefirstSVG}
@@ -887,11 +872,11 @@
 						src={pageforwardSVG}
 						alt="next page"
 						class="pagination-image"
-						class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+						class:disabled-img={groupMembershipsCurrentPage + 1 === $groupMembershipsTotalPages ||
 							$groupMembershipList?.length === undefined}
 						on:click={() => {
 							deselectAllGroupMembershipCheckboxes();
-							if (groupMembershipsCurrentPage + 1 < groupMembershipsTotalPages) {
+							if (groupMembershipsCurrentPage + 1 < $groupMembershipsTotalPages) {
 								groupMembershipsCurrentPage++;
 								reloadGroupMemberships(groupMembershipsCurrentPage);
 							}
@@ -901,12 +886,12 @@
 						src={pagelastSVG}
 						alt="last page"
 						class="pagination-image"
-						class:disabled-img={groupMembershipsCurrentPage + 1 === groupMembershipsTotalPages ||
+						class:disabled-img={groupMembershipsCurrentPage + 1 === $groupMembershipsTotalPages ||
 							$groupMembershipList?.length === undefined}
 						on:click={() => {
 							deselectAllGroupMembershipCheckboxes();
-							if (groupMembershipsCurrentPage < groupMembershipsTotalPages) {
-								groupMembershipsCurrentPage = groupMembershipsTotalPages - 1;
+							if (groupMembershipsCurrentPage < $groupMembershipsTotalPages) {
+								groupMembershipsCurrentPage = $groupMembershipsTotalPages - 1;
 								reloadGroupMemberships(groupMembershipsCurrentPage);
 							}
 						}}
