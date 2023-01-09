@@ -18,6 +18,7 @@
 	import lastActivity from '../stores/lastActivity';
 	import errorMessages from '$lib/errorMessages.json';
 	import userEmail from '../stores/userEmail';
+	import updatePermissionsForAllGroups from '../stores/updatePermissionsForAllGroups';
 	import '../app.css';
 
 	export let data;
@@ -98,6 +99,8 @@
 		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 		userEmail.set(res.data.username);
+
+		updatePermissionsForAllGroups.set(true);
 
 		refreshPage.set(Date.now());
 		if ($lastRefresh === null) lastRefresh.set($refreshPage);

@@ -21,7 +21,6 @@
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
 	import editAppName from '../stores/editAppName';
 	import tooltips from '$lib/tooltips.json';
-	import urlparameters from '../stores/urlparameters';
 	import createItem from '../stores/createItem';
 
 	export let avatarName;
@@ -163,7 +162,7 @@
 									if (isGroupAdminInContext || $isAdmin) {
 										if ($page.url.pathname === '/users/') createItem.set('user');
 										else {
-											urlparameters.set('create');
+											createItem.set('user');
 											goto(`/users`, true);
 										}
 									}
@@ -211,7 +210,7 @@
 									if (isTopicAdminInContext || $isAdmin) {
 										if ($page.url.pathname === '/topics/') createItem.set('topic');
 										else {
-											urlparameters.set('create');
+											createItem.set('topic');
 											goto(`/topics`, true);
 										}
 									}
@@ -260,7 +259,7 @@
 									if (isApplicationAdminInContext || $isAdmin) {
 										if ($page.url.pathname === '/applications/') createItem.set('application');
 										else {
-											urlparameters.set('create');
+											createItem.set('application');
 											goto(`/applications`, true);
 										}
 									}

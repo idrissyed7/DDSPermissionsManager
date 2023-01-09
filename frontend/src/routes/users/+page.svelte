@@ -3,7 +3,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import users from '../../stores/users';
-	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import refreshPage from '../../stores/refreshPage';
@@ -20,6 +19,8 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
 	import errorMessages from '$lib/errorMessages.json';
+	import superUsersTotalPages from '../../stores/superUsersTotalPages';
+	import superUsersTotalSize from '../../stores/superUsersTotalSize';
 
 	export let data, errors;
 
@@ -82,7 +83,7 @@
 
 	// Pagination
 	let superUsersPerPage = 10;
-	let superUsersTotalPages, superUsersTotalSize;
+
 	let superUsersCurrentPage = 0;
 
 	// Search Feature
@@ -111,8 +112,8 @@
 				res = await httpAdapter.get(`/admins?page=${page}&size=${superUsersPerPage}`);
 			}
 			if (res.data) {
-				superUsersTotalPages = res.data.totalPages;
-				superUsersTotalSize = res.data.totalSize;
+				superUsersTotalPages.set(res.data.totalPages);
+				superUsersTotalSize.set(res.data.totalSize);
 			}
 			users.set(res.data.content);
 			superUsersCurrentPage = page;
@@ -123,15 +124,11 @@
 		}
 	};
 
-	const initializeSuperUsers = async () => {
-		if ($isAdmin) promise = await reloadAllSuperUsers();
-	};
-
-	initializeSuperUsers();
-
 	onMount(async () => {
 		headerTitle.set('Users');
 		detailView.set();
+		if (document.querySelector('#super-users-table') == null)
+			if ($isAdmin) promise = await reloadAllSuperUsers();
 	});
 
 	const errorMessage = (errMsg, errObj) => {
@@ -155,9 +152,9 @@
 		} else {
 			users.set([]);
 		}
-		superUsersTotalPages = searchUserResults.data.totalPages;
+		superUsersTotalPages.set(searchUserResults.data.totalPages);
 		if (searchUserResults.data.totalSize !== undefined)
-			superUsersTotalSize = searchUserResults.data.totalSize;
+			superUsersTotalSize.set(searchUserResults.data.totalSize);
 		superUsersCurrentPage = 0;
 	};
 
@@ -269,170 +266,170 @@
 					/>
 				{/if}
 
-				<div class="content">
-					<h1 data-cy="super-users">Super Users</h1>
+				{#if $superUsersTotalSize !== undefined && $superUsersTotalSize != NaN}
+					<div class="content">
+						<h1 data-cy="super-users">Super Users</h1>
 
-					<form class="searchbox">
-						<input
-							data-cy="search-super-users-table"
-							class="searchbox"
-							type="search"
-							placeholder="Search"
-							bind:value={searchString}
-							on:blur={() => {
-								searchString = searchString?.trim();
+						<form class="searchbox">
+							<input
+								data-cy="search-super-users-table"
+								class="searchbox"
+								type="search"
+								placeholder="Search"
+								bind:value={searchString}
+								on:blur={() => {
+									searchString = searchString?.trim();
+								}}
+								on:keydown={(event) => {
+									if (event.which === returnKey) {
+										document.activeElement.blur();
+										searchString = searchString?.trim();
+									}
+								}}
+							/>
+						</form>
+
+						{#if searchString?.length > 0}
+							<button
+								class="button-blue"
+								style="cursor: pointer; width: 4rem; height: 2.1rem"
+								on:click={() => (searchString = '')}>Clear</button
+							>
+						{/if}
+						<img
+							src={deleteSVG}
+							alt="options"
+							class="dot"
+							class:button-disabled={superUsersRowsSelected.length === 0}
+							style="margin-left: 0.5rem"
+							on:click={() => {
+								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
 							}}
 							on:keydown={(event) => {
 								if (event.which === returnKey) {
-									document.activeElement.blur();
-									searchString = searchString?.trim();
+									if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
+								}
+							}}
+							on:mouseenter={() => {
+								if (superUsersRowsSelected.length === 0) {
+									const tooltip = document.querySelector('#delete-super-users');
+									setTimeout(() => {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}, 1000);
+								}
+							}}
+							on:mouseleave={() => {
+								if (superUsersRowsSelected.length === 0) {
+									const tooltip = document.querySelector('#delete-super-users');
+									setTimeout(() => {
+										tooltip.classList.add('tooltip-hidden');
+										tooltip.classList.remove('tooltip');
+									}, 1000);
 								}
 							}}
 						/>
-					</form>
 
-					{#if searchString?.length > 0}
-						<button
-							class="button-blue"
-							style="cursor: pointer; width: 4rem; height: 2.1rem"
-							on:click={() => (searchString = '')}>Clear</button
-						>
-					{/if}
-					<img
-						src={deleteSVG}
-						alt="options"
-						class="dot"
-						class:button-disabled={superUsersRowsSelected.length === 0}
-						style="margin-left: 0.5rem"
-						on:click={() => {
-							if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
-								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-							}
-						}}
-						on:mouseenter={() => {
-							if (superUsersRowsSelected.length === 0) {
-								const tooltip = document.querySelector('#delete-super-users');
-								setTimeout(() => {
-									tooltip.classList.remove('tooltip-hidden');
-									tooltip.classList.add('tooltip');
-								}, 1000);
-							}
-						}}
-						on:mouseleave={() => {
-							if (superUsersRowsSelected.length === 0) {
-								const tooltip = document.querySelector('#delete-super-users');
-								setTimeout(() => {
-									tooltip.classList.add('tooltip-hidden');
-									tooltip.classList.remove('tooltip');
-								}, 1000);
-							}
-						}}
-					/>
+						<span
+							id="delete-super-users"
+							class="tooltip-hidden"
+							style="margin-left: 9.5rem; margin-top: -1.8rem"
+							>Select super users to delete
+						</span>
 
-					<span
-						id="delete-super-users"
-						class="tooltip-hidden"
-						style="margin-left: 9.5rem; margin-top: -1.8rem"
-						>Select super users to delete
-					</span>
-
-					<img
-						data-cy="add-super-user"
-						src={addSVG}
-						alt="options"
-						class="dot"
-						on:click={() => {
-							addSuperUserVisible = true;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
+						<img
+							data-cy="add-super-user"
+							src={addSVG}
+							alt="options"
+							class="dot"
+							on:click={() => {
 								addSuperUserVisible = true;
-							}
-						}}
-					/>
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									addSuperUserVisible = true;
+								}
+							}}
+						/>
 
-					{#if $users?.length > 0}
-						<table data-cy="super-users-table" style="margin-top: 0.5rem">
-							<thead>
-								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-									<td>
-										<input
-											tabindex="-1"
-											type="checkbox"
-											class="super-user-checkbox"
-											style="margin-right: 0.5rem"
-											bind:indeterminate={superUsersRowsSelectedTrue}
-											on:click={(e) => {
-												if (e.target.checked) {
-													superUsersRowsSelected = $users;
-													superUsersRowsSelectedTrue = false;
-													superUsersAllRowsSelectedTrue = true;
-												} else {
-													superUsersAllRowsSelectedTrue = false;
-													superUsersRowsSelectedTrue = false;
-													superUsersRowsSelected = [];
-												}
-											}}
-											checked={superUsersAllRowsSelectedTrue}
-										/>
-									</td>
-									<td>E-mail</td>
-									<td />
-								</tr>
-							</thead>
-							<tbody>
-								{#each $users as user}
-									<tr class:highlighted={user.email === $userEmail}>
-										<td style="width: 2rem">
+						{#if $users?.length > 0}
+							<table data-cy="super-users-table" id="super-users-table" style="margin-top: 0.5rem">
+								<thead>
+									<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+										<td>
 											<input
 												tabindex="-1"
 												type="checkbox"
 												class="super-user-checkbox"
-												checked={superUsersAllRowsSelectedTrue}
-												on:change={(e) => {
-													if (e.target.checked === true) {
-														superUsersRowsSelected.push(user);
-														// reactive statement
-														superUsersRowsSelected = superUsersRowsSelected;
-														superUsersRowsSelectedTrue = true;
+												style="margin-right: 0.5rem"
+												bind:indeterminate={superUsersRowsSelectedTrue}
+												on:click={(e) => {
+													if (e.target.checked) {
+														superUsersRowsSelected = $users;
+														superUsersRowsSelectedTrue = false;
+														superUsersAllRowsSelectedTrue = true;
 													} else {
-														superUsersRowsSelected = superUsersRowsSelected.filter(
-															(selection) => selection !== user
-														);
-														if (superUsersRowsSelected.length === 0) {
-															superUsersRowsSelectedTrue = false;
-														}
+														superUsersAllRowsSelectedTrue = false;
+														superUsersRowsSelectedTrue = false;
+														superUsersRowsSelected = [];
 													}
 												}}
+												checked={superUsersAllRowsSelectedTrue}
 											/>
 										</td>
-										<td style="margin-left: 0.3rem">{user.email}</td>
-										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-											<img
-												data-cy="delete-super-users-icon"
-												src={deleteSVG}
-												width="25px"
-												alt="delete user"
-												on:click={() => {
-													if (!superUsersRowsSelected?.some((usr) => usr === user))
-														superUsersRowsSelected.push(user);
-													deleteSuperUserVisible = true;
-												}}
-											/>
-										</td>
+										<td>E-mail</td>
+										<td />
 									</tr>
-								{/each}
-							</tbody>
-						</table>
-					{:else}
-						<p style="margin-left: 0.3rem">No Super Users Found</p>
-					{/if}
-				</div>
+								</thead>
+								<tbody>
+									{#each $users as user}
+										<tr class:highlighted={user.email === $userEmail}>
+											<td style="width: 2rem">
+												<input
+													tabindex="-1"
+													type="checkbox"
+													class="super-user-checkbox"
+													checked={superUsersAllRowsSelectedTrue}
+													on:change={(e) => {
+														if (e.target.checked === true) {
+															superUsersRowsSelected.push(user);
+															// reactive statement
+															superUsersRowsSelected = superUsersRowsSelected;
+															superUsersRowsSelectedTrue = true;
+														} else {
+															superUsersRowsSelected = superUsersRowsSelected.filter(
+																(selection) => selection !== user
+															);
+															if (superUsersRowsSelected.length === 0) {
+																superUsersRowsSelectedTrue = false;
+															}
+														}
+													}}
+												/>
+											</td>
+											<td style="margin-left: 0.3rem">{user.email}</td>
+											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<img
+													data-cy="delete-super-users-icon"
+													src={deleteSVG}
+													width="25px"
+													alt="delete user"
+													on:click={() => {
+														if (!superUsersRowsSelected?.some((usr) => usr === user))
+															superUsersRowsSelected.push(user);
+														deleteSuperUserVisible = true;
+													}}
+												/>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						{:else}
+							<p style="margin-left: 0.3rem">No Super Users Found</p>
+						{/if}
+					</div>
 
-				{#if superUsersTotalSize !== undefined && superUsersTotalSize != NaN}
 					<div class="pagination">
 						<span>Rows per page</span>
 						<select
@@ -450,13 +447,13 @@
 							<option value="100">100&nbsp;</option>
 						</select>
 						<span style="margin: 0 2rem 0 2rem">
-							{#if superUsersTotalSize > 0}
+							{#if $superUsersTotalSize > 0}
 								{1 + superUsersCurrentPage * superUsersPerPage}
 							{:else}
 								0
 							{/if}
-							- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), superUsersTotalSize)} of
-							{superUsersTotalSize}
+							- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), $superUsersTotalSize)} of
+							{$superUsersTotalSize}
 						</span>
 						<img
 							src={pagefirstSVG}
@@ -488,11 +485,11 @@
 							src={pageforwardSVG}
 							alt="next page"
 							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+							class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
 								$users?.length === undefined}
 							on:click={() => {
 								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage + 1 < superUsersTotalPages) {
+								if (superUsersCurrentPage + 1 < $superUsersTotalPages) {
 									superUsersCurrentPage++;
 									reloadAllSuperUsers(superUsersCurrentPage);
 								}
@@ -502,12 +499,12 @@
 							src={pagelastSVG}
 							alt="last page"
 							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage + 1 === superUsersTotalPages ||
+							class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
 								$users?.length === undefined}
 							on:click={() => {
 								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage < superUsersTotalPages) {
-									superUsersCurrentPage = superUsersTotalPages - 1;
+								if (superUsersCurrentPage < $superUsersTotalPages) {
+									superUsersCurrentPage = $superUsersTotalPages - 1;
 									reloadAllSuperUsers(superUsersCurrentPage);
 								}
 							}}
