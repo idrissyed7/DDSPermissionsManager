@@ -31,8 +31,7 @@
 	// Extend Session
 	let reminderMsg, reminderObject;
 
-	const userValidityInterval = 5000; // 3 minutes
-	// const userValidityInterval = 180000; // 3 minutes
+	const userValidityInterval = 180000; // 3 minutes
 	const sixtyMin = 3600000;
 
 	let avatarName;
@@ -102,7 +101,6 @@
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 		userEmail.set(res.data.username);
 		permissionsLastUpdated.set(res.data.permissionsLastUpdated);
-		console.log('permissionsLastUpdated', $permissionsLastUpdated);
 
 		updatePermissionsForAllGroups.set(true);
 
