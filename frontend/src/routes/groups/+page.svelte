@@ -161,13 +161,11 @@
 
 	const getPermissionsForAllGroups = async () => {
 		if ($userEmail) {
-			permissionsForAllGroups.set(
-				await httpAdapter.get(`/group_membership?page=0&size=${groupsPerPage}&filter=${$userEmail}`)
+			const res = await httpAdapter.get(
+				`/group_membership?page=0&size=${groupsPerPage}&filter=${$userEmail}`
 			);
+			if (res?.data?.content) permissionsForAllGroups.set(res.data.content);
 		}
-
-		if ($permissionsForAllGroups?.data?.content)
-			permissionsForAllGroups.set($permissionsForAllGroups.data.content);
 	};
 
 	onMount(async () => {
