@@ -254,7 +254,7 @@
 		else if ($permissionsForAllGroups) {
 			return $permissionsForAllGroups?.find(
 				(groupPermission) =>
-					groupPermission.permissionsGroup === group.id && groupPermission[permissionType] === true
+					groupPermission?.permissionsGroup === group.id && groupPermission[permissionType] === true
 			);
 		} else return false;
 	};
