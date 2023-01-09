@@ -1074,17 +1074,8 @@
 		border-width: 1px;
 	}
 
-	input.searchbox {
-		margin-top: 1rem;
-		width: 14rem;
-	}
-
 	.error-message {
 		font-size: 0.7rem;
-	}
-
-	input.searchbox:disabled {
-		border-color: rgba(118, 118, 118, 0.3);
 	}
 
 	img.close-button {
