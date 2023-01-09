@@ -19,6 +19,7 @@
 	import errorMessages from '$lib/errorMessages.json';
 	import userEmail from '../stores/userEmail';
 	import updatePermissionsForAllGroups from '../stores/updatePermissionsForAllGroups';
+	import permissionsLastUpdated from '../stores/permissionsLastUpdated';
 	import '../app.css';
 
 	export let data;
@@ -99,6 +100,7 @@
 		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 		userEmail.set(res.data.username);
+		permissionsLastUpdated.set(res.data.permissionsLastUpdated);
 
 		updatePermissionsForAllGroups.set(true);
 
@@ -134,7 +136,9 @@
 				reminderMessage('Session Expiration', msg);
 			}
 
-			await httpAdapter.get(`/group_membership/user_validity`);
+			const res = await httpAdapter.get(`/group_membership/user_validity`);
+
+			if (res.data.permissionsLastUpdated !== $permissionsLastUpdated) refreshToken();
 		} catch (err) {
 			const oneHour = 3600000;
 
