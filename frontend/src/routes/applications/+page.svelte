@@ -392,7 +392,7 @@
 	const canEditAppName = () => {
 		if (
 			($permissionsByGroup &&
-				$permissionsByGroup.find((groupPermission) => groupPermission.groupId === app.group)
+				$permissionsByGroup?.find((groupPermission) => groupPermission.groupId === app.group)
 					?.isApplicationAdmin) ||
 			$isAdmin
 		)

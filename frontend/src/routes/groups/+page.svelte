@@ -252,7 +252,7 @@
 	const findPermission = (group, permissionType) => {
 		if ($isAdmin) return true;
 		else if ($permissionsForAllGroups) {
-			return $permissionsForAllGroups.find(
+			return $permissionsForAllGroups?.find(
 				(groupPermission) =>
 					groupPermission.permissionsGroup === group.id && groupPermission[permissionType] === true
 			);
