@@ -266,253 +266,251 @@
 					/>
 				{/if}
 
-				{#if $superUsersTotalSize !== undefined && $superUsersTotalSize != NaN}
-					<div class="content">
-						<h1 data-cy="super-users">Super Users</h1>
+				<div class="content">
+					<h1 data-cy="super-users">Super Users</h1>
 
-						<form class="searchbox">
-							<input
-								data-cy="search-super-users-table"
-								class="searchbox"
-								type="search"
-								placeholder="Search"
-								bind:value={searchString}
-								on:blur={() => {
+					<form class="searchbox">
+						<input
+							data-cy="search-super-users-table"
+							class="searchbox"
+							type="search"
+							placeholder="Search"
+							bind:value={searchString}
+							on:blur={() => {
+								searchString = searchString?.trim();
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									document.activeElement.blur();
 									searchString = searchString?.trim();
-								}}
-								on:keydown={(event) => {
-									if (event.which === returnKey) {
-										document.activeElement.blur();
-										searchString = searchString?.trim();
-									}
-								}}
-							/>
-						</form>
+								}
+							}}
+						/>
+					</form>
 
-						{#if searchString?.length > 0}
-							<button
-								class="button-blue"
-								style="cursor: pointer; width: 4rem; height: 2.1rem"
-								on:click={() => (searchString = '')}>Clear</button
-							>
-						{/if}
-						<img
-							src={deleteSVG}
-							alt="options"
-							class="dot"
-							class:button-disabled={superUsersRowsSelected.length === 0}
-							style="margin-left: 0.5rem"
-							on:click={() => {
+					{#if searchString?.length > 0}
+						<button
+							class="button-blue"
+							style="cursor: pointer; width: 4rem; height: 2.1rem"
+							on:click={() => (searchString = '')}>Clear</button
+						>
+					{/if}
+					<img
+						src={deleteSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={superUsersRowsSelected.length === 0}
+						style="margin-left: 0.5rem"
+						on:click={() => {
+							if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
 								if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
-									if (superUsersRowsSelected.length > 0) deleteSuperUserVisible = true;
-								}
-							}}
-							on:mouseenter={() => {
-								if (superUsersRowsSelected.length === 0) {
-									const tooltip = document.querySelector('#delete-super-users');
-									setTimeout(() => {
-										tooltip.classList.remove('tooltip-hidden');
-										tooltip.classList.add('tooltip');
-									}, 1000);
-								}
-							}}
-							on:mouseleave={() => {
-								if (superUsersRowsSelected.length === 0) {
-									const tooltip = document.querySelector('#delete-super-users');
-									setTimeout(() => {
-										tooltip.classList.add('tooltip-hidden');
-										tooltip.classList.remove('tooltip');
-									}, 1000);
-								}
-							}}
-						/>
+							}
+						}}
+						on:mouseenter={() => {
+							if (superUsersRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-super-users');
+								setTimeout(() => {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}, 1000);
+							}
+						}}
+						on:mouseleave={() => {
+							if (superUsersRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-super-users');
+								setTimeout(() => {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}, 1000);
+							}
+						}}
+					/>
 
-						<span
-							id="delete-super-users"
-							class="tooltip-hidden"
-							style="margin-left: 9.5rem; margin-top: -1.8rem"
-							>Select super users to delete
-						</span>
+					<span
+						id="delete-super-users"
+						class="tooltip-hidden"
+						style="margin-left: 9.5rem; margin-top: -1.8rem"
+						>Select super users to delete
+					</span>
 
-						<img
-							data-cy="add-super-user"
-							src={addSVG}
-							alt="options"
-							class="dot"
-							on:click={() => {
+					<img
+						data-cy="add-super-user"
+						src={addSVG}
+						alt="options"
+						class="dot"
+						on:click={() => {
+							addSuperUserVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
 								addSuperUserVisible = true;
-							}}
-							on:keydown={(event) => {
-								if (event.which === returnKey) {
-									addSuperUserVisible = true;
-								}
-							}}
-						/>
+							}
+						}}
+					/>
 
-						{#if $users?.length > 0}
-							<table data-cy="super-users-table" id="super-users-table" style="margin-top: 0.5rem">
-								<thead>
-									<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-										<td>
+					{#if $users?.length > 0}
+						<table data-cy="super-users-table" id="super-users-table" style="margin-top: 0.5rem">
+							<thead>
+								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+									<td>
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="super-user-checkbox"
+											style="margin-right: 0.5rem"
+											bind:indeterminate={superUsersRowsSelectedTrue}
+											on:click={(e) => {
+												if (e.target.checked) {
+													superUsersRowsSelected = $users;
+													superUsersRowsSelectedTrue = false;
+													superUsersAllRowsSelectedTrue = true;
+												} else {
+													superUsersAllRowsSelectedTrue = false;
+													superUsersRowsSelectedTrue = false;
+													superUsersRowsSelected = [];
+												}
+											}}
+											checked={superUsersAllRowsSelectedTrue}
+										/>
+									</td>
+									<td>E-mail</td>
+									<td />
+								</tr>
+							</thead>
+							<tbody>
+								{#each $users as user}
+									<tr class:highlighted={user.email === $userEmail}>
+										<td style="width: 2rem">
 											<input
 												tabindex="-1"
 												type="checkbox"
 												class="super-user-checkbox"
-												style="margin-right: 0.5rem"
-												bind:indeterminate={superUsersRowsSelectedTrue}
-												on:click={(e) => {
-													if (e.target.checked) {
-														superUsersRowsSelected = $users;
-														superUsersRowsSelectedTrue = false;
-														superUsersAllRowsSelectedTrue = true;
+												checked={superUsersAllRowsSelectedTrue}
+												on:change={(e) => {
+													if (e.target.checked === true) {
+														superUsersRowsSelected.push(user);
+														// reactive statement
+														superUsersRowsSelected = superUsersRowsSelected;
+														superUsersRowsSelectedTrue = true;
 													} else {
-														superUsersAllRowsSelectedTrue = false;
-														superUsersRowsSelectedTrue = false;
-														superUsersRowsSelected = [];
+														superUsersRowsSelected = superUsersRowsSelected.filter(
+															(selection) => selection !== user
+														);
+														if (superUsersRowsSelected.length === 0) {
+															superUsersRowsSelectedTrue = false;
+														}
 													}
 												}}
-												checked={superUsersAllRowsSelectedTrue}
 											/>
 										</td>
-										<td>E-mail</td>
-										<td />
+										<td style="margin-left: 0.3rem">{user.email}</td>
+										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+											<img
+												data-cy="delete-super-users-icon"
+												src={deleteSVG}
+												width="25px"
+												alt="delete user"
+												on:click={() => {
+													if (!superUsersRowsSelected?.some((usr) => usr === user))
+														superUsersRowsSelected.push(user);
+													deleteSuperUserVisible = true;
+												}}
+											/>
+										</td>
 									</tr>
-								</thead>
-								<tbody>
-									{#each $users as user}
-										<tr class:highlighted={user.email === $userEmail}>
-											<td style="width: 2rem">
-												<input
-													tabindex="-1"
-													type="checkbox"
-													class="super-user-checkbox"
-													checked={superUsersAllRowsSelectedTrue}
-													on:change={(e) => {
-														if (e.target.checked === true) {
-															superUsersRowsSelected.push(user);
-															// reactive statement
-															superUsersRowsSelected = superUsersRowsSelected;
-															superUsersRowsSelectedTrue = true;
-														} else {
-															superUsersRowsSelected = superUsersRowsSelected.filter(
-																(selection) => selection !== user
-															);
-															if (superUsersRowsSelected.length === 0) {
-																superUsersRowsSelectedTrue = false;
-															}
-														}
-													}}
-												/>
-											</td>
-											<td style="margin-left: 0.3rem">{user.email}</td>
-											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
-												<img
-													data-cy="delete-super-users-icon"
-													src={deleteSVG}
-													width="25px"
-													alt="delete user"
-													on:click={() => {
-														if (!superUsersRowsSelected?.some((usr) => usr === user))
-															superUsersRowsSelected.push(user);
-														deleteSuperUserVisible = true;
-													}}
-												/>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						{:else}
-							<p style="margin-left: 0.3rem">No Super Users Found</p>
-						{/if}
-					</div>
+								{/each}
+							</tbody>
+						</table>
+					{:else}
+						<p style="margin-left: 0.3rem">No Super Users Found</p>
+					{/if}
+				</div>
 
-					<div class="pagination">
-						<span>Rows per page</span>
-						<select
-							tabindex="-1"
-							on:change={(e) => {
-								superUsersPerPage = e.target.value;
+				<div class="pagination">
+					<span>Rows per page</span>
+					<select
+						tabindex="-1"
+						on:change={(e) => {
+							superUsersPerPage = e.target.value;
+							reloadAllSuperUsers();
+						}}
+						name="RowsPerPage"
+					>
+						<option value="10">10</option>
+						<option value="25">25</option>
+						<option value="50">50</option>
+						<option value="75">75</option>
+						<option value="100">100&nbsp;</option>
+					</select>
+					<span style="margin: 0 2rem 0 2rem">
+						{#if $superUsersTotalSize > 0}
+							{1 + superUsersCurrentPage * superUsersPerPage}
+						{:else}
+							0
+						{/if}
+						- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), $superUsersTotalSize)} of
+						{$superUsersTotalSize}
+					</span>
+					<img
+						src={pagefirstSVG}
+						alt="first page"
+						class="pagination-image"
+						class:disabled-img={superUsersCurrentPage === 0}
+						on:click={() => {
+							deselectAllSuperUsersCheckboxes();
+							if (superUsersCurrentPage > 0) {
+								superUsersCurrentPage = 0;
 								reloadAllSuperUsers();
-							}}
-							name="RowsPerPage"
-						>
-							<option value="10">10</option>
-							<option value="25">25</option>
-							<option value="50">50</option>
-							<option value="75">75</option>
-							<option value="100">100&nbsp;</option>
-						</select>
-						<span style="margin: 0 2rem 0 2rem">
-							{#if $superUsersTotalSize > 0}
-								{1 + superUsersCurrentPage * superUsersPerPage}
-							{:else}
-								0
-							{/if}
-							- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), $superUsersTotalSize)} of
-							{$superUsersTotalSize}
-						</span>
-						<img
-							src={pagefirstSVG}
-							alt="first page"
-							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage === 0}
-							on:click={() => {
-								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage > 0) {
-									superUsersCurrentPage = 0;
-									reloadAllSuperUsers();
-								}
-							}}
-						/>
-						<img
-							src={pagebackwardsSVG}
-							alt="previous page"
-							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage === 0}
-							on:click={() => {
-								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage > 0) {
-									superUsersCurrentPage--;
-									reloadAllSuperUsers(superUsersCurrentPage);
-								}
-							}}
-						/>
-						<img
-							src={pageforwardSVG}
-							alt="next page"
-							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
-								$users?.length === undefined}
-							on:click={() => {
-								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage + 1 < $superUsersTotalPages) {
-									superUsersCurrentPage++;
-									reloadAllSuperUsers(superUsersCurrentPage);
-								}
-							}}
-						/>
-						<img
-							src={pagelastSVG}
-							alt="last page"
-							class="pagination-image"
-							class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
-								$users?.length === undefined}
-							on:click={() => {
-								deselectAllSuperUsersCheckboxes();
-								if (superUsersCurrentPage < $superUsersTotalPages) {
-									superUsersCurrentPage = $superUsersTotalPages - 1;
-									reloadAllSuperUsers(superUsersCurrentPage);
-								}
-							}}
-						/>
-					</div>
-				{/if}
-				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+							}
+						}}
+					/>
+					<img
+						src={pagebackwardsSVG}
+						alt="previous page"
+						class="pagination-image"
+						class:disabled-img={superUsersCurrentPage === 0}
+						on:click={() => {
+							deselectAllSuperUsersCheckboxes();
+							if (superUsersCurrentPage > 0) {
+								superUsersCurrentPage--;
+								reloadAllSuperUsers(superUsersCurrentPage);
+							}
+						}}
+					/>
+					<img
+						src={pageforwardSVG}
+						alt="next page"
+						class="pagination-image"
+						class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
+							$users?.length === undefined}
+						on:click={() => {
+							deselectAllSuperUsersCheckboxes();
+							if (superUsersCurrentPage + 1 < $superUsersTotalPages) {
+								superUsersCurrentPage++;
+								reloadAllSuperUsers(superUsersCurrentPage);
+							}
+						}}
+					/>
+					<img
+						src={pagelastSVG}
+						alt="last page"
+						class="pagination-image"
+						class:disabled-img={superUsersCurrentPage + 1 === $superUsersTotalPages ||
+							$users?.length === undefined}
+						on:click={() => {
+							deselectAllSuperUsersCheckboxes();
+							if (superUsersCurrentPage < $superUsersTotalPages) {
+								superUsersCurrentPage = $superUsersTotalPages - 1;
+								reloadAllSuperUsers(superUsersCurrentPage);
+							}
+						}}
+					/>
+				</div>
 			{/if}
+			<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 		{/await}
 	{/if}
 {/key}
