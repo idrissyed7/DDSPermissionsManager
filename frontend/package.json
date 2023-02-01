@@ -9,12 +9,17 @@
 		"prepare": "svelte-kit sync",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"deploy:dev": "ENV=stage npm run build && gcloud app deploy --quiet --project dds-permissions-manager-359219 build/app.yaml"
+		"deploy:dev": "ENV=stage npm run build && gcloud app deploy --quiet --project dds-permissions-manager-359219 build/app.yaml",
+		"start": "concurrently \"npm run start:frontend\" \"cross-env CONCURRENTLY_NEW_WINDOW=1 npm run start:backend\"",
+		"start:frontend": "npm run dev -- --open",
+		"start:backend": "cd .. && ./gradlew app:run -t"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/adapter-static": "^1.0.0-next.38",
 		"@sveltejs/kit": "^1.0.0-next.406",
+		"concurrently": "^7.6.0",
+		"cross-env": "^7.0.3",
 		"cypress": "^10.4.0",
 		"eslint": "^8.16.0",
 		"eslint-config-prettier": "^8.3.0",
