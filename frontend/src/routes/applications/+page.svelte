@@ -276,8 +276,6 @@
 			'${DPM_URL}',
 			`${$page.url.protocol}//${$page.url.host}`
 		);
-
-		console.log('curlCommandsDecodedCodeThree', curlCommandsDecodedCodeThree);
 	};
 
 	const searchApp = async (searchString) => {
