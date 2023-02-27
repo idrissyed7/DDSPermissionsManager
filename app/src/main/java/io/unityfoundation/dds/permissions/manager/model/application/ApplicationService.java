@@ -225,7 +225,7 @@ public class ApplicationService {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            application = new Application(applicationDTO.getName());
+            application = new Application(applicationDTO.getName(), applicationDTO.getDescription());
             application.setId(applicationDTO.getId());
             Group group = groupOptional.get();
             application.setPermissionsGroup(group);

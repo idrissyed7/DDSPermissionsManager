@@ -56,7 +56,8 @@ public class Bootstrap {
             if(data.containsKey("groups")) {
                 ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
                     String groupName = (String) groupMap.get("name");
-                    Group group = groupRepository.save(new Group(groupName));
+                    String groupDescription = (String) groupMap.get("description");
+                    Group group = groupRepository.save(new Group(groupName, groupDescription));
 
                     if (groupMap.containsKey("users")) {
                         List<Map> users = (List<Map>) groupMap.get("users");
@@ -79,15 +80,18 @@ public class Bootstrap {
                         List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
                         topics.stream().forEach(topicMap -> {
                             String name = topicMap.get("name");
+                            String topicDescription = topicMap.get("description");
                             TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
-                            group.addTopic(new Topic(name, kind, group));
+                            group.addTopic(new Topic(name, kind, topicDescription, group));
                         });
                     }
 
                     if (groupMap.containsKey("applications")) {
-                        List<String> applications = (List<String>) groupMap.get("applications");
-                        applications.stream().forEach(applicationName -> {
-                            group.addApplication(new Application(applicationName, group));
+                        List<Map<String, String>> applications = (List<Map<String, String>>) groupMap.get("applications");
+                        applications.stream().forEach(applicationMap -> {
+                            String applicationName = applicationMap.get("name");
+                            String applicationDescription = applicationMap.get("description");
+                            group.addApplication(new Application(applicationName, group, applicationDescription));
                         });
                     }
 

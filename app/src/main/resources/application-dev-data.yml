@@ -17,6 +17,7 @@ dpm:
       groups:
         -
           name: Alpha
+          description: Alpha description
           users:
             -
              email: wilsonj@test.test
@@ -30,12 +31,16 @@ dpm:
             -
               name: Test Topic 123
               kind: B
+              description: Topic 123 Description
             -
               name: Test Topic 456
               kind: B
           applications:
-            - Application One
-            - Application Two
+            -
+              name: Application One
+              description: Application One Description
+            -
+              name: Application Two
         -
           name: Beta
         -

@@ -187,6 +187,48 @@ public class TopicApiTest {
         }
 
         @Test
+        public void createWithDescriptionAndDenyIfDescriptionIsMoreThanFourThousandChars() {
+            HttpResponse<?> response;
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("A Topic Name");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+            topicDTO.setDescription("My topic description");
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertNotNull(topicOptional.get().getDescription());
+            assertEquals("My topic description", topicOptional.get().getDescription());
+
+
+            String FourKString = new String(new char[4001]).replace("\0", "s");;
+            topicDTO.setDescription(FourKString);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, ApplicationDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.TOPIC_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS.equals(map.get("code"))));
+        }
+
+        @Test
         public void createShouldTrimNameWhitespaces() {
             Group theta = new Group("Theta");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);

@@ -90,9 +90,9 @@ public class GroupService {
                 throw new DPMException(ResponseStatusCodes.GROUP_ALREADY_EXISTS);
             }
 
-            group = groupRepository.save(new Group(groupRequestDTO.getName()));
+            group = groupRepository.save(new Group(groupRequestDTO.getName(), groupRequestDTO.getDescription()));
 
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
+            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription()));
         } else {
             if (searchGroupByName.isPresent()) {
                 return HttpResponse.badRequest("Group with same name already exists");
@@ -107,7 +107,7 @@ public class GroupService {
             group.setName(groupRequestDTO.getName());
             group = groupRepository.update(group);
 
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
+            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription()));
         }
     }
 
@@ -130,7 +130,7 @@ public class GroupService {
     }
 
     public Page<SimpleGroupDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
-        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName()));
+        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription()));
     }
 
     private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {

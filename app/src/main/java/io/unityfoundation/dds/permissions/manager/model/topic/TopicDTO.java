@@ -1,6 +1,7 @@
 package io.unityfoundation.dds.permissions.manager.model.topic;
 
 import io.micronaut.core.annotation.Introspected;
+import io.micronaut.core.annotation.Nullable;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -16,6 +17,8 @@ public class TopicDTO {
     @Size(min = 3)
     private String name;
     private TopicKind kind;
+    @Size(max = 4000)
+    private String description;
     @NotNull
     private Long group;
     private String groupName;
@@ -28,6 +31,7 @@ public class TopicDTO {
         this.id = topic.getId();
         this.name = topic.getName();
         this.kind = topic.getKind();
+        this.description = topic.getDescription();
         this.group = topic.getPermissionsGroup().getId();
         this.groupName = topic.getPermissionsGroup().getName();
     }
@@ -78,5 +82,14 @@ public class TopicDTO {
 
     public void setCanonicalName(String canonicalName) {
         this.canonicalName = canonicalName;
+    }
+
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
     }
 }

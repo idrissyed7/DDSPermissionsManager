@@ -9,6 +9,7 @@ public class DetailedGroupDTO {
 
     private Long id;
     private String name;
+    private String description;
     private Set<Long> topics;
     private Set<Long> applications;
     private int membershipCount;
@@ -21,6 +22,7 @@ public class DetailedGroupDTO {
     public void setGroupFields(Group group) {
         this.id = group.getId();
         this.name = group.getName();
+        this.description = group.getDescription();
     }
 
     public Long getId() {
@@ -69,5 +71,13 @@ public class DetailedGroupDTO {
 
     public void setApplicationCount(int applicationCount) {
         this.applicationCount = applicationCount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

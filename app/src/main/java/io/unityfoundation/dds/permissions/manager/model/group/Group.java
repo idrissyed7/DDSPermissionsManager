@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.group;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import org.hibernate.annotations.OnDelete;
@@ -27,6 +28,10 @@ public class Group {
     @Column(unique = true)
     private String name;
 
+    @Nullable
+    @Size(max = 4000)
+    private String description;
+
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Topic> topics = new HashSet<>();
@@ -40,6 +45,11 @@ public class Group {
 
     public Group(@NonNull String name) {
         this.name = name;
+    }
+
+    public Group(@NonNull String name, String description) {
+        this.name = name;
+        this.description = description;
     }
 
     public Long getId() {
@@ -96,5 +106,14 @@ public class Group {
     @PrePersist
     void trimName() {
         this.name = this.name.trim();
+    }
+
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
     }
 }

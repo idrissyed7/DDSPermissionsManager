@@ -97,7 +97,7 @@ public class TopicService {
             throw new DPMException(ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION, HttpStatus.NOT_FOUND);
         }
 
-        Topic topic = new Topic(topicDTO.getName(), topicDTO.getKind());
+        Topic topic = new Topic(topicDTO.getName(), topicDTO.getKind(), topicDTO.getDescription());
         Group group = groupOptional.get();
         topic.setPermissionsGroup(group);
 

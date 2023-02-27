@@ -16,6 +16,7 @@ import io.unityfoundation.dds.permissions.manager.model.applicationpermission.*;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
@@ -174,6 +175,32 @@ public class GroupApiTest {
             assertTrue(bodyOptional.isPresent());
             List<Map> list = bodyOptional.get();
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS.equals(map.get("code"))));
+        }
+
+        @Test
+        public void createWithDescriptionAndDenyIfDescriptionIsMoreThanFourThousandChars() {
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setDescription("A description");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpResponse<SimpleGroupDTO> exchange = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> body = exchange.getBody(SimpleGroupDTO.class);
+            assertTrue(body.isPresent());
+            assertNotNull(body.get().getDescription());
+            assertEquals("A description", body.get().getDescription());
+
+            String FourKString = new String(new char[4001]).replace("\0", "s");;
+            groupDTO.setDescription(FourKString);
+            request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, SimpleGroupDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS.equals(map.get("code"))));
         }
 
         // update
