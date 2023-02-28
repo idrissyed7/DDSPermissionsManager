@@ -32,6 +32,9 @@ public class Group {
     @Size(max = 4000)
     private String description;
 
+    @Column(columnDefinition="BOOLEAN DEFAULT false")
+    private Boolean isPublic;
+
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Topic> topics = new HashSet<>();
@@ -47,9 +50,10 @@ public class Group {
         this.name = name;
     }
 
-    public Group(@NonNull String name, String description) {
+    public Group(@NonNull String name, String description, Boolean isPublic) {
         this.name = name;
         this.description = description;
+        this.isPublic = isPublic;
     }
 
     public Long getId() {
@@ -115,5 +119,13 @@ public class Group {
 
     public void setDescription(@Nullable String description) {
         this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

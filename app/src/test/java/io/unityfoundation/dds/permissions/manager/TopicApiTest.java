@@ -229,6 +229,44 @@ public class TopicApiTest {
         }
 
         @Test
+        public void createWithIsPublic() {
+            HttpResponse<?> response;
+
+            // create group
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // null isPublic should return false
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("MyTopic");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+            assertNotNull(topic.getPublic());
+            assertFalse(topic.getPublic());
+
+            // expect 'true' when set isPublic is set to 'true'
+            topicDTO.setName("A Different Topic");
+            topicDTO.setPublic(true);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            Optional<TopicDTO> body = response.getBody(TopicDTO.class);
+            assertTrue(body.isPresent());
+            assertTrue(body.get().getPublic());
+        }
+
+        @Test
         public void createShouldTrimNameWhitespaces() {
             Group theta = new Group("Theta");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);

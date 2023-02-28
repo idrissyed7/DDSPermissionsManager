@@ -18,6 +18,7 @@ dpm:
         -
           name: Alpha
           description: Alpha description
+          is-public: true
           users:
             -
              email: wilsonj@test.test
@@ -32,6 +33,7 @@ dpm:
               name: Test Topic 123
               kind: B
               description: Topic 123 Description
+              is-public: true
             -
               name: Test Topic 456
               kind: B
@@ -39,6 +41,7 @@ dpm:
             -
               name: Application One
               description: Application One Description
+              is-public: true
             -
               name: Application Two
         -

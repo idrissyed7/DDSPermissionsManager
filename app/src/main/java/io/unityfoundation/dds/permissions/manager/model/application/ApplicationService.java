@@ -225,7 +225,12 @@ public class ApplicationService {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            application = new Application(applicationDTO.getName(), applicationDTO.getDescription());
+            boolean isPublic = false;
+            if (Boolean.TRUE.equals(applicationDTO.getPublic())) {
+                isPublic = true;
+            }
+
+            application = new Application(applicationDTO.getName(), applicationDTO.getDescription(), isPublic);
             application.setId(applicationDTO.getId());
             Group group = groupOptional.get();
             application.setPermissionsGroup(group);

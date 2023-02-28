@@ -10,6 +10,7 @@ public class DetailedGroupDTO {
     private Long id;
     private String name;
     private String description;
+    private Boolean isPublic;
     private Set<Long> topics;
     private Set<Long> applications;
     private int membershipCount;
@@ -22,6 +23,7 @@ public class DetailedGroupDTO {
     public void setGroupFields(Group group) {
         this.id = group.getId();
         this.name = group.getName();
+        this.isPublic = group.getPublic();
         this.description = group.getDescription();
     }
 
@@ -79,5 +81,13 @@ public class DetailedGroupDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

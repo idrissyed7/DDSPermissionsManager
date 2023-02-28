@@ -14,13 +14,15 @@ public class SimpleGroupDTO {
     private String name;
     @Size(max = 4000)
     private String description;
+    private Boolean isPublic;
 
     public SimpleGroupDTO() {
     }
 
-    public SimpleGroupDTO(Long id, String name, String description) {
+    public SimpleGroupDTO(Long id, String name, String description, Boolean isPublic) {
         this.id = id;
         this.name = name;
+        this.isPublic = isPublic;
         this.description = description;
     }
 
@@ -46,5 +48,13 @@ public class SimpleGroupDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

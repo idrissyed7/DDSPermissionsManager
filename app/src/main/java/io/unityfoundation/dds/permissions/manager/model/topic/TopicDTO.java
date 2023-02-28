@@ -19,6 +19,7 @@ public class TopicDTO {
     private TopicKind kind;
     @Size(max = 4000)
     private String description;
+    private Boolean isPublic;
     @NotNull
     private Long group;
     private String groupName;
@@ -32,6 +33,7 @@ public class TopicDTO {
         this.name = topic.getName();
         this.kind = topic.getKind();
         this.description = topic.getDescription();
+        this.isPublic = topic.getPublic();
         this.group = topic.getPermissionsGroup().getId();
         this.groupName = topic.getPermissionsGroup().getName();
     }
@@ -91,5 +93,13 @@ public class TopicDTO {
 
     public void setDescription(@Nullable String description) {
         this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

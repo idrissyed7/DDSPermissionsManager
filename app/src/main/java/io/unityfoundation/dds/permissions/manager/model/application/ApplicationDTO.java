@@ -15,6 +15,7 @@ public class ApplicationDTO {
     private String name;
     @Size(max = 4000)
     private String description;
+    private Boolean isPublic;
     @NotNull
     private Long group;
     private String groupName;
@@ -26,6 +27,7 @@ public class ApplicationDTO {
         this.id = app.getId();
         this.name = app.getName();
         this.description = app.getDescription();
+        this.isPublic = app.getPublic();
         this.group = app.getPermissionsGroup().getId();
         this.groupName = app.getPermissionsGroup().getName();
     }
@@ -68,5 +70,13 @@ public class ApplicationDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

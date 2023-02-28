@@ -306,6 +306,39 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void createWithIsPublic() {
+            HttpResponse<?> response;
+
+            // create group
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            // null isPublic should return false
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(theta.getId());
+            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertNotNull(applicationOptional.get().getPublic());
+            assertFalse(applicationOptional.get().getPublic());
+
+            // expect 'true' when set isPublic is set to 'true'
+            applicationDTO.setName("Xyz789");
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            Optional<ApplicationDTO> body = response.getBody(ApplicationDTO.class);
+            assertTrue(body.isPresent());
+            assertTrue(body.get().getPublic());
+        }
+
+        @Test
         public void canViewAllApplications() {
             HttpRequest<?> request;
             HttpResponse<?> response;

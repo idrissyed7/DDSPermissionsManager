@@ -203,6 +203,29 @@ public class GroupApiTest {
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS.equals(map.get("code"))));
         }
 
+        @Test
+        public void createWithIsPublic() {
+
+            // null isPublic should return false
+            HttpResponse<?> response = createGroup("NotAPublicGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(thetaOptional.isPresent());
+            SimpleGroupDTO theta = thetaOptional.get();
+            assertNotNull(theta.getPublic());
+            assertFalse(theta.getPublic());
+
+            // expect 'true' when set isPublic is set to 'true'
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setPublic(true);
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpResponse<SimpleGroupDTO> exchange = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> body = exchange.getBody(SimpleGroupDTO.class);
+            assertTrue(body.isPresent());
+            assertTrue(body.get().getPublic());
+        }
+
         // update
         @Test
         void canUpdateGroup(){
