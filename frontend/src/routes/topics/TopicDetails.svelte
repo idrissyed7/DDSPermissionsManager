@@ -15,6 +15,8 @@
 
 	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
+	let selectedTopicDescription;
+	let selectedTopicPublic;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
 	let accessTypeSelection;
@@ -30,6 +32,9 @@
 
 	// Constants
 	const returnKey = 13;
+
+	// Public flag
+	let isPublic;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -47,9 +52,12 @@
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
 			selectedTopicCanonicalName = $topicDetails.canonicalName;
+			selectedTopicDescription = $topicDetails.description;
+			selectedTopicPublic = $topicDetails.public;
 			selectedTopicGroupName = $topicDetails.groupName;
 			selectedTopicGroupId = $topicDetails.group;
 			selectedTopicKind = $topicDetails.kind;
+			isPublic = $topicDetails.public;
 
 			headerTitle.set(selectedTopicName);
 			detailView.set(true);
@@ -163,6 +171,11 @@
 				<td />
 				<td />
 			</tr>
+			<td>Description:</td>
+			<td>{selectedTopicName}</td>
+			<td />
+			<td />
+			<tr />
 
 			<tr>
 				<td>Group:</td>
@@ -179,6 +192,20 @@
 					{:else}
 						No
 					{/if}
+				</td>
+				<td />
+				<td />
+			</tr>
+
+			<tr>
+				<td>Public:</td>
+				<td>
+					<input
+						type="checkbox"
+						style="vertical-align: middle; margin-left: 0.1rem; width: 15px; height: 15px"
+						bind:checked={isPublic}
+						on:change={() => (isPublic = selectedTopicPublic)}
+					/>
 				</td>
 				<td />
 				<td />
