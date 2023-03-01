@@ -39,6 +39,8 @@
 	export let selectedGroupMembership = '';
 	export let previousAppName = '';
 	export let groupCurrentName = '';
+	export let groupCurrentDescription = '';
+	export let groupCurrentPublic = false;
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let reminderDescription = '';
@@ -60,6 +62,8 @@
 	let selectedIsApplicationAdmin = false;
 	let appName = '';
 	let newGroupName = '';
+	let newGroupDescription = '';
+	let newGroupPublic;
 	let accessTypeSelection;
 
 	// Bind Token
@@ -83,7 +87,11 @@
 	// SearchBox
 	let selectedGroup;
 
-	if (actionEditGroup) newGroupName = groupCurrentName;
+	if (actionEditGroup) {
+		newGroupName = groupCurrentName;
+		newGroupDescription = groupCurrentDescription;
+		newGroupPublic = groupCurrentPublic;
+	}
 
 	// Bind Token Decode
 	$: if (bindToken?.length > 0) {
@@ -256,7 +264,9 @@
 		invalidGroup = !validateNameLength(newGroupName, 'group');
 
 		let returnGroupName = {
-			newGroupName: newGroupName
+			newGroupName: newGroupName,
+			newGroupDescription: newGroupDescription,
+			newGroupPublic: newGroupPublic
 		};
 
 		const res = await httpAdapter.get(
@@ -265,13 +275,19 @@
 
 		if (res.data.content) {
 			if (
+				!actionEditGroup &&
 				res.data.content.some((group) => group.name.toUpperCase() === newGroupName.toUpperCase())
 			) {
 				errorMessageGroup = errorMessages['group']['exists'];
 				return;
 			} else {
 				if (actionEditGroup) {
-					dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+					dispatch('addGroup', {
+						groupId: groupId,
+						newGroupName: newGroupName,
+						newGroupDescription: newGroupDescription,
+						newGroupPublic: newGroupPublic
+					});
 				} else {
 					dispatch('addGroup', returnGroupName);
 				}
@@ -280,7 +296,12 @@
 			}
 		} else {
 			if (actionEditGroup) {
-				dispatch('addGroup', { groupId: groupId, newGroupName: newGroupName });
+				dispatch('addGroup', {
+					groupId: groupId,
+					newGroupName: newGroupName,
+					newGroupDescription: newGroupDescription,
+					newGroupPublic: newGroupPublic
+				});
 			} else {
 				dispatch('addGroup', returnGroupName);
 			}
@@ -494,7 +515,13 @@
 							actionAddGroupEvent();
 						}
 
-						if (actionEditGroup && !invalidGroup && newGroupName !== groupCurrentName) {
+						if (
+							actionEditGroup &&
+							!invalidGroup &&
+							newGroupName !== groupCurrentName &&
+							newGroupDescription !== groupCurrentDescription &&
+							newGroupPublic !== groupCurrentPublic
+						) {
 							actionAddGroupEvent();
 						}
 						if (newGroupName === groupCurrentName) {
@@ -507,6 +534,30 @@
 					errorMessageGroup = '';
 				}}
 			/>
+
+			<input
+				data-cy="group-new-description"
+				placeholder="Group Description"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				bind:value={newGroupDescription}
+				on:blur={() => {
+					newGroupDescription = newGroupDescription.trim();
+				}}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+					/// add description
+				}}
+			/>
+
+			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
+				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<input
+					type="checkbox"
+					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
+					bind:checked={newGroupPublic}
+				/>
+			</div>
 
 			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
 				<span
@@ -842,12 +893,22 @@
 			class:action-button-invalid={newGroupName?.length < minNameLength}
 			disabled={newGroupName?.length < minNameLength}
 			on:click={() => {
-				if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+				if (
+					newGroupName !== groupCurrentName ||
+					newGroupDescription !== groupCurrentDescription ||
+					newGroupPublic !== groupCurrentPublic
+				)
+					actionAddGroupEvent();
 				else dispatch('cancel');
 			}}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
-					if (newGroupName !== groupCurrentName) actionAddGroupEvent();
+					if (
+						newGroupName !== groupCurrentName ||
+						newGroupDescription !== groupCurrentDescription ||
+						newGroupPublic !== groupCurrentPublic
+					)
+						actionAddGroupEvent();
 					else dispatch('cancel');
 				}
 			}}
