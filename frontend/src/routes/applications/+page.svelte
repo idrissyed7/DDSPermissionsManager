@@ -980,12 +980,12 @@
 									>Application Name:
 								</span>
 								<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
-								<img
+								<!-- <img
 									src={editSVG}
 									alt="edit group"
 									width="18rem"
 									style="margin-left: 1.5rem; float: right; cursor: pointer"
-								/>
+								/> -->
 							</div>
 							<div style="margin-top: 0.5rem; width:fit-content">
 								<span
