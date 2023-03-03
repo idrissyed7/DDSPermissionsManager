@@ -97,7 +97,6 @@
 		}
 
 		onLoggedIn(res.data);
-		console.log('is admin', $isAdmin);
 		loginCompleted.set(true);
 		avatarName = res.data.username.slice(0, 1).toUpperCase();
 		userEmail.set(res.data.username);

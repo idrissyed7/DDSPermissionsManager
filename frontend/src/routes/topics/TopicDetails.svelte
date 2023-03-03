@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -19,7 +19,11 @@
 	let selectedApplicationList;
 	let accessTypeSelection;
 
-	const dispatch = createEventDispatcher();
+	// Success Message
+	let notifyApplicationAccessTypeSuccess = false;
+	$: if (notifyApplicationAccessTypeSuccess) {
+		setTimeout(() => (notifyApplicationAccessTypeSuccess = false), waitTime);
+	}
 
 	// Promises
 	let promise;
@@ -30,6 +34,7 @@
 
 	// Constants
 	const returnKey = 13;
+	const waitTime = 2000;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -104,7 +109,12 @@
 	};
 
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
-		await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
+		try {
+			const res = await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
+			if (res.status === 200) notifyApplicationAccessTypeSuccess = true;
+		} catch {
+			errorMessage('Error Updating Application Access Type', err.message);
+		}
 		await loadApplicationPermissions(topicId);
 	};
 
@@ -257,10 +267,16 @@
 						/>
 					</div>
 				{/each}
-				<div style="font-size: 0.7rem; text-align:right; margin-top: 0.8rem">
+				<div style="font-size: 0.7rem; text-align:right; margin-top: 1.1rem">
 					{selectedTopicApplications.length} of {selectedTopicApplications.length}
 				</div>
 			</div>
+			{#if notifyApplicationAccessTypeSuccess}
+				<span
+					style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
+					>Updated Successfully</span
+				>
+			{/if}
 		{/if}
 		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
 	{/await}

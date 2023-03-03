@@ -68,7 +68,6 @@
 			superUsersTotalSize.set(res.data.totalSize);
 		}
 		users.set(res.data.content);
-		console.log('super users', $users);
 	};
 
 	const preloadGroupMemberships = async (page = 0) => {
