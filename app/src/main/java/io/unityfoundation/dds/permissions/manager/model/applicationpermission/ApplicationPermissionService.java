@@ -52,10 +52,14 @@ public class ApplicationPermissionService {
 
     public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
         return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
-                applicationPermission.getId(), applicationPermission.getPermissionsTopic().getId(),
-                applicationPermission.getPermissionsTopic().getName(), applicationPermission.getPermissionsApplication().getId(),
+                applicationPermission.getId(),
+                applicationPermission.getPermissionsTopic().getId(),
+                applicationPermission.getPermissionsTopic().getName(),
+                applicationPermission.getPermissionsTopic().getPermissionsGroup().getName(),
+                applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getPermissionsApplication().getName(),
-                applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(), applicationPermission.getAccessType()
+                applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
+                applicationPermission.getAccessType()
         ));
     }
 
@@ -157,12 +161,21 @@ public class ApplicationPermissionService {
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
         String topicName = applicationPermission.getPermissionsTopic().getName();
+        String topicGroup = applicationPermission.getPermissionsTopic().getPermissionsGroup().getName();
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
         String applicationName = applicationPermission.getPermissionsApplication().getName();
         String applicationGroupName = applicationPermission.getPermissionsApplication().getPermissionsGroup().getName();
         AccessType accessType = applicationPermission.getAccessType();
-        return new AccessPermissionDTO(applicationPermission.getId(), topicId, topicName, applicationId, applicationName,
-                applicationGroupName, accessType);
+        return new AccessPermissionDTO(
+                applicationPermission.getId(),
+                topicId,
+                topicName,
+                topicGroup,
+                applicationId,
+                applicationName,
+                applicationGroupName,
+                accessType
+        );
     }
 
     public HttpResponse deleteById(Long permissionId) {
