@@ -38,11 +38,13 @@ public interface ResponseStatusCodes {
 
     // topic
     String TOPIC_NOT_FOUND = "topic.not-found";
-    String TOPIC_UPDATE_NOT_ALLOWED = "topic.update-not-allowed";
     String TOPIC_REQUIRES_GROUP_ASSOCIATION = "topic.requires-group-association";
+    String TOPIC_CANNOT_UPDATE_GROUP_ASSOCIATION = "topic.cannot-update-group-association";
+    String TOPIC_NAME_UPDATE_NOT_ALLOWED = "topic.name.update-not-allowed";
     String TOPIC_NAME_CANNOT_BE_BLANK_OR_NULL = "topic.name.cannot-be-blank-or-null";
     String TOPIC_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS = "topic.name.cannot-be-less-than-three-characters";
     String TOPIC_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS = "topic.name.cannot-be-more-than-four-thousand-characters";
+    String TOPIC_KIND_UPDATE_NOT_ALLOWED = "topic.kind.update-not-allowed";
     String TOPIC_ALREADY_EXISTS = "topic.exists";
 
     // group member

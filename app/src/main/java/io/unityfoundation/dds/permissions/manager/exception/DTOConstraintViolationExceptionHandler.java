@@ -94,11 +94,7 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
                 }
             }
         } else if (code.contains(".topic.")) {
-            if (code.endsWith(".id")) {
-                if (descriptor.getAnnotation() instanceof Null) {
-                    code = ResponseStatusCodes.TOPIC_UPDATE_NOT_ALLOWED;
-                }
-            } else if (code.endsWith(".name")) {
+            if (code.endsWith(".name")) {
                 if (descriptor.getAnnotation() instanceof NotBlank) {
                     code = ResponseStatusCodes.TOPIC_NAME_CANNOT_BE_BLANK_OR_NULL;
                 } else if (descriptor.getAnnotation() instanceof Size) {

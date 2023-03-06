@@ -291,10 +291,66 @@ public class TopicApiTest {
         }
 
         @Test
-        public void cannotUpdateTopic() {
+        public void cannotUpdateTopicNameNorKind() {
             Group theta = new Group("Theta");
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
             HttpResponse<?> response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            String originalName = "Abc123";
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName(originalName);
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            assertEquals(originalName, topicOptional.get().getName());
+
+            // update attempt
+            topicDTO = topicOptional.get();
+            topicDTO.setName("UpdatedTestTopic2");
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(BAD_REQUEST, thrown.getStatus());
+            Optional<List> bodyOptional = thrown.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.TOPIC_NAME_UPDATE_NOT_ALLOWED.equals(map.get("code"))));
+
+
+            topicDTO.setName(originalName);
+            topicDTO.setKind(TopicKind.C);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            HttpRequest<?> finalRequest1 = request;
+            thrown = assertThrows(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest1);
+            });
+            assertEquals(BAD_REQUEST, thrown.getStatus());
+            bodyOptional = thrown.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.TOPIC_KIND_UPDATE_NOT_ALLOWED.equals(map.get("code"))));
+        }
+
+        @Test
+        public void canUpdateTopicDescriptionAndOrPublic() {
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            Group theta = new Group("Theta");
+            request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> thetaOptional = response.getBody(Group.class);
             assertTrue(thetaOptional.isPresent());
@@ -313,20 +369,18 @@ public class TopicApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Abc123", topicOptional.get().getName());
 
-            // update attempt
-            topicDTO = topicOptional.get();
-            topicDTO.setName("UpdatedTestTopic2");
-            topicDTO.setKind(TopicKind.C);
-            request = HttpRequest.POST("/topics/save", topicDTO);
-            HttpRequest<?> finalRequest = request;
-            HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(finalRequest);
-            });
-            assertEquals(BAD_REQUEST, thrown.getStatus());
-            Optional<List> bodyOptional = thrown.getResponse().getBody(List.class);
-            assertTrue(bodyOptional.isPresent());
-            List<Map> list = bodyOptional.get();
-            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.TOPIC_UPDATE_NOT_ALLOWED.equals(map.get("code"))));
+            // with same name different description and isPublic values
+            TopicDTO savededTopicDTO = topicOptional.get();
+            savededTopicDTO.setDescription("This is a description");
+            savededTopicDTO.setPublic(true);
+            request = HttpRequest.POST("/topics/save", savededTopicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> updatedTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(updatedTopicOptional.isPresent());
+            TopicDTO updatedTopic = updatedTopicOptional.get();
+            assertEquals("This is a description", updatedTopic.getDescription());
+            assertTrue(updatedTopic.getPublic());
         }
 
         @Test
