@@ -115,6 +115,16 @@ public class GroupApiTest {
         void canCreateGroup(){
             HttpResponse<?> response = createGroup("Theta");
             assertEquals(OK, response.getStatus());
+
+            // with description and isPublic flag
+            Group group = new Group("Beta", "myDescription", true);
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, Group.class);
+            Optional<SimpleGroupDTO> simpleGroupDTO = response.getBody(SimpleGroupDTO.class);
+            assertTrue(simpleGroupDTO.isPresent());
+            assertEquals("Beta", simpleGroupDTO.get().getName());
+            assertEquals("myDescription", simpleGroupDTO.get().getDescription());
+            assertTrue(simpleGroupDTO.get().getPublic());
         }
 
         @Test
@@ -235,13 +245,22 @@ public class GroupApiTest {
             assertTrue(thetaOptional.isPresent());
             Group theta = thetaOptional.get();
 
-            theta.setName("ThetaTestUpdate");
+            // with same name different description and public values
+            theta.setDescription("This is a description");
+            theta.setPublic(true);
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+
+            theta.setName("ThetaTestUpdate");
+            request = HttpRequest.POST("/groups/save", theta);
             response = blockingClient.exchange(request, Group.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> thetaTestUpdateOptional = response.getBody(Group.class);
             assertTrue(thetaTestUpdateOptional.isPresent());
             assertEquals("ThetaTestUpdate", thetaTestUpdateOptional.get().getName());
+            assertEquals("This is a description", thetaTestUpdateOptional.get().getDescription());
+            assertTrue(thetaTestUpdateOptional.get().getPublic());
         }
 
         @Test

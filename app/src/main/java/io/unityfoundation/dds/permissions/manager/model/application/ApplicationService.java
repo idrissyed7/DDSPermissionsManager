@@ -202,7 +202,7 @@ public class ApplicationService {
                 applicationDTO.getName().trim(), groupOptional.get());
 
         Application application;
-        if (applicationDTO.getId() != null) { // update
+        if (applicationDTO.getId() != null) {
 
             Optional<Application> applicationOptional = applicationRepository.findById(applicationDTO.getId());
             if (applicationOptional.isEmpty()) {
@@ -217,9 +217,11 @@ public class ApplicationService {
 
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
+            application.setDescription(applicationDTO.getDescription());
+            application.setPublic(applicationDTO.getPublic());
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
-        } else { // new
+        } else {
 
             if (searchApplicationByNameAndGroup.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);

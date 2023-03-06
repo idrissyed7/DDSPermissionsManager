@@ -578,7 +578,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationName() {
+        public void canUpdateApplication() {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
@@ -596,6 +596,13 @@ public class ApplicationApiTest {
             assertTrue(applicationOptional.isPresent());
             ApplicationDTO application = applicationOptional.get();
 
+            // with same name different description and isPublic values
+            application.setDescription("This is a description");
+            application.setPublic(true);
+            request = HttpRequest.POST("/applications/save", application);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+
             application.setName("TestApplicationUpdate");
             request = HttpRequest.POST("/applications/save", application);
             response = blockingClient.exchange(request, ApplicationDTO.class);
@@ -605,6 +612,8 @@ public class ApplicationApiTest {
             ApplicationDTO updatedApplication = updatedApplicationOptional.get();
 
             assertEquals("TestApplicationUpdate", updatedApplication.getName());
+            assertEquals("This is a description", updatedApplication.getDescription());
+            assertTrue(updatedApplication.getPublic());
         }
 
         @Test

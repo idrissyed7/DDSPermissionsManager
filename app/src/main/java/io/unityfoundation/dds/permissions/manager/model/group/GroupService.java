@@ -90,16 +90,11 @@ public class GroupService {
                 throw new DPMException(ResponseStatusCodes.GROUP_ALREADY_EXISTS);
             }
 
-            boolean isPublic = false;
-            if (Boolean.TRUE.equals(groupRequestDTO.getPublic())) {
-                isPublic = true;
-            }
+            boolean isPublic = Boolean.TRUE.equals(groupRequestDTO.getPublic());
 
             group = groupRepository.save(new Group(groupRequestDTO.getName(), groupRequestDTO.getDescription(), isPublic));
-
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getPublic()));
         } else {
-            if (searchGroupByName.isPresent()) {
+            if (searchGroupByName.isPresent() && !searchGroupByName.get().getId().equals(groupRequestDTO.getId())) {
                 return HttpResponse.badRequest("Group with same name already exists");
             }
 
@@ -110,10 +105,13 @@ public class GroupService {
 
             group = groupById.get();
             group.setName(groupRequestDTO.getName());
-            group = groupRepository.update(group);
+            group.setDescription(groupRequestDTO.getDescription());
+            group.setPublic(groupRequestDTO.getPublic());
 
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getPublic()));
+            group = groupRepository.update(group);
         }
+
+        return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getPublic()));
     }
 
     public MutableHttpResponse<?> deleteById(Long id) {
