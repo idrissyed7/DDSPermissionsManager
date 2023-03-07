@@ -532,7 +532,7 @@ public class GroupApiTest {
         }
 
         @Test
-        void cannotUpdateGroup() {
+        void canUpdateGroup() {
             HttpResponse response;
             HttpRequest<?> request;
 
@@ -541,18 +541,28 @@ public class GroupApiTest {
 
             response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            Optional<Group> primaryOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> primaryOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(primaryOptional.isPresent());
+
+            // add membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryOptional.get().getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
 
             loginAsNonAdmin();
 
-            Group group = primaryOptional.get();
-            group.setName("Omega");
-            request = HttpRequest.POST("/groups/save", group);
-            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(request);
-            });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
+            SimpleGroupDTO requestGroupDTO = primaryOptional.get();
+            requestGroupDTO.setName("Omega");
+            request = HttpRequest.POST("/groups/save", requestGroupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> updatedOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(updatedOptional.isPresent());
+            assertEquals("Omega", updatedOptional.get().getName());
         }
 
         @Test
@@ -718,6 +728,40 @@ public class GroupApiTest {
             Map group = groups.get(0);
             assertEquals("GroupOne", group.get("name"));
         }
+
+        @Test
+        void canUpdateGroup() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> primaryOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(primaryOptional.isPresent());
+
+            // add membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryOptional.get().getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(false);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            SimpleGroupDTO requestGroupDTO = primaryOptional.get();
+            requestGroupDTO.setName("Omega");
+            request = HttpRequest.POST("/groups/save", requestGroupDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
     }
 
     @Nested
@@ -752,9 +796,10 @@ public class GroupApiTest {
     }
 
     private HttpResponse<?> createGroup(String groupName) {
-        Group group = new Group(groupName);
+        SimpleGroupDTO group = new SimpleGroupDTO();
+        group.setName(groupName);
         HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
-        return blockingClient.exchange(request, Group.class);
+        return blockingClient.exchange(request, SimpleGroupDTO.class);
     }
 
     private HttpResponse<?> createApplication(String applicationName, Long groupId) {

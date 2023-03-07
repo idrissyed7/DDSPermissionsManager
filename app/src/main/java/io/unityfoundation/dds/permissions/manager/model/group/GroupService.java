@@ -78,14 +78,14 @@ public class GroupService {
     }
 
     public MutableHttpResponse<?> save(SimpleGroupDTO groupRequestDTO) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            return HttpResponse.unauthorized();
-        }
 
         Optional<Group> searchGroupByName = groupRepository.findByName(groupRequestDTO.getName().trim());
 
         Group group;
         if (groupRequestDTO.getId() == null) {
+            if (!securityUtil.isCurrentUserAdmin()) {
+                return HttpResponse.unauthorized();
+            }
             if (searchGroupByName.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.GROUP_ALREADY_EXISTS);
             }
@@ -101,6 +101,9 @@ public class GroupService {
             Optional<Group> groupById = groupRepository.findById(groupRequestDTO.getId());
             if (groupById.isEmpty()) {
                 return HttpResponse.notFound();
+            }
+            if (!securityUtil.isCurrentUserAdmin() && !isUserGroupAdminOfGroup(groupById.get())) {
+                return HttpResponse.unauthorized();
             }
 
             group = groupById.get();
@@ -130,6 +133,12 @@ public class GroupService {
         groupRepository.deleteById(id);
 
         return HttpResponse.seeOther(URI.create("/api/groups"));
+    }
+
+    public boolean isUserGroupAdminOfGroup(Group group) {
+        return securityUtil.getCurrentlyAuthenticatedUser()
+                .map(user -> groupUserService.isUserGroupAdminOfGroup(group.getId(), user.getId()))
+                .orElse(false);
     }
 
     public Page<SimpleGroupDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
