@@ -80,9 +80,9 @@
 
 	$: if ($editAppName === 'edit') {
 		previousAppName = $headerTitle;
-		editApplicationNameVisible = true;
+		editApplicationVisible = true;
 	} else if ($editAppName === true) {
-		editApplicationNameVisible = false;
+		editApplicationVisible = false;
 	}
 
 	// Messages
@@ -127,7 +127,7 @@
 	let addApplicationVisible = false;
 	let deleteApplicationVisible = false;
 	let applicationDetailVisible = false;
-	let editApplicationNameVisible = false;
+	let editApplicationVisible = false;
 
 	// Tables
 	let applicationsRowsSelected = [];
@@ -223,7 +223,6 @@
 				applicationsTotalSize.set(res.data.totalSize);
 			}
 			applications.set(res.data.content);
-			console.log('applications', $applications);
 			applicationsCurrentPage = page;
 		} catch (err) {
 			userValidityCheck.set(true);
@@ -361,12 +360,14 @@
 		returnToAppsList();
 	};
 
-	const saveNewAppName = async (newAppName) => {
+	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
 		await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: newAppName,
-				group: selectedAppGroupId
+				group: selectedAppGroupId,
+				description: newAppDescription,
+				public: newAppPublic
 			})
 			.catch((err) => {
 				if (err.response.data && err.response.status === 400) {
@@ -385,7 +386,6 @@
 
 	const loadApplicationDetail = async (appId, groupId) => {
 		const appDetail = await httpAdapter.get(`/applications/show/${appId}`);
-		console.log('appDetail', appDetail.data);
 		applicationListVisible = false;
 		applicationDetailVisible = true;
 
@@ -397,10 +397,7 @@
 		selectedAppPublic = appDetail.data.public;
 		isPublic = selectedAppPublic;
 
-		if (!selectedAppDescription && applicationDetailVisible)
-			console.log(selectedAppDescriptionSelector);
-
-		canEditAppName();
+		if (!selectedAppDescription && applicationDetailVisible) canEditAppName();
 
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
@@ -557,6 +554,7 @@
 					}}
 				/>
 			{/if}
+
 			{#if deleteApplicationVisible && !errorMessageVisible}
 				<Modal
 					actionDeleteApplications={true}
@@ -589,16 +587,22 @@
 				/>
 			{/if}
 
-			{#if editApplicationNameVisible}
+			{#if editApplicationVisible}
 				<Modal
 					title="Edit Application"
-					actionEditApplicationName={true}
-					{previousAppName}
-					on:cancel={() => (editApplicationNameVisible = false)}
-					on:saveNewAppName={(e) => {
-						saveNewAppName(e.detail.newAppName);
+					actionEditApplication={true}
+					appCurrentName={selectedAppName}
+					appCurrentDescription={selectedAppDescription}
+					appCurrentPublic={isPublic}
+					on:cancel={() => (editApplicationVisible = false)}
+					on:saveNewApp={(e) => {
+						saveNewApp(e.detail.newAppName, e.detail.newAppDescription, e.detail.newAppPublic);
 						canEditAppName();
 						headerTitle.set(e.detail.newAppName);
+						editApplicationVisible = false;
+						selectedAppName = e.detail.newAppName;
+						selectedAppDescription = e.detail.newAppDescription;
+						isPublic = e.detail.newAppPublic;
 					}}
 				/>
 			{/if}
@@ -980,12 +984,15 @@
 									>Application Name:
 								</span>
 								<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
-								<!-- <img
-									src={editSVG}
-									alt="edit group"
-									width="18rem"
-									style="margin-left: 1.5rem; float: right; cursor: pointer"
-								/> -->
+								{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
+									<img
+										src={editSVG}
+										alt="edit group"
+										width="18rem"
+										style="margin-left: 7rem; cursor: pointer"
+										on:click={() => (editApplicationVisible = true)}
+									/>
+								{/if}
 							</div>
 							<div style="margin-top: 0.5rem; width:fit-content">
 								<span

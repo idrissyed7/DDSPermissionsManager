@@ -1,5 +1,7 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { isAdmin } from '../../stores/authentication';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import Modal from '../../lib/Modal.svelte';
@@ -9,6 +11,11 @@
 	const dispatch = createEventDispatcher();
 
 	export let group;
+
+	console.log('permissionsByGroup', $permissionsByGroup);
+	console.log('group', group);
+
+	$: if (group) isPublic = group.public;
 
 	let descriptionSelector;
 	let isPublic = group.public;
@@ -32,7 +39,8 @@
 			public: isPublic
 		});
 
-		console.log('res', res);
+		group = res.data;
+		headerTitle.set(group.name);
 
 		dispatch('reload');
 	};
@@ -65,13 +73,16 @@
 				>Group Name:
 			</span>
 			<span style="font-size: 1.3rem; font-weight: 500">{group.name} </span>
-			<img
-				src={editSVG}
-				alt="edit group"
-				width="18rem"
-				style="margin-left: 1.5rem; float: right; cursor: pointer"
-				on:click={() => (editGroupVisible = true)}
-			/>
+
+			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === group.id && permission.isGroupAdmin)}
+				<img
+					src={editSVG}
+					alt="edit group"
+					width="18rem"
+					style="margin-left: 1.5rem; float: right; cursor: pointer"
+					on:click={() => (editGroupVisible = true)}
+				/>
+			{/if}
 		</div>
 		<div style="margin-top: 0.5rem; width:fit-content">
 			<span

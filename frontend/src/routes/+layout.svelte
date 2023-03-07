@@ -80,7 +80,7 @@
 	const refreshToken_Info = async () => {
 		const res = await httpAdapter.get(`/token_info`);
 		permissionsByGroup.set(res.data.permissionsByGroup);
-
+		console.log('permissionsByGroup', $permissionsByGroup);
 		if ($permissionsByGroup) {
 			let groupsList = [];
 			let topicsList = [];

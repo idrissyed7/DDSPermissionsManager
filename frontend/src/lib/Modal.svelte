@@ -23,7 +23,8 @@
 	export let actionAddGroup = false;
 	export let actionAssociateApplication = false;
 	export let actionEditUser = false;
-	export let actionEditApplicationName = false;
+	export let actionEditApplication = false;
+	export let actionEditTopic = false;
 	export let actionEditGroup = false;
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
@@ -37,10 +38,15 @@
 	export let anyApplicationCanRead = false;
 	export let searchGroups = '';
 	export let selectedGroupMembership = '';
-	export let previousAppName = '';
 	export let groupCurrentName = '';
 	export let groupCurrentDescription = '';
 	export let groupCurrentPublic = false;
+	export let appCurrentName = '';
+	export let appCurrentDescription = '';
+	export let appCurrentPublic = false;
+	export let topicCurrentName = '';
+	export let topicCurrentDescription = '';
+	export let topicCurrentPublic = false;
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let reminderDescription = '';
@@ -64,6 +70,9 @@
 	let newGroupName = '';
 	let newGroupDescription = '';
 	let newGroupPublic;
+	let newAppName = '';
+	let newAppDescription = '';
+	let newAppPublic;
 	let accessTypeSelection;
 
 	// Bind Token
@@ -75,6 +84,7 @@
 	let invalidTopic = false;
 	let invalidGroup = false;
 	let invalidApplicationName = false;
+	let invalidTopicName = false;
 	let invalidEmail = false;
 	let errorMessageGroup = '';
 	let errorMessageApplication = '';
@@ -91,6 +101,12 @@
 		newGroupName = groupCurrentName;
 		newGroupDescription = groupCurrentDescription;
 		newGroupPublic = groupCurrentPublic;
+	}
+
+	if (actionEditApplication) {
+		newAppName = appCurrentName;
+		newAppDescription = appCurrentDescription;
+		newAppPublic = appCurrentPublic;
 	}
 
 	// Bind Token Decode
@@ -546,7 +562,6 @@
 				on:click={() => {
 					errorMessageName = '';
 					errorMessageGroup = '';
-					/// add description
 				}}
 			/>
 
@@ -580,7 +595,7 @@
 			{/if}
 		{/if}
 
-		{#if actionEditApplicationName}
+		{#if actionEditApplication}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				autofocus
@@ -588,21 +603,100 @@
 				placeholder="Application Name *"
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
-				bind:value={previousAppName}
+				bind:value={newAppName}
 				on:blur={() => {
-					previousAppName = previousAppName.trim();
+					newAppName = newAppName.trim();
 				}}
 				on:keydown={(event) => {
 					errorMessageName = '';
 					if (event.which === returnKey) {
-						previousAppName = previousAppName.trim();
-						invalidApplicationName = !validateNameLength(previousAppName, 'application');
+						newAppName = newAppName.trim();
+						invalidApplicationName = !validateNameLength(newAppName, 'application');
 						if (!invalidApplicationName)
-							dispatch('saveNewAppName', { newAppName: previousAppName });
+							dispatch('saveNewApp', {
+								newAppName: newAppName,
+								newAppDescription: newAppDescription,
+								newAppPublic: newAppPublic
+							});
 					}
 				}}
 				on:click={() => (errorMessageName = '')}
 			/>
+
+			<input
+				data-cy="application-new-description"
+				placeholder="Application Description"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				bind:value={newAppDescription}
+				on:blur={() => {
+					newAppDescription = newAppDescription.trim();
+				}}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+				}}
+			/>
+
+			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
+				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<input
+					type="checkbox"
+					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
+					bind:checked={newAppPublic}
+				/>
+			</div>
+		{/if}
+
+		{#if actionEditTopic}
+			<!-- svelte-ignore a11y-autofocus -->
+			<!-- <input
+				autofocus
+				data-cy="topic-name"
+				placeholder="Topic Name *"
+				class:invalid={invalidApplicationName}
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
+				bind:value={topicCurrentName}
+				on:blur={() => {
+					topicCurrentName = topicCurrentName.trim();
+				}}
+				on:keydown={(event) => {
+					errorMessageName = '';
+					if (event.which === returnKey) {
+						topicCurrentName = topicCurrentName.trim();
+						invalidTopicName = !validateNameLength(topicCurrentName, 'topic');
+						if (!invalidTopicName)
+							dispatch('saveNewTopic', {
+								newTopicName: topicCurrentName,
+								newTopicDescription: topicCurrentDescription,
+								newTopicPublic: topicCurrentPublic
+							});
+					}
+				}}
+				on:click={() => (errorMessageName = '')}
+			/> -->
+
+			<input
+				data-cy="topic-new-description"
+				placeholder="Topic Description"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 0 2rem 0 0"
+				bind:value={topicCurrentDescription}
+				on:blur={() => {
+					topicCurrentDescription = topicCurrentDescription.trim();
+				}}
+				on:click={() => {
+					errorMessageName = '';
+					errorMessageGroup = '';
+				}}
+			/>
+
+			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
+				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<input
+					type="checkbox"
+					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
+					bind:checked={topicCurrentPublic}
+				/>
+			</div>
 		{/if}
 
 		{#if group}
@@ -866,19 +960,60 @@
 		</button>
 	{/if}
 
-	{#if actionEditApplicationName}
+	{#if actionEditApplication}
 		<hr style="z-index: 1" />
 		<button
 			data-cy="save-application"
 			class="action-button"
-			class:action-button-invalid={previousAppName?.length < minNameLength}
-			disabled={previousAppName?.length < minNameLength}
+			class:action-button-invalid={newAppName?.length < minNameLength}
+			disabled={newAppName?.length < minNameLength}
 			on:click={() => {
-				dispatch('saveNewAppName', { newAppName: previousAppName });
+				dispatch('saveNewApp', {
+					newAppName: newAppName,
+					newAppDescription: newAppDescription,
+					newAppPublic: newAppPublic
+				});
 			}}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
-					dispatch('saveNewAppName', { newAppName: previousAppName });
+					dispatch('saveNewApp', {
+						newAppName: newAppName,
+						newAppDescription: newAppDescription,
+						newAppPublic: newAppPublic
+					});
+				}
+			}}
+			>Save Changes
+		</button>
+	{/if}
+
+	{#if actionEditTopic}
+		<hr style="z-index: 1" />
+		<button
+			data-cy="save-application"
+			class="action-button"
+			class:action-button-invalid={topicCurrentName?.length < minNameLength}
+			disabled={topicCurrentName?.length < minNameLength}
+			on:click={() => {
+				topicCurrentName = topicCurrentName.trim();
+				invalidTopicName = !validateNameLength(topicCurrentName, 'topic');
+				if (!invalidTopicName)
+					dispatch('saveNewTopic', {
+						newTopicName: topicCurrentName,
+						newTopicDescription: topicCurrentDescription,
+						newTopicPublic: topicCurrentPublic
+					});
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					topicCurrentName = topicCurrentName.trim();
+					invalidTopicName = !validateNameLength(topicCurrentName, 'topic');
+					if (!invalidTopicName)
+						dispatch('saveNewTopic', {
+							newTopicName: topicCurrentName,
+							newTopicDescription: topicCurrentDescription,
+							newTopicPublic: topicCurrentPublic
+						});
 				}
 			}}
 			>Save Changes
