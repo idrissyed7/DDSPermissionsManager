@@ -323,6 +323,7 @@
 				<TopicDetails
 					{selectedTopicId}
 					{isTopicAdmin}
+					on:reloadTopics={reloadAllTopics}
 					on:addTopic={async (e) => {
 						newTopicName = e.detail.newTopicName;
 						searchGroups = e.detail.searchGroups;
