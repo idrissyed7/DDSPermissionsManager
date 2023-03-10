@@ -30,7 +30,7 @@ public class Topic {
     private String description;
 
     @Column(columnDefinition="BOOLEAN DEFAULT false")
-    private Boolean isPublic;
+    private Boolean makePublic;
 
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
@@ -43,7 +43,7 @@ public class Topic {
         this.name = name;
         this.kind = kind;
         this.description = description;
-        this.isPublic = isPublic;
+        this.makePublic = isPublic;
     }
 
     public Topic(@NonNull String name, @NonNull TopicKind kind, Group permissionsGroup) {
@@ -56,7 +56,7 @@ public class Topic {
         this.name = name;
         this.kind = kind;
         this.description = description;
-        this.isPublic = isPublic;
+        this.makePublic = isPublic;
         this.permissionsGroup = permissionsGroup;
     }
 
@@ -108,11 +108,11 @@ public class Topic {
         this.description = description;
     }
 
-    public Boolean getPublic() {
-        return isPublic;
+    public Boolean getMakePublic() {
+        return makePublic;
     }
 
-    public void setPublic(Boolean aPublic) {
-        isPublic = aPublic;
+    public void setMakePublic(Boolean isPublic) {
+        makePublic = isPublic;
     }
 }

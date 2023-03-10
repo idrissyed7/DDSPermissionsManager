@@ -456,6 +456,41 @@ public class TopicApiTest {
             assertNotNull(topicShowResponse.get().getGroupName());
         }
 
+        @Test
+        public void canViewPublic() {
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create group
+            Group theta = new Group("Theta");
+            request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topic
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+            xyzDTO.setPublic(true);
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzTopicOptional.isPresent());
+            TopicDTO xyzTopic = xyzTopicOptional.get();
+
+            request = HttpRequest.GET("/topics/show/"+xyzTopic.getId());
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> savedAppOptional1 = response.getBody(TopicDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
+        }
+
         // list all topics from all groups
         @Test
         void canListAllTopicsAndTopicsWithSameNameCanExistSitewide(){
@@ -1195,6 +1230,47 @@ public class TopicApiTest {
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
 
+        @Test
+        public void canViewPublic() {
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create group
+            Group theta = new Group("Theta");
+            request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topic
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+            xyzDTO.setPublic(true);
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzTopicOptional.isPresent());
+            TopicDTO xyzTopic = xyzTopicOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/topics/show/"+xyzTopic.getId());
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> savedAppOptional1 = response.getBody(TopicDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
+        }
+
         // list
         @Test
         void canListAllTopicsLimitedToMembership(){
@@ -1470,6 +1546,47 @@ public class TopicApiTest {
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
+        @Test
+        public void canViewPublic() {
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create group
+            Group theta = new Group("Theta");
+            request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topic
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+            xyzDTO.setPublic(true);
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzTopicOptional.isPresent());
+            TopicDTO xyzTopic = xyzTopicOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/topics/show/"+xyzTopic.getId());
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> savedAppOptional1 = response.getBody(TopicDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
+        }
+
         // create
         @Test
         void cannotCreateTopic(){
@@ -1621,6 +1738,48 @@ public class TopicApiTest {
         void loginAsNonAdmin() {
             mockSecurityService.setServerAuthentication(null);
             mockAuthenticationFetcher.setAuthentication(null);
+        }
+
+        @Test
+        public void canViewPublic() {
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create group
+            Group theta = new Group("Theta");
+            request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topic
+            TopicDTO xyzDTO = new TopicDTO();
+            xyzDTO.setName("Xyz789");
+            xyzDTO.setKind(TopicKind.B);
+            xyzDTO.setGroup(theta.getId());
+            xyzDTO.setPublic(true);
+
+            request = HttpRequest.POST("/topics/save", xyzDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> xyzTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(xyzTopicOptional.isPresent());
+            TopicDTO xyzTopic = xyzTopicOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/topics/show/"+xyzTopic.getId());
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, TopicDTO.class);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
         }
 
         @Test

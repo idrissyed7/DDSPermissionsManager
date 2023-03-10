@@ -101,10 +101,7 @@ public class TopicService {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
-        boolean isPublic = false;
-        if (Boolean.TRUE.equals(topicDTO.getPublic())) {
-            isPublic = true;
-        }
+        boolean isPublic = Boolean.TRUE.equals(topicDTO.getPublic());
 
         Topic topic;
         if (topicDTO.getId() != null) {
@@ -122,7 +119,7 @@ public class TopicService {
             }
 
             savedTopic.setDescription(topicDTO.getDescription());
-            savedTopic.setPublic(isPublic);
+            savedTopic.setMakePublic(isPublic);
 
             topic = topicRepository.update(savedTopic);
         } else {
@@ -170,11 +167,11 @@ public class TopicService {
         }
 
         Topic topic = topicOptional.get();
-        TopicDTO topicResponseDTO = new TopicDTO(topic);
-        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
-        if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
+        if (!topic.getMakePublic() && !securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
+        TopicDTO topicResponseDTO = new TopicDTO(topic);
+        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
 
         return HttpResponse.ok(topicResponseDTO);
     }

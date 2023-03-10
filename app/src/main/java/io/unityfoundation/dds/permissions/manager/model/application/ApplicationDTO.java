@@ -27,7 +27,7 @@ public class ApplicationDTO {
         this.id = app.getId();
         this.name = app.getName();
         this.description = app.getDescription();
-        this.isPublic = app.getPublic();
+        this.isPublic = app.getMakePublic();
         this.group = app.getPermissionsGroup().getId();
         this.groupName = app.getPermissionsGroup().getName();
     }

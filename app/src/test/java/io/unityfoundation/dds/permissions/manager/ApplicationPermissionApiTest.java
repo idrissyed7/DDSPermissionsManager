@@ -810,6 +810,8 @@ public class ApplicationPermissionApiTest {
     class WhenAsNonAdmin {
 
         private ApplicationPermission applicationPermissionOne;
+        private Application publicApplication;
+        private Application privateApplication;
 
         @BeforeEach
         void setup() {
@@ -823,9 +825,12 @@ public class ApplicationPermissionApiTest {
             applicationPermissionOne = applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
 
             Group group1 = groupRepository.save(new Group("TestGroup1"));
-            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, group1));
-            Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
-            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
+            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, "topic description", true, group1));
+            publicApplication = applicationRepository.save(new Application("ApplicationTwo", group1, "topic description", true));
+            applicationPermissionRepository.save(new ApplicationPermission(publicApplication, topic1, AccessType.READ_WRITE));
+
+            privateApplication = applicationRepository.save(new Application("ApplicationThree", group1, "topic description", false));
+            applicationPermissionRepository.save(new ApplicationPermission(privateApplication, topic1, AccessType.READ_WRITE));
         }
 
         void loginAsNonAdmin() {
@@ -844,6 +849,55 @@ public class ApplicationPermissionApiTest {
             HttpRequest<?> request = HttpRequest.GET("/application_permissions");
             Page page = blockingClient.retrieve(request,  Page.class);
             assertTrue(page.isEmpty());
+        }
+
+        @Test
+        public void canViewPublicApplicationPermissions() {
+            loginAsNonAdmin();
+
+            HttpRequest<?> request;
+            Page page;
+
+            // all public permissions - should yield permissions with TestTopic1 and ApplicationTwo
+            request = HttpRequest.GET("/application_permissions?publicMode=true");
+            page = blockingClient.retrieve(request, Page.class);
+            assertFalse(page.isEmpty());
+            assertEquals(1, page.getContent().size());
+            assertTrue(page.getContent().stream().allMatch(o -> {
+                Map map1 = (Map) o;
+                String topic = (String) map1.get("topicName");
+                String application = (String) map1.get("applicationName");
+                return topic.contentEquals("TestTopic1") && application.contentEquals("ApplicationTwo");
+            }));
+
+            // public permissions with public application - should yield the same as above
+            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+publicApplication.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertFalse(page.isEmpty());
+            assertEquals(1, page.getContent().size());
+            assertTrue(page.getContent().stream().allMatch(o -> {
+                Map map1 = (Map) o;
+                String topic = (String) map1.get("topicName");
+                String application = (String) map1.get("applicationName");
+                return topic.contentEquals("TestTopic1") && application.contentEquals("ApplicationTwo");
+            }));
+
+            // public permissions call with private application - should not yield results
+            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+privateApplication.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertTrue(page.isEmpty());
+
+            // public permissions call with public topic - should yield one permission (the one with public application association)
+            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+publicApplication.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertFalse(page.isEmpty());
+            assertEquals(1, page.getContent().size());
+            assertTrue(page.getContent().stream().allMatch(o -> {
+                Map map1 = (Map) o;
+                String topic = (String) map1.get("topicName");
+                String application = (String) map1.get("applicationName");
+                return topic.contentEquals("TestTopic1") && application.contentEquals("ApplicationTwo");
+            }));
         }
 
         @Test

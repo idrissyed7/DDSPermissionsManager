@@ -23,7 +23,7 @@ public class DetailedGroupDTO {
     public void setGroupFields(Group group) {
         this.id = group.getId();
         this.name = group.getName();
-        this.isPublic = group.getPublic();
+        this.isPublic = group.getMakePublic();
         this.description = group.getDescription();
     }
 
