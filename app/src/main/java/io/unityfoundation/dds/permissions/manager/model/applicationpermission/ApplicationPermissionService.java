@@ -50,8 +50,15 @@ public class ApplicationPermissionService {
         this.jwtTokenValidator = jwtTokenValidator;
     }
 
-    public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable) {
-        return getApplicationPermissionsPage(applicationId, topicId, pageable).map(applicationPermission -> new AccessPermissionDTO(
+    public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable, Boolean publicMode) {
+        Page<ApplicationPermission> page;
+        if (Boolean.TRUE.equals(publicMode)) {
+            page = getPublicApplicationPermissionsPage(applicationId, topicId, pageable);
+        } else {
+            page = getApplicationPermissionsPage(applicationId, topicId, pageable);
+        }
+
+        return page.map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(),
                 applicationPermission.getPermissionsTopic().getId(),
                 applicationPermission.getPermissionsTopic().getName(),
@@ -95,6 +102,19 @@ public class ApplicationPermissionService {
                 return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndPermissionsApplicationIdInAndPermissionsTopicIdIn(
                         applicationId, topicId, groupsApplications, groupsTopics, pageable);
             }
+        }
+    }
+
+    private Page<ApplicationPermission> getPublicApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
+        if (applicationId == null && topicId == null) {
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrue(pageable);
+        } else if (applicationId != null && topicId == null) {
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsApplicationId(applicationId, pageable);
+        } else if (topicId != null && applicationId == null) {
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsTopicId(topicId, pageable);
+        } else {
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsApplicationIdAndPermissionsTopicId(
+                    applicationId, topicId, pageable);
         }
     }
 

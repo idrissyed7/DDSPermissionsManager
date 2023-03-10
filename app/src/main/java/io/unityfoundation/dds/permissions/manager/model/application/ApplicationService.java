@@ -218,7 +218,7 @@ public class ApplicationService {
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
             application.setDescription(applicationDTO.getDescription());
-            application.setPublic(applicationDTO.getPublic());
+            application.setMakePublic(applicationDTO.getPublic());
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
         } else {
@@ -227,10 +227,7 @@ public class ApplicationService {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            boolean isPublic = false;
-            if (Boolean.TRUE.equals(applicationDTO.getPublic())) {
-                isPublic = true;
-            }
+            boolean isPublic = Boolean.TRUE.equals(applicationDTO.getPublic());
 
             application = new Application(applicationDTO.getName(), applicationDTO.getDescription(), isPublic);
             application.setId(applicationDTO.getId());
@@ -277,14 +274,14 @@ public class ApplicationService {
             return HttpResponse.notFound();
         }
 
-        if (!securityUtil.isCurrentUserAdmin() &&
+        Application application = applicationOptional.get();
+        if (!application.getMakePublic() && !securityUtil.isCurrentUserAdmin() &&
                 !groupUserService.isUserMemberOfGroup(
                         applicationOptional.get().getPermissionsGroup().getId(),
                         securityUtil.getCurrentlyAuthenticatedUser().get().getId())
         ){
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
-        Application application = applicationOptional.get();
         ApplicationDTO applicationDTO = new ApplicationDTO(application);
 
         return HttpResponse.ok(applicationDTO);

@@ -31,7 +31,7 @@ public class TopicDTO {
         this.name = topic.getName();
         this.kind = topic.getKind();
         this.description = topic.getDescription();
-        this.isPublic = topic.getPublic();
+        this.isPublic = topic.getMakePublic();
         this.group = topic.getPermissionsGroup().getId();
         this.groupName = topic.getPermissionsGroup().getName();
     }

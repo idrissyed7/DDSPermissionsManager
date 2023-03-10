@@ -369,6 +369,37 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void canViewPublic() {
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Public Application");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional.isPresent());
+            ApplicationDTO savedApp = savedAppOptional.get();
+
+            request = HttpRequest.GET("/applications/show/"+savedApp.getId());
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional1 = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
+        }
+
+        @Test
         void canListAllApplicationsWithFilter(){
             // Group - Applications
             // ---
@@ -1018,6 +1049,43 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void canViewPublic() {
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Public Application");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional.isPresent());
+            ApplicationDTO savedApp = savedAppOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications/show/"+savedApp.getId());
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional1 = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
+        }
+
+        @Test
         void canListApplicationsWithFilterLimitedToGroupMembership(){
             // PrimaryGroup - TestApplicationOne, TestApplicationTwo
             // SecondaryGroup - Three, Four
@@ -1530,6 +1598,43 @@ public class ApplicationApiTest {
             assertTrue(bodyOptional.isPresent());
             List<Map> list = bodyOptional.get();
             assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.UNAUTHORIZED.equals(group.get("code"))));
+        }
+
+        @Test
+        public void canViewPublic() {
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            HttpRequest<?> request;
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create applications
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Public Application");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional.isPresent());
+            ApplicationDTO savedApp = savedAppOptional.get();
+
+            loginAsNonAdmin();
+
+            request = HttpRequest.GET("/applications/show/"+savedApp.getId());
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> savedAppOptional1 = response.getBody(ApplicationDTO.class);
+            assertTrue(savedAppOptional1.isPresent());
         }
 
         @Test

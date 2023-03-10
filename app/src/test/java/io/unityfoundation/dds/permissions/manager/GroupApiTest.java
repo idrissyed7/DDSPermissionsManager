@@ -117,9 +117,12 @@ public class GroupApiTest {
             assertEquals(OK, response.getStatus());
 
             // with description and isPublic flag
-            Group group = new Group("Beta", "myDescription", true);
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("Beta");
+            group.setDescription("myDescription");
+            group.setPublic(true);
             HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             Optional<SimpleGroupDTO> simpleGroupDTO = response.getBody(SimpleGroupDTO.class);
             assertTrue(simpleGroupDTO.isPresent());
             assertEquals("Beta", simpleGroupDTO.get().getName());
@@ -241,22 +244,22 @@ public class GroupApiTest {
         void canUpdateGroup(){
             HttpResponse<?> response = createGroup("Theta");
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaOptional.isPresent());
-            Group theta = thetaOptional.get();
+            SimpleGroupDTO theta = thetaOptional.get();
 
             // with same name different description and public values
             theta.setDescription("This is a description");
             theta.setPublic(true);
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
 
             theta.setName("ThetaTestUpdate");
             request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaTestUpdateOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaTestUpdateOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaTestUpdateOptional.isPresent());
             assertEquals("ThetaTestUpdate", thetaTestUpdateOptional.get().getName());
             assertEquals("This is a description", thetaTestUpdateOptional.get().getDescription());

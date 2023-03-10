@@ -29,7 +29,7 @@ public class Application {
     private String description;
 
     @Column(columnDefinition="BOOLEAN DEFAULT false")
-    private Boolean isPublic;
+    private Boolean makePublic;
 
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
@@ -41,7 +41,7 @@ public class Application {
     public Application(@NonNull String name, String description, Boolean isPublic) {
         this.name = name;
         this.description = description;
-        this.isPublic = isPublic;
+        this.makePublic = isPublic;
     }
 
     public Application(@NonNull String name, @NonNull Group permissionsGroup) {
@@ -52,7 +52,7 @@ public class Application {
     public Application(@NonNull String name, @NonNull Group permissionsGroup, String description, Boolean isPublic) {
         this.name = name;
         this.description = description;
-        this.isPublic = isPublic;
+        this.makePublic = isPublic;
         this.permissionsGroup = permissionsGroup;
     }
 
@@ -104,11 +104,11 @@ public class Application {
         this.description = description;
     }
 
-    public Boolean getPublic() {
-        return isPublic;
+    public Boolean getMakePublic() {
+        return makePublic;
     }
 
-    public void setPublic(Boolean aPublic) {
-        isPublic = aPublic;
+    public void setMakePublic(Boolean isPublic) {
+        makePublic = isPublic;
     }
 }

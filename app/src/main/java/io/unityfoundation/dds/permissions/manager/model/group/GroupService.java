@@ -109,12 +109,12 @@ public class GroupService {
             group = groupById.get();
             group.setName(groupRequestDTO.getName());
             group.setDescription(groupRequestDTO.getDescription());
-            group.setPublic(groupRequestDTO.getPublic());
+            group.setMakePublic(groupRequestDTO.getPublic());
 
             group = groupRepository.update(group);
         }
 
-        return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getPublic()));
+        return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()));
     }
 
     public MutableHttpResponse<?> deleteById(Long id) {
@@ -142,7 +142,7 @@ public class GroupService {
     }
 
     public Page<SimpleGroupDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
-        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getPublic()));
+        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()));
     }
 
     private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {
