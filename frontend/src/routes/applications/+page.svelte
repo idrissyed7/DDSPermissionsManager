@@ -21,6 +21,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import lockSVG from '../../icons/lock.svg';
 	import copySVG from '../../icons/copy.svg';
+	import editSVG from '../../icons/edit.svg';
 	import errorMessages from '$lib/errorMessages.json';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import groupContext from '../../stores/groupContext';
@@ -79,9 +80,9 @@
 
 	$: if ($editAppName === 'edit') {
 		previousAppName = $headerTitle;
-		editApplicationNameVisible = true;
+		editApplicationVisible = true;
 	} else if ($editAppName === true) {
-		editApplicationNameVisible = false;
+		editApplicationVisible = false;
 	}
 
 	// Messages
@@ -93,6 +94,9 @@
 
 	// Promises
 	let promise, promiseDetail;
+
+	// Public flag
+	let isPublic, checkboxSelector;
 
 	// Constants
 	const fiveSeconds = 5000;
@@ -123,7 +127,7 @@
 	let addApplicationVisible = false;
 	let deleteApplicationVisible = false;
 	let applicationDetailVisible = false;
-	let editApplicationNameVisible = false;
+	let editApplicationVisible = false;
 
 	// Tables
 	let applicationsRowsSelected = [];
@@ -157,7 +161,13 @@
 	let applicationsCurrentPage = 0;
 
 	// Selection
-	let selectedAppName, selectedAppId, selectedAppGroupId, selectedAppGroupName;
+	let selectedAppName,
+		selectedAppId,
+		selectedAppGroupId,
+		selectedAppGroupName,
+		selectedAppDescription,
+		selectedAppDescriptionSelector,
+		selectedAppPublic;
 
 	// Validation
 	let previousAppName;
@@ -350,12 +360,14 @@
 		returnToAppsList();
 	};
 
-	const saveNewAppName = async (newAppName) => {
+	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
 		await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: newAppName,
-				group: selectedAppGroupId
+				group: selectedAppGroupId,
+				description: newAppDescription,
+				public: newAppPublic
 			})
 			.catch((err) => {
 				if (err.response.data && err.response.status === 400) {
@@ -381,8 +393,11 @@
 		selectedAppGroupId = groupId;
 		selectedAppName = appDetail.data.name;
 		selectedAppGroupName = appDetail.data.groupName;
+		selectedAppDescription = appDetail.data.description;
+		selectedAppPublic = appDetail.data.public;
+		isPublic = selectedAppPublic;
 
-		canEditAppName();
+		if (!selectedAppDescription && applicationDetailVisible) canEditAppName();
 
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
@@ -539,6 +554,7 @@
 					}}
 				/>
 			{/if}
+
 			{#if deleteApplicationVisible && !errorMessageVisible}
 				<Modal
 					actionDeleteApplications={true}
@@ -571,16 +587,22 @@
 				/>
 			{/if}
 
-			{#if editApplicationNameVisible}
+			{#if editApplicationVisible}
 				<Modal
 					title="Edit Application"
-					actionEditApplicationName={true}
-					{previousAppName}
-					on:cancel={() => (editApplicationNameVisible = false)}
-					on:saveNewAppName={(e) => {
-						saveNewAppName(e.detail.newAppName);
+					actionEditApplication={true}
+					appCurrentName={selectedAppName}
+					appCurrentDescription={selectedAppDescription}
+					appCurrentPublic={isPublic}
+					on:cancel={() => (editApplicationVisible = false)}
+					on:saveNewApp={(e) => {
+						saveNewApp(e.detail.newAppName, e.detail.newAppDescription, e.detail.newAppPublic);
 						canEditAppName();
 						headerTitle.set(e.detail.newAppName);
+						editApplicationVisible = false;
+						selectedAppName = e.detail.newAppName;
+						selectedAppDescription = e.detail.newAppDescription;
+						isPublic = e.detail.newAppPublic;
 					}}
 				/>
 			{/if}
@@ -956,7 +978,45 @@
 
 					{#await promiseDetail then _}
 						{#if $applications && applicationDetailVisible && !applicationListVisible}
-							<table style="width: 35rem; margin-top: 2rem">
+							<div style="margin-top: 2.1rem; width:100%">
+								<span
+									style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 9.2rem"
+									>Application Name:
+								</span>
+								<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
+								{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
+									<img
+										src={editSVG}
+										alt="edit group"
+										width="18rem"
+										style="margin-left: 7rem; cursor: pointer"
+										on:click={() => (editApplicationVisible = true)}
+									/>
+								{/if}
+							</div>
+							<div style="margin-top: 0.5rem; width:fit-content">
+								<span
+									style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
+									>Description:</span
+								>
+								<span
+									style="font-weight: 400; font-size: 1.1rem; margin-left: 2rem"
+									bind:this={selectedAppDescriptionSelector}
+									>{selectedAppDescription ? selectedAppDescription : '-'}</span
+								>
+							</div>
+							<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
+								<span style="font-weight: 300; vertical-align: 1rem">Public:</span>
+								<input
+									type="checkbox"
+									style="vertical-align: 1rem; margin-left: 6rem; width: 15px; height: 15px"
+									bind:checked={isPublic}
+									on:change={() => (isPublic = selectedAppPublic)}
+									bind:this={checkboxSelector}
+								/>
+							</div>
+
+							<table style="width: 35rem; margin-top: 1rem">
 								<thead>
 									<tr style="border-width: 0px">
 										<td>Group</td>

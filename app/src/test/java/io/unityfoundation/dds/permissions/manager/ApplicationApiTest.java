@@ -267,6 +267,78 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void createWithDescriptionAndDenyIfDescriptionIsMoreThanFourThousandChars() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setDescription("My application description");
+            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertNotNull(applicationOptional.get().getDescription());
+            assertEquals("My application description", applicationOptional.get().getDescription());
+
+
+            String FourKString = new String(new char[4001]).replace("\0", "s");;
+            applicationDTO.setDescription(FourKString);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, ApplicationDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.APPLICATION_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS.equals(map.get("code"))));
+        }
+
+        @Test
+        public void createWithIsPublic() {
+            HttpResponse<?> response;
+
+            // create group
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            Group theta = thetaOptional.get();
+
+            // null isPublic should return false
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(theta.getId());
+            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            assertNotNull(applicationOptional.get().getPublic());
+            assertFalse(applicationOptional.get().getPublic());
+
+            // expect 'true' when set isPublic is set to 'true'
+            applicationDTO.setName("Xyz789");
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            Optional<ApplicationDTO> body = response.getBody(ApplicationDTO.class);
+            assertTrue(body.isPresent());
+            assertTrue(body.get().getPublic());
+        }
+
+        @Test
         public void canViewAllApplications() {
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -506,7 +578,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void canUpdateApplicationName() {
+        public void canUpdateApplication() {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
@@ -524,6 +596,13 @@ public class ApplicationApiTest {
             assertTrue(applicationOptional.isPresent());
             ApplicationDTO application = applicationOptional.get();
 
+            // with same name different description and isPublic values
+            application.setDescription("This is a description");
+            application.setPublic(true);
+            request = HttpRequest.POST("/applications/save", application);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+
             application.setName("TestApplicationUpdate");
             request = HttpRequest.POST("/applications/save", application);
             response = blockingClient.exchange(request, ApplicationDTO.class);
@@ -533,6 +612,8 @@ public class ApplicationApiTest {
             ApplicationDTO updatedApplication = updatedApplicationOptional.get();
 
             assertEquals("TestApplicationUpdate", updatedApplication.getName());
+            assertEquals("This is a description", updatedApplication.getDescription());
+            assertTrue(updatedApplication.getPublic());
         }
 
         @Test

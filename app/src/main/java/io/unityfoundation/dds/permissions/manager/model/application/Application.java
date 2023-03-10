@@ -24,6 +24,13 @@ public class Application {
     @Nullable
     private String encryptedPassword;
 
+    @Nullable
+    @Size(max = 4000)
+    private String description;
+
+    @Column(columnDefinition="BOOLEAN DEFAULT false")
+    private Boolean isPublic;
+
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
     private Group permissionsGroup;
@@ -31,12 +38,21 @@ public class Application {
     public Application() {
     }
 
-    public Application(@NonNull String name) {
+    public Application(@NonNull String name, String description, Boolean isPublic) {
         this.name = name;
+        this.description = description;
+        this.isPublic = isPublic;
     }
 
     public Application(@NonNull String name, @NonNull Group permissionsGroup) {
         this.name = name;
+        this.permissionsGroup = permissionsGroup;
+    }
+
+    public Application(@NonNull String name, @NonNull Group permissionsGroup, String description, Boolean isPublic) {
+        this.name = name;
+        this.description = description;
+        this.isPublic = isPublic;
         this.permissionsGroup = permissionsGroup;
     }
 
@@ -77,5 +93,22 @@ public class Application {
     @PrePersist
     void trimName() {
         this.name = this.name.trim();
+    }
+
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

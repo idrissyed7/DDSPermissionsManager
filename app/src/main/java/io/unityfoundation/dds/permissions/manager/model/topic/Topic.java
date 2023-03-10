@@ -2,6 +2,7 @@ package io.unityfoundation.dds.permissions.manager.model.topic;
 
 
 import io.micronaut.core.annotation.NonNull;
+import io.micronaut.core.annotation.Nullable;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 
 import javax.persistence.*;
@@ -24,6 +25,13 @@ public class Topic {
     @NonNull
     private TopicKind kind;
 
+    @Nullable
+    @Size(max = 4000)
+    private String description;
+
+    @Column(columnDefinition="BOOLEAN DEFAULT false")
+    private Boolean isPublic;
+
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
     private Group permissionsGroup;
@@ -31,14 +39,24 @@ public class Topic {
     public Topic() {
     }
 
-    public Topic(@NonNull String name, @NonNull TopicKind kind) {
+    public Topic(@NonNull String name, @NonNull TopicKind kind, String description, Boolean isPublic) {
         this.name = name;
         this.kind = kind;
+        this.description = description;
+        this.isPublic = isPublic;
     }
 
     public Topic(@NonNull String name, @NonNull TopicKind kind, Group permissionsGroup) {
         this.name = name;
         this.kind = kind;
+        this.permissionsGroup = permissionsGroup;
+    }
+
+    public Topic(@NonNull String name, @NonNull TopicKind kind, String description, Boolean isPublic, Group permissionsGroup) {
+        this.name = name;
+        this.kind = kind;
+        this.description = description;
+        this.isPublic = isPublic;
         this.permissionsGroup = permissionsGroup;
     }
 
@@ -79,5 +97,22 @@ public class Topic {
     @PrePersist
     void trimName() {
         this.name = this.name.trim();
+    }
+
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
+    }
+
+    public Boolean getPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(Boolean aPublic) {
+        isPublic = aPublic;
     }
 }

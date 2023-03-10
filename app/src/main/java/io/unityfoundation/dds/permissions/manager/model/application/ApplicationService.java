@@ -202,7 +202,7 @@ public class ApplicationService {
                 applicationDTO.getName().trim(), groupOptional.get());
 
         Application application;
-        if (applicationDTO.getId() != null) { // update
+        if (applicationDTO.getId() != null) {
 
             Optional<Application> applicationOptional = applicationRepository.findById(applicationDTO.getId());
             if (applicationOptional.isEmpty()) {
@@ -217,15 +217,22 @@ public class ApplicationService {
 
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
+            application.setDescription(applicationDTO.getDescription());
+            application.setPublic(applicationDTO.getPublic());
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
-        } else { // new
+        } else {
 
             if (searchApplicationByNameAndGroup.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            application = new Application(applicationDTO.getName());
+            boolean isPublic = false;
+            if (Boolean.TRUE.equals(applicationDTO.getPublic())) {
+                isPublic = true;
+            }
+
+            application = new Application(applicationDTO.getName(), applicationDTO.getDescription(), isPublic);
             application.setId(applicationDTO.getId());
             Group group = groupOptional.get();
             application.setPermissionsGroup(group);

@@ -16,6 +16,7 @@ import io.unityfoundation.dds.permissions.manager.model.applicationpermission.*;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
@@ -114,6 +115,16 @@ public class GroupApiTest {
         void canCreateGroup(){
             HttpResponse<?> response = createGroup("Theta");
             assertEquals(OK, response.getStatus());
+
+            // with description and isPublic flag
+            Group group = new Group("Beta", "myDescription", true);
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, Group.class);
+            Optional<SimpleGroupDTO> simpleGroupDTO = response.getBody(SimpleGroupDTO.class);
+            assertTrue(simpleGroupDTO.isPresent());
+            assertEquals("Beta", simpleGroupDTO.get().getName());
+            assertEquals("myDescription", simpleGroupDTO.get().getDescription());
+            assertTrue(simpleGroupDTO.get().getPublic());
         }
 
         @Test
@@ -176,6 +187,55 @@ public class GroupApiTest {
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS.equals(map.get("code"))));
         }
 
+        @Test
+        public void createWithDescriptionAndDenyIfDescriptionIsMoreThanFourThousandChars() {
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setDescription("A description");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpResponse<SimpleGroupDTO> exchange = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> body = exchange.getBody(SimpleGroupDTO.class);
+            assertTrue(body.isPresent());
+            assertNotNull(body.get().getDescription());
+            assertEquals("A description", body.get().getDescription());
+
+            String FourKString = new String(new char[4001]).replace("\0", "s");;
+            groupDTO.setDescription(FourKString);
+            request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, SimpleGroupDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.GROUP_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS.equals(map.get("code"))));
+        }
+
+        @Test
+        public void createWithIsPublic() {
+
+            // null isPublic should return false
+            HttpResponse<?> response = createGroup("NotAPublicGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(thetaOptional.isPresent());
+            SimpleGroupDTO theta = thetaOptional.get();
+            assertNotNull(theta.getPublic());
+            assertFalse(theta.getPublic());
+
+            // expect 'true' when set isPublic is set to 'true'
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setPublic(true);
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpResponse<SimpleGroupDTO> exchange = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> body = exchange.getBody(SimpleGroupDTO.class);
+            assertTrue(body.isPresent());
+            assertTrue(body.get().getPublic());
+        }
+
         // update
         @Test
         void canUpdateGroup(){
@@ -185,13 +245,22 @@ public class GroupApiTest {
             assertTrue(thetaOptional.isPresent());
             Group theta = thetaOptional.get();
 
-            theta.setName("ThetaTestUpdate");
+            // with same name different description and public values
+            theta.setDescription("This is a description");
+            theta.setPublic(true);
             HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+
+            theta.setName("ThetaTestUpdate");
+            request = HttpRequest.POST("/groups/save", theta);
             response = blockingClient.exchange(request, Group.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> thetaTestUpdateOptional = response.getBody(Group.class);
             assertTrue(thetaTestUpdateOptional.isPresent());
             assertEquals("ThetaTestUpdate", thetaTestUpdateOptional.get().getName());
+            assertEquals("This is a description", thetaTestUpdateOptional.get().getDescription());
+            assertTrue(thetaTestUpdateOptional.get().getPublic());
         }
 
         @Test
@@ -463,7 +532,7 @@ public class GroupApiTest {
         }
 
         @Test
-        void cannotUpdateGroup() {
+        void canUpdateGroup() {
             HttpResponse response;
             HttpRequest<?> request;
 
@@ -472,18 +541,28 @@ public class GroupApiTest {
 
             response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
-            Optional<Group> primaryOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> primaryOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(primaryOptional.isPresent());
+
+            // add membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryOptional.get().getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(true);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
 
             loginAsNonAdmin();
 
-            Group group = primaryOptional.get();
-            group.setName("Omega");
-            request = HttpRequest.POST("/groups/save", group);
-            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                blockingClient.exchange(request);
-            });
-            assertEquals(UNAUTHORIZED, exception.getStatus());
+            SimpleGroupDTO requestGroupDTO = primaryOptional.get();
+            requestGroupDTO.setName("Omega");
+            request = HttpRequest.POST("/groups/save", requestGroupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> updatedOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(updatedOptional.isPresent());
+            assertEquals("Omega", updatedOptional.get().getName());
         }
 
         @Test
@@ -649,6 +728,40 @@ public class GroupApiTest {
             Map group = groups.get(0);
             assertEquals("GroupOne", group.get("name"));
         }
+
+        @Test
+        void canUpdateGroup() {
+            HttpResponse response;
+            HttpRequest<?> request;
+
+            mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
+
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> primaryOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(primaryOptional.isPresent());
+
+            // add membership
+            GroupUserDTO dto = new GroupUserDTO();
+            dto.setPermissionsGroup(primaryOptional.get().getId());
+            dto.setEmail("jjones@test.test");
+            dto.setGroupAdmin(false);
+            request = HttpRequest.POST("/group_membership", dto);
+            response = blockingClient.exchange(request);
+            assertEquals(OK, response.getStatus());
+
+            loginAsNonAdmin();
+
+            SimpleGroupDTO requestGroupDTO = primaryOptional.get();
+            requestGroupDTO.setName("Omega");
+            request = HttpRequest.POST("/groups/save", requestGroupDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest);
+            });
+            assertEquals(UNAUTHORIZED, exception.getStatus());
+        }
     }
 
     @Nested
@@ -683,9 +796,10 @@ public class GroupApiTest {
     }
 
     private HttpResponse<?> createGroup(String groupName) {
-        Group group = new Group(groupName);
+        SimpleGroupDTO group = new SimpleGroupDTO();
+        group.setName(groupName);
         HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
-        return blockingClient.exchange(request, Group.class);
+        return blockingClient.exchange(request, SimpleGroupDTO.class);
     }
 
     private HttpResponse<?> createApplication(String applicationName, Long groupId) {

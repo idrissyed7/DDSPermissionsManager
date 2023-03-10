@@ -8,13 +8,17 @@
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
 	import addSVG from '../../icons/add.svg';
+	import editSVG from '../../icons/edit.svg';
 	import errorMessages from '$lib/errorMessages.json';
 	import errorMessageAssociation from '../../stores/errorMessageAssociation';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
 
 	export let selectedTopicId, isTopicAdmin;
 
 	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
+	let selectedTopicDescription;
+	let selectedTopicPublic;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
 	let accessTypeSelection;
@@ -31,10 +35,14 @@
 	// Modals
 	let errorMessageVisible = false;
 	let associateApplicationVisible = false;
+	let editTopicVisible = false;
 
 	// Constants
 	const returnKey = 13;
 	const waitTime = 2000;
+
+	// Public flag
+	let isPublic;
 
 	// Error Handling
 	let errorMsg, errorObject;
@@ -52,9 +60,12 @@
 			selectedTopicId = $topicDetails.id;
 			selectedTopicName = $topicDetails.name;
 			selectedTopicCanonicalName = $topicDetails.canonicalName;
+			selectedTopicDescription = $topicDetails.description;
+			selectedTopicPublic = $topicDetails.public;
 			selectedTopicGroupName = $topicDetails.groupName;
 			selectedTopicGroupId = $topicDetails.group;
 			selectedTopicKind = $topicDetails.kind;
+			isPublic = $topicDetails.public;
 
 			headerTitle.set(selectedTopicName);
 			detailView.set(true);
@@ -124,6 +135,29 @@
 		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
 		return { category: cat, code: code };
 	};
+
+	const saveNewTopic = async (newTopicName, newTopicDescription, newTopicPublic) => {
+		try {
+			await httpAdapter.post(`/topics/save/`, {
+				name: newTopicName,
+				id: selectedTopicId,
+				kind: selectedTopicKind ? 'B' : 'C',
+				group: selectedTopicGroupId,
+				groupName: selectedTopicGroupName,
+				description: newTopicDescription,
+				public: newTopicPublic
+			});
+
+			dispatch('reloadTopics');
+			selectedTopicDescription = newTopicDescription;
+			isPublic = newTopicPublic;
+			editTopicVisible = false;
+		} catch (err) {
+			errorMessage('Error Adding Topic', err.message);
+			editTopicVisible = false;
+			errorMessageVisible = true;
+		}
+	};
 </script>
 
 {#if $isAuthenticated}
@@ -165,69 +199,117 @@
 		/>
 	{/if}
 
+	{#if editTopicVisible}
+		<Modal
+			title="Edit Topic"
+			actionEditTopic={true}
+			topicCurrentName={selectedTopicName}
+			topicCurrentDescription={selectedTopicDescription}
+			topicCurrentPublic={selectedTopicPublic}
+			on:saveNewTopic={(e) => {
+				saveNewTopic(e.detail.newTopicName, e.detail.newTopicDescription, e.detail.newTopicPublic);
+				selectedTopicName = e.detail.newTopicName;
+				selectedTopicDescription = e.detail.newTopicDescription;
+				selectedTopicPublic = e.detail.newTopicPublic;
+				editTopicVisible = false;
+			}}
+			on:cancel={() => (editTopicVisible = false)}
+		/>
+	{/if}
+
 	{#await promise then _}
-		<table class="topics-details">
-			<tr>
-				<td>Name:</td>
-				<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
+		<div style="display: inline-flex; align-items: baseline">
+			<table class="topics-details">
+				<tr>
+					<td>Name:</td>
+					<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
+					<td />
+					<td />
+				</tr>
+				<td>Description:</td>
+				<td>{selectedTopicDescription}</td>
 				<td />
 				<td />
-			</tr>
+				<tr />
 
-			<tr>
-				<td>Group:</td>
-				<td>{selectedTopicGroupName}</td>
-				<td />
-				<td />
-			</tr>
+				<tr>
+					<td>Group:</td>
+					<td>{selectedTopicGroupName}</td>
+					<td />
+					<td />
+				</tr>
 
-			<tr>
-				<td style="min-width:12rem">Any application can read:</td>
-				<td
-					>{#if selectedTopicKind === 'B'}
-						Yes
-					{:else}
-						No
-					{/if}
-				</td>
-				<td />
-				<td />
-			</tr>
+				<tr>
+					<td style="min-width:12rem">Any application can read:</td>
+					<td
+						>{#if selectedTopicKind === 'B'}
+							Yes
+						{:else}
+							No
+						{/if}
+					</td>
+					<td />
+					<td />
+				</tr>
 
-			<tr style="border-width: 0px;">
-				<td style="border-bottom-color: transparent;">
-					<span style="margin-right: 1rem">Applications:</span>
-				</td>
-
-				<td style="border-bottom-color: transparent;">
-					<div style="margin-left: 7.4rem">
-						<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
-							{errorMessageApplication}
-						</span>
-					</div>
-				</td>
-				<td style="border-bottom-color: transparent" />
-
-				<td style="border-bottom-color: transparent">
-					<button
-						data-cy="add-application-button"
-						style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
-						class="button-blue"
-						class:button-disabled={!$isAdmin && !isTopicAdmin}
-						disabled={!$isAdmin && !isTopicAdmin}
-						on:click={() => (associateApplicationVisible = true)}
-					>
-						<img
-							src={addSVG}
-							alt="add application"
-							height="20rem"
-							style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+				<tr>
+					<td>Public:</td>
+					<td>
+						<input
+							type="checkbox"
+							style="vertical-align: middle; margin-left: 0.1rem; width: 15px; height: 15px"
+							bind:checked={isPublic}
+							on:change={() => (isPublic = selectedTopicPublic)}
 						/>
-						<span style="vertical-align: middle">Add Application</span>
-					</button>
-				</td>
-			</tr>
-		</table>
+					</td>
+					<td />
+					<td />
+				</tr>
+
+				<tr style="border-width: 0px;">
+					<td style="border-bottom-color: transparent;">
+						<span style="margin-right: 1rem">Applications:</span>
+					</td>
+
+					<td style="border-bottom-color: transparent;">
+						<div style="margin-left: 7.4rem">
+							<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
+								{errorMessageApplication}
+							</span>
+						</div>
+					</td>
+					<td style="border-bottom-color: transparent" />
+
+					<td style="border-bottom-color: transparent">
+						<button
+							data-cy="add-application-button"
+							style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
+							class="button-blue"
+							class:button-disabled={!$isAdmin && !isTopicAdmin}
+							disabled={!$isAdmin && !isTopicAdmin}
+							on:click={() => (associateApplicationVisible = true)}
+						>
+							<img
+								src={addSVG}
+								alt="add application"
+								height="20rem"
+								style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+							/>
+							<span style="vertical-align: middle">Add Application</span>
+						</button>
+					</td>
+				</tr>
+			</table>
+			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedTopicGroupId && permission.isTopicAdmin)}
+				<img
+					src={editSVG}
+					alt="edit topic"
+					height="20rem"
+					style="margin-left: 2rem; cursor:pointer"
+					on:click={() => (editTopicVisible = true)}
+				/>
+			{/if}
+		</div>
 
 		{#if selectedTopicApplications}
 			<div>
