@@ -125,7 +125,7 @@
 	};
 
 	onMount(async () => {
-		headerTitle.set('Users');
+		headerTitle.set('My Users');
 		detailView.set();
 		if (document.querySelector('#super-users-table') == null)
 			if ($isAdmin) promise = await reloadAllSuperUsers();
@@ -212,13 +212,13 @@
 </script>
 
 <svelte:head>
-	<title>Users | DDS Permissions Manager</title>
+	<title>My Users | DDS Permissions Manager</title>
 	<meta name="description" content="DDS Permissions Manager Users" />
 </svelte:head>
 
 {#key $refreshPage}
 	{#if $isAuthenticated}
-		<h1 data-cy="users">Users</h1>
+		<h1 data-cy="users">My Users</h1>
 		<GroupMembership />
 
 		{#await promise then _}
@@ -267,7 +267,7 @@
 				{/if}
 
 				<div class="content">
-					<h1 data-cy="super-users">Super Users</h1>
+					<h1 data-cy="super-users">My Super Users</h1>
 
 					<form class="searchbox">
 						<input

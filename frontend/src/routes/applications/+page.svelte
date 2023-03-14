@@ -177,7 +177,7 @@
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
-		headerTitle.set('Applications');
+		headerTitle.set('My Applications');
 		reloadAllApps();
 		returnToApplicationsList();
 	}
@@ -234,7 +234,7 @@
 	onMount(async () => {
 		detailView.set('first run');
 
-		headerTitle.set('Applications');
+		headerTitle.set('My Applications');
 
 		if (document.querySelector('.content') == null) promise = await reloadAllApps();
 
@@ -534,7 +534,7 @@
 </script>
 
 <svelte:head>
-	<title>Applications | DDS Permissions Manager</title>
+	<title>My Applications | DDS Permissions Manager</title>
 	<meta name="description" content="DDS Permissions Manager Applications" />
 </svelte:head>
 {#key $refreshPage}
@@ -610,7 +610,7 @@
 			{#if $applicationsTotalSize !== undefined && $applicationsTotalSize != NaN}
 				<div class="content">
 					{#if !applicationDetailVisible}
-						<h1 data-cy="applications">Applications</h1>
+						<h1 data-cy="applications">My Applications</h1>
 
 						<form class="searchbox">
 							<input
