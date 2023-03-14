@@ -836,6 +836,7 @@
 										</td>
 									{/if}
 									<td style="line-height: 2.2rem; min-width: 7rem">Application</td>
+									<td>ID</td>
 									<td>Group</td>
 								</tr>
 							</thead>
@@ -887,6 +888,8 @@
 												}}
 												>{app.name}
 											</td>
+
+											<td>{app.id}</td>
 
 											<td style="padding-left: 0.5rem">{app.groupName}</td>
 
