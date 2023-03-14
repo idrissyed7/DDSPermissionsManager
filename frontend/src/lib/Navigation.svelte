@@ -22,6 +22,7 @@
 	import groupMembershipsTotalSize from '../stores/groupMembershipsTotalSize';
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
+	import detailView from '../stores/detailView';
 
 	const itemsPerPage = 10;
 
@@ -132,6 +133,7 @@
 			on:mouseenter={() => {
 				if (!$groups) preloadGroups();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/groups">
 				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
@@ -157,6 +159,7 @@
 			on:mouseenter={() => {
 				if (!$topicsA) preloadTopics();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/topics">
 				<img src={topicsSVG} alt="topics" class="menu-icon" />Topics
@@ -168,6 +171,7 @@
 			on:mouseenter={() => {
 				if (!$applications) preloadApps();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/applications">
 				<img src={appsSVG} alt="applications" class="menu-icon" />Applications
