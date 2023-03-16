@@ -12,9 +12,6 @@
 
 	export let group;
 
-	console.log('permissionsByGroup', $permissionsByGroup);
-	console.log('group', group);
-
 	$: if (group) isPublic = group.public;
 
 	let descriptionSelector;

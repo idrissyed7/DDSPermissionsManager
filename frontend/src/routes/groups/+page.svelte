@@ -174,7 +174,7 @@
 	};
 
 	onMount(async () => {
-		headerTitle.set('Groups');
+		headerTitle.set('My Groups');
 		detailView.set();
 
 		if (document.querySelector('#groups-table') == null) {
@@ -285,7 +285,7 @@
 </script>
 
 <svelte:head>
-	<title>Groups | DDS Permissions Manager</title>
+	<title>My Groups | DDS Permissions Manager</title>
 	<meta name="description" content="DDS Permissions Manager Groups" />
 </svelte:head>
 
@@ -353,7 +353,7 @@
 				<GroupDetails
 					group={selectedGroup}
 					on:groupList={() => {
-						headerTitle.set('Groups');
+						headerTitle.set('My Groups');
 						detailView.set();
 						groupDetailView = false;
 					}}
@@ -363,7 +363,7 @@
 
 			{#if $groupsTotalSize !== undefined && $groupsTotalSize != NaN && !groupDetailView}
 				<div class="content">
-					<h1 data-cy="groups">Groups</h1>
+					<h1 data-cy="groups">My Groups</h1>
 
 					<form class="searchbox">
 						<input
