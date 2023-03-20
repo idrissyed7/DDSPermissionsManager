@@ -141,7 +141,7 @@
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
-		headerTitle.set('Topics');
+		headerTitle.set('My Topics');
 		reloadAllTopics();
 		returnToTopicsList();
 	}
@@ -176,7 +176,7 @@
 	onMount(async () => {
 		detailView.set('first run');
 
-		headerTitle.set('Topics');
+		headerTitle.set('My Topics');
 
 		if (document.querySelector('.content') == null) promise = await reloadAllTopics();
 
@@ -281,7 +281,7 @@
 </script>
 
 <svelte:head>
-	<title>Topics | DDS Permissions Manager</title>
+	<title>My Topics | DDS Permissions Manager</title>
 	<meta name="description" content="DDS Permissions Manager Topics" />
 </svelte:head>
 
@@ -323,6 +323,7 @@
 				<TopicDetails
 					{selectedTopicId}
 					{isTopicAdmin}
+					on:reloadTopics={reloadAllTopics}
 					on:addTopic={async (e) => {
 						newTopicName = e.detail.newTopicName;
 						searchGroups = e.detail.searchGroups;
@@ -359,7 +360,7 @@
 			{#if !topicDetailVisible}
 				{#if $topicsTotalSize !== undefined && $topicsTotalSize != NaN}
 					<div class="content">
-						<h1 data-cy="topics">Topics</h1>
+						<h1 data-cy="topics">My Topics</h1>
 
 						<form class="searchbox">
 							<input

@@ -56,7 +56,9 @@ public class Bootstrap {
             if(data.containsKey("groups")) {
                 ((List<Map<String, ?>>) data.get("groups")).stream().forEach(groupMap -> {
                     String groupName = (String) groupMap.get("name");
-                    Group group = groupRepository.save(new Group(groupName));
+                    String groupDescription = (String) groupMap.get("description");
+                    Boolean groupIsPublic =  Boolean.TRUE.equals(groupMap.get("is-public"));
+                    Group group = groupRepository.save(new Group(groupName, groupDescription, groupIsPublic));
 
                     if (groupMap.containsKey("users")) {
                         List<Map> users = (List<Map>) groupMap.get("users");
@@ -79,15 +81,20 @@ public class Bootstrap {
                         List<Map<String, String>> topics = (List<Map<String, String>>) groupMap.get("topics");
                         topics.stream().forEach(topicMap -> {
                             String name = topicMap.get("name");
+                            String topicDescription = topicMap.get("description");
+                            Boolean topicIsPublic = Boolean.TRUE.equals(topicMap.get("is-public"));
                             TopicKind kind = TopicKind.valueOf(topicMap.get("kind"));
-                            group.addTopic(new Topic(name, kind, group));
+                            group.addTopic(new Topic(name, kind, topicDescription, topicIsPublic, group));
                         });
                     }
 
                     if (groupMap.containsKey("applications")) {
-                        List<String> applications = (List<String>) groupMap.get("applications");
-                        applications.stream().forEach(applicationName -> {
-                            group.addApplication(new Application(applicationName, group));
+                        List<Map<String, String>> applications = (List<Map<String, String>>) groupMap.get("applications");
+                        applications.stream().forEach(applicationMap -> {
+                            String applicationName = applicationMap.get("name");
+                            String applicationDescription = applicationMap.get("description");
+                            Boolean applicationIsPublic = Boolean.TRUE.equals(applicationMap.get("is-public"));
+                            group.addApplication(new Application(applicationName, group, applicationDescription, applicationIsPublic));
                         });
                     }
 

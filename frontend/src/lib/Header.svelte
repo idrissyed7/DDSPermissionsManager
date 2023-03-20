@@ -27,8 +27,9 @@
 	export let userEmail;
 
 	// Headers Constants
-	let topicsHeader = 'Topics';
-	let applicationsHeader = 'Applications';
+	let topicsHeader = 'My Topics';
+	let applicationsHeader = 'My Applications';
+	let groupsHeader = 'My Groups';
 
 	// Constants
 	const waitTime = 1000;
@@ -308,7 +309,9 @@
 					/>
 				{/if}
 
-				<span style="vertical-align: middle; margin-left: 1rem">{$headerTitle}</span>
+				<span id="header-label" style="vertical-align: middle; margin-left: 1rem"
+					>{$headerTitle}</span
+				>
 
 				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications'}
 					<img

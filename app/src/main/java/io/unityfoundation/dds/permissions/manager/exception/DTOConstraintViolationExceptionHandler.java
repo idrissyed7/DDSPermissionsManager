@@ -66,6 +66,10 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
                 } else if (descriptor.getAnnotation() instanceof Size) {
                     code = ResponseStatusCodes.GROUP_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS;
                 }
+            } else if (code.endsWith(".description")) {
+                if (descriptor.getAnnotation() instanceof Size) {
+                    code = ResponseStatusCodes.GROUP_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS;
+                }
             }
         } else if (code.contains(".application.") || code.contains("checkApplicationExistence.application")) {
             if (code.endsWith(".name")) {
@@ -84,13 +88,13 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
                 } else if (descriptor.getAnnotation() instanceof Size) {
                     code = ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS;
                 }
+            } else if (code.endsWith(".description")) {
+                if (descriptor.getAnnotation() instanceof Size) {
+                    code = ResponseStatusCodes.APPLICATION_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS;
+                }
             }
         } else if (code.contains(".topic.")) {
-            if (code.endsWith(".id")) {
-                if (descriptor.getAnnotation() instanceof Null) {
-                    code = ResponseStatusCodes.TOPIC_UPDATE_NOT_ALLOWED;
-                }
-            } else if (code.endsWith(".name")) {
+            if (code.endsWith(".name")) {
                 if (descriptor.getAnnotation() instanceof NotBlank) {
                     code = ResponseStatusCodes.TOPIC_NAME_CANNOT_BE_BLANK_OR_NULL;
                 } else if (descriptor.getAnnotation() instanceof Size) {
@@ -99,6 +103,10 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
             } else if (code.endsWith(".group")) {
                 if (descriptor.getAnnotation() instanceof NotNull) {
                     code = ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION;
+                }
+            } else if (code.endsWith(".description")) {
+                if (descriptor.getAnnotation() instanceof Size) {
+                    code = ResponseStatusCodes.TOPIC_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS;
                 }
             }
         } else if (code.endsWith("dto.permissionsGroup")) {

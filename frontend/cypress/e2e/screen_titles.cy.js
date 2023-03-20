@@ -11,37 +11,37 @@ describe('title should say DDS Permissions Manager', () => {
     it('should have correct titles', () => {
         cy.get('title')
         .invoke('text')
-        .should('equal', 'Groups | DDS Permissions Manager');
+        .should('equal', 'My Groups | DDS Permissions Manager');
 
 
         cy.get('h1')
         .invoke('text')
-        .should('equal', 'Groups');
+        .should('equal', 'My Groups');
 
 
         cy.visit('/users');
 
         cy.get('[data-cy="users"]')
         .invoke('text')
-        .should('equal', 'Users');
+        .should('equal', 'My Users');
 
         cy.get('[data-cy="super-users"]')
         .invoke('text')
-        .should('equal', 'Super Users');
+        .should('equal', 'My Super Users');
 
 
         cy.visit('/topics');
 
         cy.get('[data-cy="topics"]')
         .invoke('text')
-        .should('equal', 'Topics');
+        .should('equal', 'My Topics');
 
 
         cy.visit('/applications');
 
         cy.get('[data-cy="applications"]')
         .invoke('text')
-        .should('equal', 'Applications');
+        .should('equal', 'My Applications');
         
     });
 });

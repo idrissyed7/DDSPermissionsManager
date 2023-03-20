@@ -78,23 +78,23 @@ public class GroupService {
     }
 
     public MutableHttpResponse<?> save(SimpleGroupDTO groupRequestDTO) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            return HttpResponse.unauthorized();
-        }
 
         Optional<Group> searchGroupByName = groupRepository.findByName(groupRequestDTO.getName().trim());
 
         Group group;
         if (groupRequestDTO.getId() == null) {
+            if (!securityUtil.isCurrentUserAdmin()) {
+                return HttpResponse.unauthorized();
+            }
             if (searchGroupByName.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.GROUP_ALREADY_EXISTS);
             }
 
-            group = groupRepository.save(new Group(groupRequestDTO.getName()));
+            boolean isPublic = Boolean.TRUE.equals(groupRequestDTO.getPublic());
 
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
+            group = groupRepository.save(new Group(groupRequestDTO.getName(), groupRequestDTO.getDescription(), isPublic));
         } else {
-            if (searchGroupByName.isPresent()) {
+            if (searchGroupByName.isPresent() && !searchGroupByName.get().getId().equals(groupRequestDTO.getId())) {
                 return HttpResponse.badRequest("Group with same name already exists");
             }
 
@@ -102,13 +102,19 @@ public class GroupService {
             if (groupById.isEmpty()) {
                 return HttpResponse.notFound();
             }
+            if (!securityUtil.isCurrentUserAdmin() && !isUserGroupAdminOfGroup(groupById.get())) {
+                return HttpResponse.unauthorized();
+            }
 
             group = groupById.get();
             group.setName(groupRequestDTO.getName());
-            group = groupRepository.update(group);
+            group.setDescription(groupRequestDTO.getDescription());
+            group.setMakePublic(groupRequestDTO.getPublic());
 
-            return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName()));
+            group = groupRepository.update(group);
         }
+
+        return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()));
     }
 
     public MutableHttpResponse<?> deleteById(Long id) {
@@ -129,8 +135,14 @@ public class GroupService {
         return HttpResponse.seeOther(URI.create("/api/groups"));
     }
 
+    public boolean isUserGroupAdminOfGroup(Group group) {
+        return securityUtil.getCurrentlyAuthenticatedUser()
+                .map(user -> groupUserService.isUserGroupAdminOfGroup(group.getId(), user.getId()))
+                .orElse(false);
+    }
+
     public Page<SimpleGroupDTO> search(String filter, GroupAdminRole role, Pageable pageable) {
-        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName()));
+        return getGroupSearchPage(filter, role, pageable).map(group -> new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()));
     }
 
     private Page<Group> getGroupSearchPage(String filter, GroupAdminRole role, Pageable pageable) {

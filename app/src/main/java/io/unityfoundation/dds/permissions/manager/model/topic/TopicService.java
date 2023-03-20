@@ -97,21 +97,47 @@ public class TopicService {
             throw new DPMException(ResponseStatusCodes.TOPIC_REQUIRES_GROUP_ASSOCIATION, HttpStatus.NOT_FOUND);
         }
 
-        Topic topic = new Topic(topicDTO.getName(), topicDTO.getKind());
-        Group group = groupOptional.get();
-        topic.setPermissionsGroup(group);
-
-        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(groupOptional.get())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
-        Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
-                topic.getName().trim(), topic.getPermissionsGroup());
+        boolean isPublic = Boolean.TRUE.equals(topicDTO.getPublic());
 
-        if (searchTopicByNameAndGroup.isPresent()) {
-            throw new DPMException(ResponseStatusCodes.TOPIC_ALREADY_EXISTS);
+        Topic topic;
+        if (topicDTO.getId() != null) {
+            Optional<Topic> optionalTopic = topicRepository.findById(topicDTO.getId());
+            if (optionalTopic.isEmpty()) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+            Topic savedTopic = optionalTopic.get();
+            if (!topicDTO.getName().equals(savedTopic.getName())) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_NAME_UPDATE_NOT_ALLOWED, HttpStatus.BAD_REQUEST);
+            } else if (!topicDTO.getKind().equals(savedTopic.getKind())) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_KIND_UPDATE_NOT_ALLOWED, HttpStatus.BAD_REQUEST);
+            } else if (!topicDTO.getGroup().equals(savedTopic.getPermissionsGroup().getId())) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_CANNOT_UPDATE_GROUP_ASSOCIATION);
+            }
+
+            savedTopic.setDescription(topicDTO.getDescription());
+            savedTopic.setMakePublic(isPublic);
+
+            topic = topicRepository.update(savedTopic);
+        } else {
+            // save
+            Optional<Topic> searchTopicByNameAndGroup = topicRepository.findByNameAndPermissionsGroup(
+                    topicDTO.getName().trim(), groupOptional.get());
+
+            if (searchTopicByNameAndGroup.isPresent()) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_ALREADY_EXISTS);
+            }
+
+            Topic newTopic = new Topic(topicDTO.getName(), topicDTO.getKind(), topicDTO.getDescription(), isPublic);
+            newTopic.setPermissionsGroup(groupOptional.get());
+
+            topic = topicRepository.save(newTopic);
         }
-        TopicDTO responseTopicDTO = new TopicDTO(topicRepository.save(topic));
+
+        TopicDTO responseTopicDTO = new TopicDTO(topic);
         responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));
         return HttpResponse.ok(responseTopicDTO);
     }
@@ -123,7 +149,7 @@ public class TopicService {
         }
 
         Topic topic = optionalTopic.get();
-        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic)) {
+        if (!securityUtil.isCurrentUserAdmin() && !isUserTopicAdminOfGroup(topic.getPermissionsGroup())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
 
@@ -141,11 +167,11 @@ public class TopicService {
         }
 
         Topic topic = topicOptional.get();
-        TopicDTO topicResponseDTO = new TopicDTO(topic);
-        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
-        if (!securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
+        if (!topic.getMakePublic() && !securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
+        TopicDTO topicResponseDTO = new TopicDTO(topic);
+        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
 
         return HttpResponse.ok(topicResponseDTO);
     }
@@ -154,9 +180,9 @@ public class TopicService {
         return groupUserService.isUserMemberOfGroup(group.getId(), securityUtil.getCurrentlyAuthenticatedUser().get().getId());
     }
 
-    private boolean isUserTopicAdminOfGroup(Topic topic) {
+    private boolean isUserTopicAdminOfGroup(Group group) {
         User user = securityUtil.getCurrentlyAuthenticatedUser().get();
-        return groupUserService.isUserTopicAdminOfGroup(topic.getPermissionsGroup().getId(), user.getId());
+        return groupUserService.isUserTopicAdminOfGroup(group.getId(), user.getId());
     }
 
     private String computeCanonicalName(Topic topic) {

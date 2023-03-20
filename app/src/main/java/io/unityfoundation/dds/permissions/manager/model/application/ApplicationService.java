@@ -202,7 +202,7 @@ public class ApplicationService {
                 applicationDTO.getName().trim(), groupOptional.get());
 
         Application application;
-        if (applicationDTO.getId() != null) { // update
+        if (applicationDTO.getId() != null) {
 
             Optional<Application> applicationOptional = applicationRepository.findById(applicationDTO.getId());
             if (applicationOptional.isEmpty()) {
@@ -217,15 +217,19 @@ public class ApplicationService {
 
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
+            application.setDescription(applicationDTO.getDescription());
+            application.setMakePublic(applicationDTO.getPublic());
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
-        } else { // new
+        } else {
 
             if (searchApplicationByNameAndGroup.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            application = new Application(applicationDTO.getName());
+            boolean isPublic = Boolean.TRUE.equals(applicationDTO.getPublic());
+
+            application = new Application(applicationDTO.getName(), applicationDTO.getDescription(), isPublic);
             application.setId(applicationDTO.getId());
             Group group = groupOptional.get();
             application.setPermissionsGroup(group);
@@ -270,14 +274,14 @@ public class ApplicationService {
             return HttpResponse.notFound();
         }
 
-        if (!securityUtil.isCurrentUserAdmin() &&
+        Application application = applicationOptional.get();
+        if (!application.getMakePublic() && !securityUtil.isCurrentUserAdmin() &&
                 !groupUserService.isUserMemberOfGroup(
                         applicationOptional.get().getPermissionsGroup().getId(),
                         securityUtil.getCurrentlyAuthenticatedUser().get().getId())
         ){
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
-        Application application = applicationOptional.get();
         ApplicationDTO applicationDTO = new ApplicationDTO(application);
 
         return HttpResponse.ok(applicationDTO);

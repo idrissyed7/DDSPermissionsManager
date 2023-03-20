@@ -7,24 +7,24 @@ dpm:
         -
           name: Technology Group
           applications:
-            - GoLang
-            - Groovy
-            - Micronaut
+            - name: GoLang
+            - name: Groovy
+            - name: Micronaut
         -
           name: Music Group
           applications:
-            - Guitar
-            - Piano
-            - Drums
+            - name: Guitar
+            - name: Piano
+            - name: Drums
         -
           name: Art Group
           applications:
-            - Paint
-            - Clay
-            - Pencil
+            - name: Paint
+            - name: Clay
+            - name: Pencil
         -
           name: College Degree
           applications:
-            - Art
-            - Technology
-            - Group Psychology
+            - name: Art
+            - name: Technology
+            - name: Group Psychology

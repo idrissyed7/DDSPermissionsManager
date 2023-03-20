@@ -31,6 +31,7 @@
 	import updatePermissionsForAllGroups from '../../stores/updatePermissionsForAllGroups';
 	import permissionsForAllGroups from '../../stores/permissionsForAllGroups';
 	import createItem from '../../stores/createItem';
+	import GroupDetails from './GroupDetails.svelte';
 
 	export let data;
 	export let errors;
@@ -82,6 +83,10 @@
 
 	// Promises
 	let promise;
+
+	// Group Detail View
+	let groupDetailView = false;
+	let selectedGroup;
 
 	// Constants
 	const returnKey = 13;
@@ -169,7 +174,7 @@
 	};
 
 	onMount(async () => {
-		headerTitle.set('Groups');
+		headerTitle.set('My Groups');
 		detailView.set();
 
 		if (document.querySelector('#groups-table') == null) {
@@ -280,7 +285,7 @@
 </script>
 
 <svelte:head>
-	<title>Groups | DDS Permissions Manager</title>
+	<title>My Groups | DDS Permissions Manager</title>
 	<meta name="description" content="DDS Permissions Manager Groups" />
 </svelte:head>
 
@@ -344,9 +349,21 @@
 				/>
 			{/if}
 
-			{#if $groupsTotalSize !== undefined && $groupsTotalSize != NaN}
+			{#if groupDetailView}
+				<GroupDetails
+					group={selectedGroup}
+					on:groupList={() => {
+						headerTitle.set('My Groups');
+						detailView.set();
+						groupDetailView = false;
+					}}
+					on:reload={async () => await reloadAllGroups()}
+				/>
+			{/if}
+
+			{#if $groupsTotalSize !== undefined && $groupsTotalSize != NaN && !groupDetailView}
 				<div class="content">
-					<h1 data-cy="groups">Groups</h1>
+					<h1 data-cy="groups">My Groups</h1>
 
 					<form class="searchbox">
 						<input
@@ -592,8 +609,12 @@
 											/>
 										</td>
 										<td
-											style="width: max-content"
+											style="width: max-content; cursor: pointer"
 											class:highlighted={group.name === $groupContext?.name}
+											on:click={() => {
+												selectedGroup = group;
+												groupDetailView = true;
+											}}
 										>
 											{group.name}
 										</td>

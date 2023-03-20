@@ -22,6 +22,7 @@
 	import groupMembershipsTotalSize from '../stores/groupMembershipsTotalSize';
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
+	import detailView from '../stores/detailView';
 
 	const itemsPerPage = 10;
 
@@ -132,9 +133,10 @@
 			on:mouseenter={() => {
 				if (!$groups) preloadGroups();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/groups">
-				<img src={groupsSVG} alt="groups" class="menu-icon" />Groups
+				<img src={groupsSVG} alt="groups" class="menu-icon" />My Groups
 			</a>
 		</li>
 
@@ -148,7 +150,7 @@
 			}}
 		>
 			<a sveltekit:prefetch href="/users">
-				<img src={usersSVG} alt="users" class="menu-icon" />Users
+				<img src={usersSVG} alt="users" class="menu-icon" />My Users
 			</a>
 		</li>
 
@@ -157,9 +159,10 @@
 			on:mouseenter={() => {
 				if (!$topicsA) preloadTopics();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/topics">
-				<img src={topicsSVG} alt="topics" class="menu-icon" />Topics
+				<img src={topicsSVG} alt="topics" class="menu-icon" />My Topics
 			</a>
 		</li>
 
@@ -168,9 +171,10 @@
 			on:mouseenter={() => {
 				if (!$applications) preloadApps();
 			}}
+			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/applications">
-				<img src={appsSVG} alt="applications" class="menu-icon" />Applications
+				<img src={appsSVG} alt="applications" class="menu-icon" />My Applications
 			</a>
 		</li>
 	</ul>
@@ -178,7 +182,7 @@
 
 <style>
 	nav {
-		width: 13rem;
+		width: 14.4rem;
 		justify-content: center;
 		margin-top: 2.5rem;
 	}
