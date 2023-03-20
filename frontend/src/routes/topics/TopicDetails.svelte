@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -14,6 +14,8 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 
 	export let selectedTopicId, isTopicAdmin;
+
+	const dispatch = createEventDispatcher();
 
 	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
