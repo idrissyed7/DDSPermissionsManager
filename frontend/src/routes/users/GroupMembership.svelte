@@ -22,6 +22,7 @@
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import createItem from '../../stores/createItem';
@@ -214,7 +215,7 @@
 			userValidityCheck.set(true);
 
 			if (err.response.status === 500) onLoggedIn(false);
-			errorMessage('Error Loading Group Memberships', err.message);
+			errorMessage(errorMessages['group_membership']['loading.error.title'], err.message);
 		}
 
 		if ($groupAdminGroups?.length > 0) {
@@ -282,11 +283,11 @@
 			})
 			.catch((err) => {
 				if (err.response.status === 403) {
-					errorMessage('Error Saving Group Membership', err.message);
+					errorMessage(errorMessages['group_membership']['saving.error.title'], err.message);
 				} else if (err.response.status === 400 || 401) {
 					const decodedError = decodeError(Object.create(...err.response.data));
 					errorMessage(
-						'Error Adding Group Membership',
+						errorMessages['group_membership']['adding.error.title'],
 						errorMessages[decodedError.category][decodedError.code]
 					);
 				}
@@ -367,7 +368,7 @@
 			updateGroupMembershipVisible = false;
 			const decodedError = decodeError(Object.create(...err.response.data));
 			errorMessage(
-				'Error Updating Group Membership',
+				errorMessages['group_membership']['updating.error.title'],
 				errorMessages[decodedError.category][decodedError.code]
 			);
 		}
@@ -385,7 +386,10 @@
 
 			await reloadGroupMemberships();
 		} catch (err) {
-			errorMessage('Error Deleting Users', errorMessages['group_membership']['not_found']);
+			errorMessage(
+				errorMessages['group_membership']['deleting.error.title'],
+				errorMessages['group_membership']['not_found']
+			);
 		}
 	};
 
@@ -412,14 +416,14 @@
 					title={errorMsg}
 					errorMsg={true}
 					errorDescription={errorObject}
-					closeModalText={'Close'}
+					closeModalText={errorMessages['modal']['button.close']}
 					on:cancel={() => errorMessageClear()}
 				/>
 			{/if}
 
 			{#if addGroupMembershipVisible}
 				<Modal
-					title="Add User"
+					title={messages['user']['add.title']}
 					actionAddUser={true}
 					email={true}
 					group={true}
@@ -442,7 +446,7 @@
 
 			{#if updateGroupMembershipVisible}
 				<Modal
-					title="Change User"
+					title={messages['user']['change.title']}
 					actionEditUser={true}
 					email={true}
 					emailValue={selectedGroupMembership.userEmail}
@@ -458,7 +462,9 @@
 
 			{#if deleteSelectedGroupMembershipsVisible}
 				<Modal
-					title="Delete {usersRowsSelected.length > 1 ? 'Users' : 'User'}"
+					title="{messages['user']['delete.title.user']} {usersRowsSelected.length > 1
+						? messages['user']['delete.multiple.user']
+						: messages['user']['delete.single.user']}"
 					actionDeleteUsers={true}
 					on:cancel={() => {
 						if (usersRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
@@ -482,7 +488,7 @@
 						data-cy="search-users-table"
 						class="searchbox"
 						type="search"
-						placeholder="Search"
+						placeholder={messages['user']['search.placeholder.user']}
 						bind:value={searchString}
 						on:blur={() => {
 							searchString = searchString?.trim();
@@ -500,8 +506,10 @@
 					<button
 						class="button-blue"
 						style="cursor: pointer; width: 4rem; height: 2.1rem"
-						on:click={() => (searchString = '')}>Clear</button
+						on:click={() => (searchString = '')}
 					>
+						{messages['user']['search.clear.button.user']}
+					</button>
 				{/if}
 
 				<img
@@ -522,7 +530,7 @@
 						deleteMouseEnter = true;
 						if ($isAdmin || isGroupAdmin) {
 							if (usersRowsSelected.length === 0) {
-								deleteToolip = 'Select users to delete';
+								deleteToolip = messages['user']['delete.tooltip.user'];
 								const tooltip = document.querySelector('#delete-users');
 								setTimeout(() => {
 									if (deleteMouseEnter) {
@@ -534,7 +542,7 @@
 								}, waitTime);
 							}
 						} else {
-							deleteToolip = 'Group Admin permissions required';
+							deleteToolip = messages['user']['delete.tooltip.group.admin.required'];
 							const tooltip = document.querySelector('#delete-users');
 							setTimeout(() => {
 								if (deleteMouseEnter) {
@@ -584,7 +592,7 @@
 					on:mouseenter={() => {
 						addMouseEnter = true;
 						if (!$isAdmin && !isGroupAdmin) {
-							addTooltip = 'Group Admin permission required';
+							addTooltip = messages['user']['add.tooltip.group.admin.required'];
 							const tooltip = document.querySelector('#add-users');
 							setTimeout(() => {
 								if (addMouseEnter) {
@@ -593,7 +601,7 @@
 								}
 							}, waitTime);
 						} else if (!$groupContext && $isAdmin) {
-							addTooltip = 'Select a group to add a User';
+							addTooltip = messages['user']['add.tooltip.select.group'];
 							const tooltip = document.querySelector('#add-users');
 							setTimeout(() => {
 								if (addMouseEnter) {
@@ -618,8 +626,8 @@
 						}, waitTime);
 					}}
 				/>
-				<span id="add-users" class="tooltip-hidden" style="margin-left: 24rem; margin-top: -1.8rem"
-					>{addTooltip}
+				<span id="add-users" class="tooltip-hidden" style="margin-left: 24rem; margin-top: -1.8rem">
+					{addTooltip}
 				</span>
 
 				{#if $groupMembershipList?.length > 0}
@@ -653,17 +661,21 @@
 										/>
 									</td>
 								{/if}
-								<td style="font-stretch:ultra-condensed; width:fit-content">E-mail</td>
-								<td style="font-stretch:ultra-condensed; width:fit-content">Group</td>
-								<td style="font-stretch:ultra-condensed; width:5.25rem"
-									><center>Group Admin</center></td
-								>
-								<td style="font-stretch:ultra-condensed; width:5rem"
-									><center>Topic Admin</center></td
-								>
-								<td style="font-stretch:ultra-condensed; width:7.4rem"
-									><center>Application Admin</center></td
-								>
+								<td style="font-stretch:ultra-condensed; width:fit-content">
+									{messages['user']['table.user.column.one']}
+								</td>
+								<td style="font-stretch:ultra-condensed; width:fit-content">
+									{messages['user']['table.user.column.two']}
+								</td>
+								<td style="font-stretch:ultra-condensed; width:5.25rem">
+									<center>{messages['user']['table.user.column.three']}</center>
+								</td>
+								<td style="font-stretch:ultra-condensed; width:5rem">
+									<center>{messages['user']['table.user.column.four']}</center>
+								</td>
+								<td style="font-stretch:ultra-condensed; width:7.4rem">
+									<center>{messages['user']['table.user.column.five']}</center>
+								</td>
 								<td /><td />
 							</tr>
 						</thead>
@@ -789,13 +801,13 @@
 					</table>
 				{:else if !$groupContext}
 					<p>
-						No Users Found.
+						{messages['user']['empty.users']}
 						<br />
-						Select a group to get started.
+						{messages['user']['empty.users.action']}
 					</p>
 				{:else if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isGroupAdmin === true) || $isAdmin)}
 					<p>
-						No Users Found. <br />
+						{messages['user']['empty.users']} <br />
 						<span
 							class="link"
 							on:click={() => {
@@ -803,9 +815,9 @@
 								else showSelectGroupContext.set(true);
 							}}
 						>
-							Click here
+							{messages['user']['empty.users.action.two']}
 						</span>
-						to create a new User.
+						{messages['user']['empty.users.action.result']}
 					</p>
 				{/if}
 
@@ -814,7 +826,7 @@
 
 			{#if $groupMembershipsTotalSize !== undefined && $groupMembershipsTotalSize != NaN}
 				<div class="pagination">
-					<span>Rows per page</span>
+					<span>{messages['pagination']['rows.per.page']}</span>
 					<select
 						tabindex="-1"
 						on:change={(e) => {

@@ -6,6 +6,7 @@
 	import closeSVG from '../icons/close.svg';
 	import Switch from './Switch.svelte';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
 	import groupContext from '../stores/groupContext';
 
@@ -52,7 +53,7 @@
 	export let reminderDescription = '';
 	export let errorMsg = false;
 	export let reminderMsg = false;
-	export let closeModalText = 'Cancel';
+	export let closeModalText = messages['modal']['close.modal.label'];
 	export let selectedTopicId = '';
 
 	const dispatch = createEventDispatcher();
@@ -61,6 +62,7 @@
 	const returnKey = 13;
 	const groupsToCompare = 7;
 	const minNameLength = 3;
+	const maxCharactersLength = 4000;
 
 	// Forms
 	let selectedIsGroupAdmin = false;
@@ -371,7 +373,7 @@
 				data-cy="email-input"
 				autofocus
 				disabled={noneditable}
-				placeholder="Email *"
+				placeholder={messages['modal']['input.email.placeholder']}
 				class:invalid={invalidEmail && emailValue?.length >= 1}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={emailValue}
@@ -409,7 +411,8 @@
 			{#if noneditable}
 				<span
 					style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
-					>Email
+				>
+					{messages['modal']['input.email.label']}
 				</span>
 			{/if}
 		{/if}
@@ -419,7 +422,7 @@
 			<input
 				data-cy="topic-name"
 				autofocus
-				placeholder="Topic Name *"
+				placeholder={messages['modal']['input.topic.placeholder']}
 				class:invalid={invalidTopic}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newTopicName}
@@ -441,7 +444,7 @@
 			/>
 		{/if}
 
-		{#if errorMessageTopic?.substring(0, errorMessageTopic?.indexOf(' ')) === 'Topic' && errorMessageTopic?.length > 0}
+		{#if errorMessageTopic?.substring(0, errorMessageTopic?.indexOf(' ')) === messages['modal']['error.message.topic.substring'] && errorMessageTopic?.length > 0}
 			<span
 				class="error-message"
 				style="	top: 9.6rem; right: 2.2rem"
@@ -451,7 +454,7 @@
 			</span>
 		{/if}
 
-		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Topic' && errorMessageName?.length > 0}
+		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === messages['modal']['error.message.topic.substring'] && errorMessageName?.length > 0}
 			<span
 				class="error-message"
 				style="	top: 9.6rem; right: 2.2rem"
@@ -466,7 +469,7 @@
 			<input
 				data-cy="application-name"
 				autofocus
-				placeholder="Application Name *"
+				placeholder={messages['modal']['input.application.placeholder']}
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={appName}
@@ -488,7 +491,7 @@
 			/>
 		{/if}
 
-		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Application' && errorMessageName?.length > 0}
+		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === messages['modal']['error.message.application.substring'] && errorMessageName?.length > 0}
 			<span
 				class="error-message"
 				style="	top: 9.6rem; right: 1.4rem"
@@ -498,7 +501,7 @@
 			</span>
 		{/if}
 
-		{#if errorMessageApplication?.substring(0, errorMessageApplication?.indexOf(' ')) === 'Application' && errorMessageApplication?.length > 0}
+		{#if errorMessageApplication?.substring(0, errorMessageApplication?.indexOf(' ')) === messages['modal']['error.message.application.substring'] && errorMessageApplication?.length > 0}
 			<span
 				class="error-message"
 				style="	top: 9.6rem; right: 2.3rem"
@@ -513,7 +516,7 @@
 			<input
 				data-cy="group-new-name"
 				autofocus
-				placeholder="Group Name *"
+				placeholder={messages['modal']['input.group.placeholder']}
 				class:invalid={invalidGroup || errorMessageGroup?.length > 0}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newGroupName}
@@ -553,8 +556,9 @@
 
 			<input
 				data-cy="group-new-description"
-				placeholder="Group Description"
+				placeholder={messages['modal']['input.group.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				maxlength={maxCharactersLength}
 				bind:value={newGroupDescription}
 				on:blur={() => {
 					newGroupDescription = newGroupDescription.trim();
@@ -565,8 +569,14 @@
 				}}
 			/>
 
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{newGroupDescription?.length}/{maxCharactersLength}</span
+			>
+
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
-				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<span style="font-weight: 300; vertical-align: 1.12rem"
+					>{messages['modal']['public.label']}</span
+				>
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
@@ -584,7 +594,7 @@
 				</span>
 			{/if}
 
-			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === 'Group' && errorMessageGroup?.length > 0}
+			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === messages['modal']['error.message.group.substring'] && errorMessageGroup?.length > 0}
 				<span
 					class="error-message"
 					style="	top: 9.6rem; right: 2.3rem"
@@ -600,7 +610,7 @@
 			<input
 				autofocus
 				data-cy="application-name"
-				placeholder="Application Name *"
+				placeholder={messages['modal']['input.application.edit.placeholder']}
 				class:invalid={invalidApplicationName}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
 				bind:value={newAppName}
@@ -625,8 +635,9 @@
 
 			<input
 				data-cy="application-new-description"
-				placeholder="Application Description"
+				placeholder={messages['modal']['input.application.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				maxlength={maxCharactersLength}
 				bind:value={newAppDescription}
 				on:blur={() => {
 					newAppDescription = newAppDescription.trim();
@@ -637,8 +648,14 @@
 				}}
 			/>
 
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{newAppDescription?.length}/{maxCharactersLength}</span
+			>
+
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
-				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<span style="font-weight: 300; vertical-align: 1.12rem"
+					>{messages['modal']['public.label']}</span
+				>
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
@@ -648,37 +665,11 @@
 		{/if}
 
 		{#if actionEditTopic}
-			<!-- svelte-ignore a11y-autofocus -->
-			<!-- <input
-				autofocus
-				data-cy="topic-name"
-				placeholder="Topic Name *"
-				class:invalid={invalidApplicationName}
-				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
-				bind:value={topicCurrentName}
-				on:blur={() => {
-					topicCurrentName = topicCurrentName.trim();
-				}}
-				on:keydown={(event) => {
-					errorMessageName = '';
-					if (event.which === returnKey) {
-						topicCurrentName = topicCurrentName.trim();
-						invalidTopicName = !validateNameLength(topicCurrentName, 'topic');
-						if (!invalidTopicName)
-							dispatch('saveNewTopic', {
-								newTopicName: topicCurrentName,
-								newTopicDescription: topicCurrentDescription,
-								newTopicPublic: topicCurrentPublic
-							});
-					}
-				}}
-				on:click={() => (errorMessageName = '')}
-			/> -->
-
 			<input
 				data-cy="topic-new-description"
-				placeholder="Topic Description"
+				placeholder={messages['modal']['input.topic.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 0 2rem 0 0"
+				maxlength={maxCharactersLength}
 				bind:value={topicCurrentDescription}
 				on:blur={() => {
 					topicCurrentDescription = topicCurrentDescription.trim();
@@ -689,8 +680,14 @@
 				}}
 			/>
 
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{topicCurrentDescription?.length}/{maxCharactersLength}</span
+			>
+
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
-				<span style="font-weight: 300; vertical-align: 1.12rem">Public:</span>
+				<span style="font-weight: 300; vertical-align: 1.12rem"
+					>{messages['modal']['public.label']}</span
+				>
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
@@ -711,7 +708,7 @@
 
 			<span
 				style="display: inline-flex; font-size: 0.65rem; position: relative; top: -4rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
-				>Group
+				>{messages['modal']['group.label']}
 			</span>
 		{/if}
 
@@ -724,7 +721,7 @@
 
 			<span
 				style="display: inline-flex; font-size: 0.65rem; position: relative; top: -3rem; left: 0.5rem; background-color: rgb(246,246,246); padding: 0 0.2rem 0 0.2rem; color: rgb(120,120,120)"
-				>Group
+				>{messages['modal']['group.label']}
 			</span>
 		{/if}
 
@@ -742,7 +739,7 @@
 								value={false}
 								checked
 							/>
-							This topic requires each application to be authorized in order to read and to write it.</label
+							{messages['modal']['any.application.can.read.message.one']}</label
 						>
 					</div>
 
@@ -756,8 +753,7 @@
 								bind:group={anyApplicationCanRead}
 								value={true}
 							/>
-							This topic requires each application to be authorized in order to write it, but any application
-							may read it.
+							{messages['modal']['any.application.can.read.message.two']}
 						</label>
 					</div>
 				</fieldset>
@@ -771,7 +767,7 @@
 				{:else}
 					<Switch bind:checked={selectedIsGroupAdmin} />
 				{/if}
-				<h3>Group Admin</h3>
+				<h3>{messages['modal']['switch.group.admin.label']}</h3>
 			</div>
 			<div class="admin-roles">
 				{#if noneditable}
@@ -779,7 +775,7 @@
 				{:else}
 					<Switch bind:checked={selectedIsTopicAdmin} />
 				{/if}
-				<h3>Topic Admin</h3>
+				<h3>{messages['modal']['switch.topic.admin.label']}</h3>
 			</div>
 			<div class="admin-roles">
 				{#if noneditable}
@@ -787,7 +783,7 @@
 				{:else}
 					<Switch bind:checked={selectedIsApplicationAdmin} />
 				{/if}
-				<h3>Application Admin</h3>
+				<h3>{messages['modal']['switch.application.admin.label']}</h3>
 			</div>
 		{/if}
 
@@ -797,7 +793,7 @@
 				style="margin-top: 0.5rem; margin-bottom: 1.5rem; width: 13.5rem"
 				type="search"
 				rows="13"
-				placeholder="Bind Token"
+				placeholder={messages['modal']['input.bind.token.placeholder']}
 				bind:value={bindToken}
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
@@ -814,10 +810,10 @@
 			/>
 
 			<select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
-				<option value="" disabled selected>Access Type</option>
-				<option value="READ">Read</option>
-				<option value="WRITE">Write</option>
-				<option value="READ_WRITE">Read + Write</option>
+				<option value="" disabled selected>{messages['modal']['select.access.type.label']}</option>
+				<option value="READ">{messages['modal']['select.read.label']}</option>
+				<option value="WRITE">{messages['modal']['select.write.label']}</option>
+				<option value="READ_WRITE">{messages['modal']['select.read.write.label']}</option>
 			</select>
 
 			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
@@ -842,7 +838,7 @@
 
 	{#if actionAddUser}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
-			>* Required & Immutable</span
+			>{messages['modal']['required.field.message.one']}</span
 		>
 		<hr />
 		<button
@@ -856,13 +852,13 @@
 					actionAddUserEvent();
 				}
 			}}
-			>Add User
+			>{messages['modal']['button.add.user.label']}
 		</button>
 	{/if}
 
 	{#if actionAddSuperUser}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
-			>* Required & Immutable</span
+			>{messages['modal']['required.field.message.one']}</span
 		>
 		<hr />
 		<button
@@ -877,13 +873,13 @@
 					actionAddSuperUserEvent();
 				}
 			}}
-			>Add User
+			>{messages['modal']['button.add.user.label']}
 		</button>
 	{/if}
 
 	{#if actionAddTopic}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
-			>* Required & Immutable</span
+			>{messages['modal']['required.field.message.one']}</span
 		>
 		<hr />
 		<button
@@ -897,13 +893,14 @@
 					actionAddTopicEvent();
 				}
 			}}
-			>Add Topic
+		>
+			{messages['modal']['button.add.topic.label']}
 		</button>
 	{/if}
 
 	{#if actionAddApplication}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
-			>* Required &nbsp;**Required & Immutable</span
+			>{messages['modal']['required.field.message.two']}</span
 		>
 		<hr />
 		<button
@@ -919,12 +916,14 @@
 					actionAddApplicationEvent();
 				}
 			}}
-			>Add Application
+			>{messages['modal']['button.add.application.label']}
 		</button>
 	{/if}
 
 	{#if actionAddGroup}
-		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0">* Required</span>
+		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
+			>{messages['modal']['required.field.message.three']}</span
+		>
 		<hr />
 		<button
 			data-cy="button-add-group"
@@ -939,7 +938,8 @@
 					if (!newGroupName.length <= minNameLength) actionAddGroupEvent();
 				}
 			}}
-			>Add Group
+		>
+			{messages['modal']['button.add.group.label']}
 		</button>
 	{/if}
 
@@ -956,7 +956,7 @@
 					actionEditUserEvent();
 				}
 			}}
-			>Save Changes
+			>{messages['modal']['button.save.changes']}
 		</button>
 	{/if}
 
@@ -983,7 +983,7 @@
 					});
 				}
 			}}
-			>Save Changes
+			>{messages['modal']['button.save.changes']}
 		</button>
 	{/if}
 
@@ -1016,7 +1016,7 @@
 						});
 				}
 			}}
-			>Save Changes
+			>{messages['modal']['button.save.changes']}
 		</button>
 	{/if}
 
@@ -1047,13 +1047,13 @@
 					else dispatch('cancel');
 				}
 			}}
-			>Save Changes
+			>{messages['modal']['button.save.changes']}
 		</button>
 	{/if}
 
 	{#if actionDeleteUsers}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
-			Are you sure? This is not reversible.
+			{messages['modal']['delete.warning']}
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1071,7 +1071,7 @@
 
 	{#if actionDeleteSuperUsers}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
-			Are you sure? This is not reversible.
+			{messages['modal']['delete.warning']}
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1089,7 +1089,7 @@
 
 	{#if actionDeleteTopics}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
-			Are you sure? This is not reversible.
+			{messages['modal']['delete.warning']}
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1107,7 +1107,7 @@
 
 	{#if actionDeleteApplications}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
-			Are you sure? This is not reversible.
+			{messages['modal']['delete.warning']}
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1125,7 +1125,7 @@
 
 	{#if actionDeleteGroups}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
-			Are you sure? This is not reversible.
+			{messages['modal']['delete.warning']}
 		</p>
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
@@ -1163,7 +1163,7 @@
 						accessTypeSelection: accessTypeSelection
 					});
 				}
-			}}>Add</button
+			}}>{messages['modal']['associate.application.button.label']}</button
 		>
 	{/if}
 
@@ -1177,7 +1177,7 @@
 				if (event.which === returnKey) {
 					dispatch('extendSession');
 				}
-			}}>Yes</button
+			}}>{messages['modal']['reminder.message.button.label']}</button
 		>
 	{/if}
 

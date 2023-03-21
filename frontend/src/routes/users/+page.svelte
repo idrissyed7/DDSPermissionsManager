@@ -19,6 +19,7 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import userEmail from '../../stores/userEmail';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import superUsersTotalPages from '../../stores/superUsersTotalPages';
 	import superUsersTotalSize from '../../stores/superUsersTotalSize';
 
@@ -120,7 +121,7 @@
 		} catch (err) {
 			userValidityCheck.set(true);
 
-			errorMessage('Error Loading Super Admins', err.message);
+			errorMessage(errorMessages['super_user']['loading.error.title'], err.message);
 		}
 	};
 
@@ -212,13 +213,13 @@
 </script>
 
 <svelte:head>
-	<title>My Users | DDS Permissions Manager</title>
+	<title>{messages['user']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Users" />
 </svelte:head>
 
 {#key $refreshPage}
 	{#if $isAuthenticated}
-		<h1 data-cy="users">My Users</h1>
+		<h1 data-cy="users">{messages['user']['title.user']}</h1>
 		<GroupMembership />
 
 		{#await promise then _}
@@ -227,7 +228,7 @@
 					title={errorMsg}
 					errorMsg={true}
 					errorDescription={errorObject}
-					closeModalText={'Close'}
+					closeModalText={errorMessages['modal']['button.close']}
 					on:cancel={() => errorMessageClear()}
 				/>
 			{/if}
@@ -235,7 +236,7 @@
 			{#if $isAdmin}
 				{#if addSuperUserVisible}
 					<Modal
-						title="Add Super User"
+						title={messages['user']['add.super.user.title']}
 						email={true}
 						actionAddSuperUser={true}
 						on:cancel={() => (addSuperUserVisible = false)}
@@ -249,7 +250,9 @@
 
 				{#if deleteSuperUserVisible && !errorMessageVisible}
 					<Modal
-						title="Delete {superUsersRowsSelected.length > 1 ? 'Users' : 'User'}"
+						title="{messages['user']['delete.title.user']} {superUsersRowsSelected.length > 1
+							? messages['user']['delete.multiple.super.user']
+							: messages['user']['delete.single.super.user']}"
 						actionDeleteSuperUsers={true}
 						on:deleteSuperUsers={async () => {
 							await deleteSelectedSuperUsers();
@@ -267,14 +270,14 @@
 				{/if}
 
 				<div class="content">
-					<h1 data-cy="super-users">My Super Users</h1>
+					<h1 data-cy="super-users">{messages['user']['title.super.user']}</h1>
 
 					<form class="searchbox">
 						<input
 							data-cy="search-super-users-table"
 							class="searchbox"
 							type="search"
-							placeholder="Search"
+							placeholder={messages['user']['search.placeholder.super.user']}
 							bind:value={searchString}
 							on:blur={() => {
 								searchString = searchString?.trim();
@@ -292,8 +295,10 @@
 						<button
 							class="button-blue"
 							style="cursor: pointer; width: 4rem; height: 2.1rem"
-							on:click={() => (searchString = '')}>Clear</button
+							on:click={() => (searchString = '')}
 						>
+							{messages['user']['search.clear.button.super.user']}
+						</button>
 					{/if}
 					<img
 						src={deleteSVG}
@@ -333,7 +338,8 @@
 						id="delete-super-users"
 						class="tooltip-hidden"
 						style="margin-left: 9.5rem; margin-top: -1.8rem"
-						>Select super users to delete
+					>
+						{messages['user']['delete.tooltip.super.user']}
 					</span>
 
 					<img
@@ -376,7 +382,7 @@
 											checked={superUsersAllRowsSelectedTrue}
 										/>
 									</td>
-									<td>E-mail</td>
+									<td>{messages['user']['table.super.user.column.one']}</td>
 									<td />
 								</tr>
 							</thead>
@@ -425,12 +431,12 @@
 							</tbody>
 						</table>
 					{:else}
-						<p style="margin-left: 0.3rem">No Super Users Found</p>
+						<p style="margin-left: 0.3rem">{messages['user']['empty.super.users']}</p>
 					{/if}
 				</div>
 
 				<div class="pagination">
-					<span>Rows per page</span>
+					<span>{messages['pagination']['rows.per.page']}</span>
 					<select
 						tabindex="-1"
 						on:change={(e) => {
@@ -510,7 +516,7 @@
 					/>
 				</div>
 			{/if}
-			<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+			<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 		{/await}
 	{/if}
 {/key}

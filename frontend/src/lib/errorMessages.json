@@ -1,80 +1,105 @@
 {
     "generic": 
-        {
-            "unauthorized":"Not authorized"
-        },
+    {
+        "unauthorized":"Not authorized"
+    },
     
     "email": 
-        {
-            "is_not_format": "Invalid Email", 
-            "cannot_be_blank_or_null":"Email cannot be blank"
-        },
+    {
+        "is_not_format": "Invalid Email", 
+        "cannot_be_blank_or_null":"Email cannot be blank"
+    },
     
     "user":
-        {
-            "exists": "User already exists",
-            "not_found": "User not found",
-            "is_not_valid": "User is not valid"
-        },
+    {
+        "exists": "User already exists",
+        "not_found": "User not found",
+        "is_not_valid": "User is not valid"
+    },
 
     "nonce":
-        {
-            "is_not_valid": "Nonce is not valid"
-        },
+    {
+        "is_not_valid": "Nonce is not valid"
+    },
 
     "group":
-        {
-            "not_found": "Group not found",
-            "exists": "Group already exists",
-            "name.cannot_be_blank_or_null": "Group name cannot be blank or invalid",
-            "name.cannot_be_less_than_three_characters": "Group name cannot be less than 3 characters"
-        },
+    {
+        "not_found": "Group not found",
+        "exists": "Group already exists",
+        "name.cannot_be_blank_or_null": "Group name cannot be blank or invalid",
+        "name.cannot_be_less_than_three_characters": "Group name cannot be less than 3 characters",
+        "loading.error.title": "Error Loading Groups",
+        "adding.error.title": "Error Adding Group",
+        "editing.error.title": "Error Editing Group Name",
+        "deleting.error.title": "Error Deleting Group"
+    },
 
     "application":
-        {
-            "not_found": "Application not found",
-            "requires_group_association": "Application requires group association",
-            "cannot_update_group_association": "Application cannot update group association",
-            "exists": "Application already exists",
-            "permission.exists": "Application already exists",
-            "name.cannot_be_blank_or_null": "Application name cannot be blank or invalid",
-            "name.cannot_be_less_than_three_characters": "Application name cannot be less than 3 characters",
-            "identity_ca_cert.not_found": "Application certificate not found",
-            "permissions_ca_cert.not_found": "Application permissions certificate not found",
-            "governance_file.not_found": "Application governance file not found"
-        },
+    {
+        "not_found": "Application not found",
+        "requires_group_association": "Application requires group association",
+        "cannot_update_group_association": "Application cannot update group association",
+        "exists": "Application already exists",
+        "permission.exists": "Application already exists",
+        "name.cannot_be_blank_or_null": "Application name cannot be blank or invalid",
+        "name.cannot_be_less_than_three_characters": "Application name cannot be less than 3 characters",
+        "identity_ca_cert.not_found": "Application certificate not found",
+        "permissions_ca_cert.not_found": "Application permissions certificate not found",
+        "governance_file.not_found": "Application governance file not found",
+        "loading.error.title": "Error Loading Applications",
+        "adding.error.title": "Error Adding Application",
+        "deleting.error.title": "Error Deleting Application",
+        "saving.error.title": "Error Saving Application",
+        "generating.passphrase.error.title": "Error Generating Passphrase",
+        "generating.token.error.title": "Error Generating Token"
+    },
 
     "topic":
-        {
-            "not_found": "Topic not found",
-            "update_not_allowed": "Topic update not allowed",
-            "requires_group_association": "Topic requires group association",
-            "name.cannot_be_blank_or_null": "Topic name cannot be blank or invalid",
-            "name.cannot_be_less_than_three_characters": "Topic name cannot be less than 3 characters",
-            "exists": "Topic already exists"
-        },
+    {
+        "not_found": "Topic not found",
+        "update_not_allowed": "Topic update not allowed",
+        "requires_group_association": "Topic requires group association",
+        "name.cannot_be_blank_or_null": "Topic name cannot be blank or invalid",
+        "name.cannot_be_less_than_three_characters": "Topic name cannot be less than 3 characters",
+        "exists": "Topic already exists",
+        "loading.error.title": "Error Loading Topics",
+        "loading.detail.error.title": "Error Loading Topic Details",
+        "deleting.error.title": "Error Deleting Topic",
+        "adding.error.title": "Error Adding Topic",
+        "updating.access.type.error.title": "Error Updating Application Access Type"
+    },
     
     "group_membership":
-        {
-            "not_found": "User not found",
-            "exists": "User already exists",
-            "cannot_create_with_update": "Failed updating user",
-            "requires_group_association": "User requires a groups association"
-        },
+    {
+        "not_found": "User not found",
+        "exists": "User already exists",
+        "cannot_create_with_update": "Failed updating user",
+        "requires_group_association": "User requires a groups association",
+        "loading.error.title": "Error Loading Group Memberships",
+        "saving.error.title": "Error Saving Group Membership",
+        "adding.error.title": "Error Adding Group Membership",
+        "updating.error.title": "Error Updating Group Membership",
+        "deleting.error.title": "Error Deleting Users"
+    },
+    
+    "super_user":
+    {
+        "loading.error.title": "Error Loading Super Admins"
+    },
 
     "application_permission":
-        {
-           "not_found": "Application permission not found"
-        },
-
-    "refresh_token":
-        {
-            "five_min_reminder": "Would you like to extend your session?"
-        },
+    {
+        "not_found": "Application permission not found"
+    },
 
     "bind_token":
-        {
-            "forbidden": "Invalid or Expired Bind Token",
-            "invalid": "Invalid Bind Token"
-        }
+    {
+        "forbidden": "Invalid or Expired Bind Token",
+        "invalid": "Invalid Bind Token"
+    },
+    
+    "modal":
+    {
+        "button.close": "Close"
+    }
 }
