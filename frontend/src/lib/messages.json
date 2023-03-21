@@ -239,7 +239,8 @@
         "button.save.changes": "Save Changes",
         "delete.warning": "Are you sure? This is not reversible.",
         "associate.application.button.label": "Add",
-        "reminder.message.button.label": "Yes"
+        "reminder.message.button.label": "Yes",
+        "max.characters": "4000"
     },
 
     "pagination":

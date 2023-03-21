@@ -557,6 +557,7 @@
 				data-cy="group-new-description"
 				placeholder={messages['modal']['input.group.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				maxlength="4000"
 				bind:value={newGroupDescription}
 				on:blur={() => {
 					newGroupDescription = newGroupDescription.trim();
@@ -566,6 +567,10 @@
 					errorMessageGroup = '';
 				}}
 			/>
+
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{newGroupDescription?.length}/{messages['modal']['max.characters']}</span
+			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
 				<span style="font-weight: 300; vertical-align: 1.12rem"
@@ -631,6 +636,7 @@
 				data-cy="application-new-description"
 				placeholder={messages['modal']['input.application.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				maxlength="4000"
 				bind:value={newAppDescription}
 				on:blur={() => {
 					newAppDescription = newAppDescription.trim();
@@ -640,6 +646,10 @@
 					errorMessageGroup = '';
 				}}
 			/>
+
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{newAppDescription?.length}/{messages['modal']['max.characters']}</span
+			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
 				<span style="font-weight: 300; vertical-align: 1.12rem"
@@ -658,6 +668,7 @@
 				data-cy="topic-new-description"
 				placeholder={messages['modal']['input.topic.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 0 2rem 0 0"
+				maxlength="4000"
 				bind:value={topicCurrentDescription}
 				on:blur={() => {
 					topicCurrentDescription = topicCurrentDescription.trim();
@@ -667,6 +678,10 @@
 					errorMessageGroup = '';
 				}}
 			/>
+
+			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
+				>{topicCurrentDescription?.length}/{messages['modal']['max.characters']}</span
+			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
 				<span style="font-weight: 300; vertical-align: 1.12rem"
