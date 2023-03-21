@@ -19,6 +19,7 @@
 	import pagefirstSVG from '../../icons/pagefirst.svg';
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import groupContext from '../../stores/groupContext';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
@@ -141,7 +142,7 @@
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
-		headerTitle.set('My Topics');
+		headerTitle.set(messages['topic']['title']);
 		reloadAllTopics();
 		returnToTopicsList();
 	}
@@ -169,14 +170,14 @@
 		} catch (err) {
 			userValidityCheck.set(true);
 
-			errorMessage('Error Loading Topics', err.message);
+			errorMessage(errorMessages['topic']['loading.error.title'], err.message);
 		}
 	};
 
 	onMount(async () => {
 		detailView.set('first run');
 
-		headerTitle.set('My Topics');
+		headerTitle.set(messages['topic']['title']);
 
 		if (document.querySelector('.content') == null) promise = await reloadAllTopics();
 
@@ -223,7 +224,7 @@
 				await httpAdapter.post(`/topics/delete/${topic.id}`);
 			}
 		} catch (err) {
-			errorMessage('Error Deleting Topic', err.message);
+			errorMessage(errorMessages['topic']['deleting.error.title'], err.message);
 		}
 	};
 
@@ -265,7 +266,7 @@
 			})
 			.catch((err) => {
 				addTopicVisible = false;
-				errorMessage('Error Adding Topic', err.message);
+				errorMessage(errorMessages['topic']['adding.error.title'], err.message);
 			});
 
 		addTopicVisible = false;
@@ -275,13 +276,13 @@
 		}
 
 		if (res === undefined) {
-			errorMessage('Error Adding Topic', errorMessages['topic']['exists']);
+			errorMessage(errorMessages['topic']['adding.error.title'], errorMessages['topic']['exists']);
 		}
 	};
 </script>
 
 <svelte:head>
-	<title>My Topics | DDS Permissions Manager</title>
+	<title>{messages['topic']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Topics" />
 </svelte:head>
 
@@ -293,7 +294,7 @@
 					title={errorMsg}
 					errorMsg={true}
 					errorDescription={errorObject}
-					closeModalText={'Close'}
+					closeModalText={errorMessages['modal']['button.close']}
 					on:cancel={() => {
 						errorMessageVisible = false;
 						errorMessageClear();
@@ -303,7 +304,7 @@
 
 			{#if addTopicVisible}
 				<Modal
-					title="Add Topic"
+					title={messages['topic']['add']}
 					topicName={true}
 					group={true}
 					actionAddTopic={true}
@@ -342,7 +343,9 @@
 			{#if deleteTopicVisible}
 				<Modal
 					actionDeleteTopics={true}
-					title="Delete {topicsRowsSelected.length > 1 ? 'Topics' : 'Topic'}"
+					title="{messages['topic']['delete.title']} {topicsRowsSelected.length > 1
+						? messages['topic']['delete.multiple']
+						: messages['topic']['delete.single']}"
 					on:cancel={() => {
 						if (topicsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
 							topicsRowsSelected = [];
@@ -360,14 +363,14 @@
 			{#if !topicDetailVisible}
 				{#if $topicsTotalSize !== undefined && $topicsTotalSize != NaN}
 					<div class="content">
-						<h1 data-cy="topics">My Topics</h1>
+						<h1 data-cy="topics">{messages['topic']['title']}</h1>
 
 						<form class="searchbox">
 							<input
 								data-cy="search-topics-table"
 								class="searchbox"
 								type="search"
-								placeholder="Search"
+								placeholder={messages['topic']['search.placeholder']}
 								bind:value={searchString}
 								on:blur={() => {
 									searchString = searchString?.trim();
@@ -385,7 +388,8 @@
 							<button
 								class="button-blue"
 								style="cursor: pointer; width: 4rem; height: 2.1rem"
-								on:click={() => (searchString = '')}>Clear</button
+								on:click={() => (searchString = '')}
+								>{messages['topic']['search.clear.button']}</button
 							>
 						{/if}
 
@@ -408,7 +412,7 @@
 								deleteMouseEnter = true;
 								if ($isAdmin || isTopicAdmin) {
 									if (topicsRowsSelected.length === 0) {
-										deleteToolip = 'Select topics to delete';
+										deleteToolip = messages['topic']['delete.tooltip'];
 										const tooltip = document.querySelector('#delete-topics');
 										setTimeout(() => {
 											if (deleteMouseEnter) {
@@ -418,7 +422,7 @@
 										}, 1000);
 									}
 								} else {
-									deleteToolip = 'Topic Admin permissions required';
+									deleteToolip = messages['topic']['delete.tooltip.topic.admin.required'];
 									const tooltip = document.querySelector('#delete-topics');
 									setTimeout(() => {
 										if (deleteMouseEnter) {
@@ -503,7 +507,7 @@
 										!$groupContext &&
 										!$permissionsByGroup?.some((gm) => gm.isTopicAdmin === true))
 								) {
-									addTooltip = 'Topic Admin permission required';
+									addTooltip = messages['topic']['add.tooltip.topic.admin.required'];
 									const tooltip = document.querySelector('#add-topics');
 									setTimeout(() => {
 										if (addMouseEnter) {
@@ -515,7 +519,7 @@
 									!$groupContext &&
 									($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)
 								) {
-									addTooltip = 'Select a group to add a Topic';
+									addTooltip = messages['topic']['add.tooltip.select.group'];
 									const tooltip = document.querySelector('#add-topics');
 									setTimeout(() => {
 										if (addMouseEnter) {
@@ -572,8 +576,8 @@
 												/>
 											</td>
 										{/if}
-										<td style="min-width: 7rem">Topic</td>
-										<td>Group</td>
+										<td style="min-width: 7rem">{messages['topic']['table.column.one']}</td>
+										<td>{messages['topic']['table.column.two']}</td>
 									</tr>
 								</thead>
 								<tbody>
@@ -668,7 +672,7 @@
 							</table>
 						{:else if !topicDetailVisible}
 							<p>
-								No Topics Found.
+								{messages['topic']['empty.topics']}
 								<br />
 								{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
 									<span
@@ -689,18 +693,18 @@
 												showSelectGroupContext.set(true);
 										}}
 									>
-										Click here
+										{messages['topic']['empty.topics.action.two']}
 									</span>
-									to create a new Topic.
+									{messages['topic']['empty.topics.action.result']}
 								{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isTopicAdmin === true) || $isAdmin)}
-									Select a group to get started.
+									{messages['topic']['empty.topics.action']}
 								{/if}
 							</p>
 						{/if}
 					</div>
 
 					<div class="pagination">
-						<span>Rows per page</span>
+						<span>{messages['pagination']['rows.per.page']}</span>
 						<select
 							tabindex="-1"
 							on:change={(e) => {
@@ -781,7 +785,7 @@
 							}}
 						/>
 					</div>
-					<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+					<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 				{/if}
 			{/if}
 		{/await}

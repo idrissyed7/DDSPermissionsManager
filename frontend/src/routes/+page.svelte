@@ -9,6 +9,7 @@
 	import groups from '../stores/groups';
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
+	import messages from '$lib/messages.json';
 
 	const URL_PREFIX = import.meta.env.VITE_BACKEND_URL;
 	const itemsPerPage = 10;
@@ -36,13 +37,13 @@
 </script>
 
 <svelte:head>
-	<title>DDS Permissions Manager</title>
+	<title>{messages['login']['title']}</title>
 	<meta name="description" content="Permissions Manager" />
 </svelte:head>
 
 {#if $isAuthenticated === false && $loginCompleted !== null}
 	<center>
-		<h1>DDS Permissions Manager</h1>
+		<h1>{messages['login']['header']}</h1>
 	</center>
 	<br />
 	<div class="container-box">
@@ -52,7 +53,9 @@
 			class="icon"
 			style="margin: 1rem 0 1rem 1.5rem; filter: contrast(60%);"
 		/>
-		<span style="margin-left: 1rem; vertical-align: middle; filter: contrast(60%);">Login</span>
+		<span style="margin-left: 1rem; vertical-align: middle; filter: contrast(60%);"
+			>{messages['login']['label']}</span
+		>
 		<hr />
 		<center>
 			<div class="login-button" on:click={() => goto(`${URL_PREFIX}/oauth/login/google`, true)}>
@@ -63,7 +66,9 @@
 					style="scale: 55%; margin: 0.1rem 0 0.1rem 0;"
 				/>
 				<span style="margin-left: 0; font-size: 1.4rem"
-					><a rel="external" href={`${URL_PREFIX}/oauth/login/google`}>Login with Google</a></span
+					><a rel="external" href={`${URL_PREFIX}/oauth/login/google`}
+						>{messages['login']['button']}</a
+					></span
 				>
 			</div>
 		</center>
