@@ -62,6 +62,7 @@
 	const returnKey = 13;
 	const groupsToCompare = 7;
 	const minNameLength = 3;
+	const maxCharactersLength = 4000;
 
 	// Forms
 	let selectedIsGroupAdmin = false;
@@ -557,7 +558,7 @@
 				data-cy="group-new-description"
 				placeholder={messages['modal']['input.group.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
-				maxlength="4000"
+				maxlength={maxCharactersLength}
 				bind:value={newGroupDescription}
 				on:blur={() => {
 					newGroupDescription = newGroupDescription.trim();
@@ -569,7 +570,7 @@
 			/>
 
 			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
-				>{newGroupDescription?.length}/{messages['modal']['max.characters']}</span
+				>{newGroupDescription?.length}/{maxCharactersLength}</span
 			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
@@ -636,7 +637,7 @@
 				data-cy="application-new-description"
 				placeholder={messages['modal']['input.application.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
-				maxlength="4000"
+				maxlength={maxCharactersLength}
 				bind:value={newAppDescription}
 				on:blur={() => {
 					newAppDescription = newAppDescription.trim();
@@ -648,7 +649,7 @@
 			/>
 
 			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
-				>{newAppDescription?.length}/{messages['modal']['max.characters']}</span
+				>{newAppDescription?.length}/{maxCharactersLength}</span
 			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
@@ -668,7 +669,7 @@
 				data-cy="topic-new-description"
 				placeholder={messages['modal']['input.topic.description.placeholder']}
 				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 0 2rem 0 0"
-				maxlength="4000"
+				maxlength={maxCharactersLength}
 				bind:value={topicCurrentDescription}
 				on:blur={() => {
 					topicCurrentDescription = topicCurrentDescription.trim();
@@ -680,7 +681,7 @@
 			/>
 
 			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
-				>{topicCurrentDescription?.length}/{messages['modal']['max.characters']}</span
+				>{topicCurrentDescription?.length}/{maxCharactersLength}</span
 			>
 
 			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
