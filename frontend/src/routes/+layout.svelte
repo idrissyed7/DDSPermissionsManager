@@ -49,6 +49,14 @@
 	}
 
 	onMount(async () => {
+		const cookies = document.cookie.split(';');
+		const jwtRefreshToken = cookies.find((cookie) =>
+			cookie.trim().startsWith('JWT_REFRESH_TOKEN=')
+		);
+		if (jwtRefreshToken && !$isAuthenticated) {
+			document.cookie = 'JWT_REFRESH_TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+		}
+
 		document.body.addEventListener('click', userClicked);
 		userClicked();
 		userLoggedCookie = document.cookie;
