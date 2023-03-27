@@ -1,11 +1,12 @@
 package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.core.annotation.Introspected;
+import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 
 import java.util.Set;
 
 @Introspected
-public class DetailedGroupDTO {
+public class DetailedGroupDTO implements EntityDTO {
 
     private Long id;
     private String name;

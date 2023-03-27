@@ -1,9 +1,10 @@
 package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 
 import io.micronaut.core.annotation.Introspected;
+import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 
 @Introspected
-public class AccessPermissionDTO {
+public class AccessPermissionDTO implements EntityDTO {
     private final Long topicId;
     private final String topicName;
     private final String topicGroup;

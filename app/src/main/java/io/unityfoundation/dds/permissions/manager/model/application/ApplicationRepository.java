@@ -15,8 +15,7 @@ import java.util.Optional;
 @Repository
 public interface ApplicationRepository extends PageableRepository<Application, Long> {
     @NonNull
-    Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
-                                                        @NotNull @NonNull Group group);
+    Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name, @NotNull @NonNull Group group);
 
     Page<Application> findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application,String group, Pageable page);
 
@@ -29,4 +28,12 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     Page<Application> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
 
     List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
+
+    Page<Application> findAllByNameContainsIgnoreCaseAndMakePublicTrue(String query, Pageable pageable);
+
+    List<Application> findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(String query);
+
+    Page<Application> findAllByMakePublicTrue(Pageable pageable);
+
+    List<Application> findTop50ByMakePublicTrue();
 }

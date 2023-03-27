@@ -6,6 +6,8 @@ import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.annotation.QueryValue;
 
+import javax.validation.Valid;
+
 
 @Introspected
 public class UniversalSearchParams {
@@ -28,8 +30,7 @@ public class UniversalSearchParams {
     @QueryValue
     private Boolean applications;
 
-    @Nullable
-    @QueryValue
+    @Valid
     private Pageable pageable;
 
     public UniversalSearchParams(HttpRequest<?> httpRequest, @Nullable String query, @Nullable Boolean groups, @Nullable Boolean topics, @Nullable Boolean applications, @Nullable Pageable pageable) {

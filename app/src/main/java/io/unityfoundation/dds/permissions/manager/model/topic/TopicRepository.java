@@ -27,4 +27,12 @@ public interface TopicRepository extends PageableRepository<Topic, Long> {
                                                   @NotNull @NonNull Group group);
 
     List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
+
+    Page<Topic> findAllByNameContainsIgnoreCaseAndMakePublicTrue(String query, Pageable pageable);
+
+    List<Topic> findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(String query);
+
+    Page<Topic> findAllByMakePublicTrue(Pageable pageable);
+
+    List<Topic> findTop50ByMakePublicTrue();
 }

@@ -1,32 +1,166 @@
 package io.unityfoundation.dds.permissions.manager.search;
 
+import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
+import io.unityfoundation.dds.permissions.manager.model.DPDEntity;
+import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
+import jakarta.inject.Singleton;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@Singleton
 public class UniversalSearchService {
 
     private final GroupRepository groupRepository;
+    private final TopicRepository topicRepository;
+    private final ApplicationRepository applicationRepository;
 
-    public UniversalSearchService(GroupRepository groupRepository) {
+    public UniversalSearchService(GroupRepository groupRepository, TopicRepository topicRepository, ApplicationRepository applicationRepository) {
         this.groupRepository = groupRepository;
+        this.topicRepository = topicRepository;
+        this.applicationRepository = applicationRepository;
     }
 
 
     public Page<SearchResponseDTO> search(UniversalSearchParams searchParams) {
-        Pageable pageable;
-        if (searchParams.getPageable() == null) {
-            pageable = Pageable.from(0, 3);
-        } else {
-            Pageable searchPageable = searchParams.getPageable();
-            int size = searchPageable.getSize();
-            long rounded = Math.round((double)size / 3);
-            pageable = Pageable.from(searchPageable.getNumber(), (int) rounded, searchPageable.getSort());
-        }
 
-        // query all three entities in a pageable manner...
-        // todo can't progress due to unmerged code.....
-//        groupRepository.findAllBy
+        boolean searchGroups = Boolean.TRUE.equals(searchParams.getGroups());
+        boolean searchTopics = Boolean.TRUE.equals(searchParams.getTopics());
+        boolean searchApplications = Boolean.TRUE.equals(searchParams.getApplications());
+        String query = searchParams.getQuery();
+
+        Pageable searchParamsPageable = searchParams.getPageable();
+        int pageCount = Math.max(searchParamsPageable.getNumber(), 1);
+        int pageSize = 10;
+        if (searchParamsPageable.getSize() > 0) {
+            pageSize = searchParamsPageable.getSize();
+        }
+        int start = (pageCount - 1) * pageSize;
+        int end = pageCount * pageSize;
+        if (searchGroups && !searchTopics && !searchApplications) {
+            // just groups
+            Page<Group> groups;
+            if (!StringUtils.hasText(query)) {
+                groups = groupRepository.findAllByMakePublicTrue(searchParamsPageable);
+            } else {
+                groups = groupRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+            }
+            return groups.map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic())));
+        } else if (!searchGroups && searchTopics && !searchApplications) {
+            // just topics
+            Page<Topic> topics;
+            if (!StringUtils.hasText(query)) {
+                topics = topicRepository.findAllByMakePublicTrue(searchParamsPageable);
+            } else {
+                topics = topicRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+            }
+            return topics.map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic)));
+        } else if (!searchGroups && !searchTopics && searchApplications) {
+            // just applications
+            Page<Application> applications;
+            if (!StringUtils.hasText(query)) {
+                applications = applicationRepository.findAllByMakePublicTrue(searchParamsPageable);
+            } else {
+                applications = applicationRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+            }
+            applications.map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO()));
+        } else if (searchGroups && searchTopics && !searchApplications) {
+            // groups and topics
+
+            // the passed in pageable applies to the *combined* resultset (limited to 50 per resource)
+            List<Group> groupsTop50;
+            List<Topic> topicsTop50;
+            if (!StringUtils.hasText(query)) {
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrue();
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
+            } else {
+                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+            }
+            List<SearchResponseDTO> combined = Stream.concat(
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic)))
+            ).collect(Collectors.toList());
+
+            end = Math.min(end, combined.size());
+
+            return Page.of(combined.subList(start, end), searchParamsPageable, combined.size());
+        } else if (searchGroups && !searchTopics && searchApplications) {
+            // groups and applications
+
+            List<Group> groupsTop50;
+            List<Application> applicationsTop50;
+            if (!StringUtils.hasText(query)) {
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrue();
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
+            } else {
+                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+            }
+            List<SearchResponseDTO> combined = Stream.concat(
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application)))
+            ).collect(Collectors.toList());
+
+            end = Math.min(end, combined.size());
+
+            return Page.of(combined.subList(start, end), searchParamsPageable, combined.size());
+        } else if (!searchGroups && searchTopics && searchApplications) {
+            // topics and applications
+            List<Topic> topicsTop50;
+            List<Application> applicationsTop50;
+            if (!StringUtils.hasText(query)) {
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
+            } else {
+                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+            }
+            List<SearchResponseDTO> combined = Stream.concat(
+                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic))),
+                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application)))
+            ).collect(Collectors.toList());
+
+            end = Math.min(end, combined.size());
+
+            return Page.of(combined.subList(start, end), searchParamsPageable, combined.size());
+        } else {
+            // query all three entities in a pageable manner...
+            List<Group> groupsTop50;
+            List<Topic> topicsTop50;
+            List<Application> applicationsTop50;
+            if (!StringUtils.hasText(query)) {
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrue();
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
+            } else {
+                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+            }
+
+            List<SearchResponseDTO> combined = Stream.concat(
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    Stream.concat(
+                        topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic))),
+                        applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application))))
+            ).collect(Collectors.toList());
+
+            end = Math.min(end, combined.size());
+
+            return Page.of(combined.subList(start, end), searchParamsPageable, combined.size());
+        }
 
         return null;
     }
