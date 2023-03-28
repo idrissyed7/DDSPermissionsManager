@@ -86,7 +86,6 @@ public class UniversalSearchParams {
         this.applications = applications;
     }
 
-    @Nullable
     public Pageable getPageable() {
         return pageable;
     }

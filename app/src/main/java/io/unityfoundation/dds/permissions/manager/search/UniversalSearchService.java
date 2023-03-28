@@ -3,7 +3,7 @@ package io.unityfoundation.dds.permissions.manager.search;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
-import io.unityfoundation.dds.permissions.manager.model.DPDEntity;
+import io.unityfoundation.dds.permissions.manager.model.DPMEntity;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
@@ -56,7 +56,7 @@ public class UniversalSearchService {
             } else {
                 groups = groupRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
             }
-            return groups.map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic())));
+            return groups.map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic())));
         } else if (!searchGroups && searchTopics && !searchApplications) {
             // just topics
             Page<Topic> topics;
@@ -65,7 +65,7 @@ public class UniversalSearchService {
             } else {
                 topics = topicRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
             }
-            return topics.map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic)));
+            return topics.map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic)));
         } else if (!searchGroups && !searchTopics && searchApplications) {
             // just applications
             Page<Application> applications;
@@ -74,7 +74,7 @@ public class UniversalSearchService {
             } else {
                 applications = applicationRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
             }
-            applications.map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO()));
+            return applications.map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO()));
         } else if (searchGroups && searchTopics && !searchApplications) {
             // groups and topics
 
@@ -89,8 +89,8 @@ public class UniversalSearchService {
                 topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
             }
             List<SearchResponseDTO> combined = Stream.concat(
-                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
-                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic)))
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic)))
             ).collect(Collectors.toList());
 
             end = Math.min(end, combined.size());
@@ -109,8 +109,8 @@ public class UniversalSearchService {
                 applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
             }
             List<SearchResponseDTO> combined = Stream.concat(
-                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
-                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application)))
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO(application)))
             ).collect(Collectors.toList());
 
             end = Math.min(end, combined.size());
@@ -128,8 +128,8 @@ public class UniversalSearchService {
                 applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
             }
             List<SearchResponseDTO> combined = Stream.concat(
-                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic))),
-                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application)))
+                    topicsTop50.stream().map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic))),
+                    applicationsTop50.stream().map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO(application)))
             ).collect(Collectors.toList());
 
             end = Math.min(end, combined.size());
@@ -151,17 +151,15 @@ public class UniversalSearchService {
             }
 
             List<SearchResponseDTO> combined = Stream.concat(
-                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPDEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
+                    groupsTop50.stream().map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
                     Stream.concat(
-                        topicsTop50.stream().map(topic -> new SearchResponseDTO(DPDEntity.TOPIC, new TopicDTO(topic))),
-                        applicationsTop50.stream().map(application -> new SearchResponseDTO(DPDEntity.APPLICATION, new ApplicationDTO(application))))
+                        topicsTop50.stream().map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic))),
+                        applicationsTop50.stream().map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO(application))))
             ).collect(Collectors.toList());
 
             end = Math.min(end, combined.size());
 
             return Page.of(combined.subList(start, end), searchParamsPageable, combined.size());
         }
-
-        return null;
     }
 }

@@ -6,22 +6,18 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
-import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.unityfoundation.dds.permissions.manager.model.DPDEntity;
+import io.unityfoundation.dds.permissions.manager.model.DPMEntity;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.*;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
-import io.unityfoundation.dds.permissions.manager.model.group.GroupAdminRole;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
-import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserResponseDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
@@ -31,15 +27,10 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static io.micronaut.http.HttpStatus.*;
 import static io.micronaut.http.HttpStatus.OK;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -121,9 +112,9 @@ public class UniversalSearchApiTest {
         assertFalse(searchResults.isEmpty());
         assertTrue(searchResults.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name()) ||
-                    type.equals(DPDEntity.APPLICATION.name()) ||
-                    type.equals(DPDEntity.TOPIC.name());
+            return type.equals(DPMEntity.GROUP.name()) ||
+                    type.equals(DPMEntity.APPLICATION.name()) ||
+                    type.equals(DPMEntity.TOPIC.name());
         }));
 
         // group
@@ -136,7 +127,7 @@ public class UniversalSearchApiTest {
         assertFalse(groups.isEmpty());
         assertTrue(groups.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name());
+            return type.equals(DPMEntity.GROUP.name());
         }));
 
         // topics and applications
@@ -149,7 +140,7 @@ public class UniversalSearchApiTest {
         assertFalse(appsTopics.isEmpty());
         assertTrue(appsTopics.stream().noneMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name());
+            return type.equals(DPMEntity.GROUP.name());
         }));
 
         // all
@@ -162,9 +153,9 @@ public class UniversalSearchApiTest {
         assertFalse(all.isEmpty());
         assertTrue(all.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name()) ||
-                    type.equals(DPDEntity.APPLICATION.name()) ||
-                    type.equals(DPDEntity.TOPIC.name());
+            return type.equals(DPMEntity.GROUP.name()) ||
+                    type.equals(DPMEntity.APPLICATION.name()) ||
+                    type.equals(DPMEntity.TOPIC.name());
         }));
     }
 
@@ -183,9 +174,9 @@ public class UniversalSearchApiTest {
         assertFalse(all.isEmpty());
         assertTrue(all.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name()) ||
-                    type.equals(DPDEntity.APPLICATION.name()) ||
-                    type.equals(DPDEntity.TOPIC.name());
+            return type.equals(DPMEntity.GROUP.name()) ||
+                    type.equals(DPMEntity.APPLICATION.name()) ||
+                    type.equals(DPMEntity.TOPIC.name());
         }));
 
         // groups
@@ -198,7 +189,7 @@ public class UniversalSearchApiTest {
         assertFalse(groups.isEmpty());
         assertTrue(groups.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name());
+            return type.equals(DPMEntity.GROUP.name());
         }));
 
         // topics
@@ -211,7 +202,7 @@ public class UniversalSearchApiTest {
         assertFalse(topics.isEmpty());
         assertTrue(topics.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.TOPIC.name());
+            return type.equals(DPMEntity.TOPIC.name());
         }));
 
         // applications
@@ -224,7 +215,7 @@ public class UniversalSearchApiTest {
         assertFalse(apps.isEmpty());
         assertTrue(apps.stream().allMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.APPLICATION.name());
+            return type.equals(DPMEntity.APPLICATION.name());
         }));
     }
 
@@ -243,7 +234,7 @@ public class UniversalSearchApiTest {
         assertFalse(groupsTopics.isEmpty());
         assertTrue(groupsTopics.stream().noneMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.APPLICATION.name());
+            return type.equals(DPMEntity.APPLICATION.name());
         }));
 
         // topics and applications
@@ -256,7 +247,7 @@ public class UniversalSearchApiTest {
         assertFalse(appsTopics.isEmpty());
         assertTrue(appsTopics.stream().noneMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.GROUP.name());
+            return type.equals(DPMEntity.GROUP.name());
         }));
 
         // groups and applications
@@ -269,7 +260,7 @@ public class UniversalSearchApiTest {
         assertFalse(groupsApps.isEmpty());
         assertTrue(groupsApps.stream().noneMatch(map -> {
             String type = (String) map.get("type");
-            return type.equals(DPDEntity.TOPIC.name());
+            return type.equals(DPMEntity.TOPIC.name());
         }));
     }
 

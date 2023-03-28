@@ -1,26 +1,26 @@
 package io.unityfoundation.dds.permissions.manager.search;
 
 import io.micronaut.core.annotation.Introspected;
-import io.unityfoundation.dds.permissions.manager.model.DPDEntity;
+import io.unityfoundation.dds.permissions.manager.model.DPMEntity;
 import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 
 
 @Introspected
 public class SearchResponseDTO {
 
-    private DPDEntity type;
+    private DPMEntity type;
     private EntityDTO entity;
 
-    public SearchResponseDTO(DPDEntity type, EntityDTO entity) {
+    public SearchResponseDTO(DPMEntity type, EntityDTO entity) {
         this.type = type;
         this.entity = entity;
     }
 
-    public DPDEntity getType() {
+    public DPMEntity getType() {
         return type;
     }
 
-    public void setType(DPDEntity type) {
+    public void setType(DPMEntity type) {
         this.type = type;
     }
 
