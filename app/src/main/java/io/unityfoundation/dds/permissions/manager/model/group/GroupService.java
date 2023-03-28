@@ -8,9 +8,11 @@ import io.micronaut.http.MutableHttpResponse;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
+import io.unityfoundation.dds.permissions.manager.model.application.ApplicationRepository;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import jakarta.inject.Singleton;
@@ -24,14 +26,18 @@ import java.util.stream.Collectors;
 public class GroupService {
 
     private final GroupRepository groupRepository;
+    private final ApplicationRepository applicationRepository;
+    private final TopicRepository topicRepository;
     private final ApplicationPermissionRepository applicationPermissionRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
 
 
-    public GroupService(GroupRepository groupRepository, ApplicationPermissionRepository applicationPermissionRepository, SecurityUtil securityUtil,
+    public GroupService(GroupRepository groupRepository, ApplicationRepository applicationRepository, TopicRepository topicRepository, ApplicationPermissionRepository applicationPermissionRepository, SecurityUtil securityUtil,
                         GroupUserService groupUserService) {
         this.groupRepository = groupRepository;
+        this.applicationRepository = applicationRepository;
+        this.topicRepository = topicRepository;
         this.applicationPermissionRepository = applicationPermissionRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
@@ -109,12 +115,32 @@ public class GroupService {
             group = groupById.get();
             group.setName(groupRequestDTO.getName());
             group.setDescription(groupRequestDTO.getDescription());
+            if (group.getMakePublic() && !groupRequestDTO.getPublic()) {
+                cascadePrivate(group);
+            }
             group.setMakePublic(groupRequestDTO.getPublic());
 
             group = groupRepository.update(group);
         }
 
         return HttpResponse.ok(new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()));
+    }
+
+    private void cascadePrivate(Group group) {
+
+        if (group.getApplications() != null) {
+            group.getApplications().forEach(application -> {
+                application.setMakePublic(false);
+                applicationRepository.update(application);
+            });
+        }
+
+        if (group.getTopics() != null) {
+            group.getTopics().forEach(topic -> {
+                topic.setMakePublic(false);
+                topicRepository.update(topic);
+            });
+        }
     }
 
     public MutableHttpResponse<?> deleteById(Long id) {
