@@ -201,6 +201,8 @@ public class ApplicationService {
         Optional<Application> searchApplicationByNameAndGroup = applicationRepository.findByNameAndPermissionsGroup(
                 applicationDTO.getName().trim(), groupOptional.get());
 
+        boolean isPublic = Boolean.TRUE.equals(applicationDTO.getPublic());
+
         Application application;
         if (applicationDTO.getId() != null) {
 
@@ -213,6 +215,8 @@ public class ApplicationService {
                     searchApplicationByNameAndGroup.get().getId() != applicationOptional.get().getId()) {
                 // attempt to update an existing application with same name/group combo as another
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
+            } else if (!groupOptional.get().getMakePublic() && isPublic) {
+                throw new DPMException(ResponseStatusCodes.APPLICATION_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP);
             }
 
             application = applicationOptional.get();
@@ -227,7 +231,9 @@ public class ApplicationService {
                 throw new DPMException(ResponseStatusCodes.APPLICATION_ALREADY_EXISTS);
             }
 
-            boolean isPublic = Boolean.TRUE.equals(applicationDTO.getPublic());
+            if (!groupOptional.get().getMakePublic() && isPublic) {
+                throw new DPMException(ResponseStatusCodes.APPLICATION_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP);
+            }
 
             application = new Application(applicationDTO.getName(), applicationDTO.getDescription(), isPublic);
             application.setId(applicationDTO.getId());
