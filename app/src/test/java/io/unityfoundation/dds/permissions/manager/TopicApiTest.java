@@ -578,6 +578,7 @@ public class TopicApiTest {
             abcDTO.setName("Abc123");
             abcDTO.setKind(TopicKind.B);
             abcDTO.setGroup(zeta.getId());
+            abcDTO.setDescription("AbcDescription");
 
             TopicDTO xyzDTO = new TopicDTO();
             xyzDTO.setName("Xyz789");
@@ -602,6 +603,14 @@ public class TopicApiTest {
 
             // group search
             request = HttpRequest.GET("/topics?filter=heta");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+
+            // topic description
+            request = HttpRequest.GET("/topics?filter=bcdescrip");
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
             topicPage = response.getBody(Page.class);
@@ -1387,6 +1396,7 @@ public class TopicApiTest {
             xyzDTO.setName("Xyz789");
             xyzDTO.setKind(TopicKind.B);
             xyzDTO.setGroup(theta.getId());
+            xyzDTO.setDescription("XyzDescription");
 
             request = HttpRequest.POST("/topics/save", abcDTO);
             response = blockingClient.exchange(request);
@@ -1421,6 +1431,16 @@ public class TopicApiTest {
 
             // group search
             request = HttpRequest.GET("/topics?filter=heta");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            topicPage = response.getBody(Page.class);
+            assertTrue(topicPage.isPresent());
+            assertEquals(1, topicPage.get().getContent().size());
+            expectedTopic = (Map) topicPage.get().getContent().get(0);
+            assertEquals("Xyz789", expectedTopic.get("name"));
+
+            // topic description
+            request = HttpRequest.GET("/topics?filter=yzDescrip");
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
             topicPage = response.getBody(Page.class);

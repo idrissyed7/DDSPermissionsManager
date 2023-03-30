@@ -14,6 +14,6 @@ import java.util.Optional;
 public interface GroupRepository extends PageableRepository<Group, Long> {
     Optional<Group> findByName(@NotNull @NonNull String name);
     Page<Group> findAllByIdIn(List<Long> groupIds, Pageable pageable);
-    Page<Group> findAllByNameContainsIgnoreCase(String filter, Pageable pageable);
-    Page<Group> findAllByIdInAndNameContainsIgnoreCase(List<Long> groupIds, String filter, Pageable pageable);
+    Page<Group> findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String groupName, String groupDescription, Pageable pageable);
+    List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String groupName, String groupDescription);
 }

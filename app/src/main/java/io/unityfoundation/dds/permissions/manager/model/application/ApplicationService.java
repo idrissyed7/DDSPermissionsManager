@@ -153,10 +153,10 @@ public class ApplicationService {
             }
 
             if (groupId == null) {
-                return applicationRepository.findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+                return applicationRepository.findByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter, pageable);
             }
 
-            all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
 
             return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
@@ -176,7 +176,7 @@ public class ApplicationService {
                 return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            all = applicationRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
             if (all.isEmpty()) {
                 return Page.empty();
             }

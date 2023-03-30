@@ -13,13 +13,12 @@ import java.util.Optional;
 
 @Repository
 public interface TopicRepository extends PageableRepository<Topic, Long> {
-    Optional<Topic> findByName(@NotNull @NonNull String name);
 
     Page<Topic> findAllByPermissionsGroupIdIn(List<Long> groupIds, Pageable pageable);
 
-    Page<Topic> findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group, Pageable pageable);
+    Page<Topic> findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String topicDescription, String group, Pageable pageable);
 
-    List<Long> findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic, String group);
+    List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String topic,String topicDescription, String group);
 
     Page<Topic> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
 

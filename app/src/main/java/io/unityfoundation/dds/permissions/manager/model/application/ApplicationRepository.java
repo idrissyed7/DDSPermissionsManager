@@ -18,13 +18,13 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     Optional<Application> findByNameAndPermissionsGroup(@NotNull @NonNull String name,
                                                         @NotNull @NonNull Group group);
 
-    Page<Application> findByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application,String group, Pageable page);
+    Page<Application> findByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application, String applicationDescription, String group, Pageable page);
 
     Optional<Application> findByNameEquals(@NotBlank String name);
 
     Page<Application> findAllByPermissionsGroupIdIn(List<Long> groups, Pageable pageable);
 
-    List<Long> findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application, String group);
+    List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application, String applicationDescription, String group);
 
     Page<Application> findAllByIdInAndPermissionsGroupIdIn(List<Long> all, List<Long> groups, Pageable pageable);
 

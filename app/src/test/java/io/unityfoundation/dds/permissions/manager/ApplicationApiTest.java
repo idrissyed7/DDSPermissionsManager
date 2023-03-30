@@ -423,7 +423,7 @@ public class ApplicationApiTest {
             Group secondaryGroup = secondaryOptional.get();
 
             // create applications
-            response = createApplication("Xyz789", primaryGroup.getId());
+            response = createApplication("Xyz789", primaryGroup.getId(), "xyzdesc");
             assertEquals(OK, response.getStatus());
             response = createApplication("abc098", primaryGroup.getId());
             assertEquals(OK, response.getStatus());
@@ -441,6 +441,14 @@ public class ApplicationApiTest {
 
             // group search
             request = HttpRequest.GET("/applications?filter=secondary");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+
+            // application description
+            request = HttpRequest.GET("/applications?filter=zdes");
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
             applicationPage = response.getBody(Page.class);
@@ -1091,6 +1099,7 @@ public class ApplicationApiTest {
             // SecondaryGroup - Three, Four
 
             mockSecurityService.postConstruct();
+            mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest<?> request;
             HttpResponse<?> response;
@@ -1118,9 +1127,9 @@ public class ApplicationApiTest {
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
-            response = createApplication("TestApplicationOne", primaryGroup.getId());
+            response = createApplication("TestApplicationOne", primaryGroup.getId(), "OneDescription");
             assertEquals(OK, response.getStatus());
-            response = createApplication("TestApplicationTwo", primaryGroup.getId());
+            response = createApplication("TestApplicationTwo", primaryGroup.getId(), "TwoDescription");
             assertEquals(OK, response.getStatus());
 
             response = createApplication("Three", secondaryGroupOptional.get().getId());
@@ -1144,6 +1153,16 @@ public class ApplicationApiTest {
             request = HttpRequest.GET("/applications?filter=aryGrouP");
             page = blockingClient.retrieve(request, Page.class);
             assertEquals(2, page.getContent().size());
+            content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // application description
+            request = HttpRequest.GET("/applications?filter=neDescription");
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(1, page.getContent().size());
             content = page.getContent();
             assertTrue(content.stream().noneMatch(map -> {
                 String groupName = (String) map.get("groupName");
@@ -2440,14 +2459,18 @@ public class ApplicationApiTest {
     private HttpResponse<?> createGroup(String groupName) {
         Group group = new Group(groupName);
         HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
-        HttpResponse<?> response;
         return blockingClient.exchange(request, Group.class);
     }
 
     private HttpResponse<?> createApplication(String applicationName, Long groupId) {
+        return createApplication(applicationName, groupId, null);
+    }
+
+    private HttpResponse<?> createApplication(String applicationName, Long groupId, String description) {
         ApplicationDTO applicationDTO = new ApplicationDTO();
         applicationDTO.setName(applicationName);
         applicationDTO.setGroup(groupId);
+        applicationDTO.setDescription(description);
 
         HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
         return blockingClient.exchange(request, ApplicationDTO.class);
