@@ -74,7 +74,7 @@ public class UniversalSearchService {
             } else {
                 applications = applicationRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
             }
-            return applications.map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO()));
+            return applications.map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO(application)));
         } else if (searchGroups && searchTopics && !searchApplications) {
             // groups and topics
 
