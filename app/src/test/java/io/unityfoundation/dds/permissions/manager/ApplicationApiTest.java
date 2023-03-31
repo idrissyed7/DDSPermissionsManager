@@ -18,6 +18,7 @@ import io.unityfoundation.dds.permissions.manager.model.applicationpermission.Ac
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
@@ -306,17 +307,72 @@ public class ApplicationApiTest {
         }
 
         @Test
-        public void createWithIsPublic() {
+        public void createWithPublicGroup() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create public group
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("Beta");
+            group.setDescription("myDescription");
+            group.setPublic(true);
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> betaOptional = response.getBody(Group.class);
+            assertTrue(betaOptional.isPresent());
+            Group beta = betaOptional.get();
+
+            // create private application allowed
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(beta.getId());
+            applicationDTO.setPublic(false);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO savedApplicationDTO = applicationOptional.get();
+            assertNotNull(savedApplicationDTO.getPublic());
+            assertFalse(savedApplicationDTO.getPublic());
+
+            // update from private to public allowed
+            savedApplicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", savedApplicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> updateApplicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(updateApplicationOptional.isPresent());
+            assertNotNull(updateApplicationOptional.get().getPublic());
+            assertTrue(updateApplicationOptional.get().getPublic());
+
+            // create public application allowed
+            ApplicationDTO publicApplicationDTO = new ApplicationDTO();
+            publicApplicationDTO.setName("Xyz780");
+            publicApplicationDTO.setGroup(beta.getId());
+            publicApplicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", publicApplicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> publicApplicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(publicApplicationOptional.isPresent());
+            assertNotNull(publicApplicationOptional.get().getPublic());
+            assertTrue(publicApplicationOptional.get().getPublic());
+        }
+
+        @Test
+        public void createWithPrivateGroup() {
             HttpResponse<?> response;
 
-            // create group
+            // create private group
             response = createGroup("PrimaryGroup");
             assertEquals(OK, response.getStatus());
             Optional<Group> thetaOptional = response.getBody(Group.class);
             assertTrue(thetaOptional.isPresent());
             Group theta = thetaOptional.get();
 
-            // null isPublic should return false
+            // create private application (allowed)
             ApplicationDTO applicationDTO = new ApplicationDTO();
             applicationDTO.setName("Abc123");
             applicationDTO.setGroup(theta.getId());
@@ -325,17 +381,38 @@ public class ApplicationApiTest {
             assertEquals(OK, response.getStatus());
             Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
             assertTrue(applicationOptional.isPresent());
-            assertNotNull(applicationOptional.get().getPublic());
-            assertFalse(applicationOptional.get().getPublic());
+            ApplicationDTO savedApplicationDTO = applicationOptional.get();
+            assertNotNull(savedApplicationDTO.getPublic());
+            assertFalse(savedApplicationDTO.getPublic());
 
-            // expect 'true' when set isPublic is set to 'true'
-            applicationDTO.setName("Xyz789");
-            applicationDTO.setPublic(true);
-            request = HttpRequest.POST("/applications/save", applicationDTO);
-            response = blockingClient.exchange(request, ApplicationDTO.class);
-            Optional<ApplicationDTO> body = response.getBody(ApplicationDTO.class);
-            assertTrue(body.isPresent());
-            assertTrue(body.get().getPublic());
+            // update from private to public not allowed (pub sub-entity not allowed under private Group)
+            savedApplicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", savedApplicationDTO);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, ApplicationDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP.equals(group.get("code"))));
+
+            // create public application (not allowed)
+            ApplicationDTO publicApplicationDTO = new ApplicationDTO();
+            publicApplicationDTO.setName("Xyz789");
+            publicApplicationDTO.setGroup(theta.getId());
+            publicApplicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", publicApplicationDTO);
+            HttpRequest<?> finalRequest1 = request;
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest1, ApplicationDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP.equals(group.get("code"))));
         }
 
         @Test
@@ -373,8 +450,13 @@ public class ApplicationApiTest {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
-            // create groups
-            response = createGroup("PrimaryGroup");
+            // create public group
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("PrimaryGroup");
+            group.setDescription("myDescription");
+            group.setPublic(true);
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> primaryOptional = response.getBody(Group.class);
             assertTrue(primaryOptional.isPresent());
@@ -635,9 +717,8 @@ public class ApplicationApiTest {
             assertTrue(applicationOptional.isPresent());
             ApplicationDTO application = applicationOptional.get();
 
-            // with same name different description and isPublic values
+            // with same name different description
             application.setDescription("This is a description");
-            application.setPublic(true);
             request = HttpRequest.POST("/applications/save", application);
             response = blockingClient.exchange(request, ApplicationDTO.class);
             assertEquals(OK, response.getStatus());
@@ -652,7 +733,6 @@ public class ApplicationApiTest {
 
             assertEquals("TestApplicationUpdate", updatedApplication.getName());
             assertEquals("This is a description", updatedApplication.getDescription());
-            assertTrue(updatedApplication.getPublic());
         }
 
         @Test
@@ -1065,8 +1145,13 @@ public class ApplicationApiTest {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
-            // create groups
-            response = createGroup("PrimaryGroup");
+            // create public group
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("PrimaryGroup");
+            group.setDescription("myDescription");
+            group.setPublic(true);
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> primaryOptional = response.getBody(Group.class);
             assertTrue(primaryOptional.isPresent());
@@ -1628,8 +1713,13 @@ public class ApplicationApiTest {
             HttpRequest<?> request;
             HttpResponse<?> response;
 
-            // create groups
-            response = createGroup("PrimaryGroup");
+            // create public group
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("PrimaryGroup");
+            group.setDescription("myDescription");
+            group.setPublic(true);
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
             Optional<Group> primaryOptional = response.getBody(Group.class);
             assertTrue(primaryOptional.isPresent());

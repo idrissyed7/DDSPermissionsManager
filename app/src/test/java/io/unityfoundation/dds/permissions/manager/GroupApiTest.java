@@ -289,6 +289,116 @@ public class GroupApiTest {
             assertEquals(BAD_REQUEST, thrown.getStatus());
         }
 
+        @Test
+        public void updateOfPublicToPrivateShouldCascade() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create public group
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setPublic(true);
+            request = HttpRequest.POST("/groups/save", groupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> groupDTOOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(groupDTOOptional.isPresent());
+            SimpleGroupDTO savedGroupDTO = groupDTOOptional.get();
+            assertTrue(savedGroupDTO.getPublic());
+
+            // create public application
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("CascadeTestApplication");
+            applicationDTO.setGroup(savedGroupDTO.getId());
+            applicationDTO.setPublic(true);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
+
+            // create public topic
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("CascadeTestTopic");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(savedGroupDTO.getId());
+            topicDTO.setPublic(true);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response =  blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+
+            // update group's public flag from public to private
+            savedGroupDTO.setPublic(false);
+            request = HttpRequest.POST("/groups/save", savedGroupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            groupDTOOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(groupDTOOptional.isPresent());
+            SimpleGroupDTO updatedGroupDTO = groupDTOOptional.get();
+            assertFalse(updatedGroupDTO.getPublic());
+
+            // check if application/topic is private
+            assertFalse(topicRepository.findById(topic.getId()).get().getMakePublic());
+            assertFalse(applicationRepository.findById(application.getId()).get().getMakePublic());
+        }
+
+        @Test
+        public void updateOfPrivateToPublicShouldNotCascade() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create public group
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setPublic(false);
+            request = HttpRequest.POST("/groups/save", groupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> groupDTOOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(groupDTOOptional.isPresent());
+            SimpleGroupDTO savedGroupDTO = groupDTOOptional.get();
+            assertFalse(savedGroupDTO.getPublic());
+
+            // create public application
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("CascadeTestApplication");
+            applicationDTO.setGroup(savedGroupDTO.getId());
+            applicationDTO.setPublic(false);
+            request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO application = applicationOptional.get();
+
+            // create public topic
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("CascadeTestTopic");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(savedGroupDTO.getId());
+            topicDTO.setPublic(false);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response =  blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+
+            // update group's public flag from private to public
+            savedGroupDTO.setPublic(true);
+            request = HttpRequest.POST("/groups/save", savedGroupDTO);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            groupDTOOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(groupDTOOptional.isPresent());
+            SimpleGroupDTO updatedGroupDTO = groupDTOOptional.get();
+            assertTrue(updatedGroupDTO.getPublic());
+
+            // check if application/topic are still is private
+            assertFalse(topicRepository.findById(topic.getId()).get().getMakePublic());
+            assertFalse(applicationRepository.findById(application.getId()).get().getMakePublic());
+        }
+
         // list
         @Test
         void canListAllGroups(){

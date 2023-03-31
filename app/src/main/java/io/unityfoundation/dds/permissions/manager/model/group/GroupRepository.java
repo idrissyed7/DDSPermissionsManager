@@ -16,4 +16,8 @@ public interface GroupRepository extends PageableRepository<Group, Long> {
     Page<Group> findAllByIdIn(List<Long> groupIds, Pageable pageable);
     Page<Group> findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String groupName, String groupDescription, Pageable pageable);
     List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String groupName, String groupDescription);
+    Page<Group> findAllByNameContainsIgnoreCaseAndMakePublicTrue(String filter, Pageable pageable);
+    List<Group> findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(String query);
+    Page<Group> findAllByMakePublicTrue(Pageable pageable);
+    List<Group> findTop50ByMakePublicTrue();
 }

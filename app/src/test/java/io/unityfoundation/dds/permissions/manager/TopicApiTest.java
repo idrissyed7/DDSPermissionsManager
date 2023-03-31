@@ -12,6 +12,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserDTO;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserRepository;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicDTO;
@@ -229,24 +230,27 @@ public class TopicApiTest {
         }
 
         @Test
-        public void createWithIsPublic() {
+        public void createWithPublicGroup() {
             HttpResponse<?> response;
+            HttpRequest<?> request;
 
-            // create group
-            Group theta = new Group("Theta");
-            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            // create public group
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("Beta");
+            group.setDescription("myDescription");
+            group.setPublic(true);
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
-            assertTrue(thetaOptional.isPresent());
-            theta = thetaOptional.get();
+            Optional<SimpleGroupDTO> betaOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(betaOptional.isPresent());
+            SimpleGroupDTO betaDTO = betaOptional.get();
 
-            // null isPublic should return false
+            // create private topic allowed
             TopicDTO topicDTO = new TopicDTO();
             topicDTO.setName("MyTopic");
             topicDTO.setKind(TopicKind.B);
-            topicDTO.setGroup(theta.getId());
-
+            topicDTO.setGroup(betaDTO.getId());
             request = HttpRequest.POST("/topics/save", topicDTO);
             response = blockingClient.exchange(request, TopicDTO.class);
             assertEquals(OK, response.getStatus());
@@ -256,14 +260,92 @@ public class TopicApiTest {
             assertNotNull(topic.getPublic());
             assertFalse(topic.getPublic());
 
-            // expect 'true' when set isPublic is set to 'true'
-            topicDTO.setName("A Different Topic");
-            topicDTO.setPublic(true);
-            request = HttpRequest.POST("/topics/save", topicDTO);
+            // update from private to public allowed
+            topic.setPublic(true);
+            request = HttpRequest.POST("/topics/save", topic);
             response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
             Optional<TopicDTO> body = response.getBody(TopicDTO.class);
             assertTrue(body.isPresent());
             assertTrue(body.get().getPublic());
+
+            // create public topic allowed
+            TopicDTO publicTopicDTO = new TopicDTO();
+            publicTopicDTO.setName("MyPublicTopic");
+            publicTopicDTO.setKind(TopicKind.B);
+            publicTopicDTO.setGroup(betaDTO.getId());
+            publicTopicDTO.setPublic(true);
+            request = HttpRequest.POST("/topics/save", publicTopicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> publicTopicOptional = response.getBody(TopicDTO.class);
+            assertTrue(publicTopicOptional.isPresent());
+            TopicDTO savedPublicTopic = publicTopicOptional.get();
+            assertNotNull(savedPublicTopic.getPublic());
+            assertTrue(savedPublicTopic.getPublic());
+        }
+
+        @Test
+        public void createWithPrivateGroup() {
+            HttpResponse<?> response;
+            HttpRequest<?> request;
+
+            // create private group (null implies false)
+            SimpleGroupDTO group = new SimpleGroupDTO();
+            group.setName("Beta");
+            group.setDescription("myDescription");
+            request = HttpRequest.POST("/groups/save", group);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<SimpleGroupDTO> betaOptional = response.getBody(SimpleGroupDTO.class);
+            assertTrue(betaOptional.isPresent());
+            SimpleGroupDTO betaDTO = betaOptional.get();
+
+            // create private topic allowed
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("MyTopic");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(betaDTO.getId());
+            topicDTO.setPublic(false);
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO topic = topicOptional.get();
+            assertNotNull(topic.getPublic());
+            assertFalse(topic.getPublic());
+
+            // update from private to public not allowed (pub sub-entity not allowed under private Group)
+            topic.setPublic(true);
+            request = HttpRequest.POST("/topics/save", topic);
+            HttpRequest<?> finalRequest = request;
+            HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest, TopicDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            List<Map> list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(itm -> ResponseStatusCodes.TOPIC_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP.equals(itm.get("code"))));
+
+
+            // create public topic (not allowed)
+            TopicDTO publicTopicDTO = new TopicDTO();
+            publicTopicDTO.setName("MyPublicTopic");
+            publicTopicDTO.setKind(TopicKind.B);
+            publicTopicDTO.setGroup(betaDTO.getId());
+            publicTopicDTO.setPublic(true);
+            request = HttpRequest.POST("/topics/save", publicTopicDTO);
+            HttpRequest<?> finalRequest1 = request;
+            exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
+                blockingClient.exchange(finalRequest1, TopicDTO.class);
+            });
+            assertEquals(BAD_REQUEST, exception.getStatus());
+            bodyOptional = exception.getResponse().getBody(List.class);
+            assertTrue(bodyOptional.isPresent());
+            list = bodyOptional.get();
+            assertTrue(list.stream().anyMatch(itm -> ResponseStatusCodes.TOPIC_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP.equals(itm.get("code"))));
         }
 
         @Test
@@ -369,10 +451,9 @@ public class TopicApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Abc123", topicOptional.get().getName());
 
-            // with same name different description and isPublic values
+            // with same name different description
             TopicDTO savededTopicDTO = topicOptional.get();
             savededTopicDTO.setDescription("This is a description");
-            savededTopicDTO.setPublic(true);
             request = HttpRequest.POST("/topics/save", savededTopicDTO);
             response = blockingClient.exchange(request, TopicDTO.class);
             assertEquals(OK, response.getStatus());
@@ -380,7 +461,6 @@ public class TopicApiTest {
             assertTrue(updatedTopicOptional.isPresent());
             TopicDTO updatedTopic = updatedTopicOptional.get();
             assertEquals("This is a description", updatedTopic.getDescription());
-            assertTrue(updatedTopic.getPublic());
         }
 
         @Test
@@ -462,11 +542,14 @@ public class TopicApiTest {
             HttpResponse<?> response;
 
             // create group
-            Group theta = new Group("Theta");
+            SimpleGroupDTO theta = new SimpleGroupDTO();
+            theta.setName("Theta");
+            theta.setDescription("myDescription");
+            theta.setPublic(true);
             request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaOptional.isPresent());
             theta = thetaOptional.get();
 
@@ -1249,11 +1332,14 @@ public class TopicApiTest {
             HttpResponse<?> response;
 
             // create group
-            Group theta = new Group("Theta");
+            SimpleGroupDTO theta = new SimpleGroupDTO();
+            theta.setName("Theta");
+            theta.setDescription("myDescription");
+            theta.setPublic(true);
             request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaOptional.isPresent());
             theta = thetaOptional.get();
 
@@ -1576,11 +1662,14 @@ public class TopicApiTest {
             HttpResponse<?> response;
 
             // create group
-            Group theta = new Group("Theta");
+            SimpleGroupDTO theta = new SimpleGroupDTO();
+            theta.setName("Theta");
+            theta.setDescription("myDescription");
+            theta.setPublic(true);
             request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaOptional.isPresent());
             theta = thetaOptional.get();
 
@@ -1770,11 +1859,14 @@ public class TopicApiTest {
             HttpResponse<?> response;
 
             // create group
-            Group theta = new Group("Theta");
+            SimpleGroupDTO theta = new SimpleGroupDTO();
+            theta.setName("Theta");
+            theta.setDescription("myDescription");
+            theta.setPublic(true);
             request = HttpRequest.POST("/groups/save", theta);
-            response = blockingClient.exchange(request, Group.class);
+            response = blockingClient.exchange(request, SimpleGroupDTO.class);
             assertEquals(OK, response.getStatus());
-            Optional<Group> thetaOptional = response.getBody(Group.class);
+            Optional<SimpleGroupDTO> thetaOptional = response.getBody(SimpleGroupDTO.class);
             assertTrue(thetaOptional.isPresent());
             theta = thetaOptional.get();
 
