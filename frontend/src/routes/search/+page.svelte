@@ -5,6 +5,7 @@
 	import headerTitle from '../../stores/headerTitle';
 	import Modal from '$lib/Modal.svelte';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import groupsSVG from '../../icons/groups.svg';
 	import topicsSVG from '../../icons/topics.svg';
 	import applicationsSVG from '../../icons/apps.svg';
@@ -168,13 +169,13 @@
 	};
 
 	onMount(() => {
-		headerTitle.set('Search');
+		headerTitle.set(messages['universal.search']['header.title']);
 		getSearchResults();
 	});
 </script>
 
 <svelte:head>
-	<title>Universal Search | DDS Permissions Manager</title>
+	<title>{messages['universal.search']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Search" />
 </svelte:head>
 
@@ -194,7 +195,7 @@
 		{/if}
 
 		<div class="content">
-			<h1>Universal Search</h1>
+			<h1>{messages['universal.search']['title']}</h1>
 
 			<form class="searchbox">
 				<input
@@ -202,7 +203,7 @@
 					class="searchbox"
 					type="search"
 					style="width: 25rem"
-					placeholder="Search any Group, Topic or Application"
+					placeholder={messages['universal.search']['search.placeholder']}
 					bind:value={universalSearchString}
 					on:blur={() => {
 						universalSearchString = universalSearchString?.trim();
@@ -233,7 +234,7 @@
 					>
 						✓
 					</span>
-					Everything
+					{messages['universal.search']['filter.everything']}
 				</button>
 
 				<button
@@ -252,7 +253,7 @@
 					>
 						✓
 					</span>
-					Groups
+					{messages['universal.search']['filter.groups']}
 				</button>
 
 				<button
@@ -271,7 +272,7 @@
 					>
 						✓
 					</span>
-					Topics
+					{messages['universal.search']['filter.topics']}
 				</button>
 
 				<button
@@ -290,16 +291,22 @@
 					>
 						✓
 					</span>
-					Applications
+					{messages['universal.search']['filter.applications']}
 				</button>
 			</div>
 
 			<table class="universal-search-table">
 				<thead>
 					<tr>
-						<td style="min-width: 5rem">Name</td>
-						<td style="min-width: 5rem">Group</td>
-						<td style="min-width: 5rem">Description</td>
+						<td style="min-width: 5rem"
+							>{messages['universal.search']['table.search.results.column.one']}</td
+						>
+						<td style="min-width: 5rem"
+							>{messages['universal.search']['table.search.results.column.two']}</td
+						>
+						<td style="min-width: 5rem"
+							>{messages['universal.search']['table.search.results.column.three']}</td
+						>
 					</tr>
 				</thead>
 
@@ -352,14 +359,16 @@
 							</tr>
 						{/each}
 					{:else}
-						<div style="margin-top: 0.5rem; margin-left: 0.3rem">No Results</div>
+						<div style="margin-top: 0.5rem; margin-left: 0.3rem">
+							{messages['universal.search']['empty.results']}
+						</div>
 					{/if}
 				</tbody>
 			</table>
 		</div>
 
 		<div class="pagination">
-			<span>Rows per page</span>
+			<span>{messages['pagination']['rows.per.page']}</span>
 			<select
 				tabindex="-1"
 				on:change={(e) => {
@@ -435,7 +444,7 @@
 				}}
 			/>
 		</div>
-		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+		<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 	{/await}
 {/if}
 
@@ -452,5 +461,9 @@
 	.universal-search-table {
 		margin-top: 2rem;
 		min-width: 45vw;
+	}
+
+	tr {
+		height: 3rem;
 	}
 </style>
