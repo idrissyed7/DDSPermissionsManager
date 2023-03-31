@@ -22,14 +22,15 @@
 	import editAppName from '../stores/editAppName';
 	import tooltips from '$lib/tooltips.json';
 	import createItem from '../stores/createItem';
+	import messages from '$lib/messages.json';
 
 	export let avatarName;
 	export let userEmail;
 
 	// Headers Constants
-	let topicsHeader = 'My Topics';
-	let applicationsHeader = 'My Applications';
-	let groupsHeader = 'My Groups';
+	let topicsHeader = messages['header']['topics.header.constant'];
+	let applicationsHeader = messages['header']['applications.header.constant'];
+	let groupsHeader = messages['header']['groups.header.constant'];
 
 	// Constants
 	const waitTime = 1000;
@@ -122,7 +123,7 @@
 				{#await permissionsForGroupContext then _}
 					<div style="display:inline-flex">
 						<img src={DDSLock} alt="logo" class="logo" />
-						<div class="logo-text">DDS Permissions Manager</div>
+						<div class="logo-text">{messages['header']['title']}</div>
 					</div>
 					{#key $refreshPage}
 						<div
@@ -293,7 +294,7 @@
 			{:else}
 				<div style="display:inline-flex">
 					<img src={DDSLock} alt="logo" class="logo" />
-					<div class="logo-text">DDS Permissions Manager</div>
+					<div class="logo-text">{messages['header']['title']}</div>
 				</div>
 			{/if}
 		</div>
@@ -382,7 +383,7 @@
 					on:focusout={() => (avatarDropdownVisible = false)}
 				>
 					<a href="/api/logout" style="float:right">
-						Logout
+						{messages['header']['avatar.logout.button']}
 						<img src={logoutSVG} alt="logout" class="icon-logout" />
 					</a>
 				</td>

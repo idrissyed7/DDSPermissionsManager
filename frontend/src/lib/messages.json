@@ -1,0 +1,260 @@
+{
+    "refresh_token":
+    {
+        "five_min_reminder": "Would you like to extend your session?"
+    },
+
+    "login":
+    {
+        "title": "DDS Permissions Manager",
+        "header": "DDS Permissions Manager",
+        "label": "Login",
+        "button": "Login with Google"
+    },
+
+    "group":
+    {
+        "title": "My Groups",
+        "tab.title": "My Groups | DDS Permissions Manager",
+        "activate.tooltip": "Select this group as context",
+        "add.tooltip.superuser.required": "Super User permission required",
+        "delete.tooltip": "Select groups to delete",
+        "delete.tooltip.superuser.required": "Super User permission required",
+        "delete.single": "Group",
+        "delete.multiple": "Groups",
+        "add.title": "Add New Group",
+        "edit.title": "Edit Group",
+        "delete.title": "Delete",
+        "search.placeholder": "Search",
+        "search.clear.button": "Clear",
+        "table.column.one": "Activate",
+        "table.column.two": "Group",
+        "table.column.three": "Create",
+        "table.column.four": "Users",
+        "table.column.five": "Topics",
+        "table.column.six": "Applications",
+        "empty.groups": "No Groups Found.",
+        "empty.groups.action": "Click here",
+        "empty.groups.action.result": "to create a new Group."
+    },
+
+    "group.detail":
+    {
+        "row.one": "Group Name:",
+        "row.two": "Description:",
+        "row.three": "Public:"
+    },
+
+    "user":
+    {
+        "title.user": "My Users",
+        "tab.title": "My Users | DDS Permissions Manager",
+        "add.title": "Add User",
+        "change.title": "Change User",
+        "delete.title.user": "Delete",
+        "delete.single.user": "User",
+        "delete.multiple.user": "Users",
+        "search.placeholder.user": "Search",
+        "search.clear.button.user": "Clear",
+        "add.tooltip.group.admin.required": "Group Admin permission required",
+        "add.tooltip.select.group": "Select a group to add a User",
+        "delete.tooltip.user": "Select users to delete",
+        "delete.tooltip.group.admin.required": "Group Admin permissions required",
+        "table.user.column.one": "E-mail",
+        "table.user.column.two": "Group",
+        "table.user.column.three": "Group Admin",
+        "table.user.column.four": "Topic Admin",
+        "table.user.column.five": "Application Admin",
+        "empty.users": "No Users Found.",
+        "empty.users.action": "Select a group to get started.",
+        "empty.users.action.two": "Click here",
+        "empty.users.action.result": "to create a new User.",
+        "add.super.user.title": "Add Super User",
+        "delete.title.super.user": "Delete",
+        "delete.single.super.user": "User",
+        "delete.multiple.super.user": "Users",
+        "title.super.user": "My Super Users",
+        "search.placeholder.super.user": "Search",
+        "search.clear.button.super.user": "Clear",
+        "delete.tooltip.super.user": "Select super users to delete",
+        "table.super.user.column.one": "E-mail",
+        "empty.super.users": "No Super Users Found."
+    },
+
+    "topic":
+    {
+        "title": "My Topics",
+        "tab.title": "My Topics | DDS Permissions Manager",
+        "add": "Add Topic",
+        "delete.title": "Delete",
+        "delete.single": "Topic",
+        "delete.multiple": "Topics",
+        "search.placeholder": "Search",
+        "search.clear.button": "Clear",
+        "add.tooltip.topic.admin.required": "Topic Admin permission required",
+        "add.tooltip.select.group": "Select a group to add a Topic",
+        "delete.tooltip": "Select topics to delete",
+        "delete.tooltip.topic.admin.required": "Topic Admin permissions required",
+        "table.column.one": "Topic",
+        "table.column.two": "Group",
+        "empty.topics": "No Topics Found.",
+        "empty.topics.action": "Select a group to get started.",
+        "empty.topics.action.two": "Click here",
+        "empty.topics.action.result": "to create a new Topic."
+    },
+
+    "topic.detail":
+    {
+        "application.associate": "Associate an Application",
+        "edit": "Edit Topic",
+        "row.one": "Name:",
+        "row.two": "Description:",
+        "row.three": "Group:",
+        "row.four": "Any application can read:",
+        "row.five": "Public:",
+        "row.six": "Applications:",
+        "any.application.can.read.yes": "Yes",
+        "any.application.can.read.no": "No",
+        "add.application": "Add Application",
+        "selected.applications.access.type": "Access Type",
+        "selected.applications.read": "Read",
+        "selected.applications.write": "Write",
+        "selected.applications.read.write": "Read + Write",
+        "updated.success": "Updated Successfully"
+    },
+
+    "application":
+    {
+        "title": "My Applications",
+        "tab.title": "My Applications | DDS Permissions Manager",
+        "delete.title": "Delete",
+        "delete.single": "Application",
+        "delete.multiple": "Applications",
+        "add": "Add Application",
+        "edit": "Edit Application",
+        "search.placeholder": "Search",
+        "search.clear.button": "Clear",
+        "add.tooltip.application.admin.required": "Application Admin permission required",
+        "add.tooltip.select.group": "Select a group to add an Application",
+        "delete.tooltip": "Select applications to delete",
+        "delete.tooltip.application.admin.required": "Application Admin permissions required",
+        "table.column.one": "Application",
+        "table.column.two": "ID",
+        "table.column.three": "Group",
+        "empty.applications": "No Applications Found.",
+        "empty.applications.action": "Select a group to get started.",
+        "empty.applications.action.two": "Click here",
+        "empty.applications.action.result": "to create a new Application."
+    },
+
+    "application.detail":
+    {
+        "row.one": "Application Name:",
+        "row.two": "Description:",
+        "row.three": "Public:",
+        "table.applications.column.one": "Group",
+        "table.applications.column.two": "Topic",
+        "table.applications.column.three": "Access",
+        "empty.topics.associated": "No Topics Associated.",
+        "button.generate.bind.token": "Generate Bind Token",
+        "button.generate.password": "Generate Password",
+        "user.name.label": "Username:",
+        "group.id.label": "Group ID:",
+        "password.label": "Password",
+        "password.copied": "Password Copied!",
+        "bind.token.label": "Bind Token",
+        "bind.token.copied": "Bind Token Copied!",
+        "curl.commands.general.instructions": "The following commands show how to authenticate and download DDS Security Documents from the DDS Permissions Manager API using curl. The APP_PASSWORD is the password created by clicking \"Generate Password\" above. The NONCE is an alphanumeric string used to differentiate instances of the same application.",
+        "curl.commands.export.password.label": "Export the password",
+        "curl.commands.copied.notification": "Copied!",
+        "curl.commands.export.nonce.label": "Export the nonce",
+        "curl.commands.authenticate.label": "Authenticate",
+        "curl.commands.download.identity.ca.certificate.label": "Download the Identity CA certificate",
+        "curl.commands.download.permission.ca.certificate.label": "Download the Permissions CA certificate",
+        "curl.commands.download.governance.file.label": "Download the governance file",
+        "curl.commands.download.keypair.label": "Download a key pair",
+        "curl.commands.download.permissions.document.label": "Download a permissions document"
+    },
+
+    "group.context":
+    {
+        "combobox.placeholder": "Select Group",
+        "add.application.placeholder": "Group **",
+        "group.input.placeholder": "Group *",
+        "empty.results": "No Results",
+        "search.clear.button": "Clear"
+    },
+
+    "header":
+    {
+       "title": "DDS Permissions Manager",
+       "topics.header.constant": "My Topics",
+       "applications.header.constant": "My Applications",
+       "groups.header.constant": "My Groups",
+       "avatar.logout.button": "Logout"
+    },
+
+    "navigation":
+    {
+        "item.one": "My Groups",
+        "item.two": "My Users",
+        "item.three": "My Topics",
+        "item.four": "My Applications"
+    },
+
+    "modal":
+    {
+        "close.modal.label": "Cancel",
+        "input.email.placeholder": "Email *",
+        "input.email.label": "Email",
+        "input.topic.placeholder": "Topic Name *",
+        "error.message.topic.substring": "Topic",
+        "input.application.placeholder": "Application Name *",
+        "error.message.application.substring": "Application",
+        "input.group.placeholder": "Group Name *",
+        "input.group.description.placeholder": "Group Description",
+        "public.label": "Public:",
+        "error.message.group.substring": "Group",
+        "input.application.edit.placeholder": "Application Name *",
+        "input.application.description.placeholder": "Application Description",
+        "input.topic.description.placeholder": "Topic Description",
+        "group.label": "Group",
+        "any.application.can.read.message.one": "This topic requires each application to be authorized in order to read and to write it.",
+        "any.application.can.read.message.two": "This topic requires each application to be authorized in order to write it, but any application may read it.",
+        "switch.group.admin.label": "Group Admin",
+        "switch.topic.admin.label": "Topic Admin",
+        "switch.application.admin.label": "Application Admin",
+        "input.bind.token.placeholder": "Bind Token",
+        "select.access.type.label": "Access Type",
+        "select.read.label": "Read",
+        "select.write.label": "Write",
+        "select.read.write.label": "Read + Write",
+        "required.field.message.one": "* Required & Immutable",
+        "required.field.message.two": "* Required **Required & Immutable",
+        "required.field.message.three": "* Required",
+        "button.add.user.label": "Add User",
+        "button.add.topic.label": "Add Topic",
+        "button.add.application.label": "Add Application",
+        "button.add.group.label": "Add Group",
+        "button.save.changes": "Save Changes",
+        "delete.warning": "Are you sure? This is not reversible.",
+        "associate.application.button.label": "Add",
+        "reminder.message.button.label": "Yes"    
+    },
+
+    "pagination":
+    {
+        "rows.per.page": "Rows per page"
+    },
+
+    "failed.auth":
+    {
+        "header.one": "Authentication Failed",
+        "header.two": "Login was unsuccessful"
+    },
+
+    "footer":
+    {
+        "message": "© 2022 Unity Foundation. All rights reserved."
+    }
+}

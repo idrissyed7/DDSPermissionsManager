@@ -16,7 +16,7 @@
 	import userValidityCheck from '../stores/userValidityCheck';
 	import loginCompleted from '../stores/loginCompleted';
 	import lastActivity from '../stores/lastActivity';
-	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import userEmail from '../stores/userEmail';
 	import updatePermissionsForAllGroups from '../stores/updatePermissionsForAllGroups';
 	import permissionsLastUpdated from '../stores/permissionsLastUpdated';
@@ -131,7 +131,7 @@
 			const fiftyFiveMin = 3300000;
 
 			if (Date.now() - $lastActivity > fiftyFiveMin) {
-				const msg = errorMessages['refresh_token']['five_min_reminder'];
+				const msg = messages['refresh_token']['five_min_reminder'];
 				reminderMessage('Session Expiration', msg);
 			}
 

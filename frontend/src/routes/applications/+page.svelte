@@ -23,6 +23,7 @@
 	import copySVG from '../../icons/copy.svg';
 	import editSVG from '../../icons/edit.svg';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import groupContext from '../../stores/groupContext';
 	import curlCommands from '$lib/curlCommands.json';
@@ -177,7 +178,7 @@
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
-		headerTitle.set('My Applications');
+		headerTitle.set(messages['application']['title']);
 		reloadAllApps();
 		returnToApplicationsList();
 	}
@@ -227,14 +228,14 @@
 		} catch (err) {
 			userValidityCheck.set(true);
 			applications.set();
-			errorMessage('Error Loading Applications', err.message);
+			errorMessage(errorMessages['application']['loading.error.title'], err.message);
 		}
 	};
 
 	onMount(async () => {
 		detailView.set('first run');
 
-		headerTitle.set('My Applications');
+		headerTitle.set(messages['application']['title']);
 
 		if (document.querySelector('.content') == null) promise = await reloadAllApps();
 
@@ -331,7 +332,7 @@
 			if (err.response.data && err.response.status === 400) {
 				const decodedError = decodeError(Object.create(...err.response.data));
 				errorMessage(
-					'Error Adding Application',
+					errorMessages['application']['adding.error.title'],
 					errorMessages[decodedError.category][decodedError.code]
 				);
 			}
@@ -349,7 +350,7 @@
 		} catch (err) {
 			const decodedError = decodeError(Object.create(...err.response.data));
 			errorMessage(
-				'Error Deleting Application',
+				errorMessages['application']['deleting.error.title'],
 				errorMessages[decodedError.category][decodedError.code]
 			);
 		}
@@ -373,7 +374,7 @@
 				if (err.response.data && err.response.status === 400) {
 					const decodedError = decodeError(Object.create(...err.response.data));
 					errorMessage(
-						'Error Saving Application',
+						errorMessages['application']['saving.error.title'],
 						errorMessages[decodedError.category][decodedError.code]
 					);
 				}
@@ -471,7 +472,7 @@
 			password = res.data;
 			generateCredentialsVisible = true;
 		} catch (err) {
-			errorMessage('Error Generating Passphrase', err.message);
+			errorMessage(errorMessages['application']['generating.passphrase.error.title'], err.message);
 		}
 	};
 
@@ -481,7 +482,7 @@
 			bindToken = res.data;
 			generateBindTokenVisible = true;
 		} catch (err) {
-			errorMessage('Error Generating Token', err.message);
+			errorMessage(errorMessages['application']['generating.token.error.title'], err.message);
 		}
 	};
 
@@ -534,7 +535,7 @@
 </script>
 
 <svelte:head>
-	<title>My Applications | DDS Permissions Manager</title>
+	<title>{messages['application']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Applications" />
 </svelte:head>
 {#key $refreshPage}
@@ -545,7 +546,7 @@
 					title={errorMsg}
 					errorMsg={true}
 					errorDescription={errorObject}
-					closeModalText={'Close'}
+					closeModalText={errorMessages['modal']['button.close']}
 					on:cancel={() => errorMessageClear()}
 					on:keydown={(event) => {
 						if (event.which === returnKey) {
@@ -558,7 +559,9 @@
 			{#if deleteApplicationVisible && !errorMessageVisible}
 				<Modal
 					actionDeleteApplications={true}
-					title="Delete {applicationsRowsSelected.length > 1 ? 'Applications' : 'Application'}"
+					title="{messages['application']['delete.title']} {applicationsRowsSelected.length > 1
+						? messages['application']['delete.multiple']
+						: messages['application']['delete.single']}"
 					on:cancel={() => {
 						if (applicationsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
 							applicationsRowsSelected = [];
@@ -576,7 +579,7 @@
 
 			{#if addApplicationVisible && !errorMessageVisible}
 				<Modal
-					title="Add Application"
+					title={messages['application']['add']}
 					applicationName={true}
 					group={true}
 					actionAddApplication={true}
@@ -589,7 +592,7 @@
 
 			{#if editApplicationVisible}
 				<Modal
-					title="Edit Application"
+					title={messages['application']['edit']}
 					actionEditApplication={true}
 					appCurrentName={selectedAppName}
 					appCurrentDescription={selectedAppDescription}
@@ -617,7 +620,7 @@
 								data-cy="search-applications-table"
 								class="searchbox"
 								type="search"
-								placeholder="Search"
+								placeholder={messages['application']['search.placeholder']}
 								bind:value={searchString}
 								on:blur={() => {
 									searchString = searchString?.trim();
@@ -635,7 +638,8 @@
 							<button
 								class="button-blue"
 								style="cursor: pointer; width: 4rem; height: 2.1rem"
-								on:click={() => (searchString = '')}>Clear</button
+								on:click={() => (searchString = '')}
+								>{messages['application']['search.clear.button']}</button
 							>
 						{/if}
 
@@ -666,7 +670,7 @@
 									)
 								) {
 									if (applicationsRowsSelected.length === 0) {
-										deleteToolip = 'Select applications to delete';
+										deleteToolip = messages['application']['delete.tooltip'];
 										const tooltip = document.querySelector('#delete-applications');
 										setTimeout(() => {
 											if (deleteMouseEnter) {
@@ -676,7 +680,8 @@
 										}, 1000);
 									}
 								} else {
-									deleteToolip = 'Application Admin permissions required';
+									deleteToolip =
+										messages['application']['delete.tooltip.application.admin.required'];
 									const tooltip = document.querySelector('#delete-applications');
 									setTimeout(() => {
 										if (deleteMouseEnter) {
@@ -762,7 +767,7 @@
 										!$groupContext &&
 										!$permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true))
 								) {
-									addTooltip = 'Application Admin permission required';
+									addTooltip = messages['application']['add.tooltip.application.admin.required'];
 									const tooltip = document.querySelector('#add-application');
 									setTimeout(() => {
 										if (addMouseEnter) {
@@ -774,7 +779,7 @@
 									!$groupContext &&
 									($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)
 								) {
-									addTooltip = 'Select a group to add an Application';
+									addTooltip = messages['application']['add.tooltip.select.group'];
 									const tooltip = document.querySelector('#add-application');
 									setTimeout(() => {
 										if (addMouseEnter) {
@@ -835,9 +840,11 @@
 											/>
 										</td>
 									{/if}
-									<td style="line-height: 2.2rem; min-width: 7rem">Application</td>
-									<td>ID</td>
-									<td>Group</td>
+									<td style="line-height: 2.2rem; min-width: 7rem"
+										>{messages['application']['table.column.one']}</td
+									>
+									<td>{messages['application']['table.column.two']}</td>
+									<td>{messages['application']['table.column.three']}</td>
 								</tr>
 							</thead>
 
@@ -947,7 +954,7 @@
 						</table>
 					{:else if !applicationDetailVisible && applicationListVisible}
 						<p>
-							No Applications Found.
+							{messages['application']['empty.applications']}
 							<br />
 							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
 								<span
@@ -970,11 +977,11 @@
 											showSelectGroupContext.set(true);
 									}}
 								>
-									Click here
+									{messages['application']['empty.applications.action.two']}
 								</span>
-								to create a new Application.
+								{messages['application']['empty.applications.action.result']}
 							{:else if !$groupContext && ($permissionsByGroup?.some((gm) => gm.isApplicationAdmin === true) || $isAdmin)}
-								Select a group to get started.
+								{messages['application']['empty.applications.action']}
 							{/if}
 						</p>
 					{/if}
@@ -984,7 +991,8 @@
 							<div style="margin-top: 2.1rem; width:100%">
 								<span
 									style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 9.2rem"
-									>Application Name:
+								>
+									{messages['application.detail']['row.one']}
 								</span>
 								<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
 								{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
@@ -1000,8 +1008,9 @@
 							<div style="margin-top: 0.5rem; width:fit-content">
 								<span
 									style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
-									>Description:</span
 								>
+									{messages['application.detail']['row.two']}
+								</span>
 								<span
 									style="font-weight: 400; font-size: 1.1rem; margin-left: 2rem"
 									bind:this={selectedAppDescriptionSelector}
@@ -1009,7 +1018,9 @@
 								>
 							</div>
 							<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
-								<span style="font-weight: 300; vertical-align: 1rem">Public:</span>
+								<span style="font-weight: 300; vertical-align: 1rem">
+									{messages['application.detail']['row.three']}
+								</span>
 								<input
 									type="checkbox"
 									style="vertical-align: 1rem; margin-left: 6rem; width: 15px; height: 15px"
@@ -1022,9 +1033,9 @@
 							<table style="width: 35rem; margin-top: 1rem">
 								<thead>
 									<tr style="border-width: 0px">
-										<td>Group</td>
-										<td>Topic</td>
-										<td>Access</td>
+										<td>{messages['application.detail']['table.applications.column.one']}</td>
+										<td>{messages['application.detail']['table.applications.column.two']}</td>
+										<td>{messages['application.detail']['table.applications.column.three']}</td>
 										{#if isApplicationAdmin || $isAdmin}
 											<td />
 										{/if}
@@ -1063,7 +1074,9 @@
 										</tbody>
 									{/each}
 								{:else}
-									<p style="margin:0.3rem 0 0.6rem 0">No Topics Associated.</p>
+									<p style="margin:0.3rem 0 0.6rem 0">
+										{messages['application.detail']['empty.topics.associated']}
+									</p>
 								{/if}
 							</table>
 							<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
@@ -1089,7 +1102,9 @@
 										height="20rem"
 										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 									/>
-									<span style="vertical-align: middle">Generate Bind Token</span>
+									<span style="vertical-align: middle">
+										{messages['application.detail']['button.generate.bind.token']}
+									</span>
 								</button>
 
 								<button
@@ -1106,18 +1121,25 @@
 										height="20rem"
 										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 									/>
-									<span style="vertical-align: middle">Generate Password</span>
+									<span style="vertical-align: middle">
+										{messages['application.detail']['button.generate.password']}
+									</span>
 								</button>
 							</div>
+
 							<div style="margin-top: 1.5rem; font-weight: 500;  font-size: 0.9rem">
-								Username: <span style="font-weight: 300">{selectedAppId}</span>
+								{messages['application.detail']['user.name.label']}
+								<span style="font-weight: 300">{selectedAppId}</span>
 							</div>
 							<div style="font-weight: 500;  font-size: 0.9rem; margin-top: 0.5rem;">
-								Group ID: <span style="font-weight: 300">{selectedAppGroupId}</span>
+								{messages['application.detail']['group.id.label']}
+								<span style="font-weight: 300">{selectedAppGroupId}</span>
 							</div>
 
 							{#if generateCredentialsVisible}
-								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">Password</div>
+								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
+									{messages['application.detail']['password.label']}
+								</div>
 								<div
 									style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
 									on:click={() => {
@@ -1140,13 +1162,13 @@
 								</div>
 
 								{#if showCopyPasswordNotificationVisible}
-									<div class="bubble">Password Copied!</div>
+									<div class="bubble">{messages['application.detail']['password.copied']}</div>
 								{/if}
 							{/if}
 
 							{#if generateBindTokenVisible}
 								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
-									Bind Token
+									{messages['application.detail']['bind.token.label']}
 
 									<textarea
 										rows="5"
@@ -1168,23 +1190,24 @@
 								</div>
 
 								{#if showCopyBindTokenNotificationVisible}
-									<div class="bubble-bind-token">Bind Token Copied!</div>
+									<div class="bubble-bind-token">
+										{messages['application.detail']['bind.token.copied']}
+									</div>
 								{/if}
 							{/if}
 							<div class="curl-commands">
 								<!-- svelte-ignore missing-declaration -->
 								<div>
-									The following commands show how to authenticate and download DDS Security
-									Documents from the DDS Permissions Manager API using curl. The APP_PASSWORD is the
-									password created by clicking "Generate Password" above. The NONCE is an
-									alphanumeric string used to differentiate instances of the same application.
+									{messages['application.detail']['curl.commands.general.instructions']}
 								</div>
 
-								<div class="section-title">Export the password</div>
+								<div class="section-title">
+									{messages['application.detail']['curl.commands.export.password.label']}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="1" style="width:50rem; resize: none"
-										>{curlCommands.appPassword}</textarea
-									>
+										>{curlCommands.appPassword}
+									</textarea>
 									<img
 										data-cy="curl-command-1-copy"
 										src={copySVG}
@@ -1199,10 +1222,14 @@
 									/>
 
 									{#if copiedVisible === 1}
-										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+										<div class="bubble-commands" style="margin-top: -0.4rem">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Export the nonce</div>
+								<div class="section-title">
+									{messages['application.detail']['curl.commands.export.nonce.label']}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="1" style="width:50rem; resize: none"
 										>{curlCommands.appNonce}</textarea
@@ -1221,10 +1248,14 @@
 									/>
 
 									{#if copiedVisible === 2}
-										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+										<div class="bubble-commands" style="margin-top: -0.4rem">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Authenticate</div>
+								<div class="section-title">
+									{messages['application.detail']['curl.commands.authenticate.label']}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeThree}</textarea
@@ -1243,10 +1274,16 @@
 									/>
 
 									{#if copiedVisible === 3}
-										<div class="bubble-commands" style="margin-top: -0.4rem">Copied!</div>
+										<div class="bubble-commands" style="margin-top: -0.4rem">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Download the Identity CA certificate</div>
+								<div class="section-title">
+									{messages['application.detail'][
+										'curl.commands.download.identity.ca.certificate.label'
+									]}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeFour}</textarea
@@ -1263,10 +1300,16 @@
 										}}
 									/>
 									{#if copiedVisible === 4}
-										<div class="bubble-commands">Copied!</div>
+										<div class="bubble-commands">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Download the Permissions CA certificate</div>
+								<div class="section-title">
+									{messages['application.detail'][
+										'curl.commands.download.permission.ca.certificate.label'
+									]}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeFive}</textarea
@@ -1284,10 +1327,14 @@
 									/>
 
 									{#if copiedVisible === 5}
-										<div class="bubble-commands">Copied!</div>
+										<div class="bubble-commands">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Download the governance file</div>
+								<div class="section-title">
+									{messages['application.detail']['curl.commands.download.governance.file.label']}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeSix}</textarea
@@ -1305,10 +1352,14 @@
 									/>
 
 									{#if copiedVisible === 6}
-										<div class="bubble-commands">Copied!</div>
+										<div class="bubble-commands">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Download a key pair</div>
+								<div class="section-title">
+									{messages['application.detail']['curl.commands.download.keypair.label']}
+								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeSeven}</textarea
@@ -1326,10 +1377,16 @@
 									/>
 
 									{#if copiedVisible === 7}
-										<div class="bubble-commands">Copied!</div>
+										<div class="bubble-commands">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
-								<div class="section-title">Download a permissions document</div>
+								<div class="section-title">
+									{messages['application.detail'][
+										'curl.commands.download.permissions.document.label'
+									]}
+								</div>
 								<section style="display:inline-flex">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeEight}</textarea
@@ -1347,7 +1404,9 @@
 									/>
 
 									{#if copiedVisible === 8}
-										<div class="bubble-commands">Copied!</div>
+										<div class="bubble-commands">
+											{messages['application.detail']['curl.commands.copied.notification']}
+										</div>
 									{/if}
 								</section>
 							</div>
@@ -1357,7 +1416,7 @@
 
 				{#if !applicationDetailVisible}
 					<div class="pagination">
-						<span>Rows per page</span>
+						<span>{messages['pagination']['rows.per.page']}</span>
 						<select
 							tabindex="-1"
 							on:change={(e) => {
@@ -1442,7 +1501,7 @@
 							}}
 						/>
 					</div>
-					<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+					<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 				{/if}
 			{/if}
 		{/await}

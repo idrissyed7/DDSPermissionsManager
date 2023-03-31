@@ -24,6 +24,7 @@
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
 	import detailView from '../stores/detailView';
+	import messages from '$lib/messages.json';
 
 	const itemsPerPage = 10;
 
@@ -137,7 +138,7 @@
 			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/groups">
-				<img src={groupsSVG} alt="groups" class="menu-icon" />My Groups
+				<img src={groupsSVG} alt="groups" class="menu-icon" />{messages['navigation']['item.one']}
 			</a>
 		</li>
 
@@ -151,7 +152,7 @@
 			}}
 		>
 			<a sveltekit:prefetch href="/users">
-				<img src={usersSVG} alt="users" class="menu-icon" />My Users
+				<img src={usersSVG} alt="users" class="menu-icon" />{messages['navigation']['item.two']}
 			</a>
 		</li>
 
@@ -163,7 +164,7 @@
 			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/topics">
-				<img src={topicsSVG} alt="topics" class="menu-icon" />My Topics
+				<img src={topicsSVG} alt="topics" class="menu-icon" />{messages['navigation']['item.three']}
 			</a>
 		</li>
 
@@ -175,7 +176,9 @@
 			on:click={() => detailView.set('backToList')}
 		>
 			<a sveltekit:prefetch href="/applications">
-				<img src={appsSVG} alt="applications" class="menu-icon" />My Applications
+				<img src={appsSVG} alt="applications" class="menu-icon" />{messages['navigation'][
+					'item.four'
+				]}
 			</a>
 		</li>
 

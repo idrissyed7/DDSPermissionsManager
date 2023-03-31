@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -10,10 +10,13 @@
 	import addSVG from '../../icons/add.svg';
 	import editSVG from '../../icons/edit.svg';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import errorMessageAssociation from '../../stores/errorMessageAssociation';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 
 	export let selectedTopicId, isTopicAdmin;
+
+	const dispatch = createEventDispatcher();
 
 	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
 	let selectedTopicCanonicalName;
@@ -70,7 +73,7 @@
 			headerTitle.set(selectedTopicName);
 			detailView.set(true);
 		} catch (err) {
-			errorMessage('Error Loading Topic Details', err.message);
+			errorMessage(errorMessages['topic']['loading.detail.error.title'], err.message);
 		}
 	});
 
@@ -124,7 +127,7 @@
 			const res = await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
 			if (res.status === 200) notifyApplicationAccessTypeSuccess = true;
 		} catch {
-			errorMessage('Error Updating Application Access Type', err.message);
+			errorMessage(errorMessages['topic']['updating.access.type.error.title'], err.message);
 		}
 		await loadApplicationPermissions(topicId);
 	};
@@ -153,7 +156,7 @@
 			isPublic = newTopicPublic;
 			editTopicVisible = false;
 		} catch (err) {
-			errorMessage('Error Adding Topic', err.message);
+			errorMessage(errorMessages['topic']['adding.error.title'], err.message);
 			editTopicVisible = false;
 			errorMessageVisible = true;
 		}
@@ -166,7 +169,7 @@
 			title={errorMsg}
 			errorMsg={true}
 			errorDescription={errorObject}
-			closeModalText={'Close'}
+			closeModalText={errorMessages['modal']['button.close']}
 			on:cancel={() => (errorMessageVisible = false)}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
@@ -178,7 +181,7 @@
 
 	{#if associateApplicationVisible}
 		<Modal
-			title="Associate an Application"
+			title={messages['topic.detail']['application.associate']}
 			actionAssociateApplication={true}
 			{selectedTopicId}
 			on:cancel={() => {
@@ -201,7 +204,7 @@
 
 	{#if editTopicVisible}
 		<Modal
-			title="Edit Topic"
+			title={messages['topic.detail']['edit']}
 			actionEditTopic={true}
 			topicCurrentName={selectedTopicName}
 			topicCurrentDescription={selectedTopicDescription}
@@ -221,31 +224,31 @@
 		<div style="display: inline-flex; align-items: baseline">
 			<table class="topics-details">
 				<tr>
-					<td>Name:</td>
+					<td>{messages['topic.detail']['row.one']}</td>
 					<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
 					<td />
 					<td />
 				</tr>
-				<td>Description:</td>
+				<td>{messages['topic.detail']['row.two']}</td>
 				<td>{selectedTopicDescription}</td>
 				<td />
 				<td />
 				<tr />
 
 				<tr>
-					<td>Group:</td>
+					<td>{messages['topic.detail']['row.three']}</td>
 					<td>{selectedTopicGroupName}</td>
 					<td />
 					<td />
 				</tr>
 
 				<tr>
-					<td style="min-width:12rem">Any application can read:</td>
+					<td style="min-width:12rem">{messages['topic.detail']['row.four']}</td>
 					<td
 						>{#if selectedTopicKind === 'B'}
-							Yes
+							{messages['topic.detail']['any.application.can.read.yes']}
 						{:else}
-							No
+							{messages['topic.detail']['any.application.can.read.no']}
 						{/if}
 					</td>
 					<td />
@@ -253,7 +256,7 @@
 				</tr>
 
 				<tr>
-					<td>Public:</td>
+					<td>{messages['topic.detail']['row.five']}</td>
 					<td>
 						<input
 							type="checkbox"
@@ -268,7 +271,7 @@
 
 				<tr style="border-width: 0px;">
 					<td style="border-bottom-color: transparent;">
-						<span style="margin-right: 1rem">Applications:</span>
+						<span style="margin-right: 1rem">{messages['topic.detail']['row.six']}</span>
 					</td>
 
 					<td style="border-bottom-color: transparent;">
@@ -295,7 +298,9 @@
 								height="20rem"
 								style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 							/>
-							<span style="vertical-align: middle">Add Application</span>
+							<span style="vertical-align: middle">
+								{messages['topic.detail']['add.application']}
+							</span>
 						</button>
 					</td>
 				</tr>
@@ -330,10 +335,18 @@
 								);
 							}}
 						>
-							<option value="" disabled selected>Access Type</option>
-							<option value="READ">Read</option>
-							<option value="WRITE">Write</option>
-							<option value="READ_WRITE">Read + Write</option>
+							<option value="" disabled selected>
+								{messages['topic.detail']['selected.applications.access.type']}
+							</option>
+							<option value="READ">
+								{messages['topic.detail']['selected.applications.read']}
+							</option>
+							<option value="WRITE">
+								{messages['topic.detail']['selected.applications.write']}
+							</option>
+							<option value="READ_WRITE">
+								{messages['topic.detail']['selected.applications.read.write']}
+							</option>
 						</select>
 
 						<img
@@ -356,11 +369,11 @@
 			{#if notifyApplicationAccessTypeSuccess}
 				<span
 					style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
-					>Updated Successfully</span
+					>{messages['topic.detail']['updated.success']}</span
 				>
 			{/if}
 		{/if}
-		<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+		<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 	{/await}
 {/if}
 

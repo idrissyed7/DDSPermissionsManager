@@ -27,6 +27,7 @@ public interface ResponseStatusCodes {
     String APPLICATION_NOT_FOUND = "application.not-found";
     String APPLICATION_REQUIRES_GROUP_ASSOCIATION = "application.requires-group-association";
     String APPLICATION_CANNOT_UPDATE_GROUP_ASSOCIATION = "application.cannot-update-group-association";
+    String APPLICATION_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP = "application.cannot-create-nor-update-under-private-group";
     String APPLICATION_ALREADY_EXISTS = "application.exists";
     String APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL = "application.name.cannot-be-blank-or-null";
     String APPLICATION_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS = "application.name.cannot-be-less-than-three-characters";
@@ -40,6 +41,7 @@ public interface ResponseStatusCodes {
     String TOPIC_NOT_FOUND = "topic.not-found";
     String TOPIC_REQUIRES_GROUP_ASSOCIATION = "topic.requires-group-association";
     String TOPIC_CANNOT_UPDATE_GROUP_ASSOCIATION = "topic.cannot-update-group-association";
+    String TOPIC_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP = "topic.cannot-create-nor-update-under-private-group";
     String TOPIC_NAME_UPDATE_NOT_ALLOWED = "topic.name.update-not-allowed";
     String TOPIC_NAME_CANNOT_BE_BLANK_OR_NULL = "topic.name.cannot-be-blank-or-null";
     String TOPIC_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS = "topic.name.cannot-be-less-than-three-characters";

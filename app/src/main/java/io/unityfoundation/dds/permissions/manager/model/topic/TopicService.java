@@ -57,10 +57,10 @@ public class TopicService {
             }
 
             if (groupId == null) {
-                return topicRepository.findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+                return topicRepository.findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter, pageable);
             }
 
-            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
 
             return topicRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
@@ -80,7 +80,7 @@ public class TopicService {
                 return topicRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
             if (all.isEmpty()) {
                 return Page.empty();
             }
@@ -116,6 +116,8 @@ public class TopicService {
                 throw new DPMException(ResponseStatusCodes.TOPIC_KIND_UPDATE_NOT_ALLOWED, HttpStatus.BAD_REQUEST);
             } else if (!topicDTO.getGroup().equals(savedTopic.getPermissionsGroup().getId())) {
                 throw new DPMException(ResponseStatusCodes.TOPIC_CANNOT_UPDATE_GROUP_ASSOCIATION);
+            } else if (!groupOptional.get().getMakePublic() && isPublic) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP);
             }
 
             savedTopic.setDescription(topicDTO.getDescription());
@@ -129,6 +131,8 @@ public class TopicService {
 
             if (searchTopicByNameAndGroup.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.TOPIC_ALREADY_EXISTS);
+            } else if (!groupOptional.get().getMakePublic() && isPublic) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_CANNOT_CREATE_NOR_UPDATE_UNDER_PRIVATE_GROUP);
             }
 
             Topic newTopic = new Topic(topicDTO.getName(), topicDTO.getKind(), topicDTO.getDescription(), isPublic);

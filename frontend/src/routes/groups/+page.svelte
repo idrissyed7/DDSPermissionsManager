@@ -20,6 +20,7 @@
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import errorMessages from '$lib/errorMessages.json';
+	import messages from '$lib/messages.json';
 	import groupContext from '../../stores/groupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
 	import userEmail from '../../stores/userEmail';
@@ -73,7 +74,7 @@
 	let addTooltip;
 	let addMouseEnter = false;
 
-	let activateToolip = 'Select this group as context';
+	let activateToolip = messages['group']['activate.tooltip'];
 
 	let activateMouseEnter = new Array($groups?.length).fill(false);
 
@@ -139,7 +140,6 @@
 		promise = reloadAllGroups();
 		updatePermissionsForAllGroups.set(false);
 	}
-
 	const reloadAllGroups = async (page = 0) => {
 		try {
 			let res;
@@ -160,7 +160,7 @@
 		} catch (err) {
 			userValidityCheck.set(true);
 
-			errorMessage('Error Loading Groups', err.message);
+			errorMessage(errorMessages['group']['loading.error.title'], err.message);
 		}
 	};
 
@@ -174,7 +174,7 @@
 	};
 
 	onMount(async () => {
-		headerTitle.set('My Groups');
+		headerTitle.set(messages['group']['title']);
 		detailView.set();
 
 		if (document.querySelector('#groups-table') == null) {
@@ -215,7 +215,10 @@
 			.catch((err) => {
 				addGroupVisible = false;
 				const decodedError = decodeError(Object.create(...err.response.data));
-				errorMessage('Error Adding Group', errorMessages[decodedError.category][decodedError.code]);
+				errorMessage(
+					errorMessages['group']['adding.error.title'],
+					errorMessages[decodedError.category][decodedError.code]
+				);
 			});
 
 		searchString = '';
@@ -232,7 +235,7 @@
 				name: groupNewName
 			})
 			.catch((err) => {
-				errorMessage('Error Editing Group Name', err.message);
+				errorMessage(errorMessages['group']['editing.error.title'], err.message);
 			});
 
 		await reloadAllGroups();
@@ -248,7 +251,7 @@
 			}
 		} catch (err) {
 			deleteGroupVisible = false;
-			errorMessage('Error Deleting Group', err.response.data);
+			errorMessage(errorMessages['group']['deleting.error.title'], err.response.data);
 		}
 	};
 
@@ -285,7 +288,7 @@
 </script>
 
 <svelte:head>
-	<title>My Groups | DDS Permissions Manager</title>
+	<title>{messages['group']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Groups" />
 </svelte:head>
 
@@ -297,7 +300,7 @@
 					title={errorMsg}
 					errorMsg={true}
 					errorDescription={errorObject}
-					closeModalText={'Close'}
+					closeModalText={errorMessages['modal']['button.close']}
 					on:cancel={() => {
 						errorMessageVisible = false;
 						errorMessageClear();
@@ -307,7 +310,9 @@
 
 			{#if deleteGroupVisible}
 				<Modal
-					title="Delete {groupsRowsSelected.length > 1 ? 'Groups' : 'Group'}"
+					title="{messages['group']['delete.title']} {groupsRowsSelected.length > 1
+						? messages['group']['delete.multiple']
+						: messages['group']['delete.single']}"
 					actionDeleteGroups={true}
 					on:deleteGroups={async () => {
 						await deleteSelectedGroups();
@@ -327,7 +332,7 @@
 
 			{#if addGroupVisible}
 				<Modal
-					title="Add New Group"
+					title={messages['group']['add.title']}
 					actionAddGroup={true}
 					groupNewName={true}
 					on:addGroup={(e) => addGroup(e.detail.newGroupName)}
@@ -337,7 +342,7 @@
 
 			{#if editGroupVisible}
 				<Modal
-					title="Edit Group"
+					title={messages['group']['edit.title']}
 					actionEditGroup={true}
 					groupCurrentName={selectedGroupName}
 					groupNewName={true}
@@ -353,7 +358,7 @@
 				<GroupDetails
 					group={selectedGroup}
 					on:groupList={() => {
-						headerTitle.set('My Groups');
+						headerTitle.set(messages['group']['title']);
 						detailView.set();
 						groupDetailView = false;
 					}}
@@ -363,14 +368,14 @@
 
 			{#if $groupsTotalSize !== undefined && $groupsTotalSize != NaN && !groupDetailView}
 				<div class="content">
-					<h1 data-cy="groups">My Groups</h1>
+					<h1 data-cy="groups">{messages['group']['title']}</h1>
 
 					<form class="searchbox">
 						<input
 							data-cy="search-groups-table"
 							class="searchbox"
 							type="search"
-							placeholder="Search"
+							placeholder={messages['group']['search.placeholder']}
 							bind:value={searchString}
 							on:blur={() => {
 								searchString = searchString?.trim();
@@ -388,8 +393,10 @@
 						<button
 							class="button-blue"
 							style="cursor: pointer; width: 4rem; height: 2.1rem"
-							on:click={() => (searchString = '')}>Clear</button
+							on:click={() => (searchString = '')}
 						>
+							{messages['group']['search.clear.button']}
+						</button>
 					{/if}
 
 					<img
@@ -409,7 +416,7 @@
 						on:mouseenter={() => {
 							deleteMouseEnter = true;
 							if ($isAdmin) {
-								deleteToolip = 'Select groups to delete';
+								deleteToolip = messages['group']['delete.tooltip'];
 								if (groupsRowsSelected.length === 0) {
 									const tooltip = document.querySelector('#delete-groups');
 									setTimeout(() => {
@@ -423,7 +430,7 @@
 									}, 1000);
 								}
 							} else {
-								deleteToolip = 'Super User permission required';
+								deleteToolip = messages['group']['delete.tooltip.superuser.required'];
 								const tooltip = document.querySelector('#delete-groups');
 								setTimeout(() => {
 									if (deleteMouseEnter) {
@@ -471,7 +478,7 @@
 						on:mouseenter={() => {
 							addMouseEnter = true;
 							if (!$isAdmin) {
-								addTooltip = 'Super User permission required';
+								addTooltip = messages['group']['add.tooltip.superuser.required'];
 								const tooltip = document.querySelector('#add-applications');
 								setTimeout(() => {
 									if (addMouseEnter) {
@@ -531,12 +538,24 @@
 											/>
 										</td>
 									{/if}
-									<td style="width: 5rem; text-align:center">Activate</td>
-									<td style="min-width: 7rem">Group</td>
-									<td style="text-align:center; width: 7rem">Create</td>
-									<td style="width: 4rem; text-align:center">Users</td>
-									<td style="width: 4rem; text-align:center">Topics</td>
-									<td style="width: 4rem; text-align:right; padding-right: 1rem">Applications</td>
+									<td style="width: 5rem; text-align:center"
+										>{messages['group']['table.column.one']}
+									</td>
+									<td style="min-width: 7rem">
+										{messages['group']['table.column.two']}
+									</td>
+									<td style="text-align:center; width: 7rem">
+										{messages['group']['table.column.three']}
+									</td>
+									<td style="width: 4rem; text-align:center">
+										{messages['group']['table.column.four']}
+									</td>
+									<td style="width: 4rem; text-align:center">
+										{messages['group']['table.column.five']}
+									</td>
+									<td style="width: 4rem; text-align:right; padding-right: 1rem">
+										{messages['group']['table.column.six']}
+									</td>
 								</tr>
 							</thead>
 							<tbody>
@@ -848,16 +867,19 @@
 						</table>
 					{:else}
 						<p>
-							No Groups Found.&nbsp;<span class="link" on:click={() => (addGroupVisible = true)}>
-								Click here
+							{messages['group']['empty.groups']}&nbsp;<span
+								class="link"
+								on:click={() => (addGroupVisible = true)}
+							>
+								{messages['group']['empty.groups.action']}
 							</span>
-							to create a new Group.
+							{messages['group']['empty.groups.action.result']}
 						</p>
 					{/if}
 				</div>
 
 				<div class="pagination">
-					<span>Rows per page</span>
+					<span>{messages['pagination']['rows.per.page']}</span>
 					<select
 						tabindex="-1"
 						on:change={(e) => {
@@ -936,7 +958,7 @@
 						}}
 					/>
 				</div>
-				<p style="margin-top: 8rem">© 2022 Unity Foundation. All rights reserved.</p>
+				<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 			{/if}
 		{/await}
 	{/if}

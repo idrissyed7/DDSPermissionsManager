@@ -8,6 +8,7 @@
 	import singleGroupCheck from '../stores/singleGroupCheck';
 	import isSingleGroup from '../stores/isSingleGroup';
 	import contextMessage from '../stores/contextMessage';
+	import messages from '$lib/messages.json';
 
 	export let actionAddApplication = false;
 	export let isGroupContext = false;
@@ -73,8 +74,12 @@
 
 	onMount(async () => {
 		// Changes the text in the Modal's group field placeholder
-		if (isGroupContext) document.querySelector('#combobox-1').placeholder = 'Select Group';
-		if (actionAddApplication) document.querySelector('#combobox-1').placeholder = 'Group **';
+		if (isGroupContext)
+			document.querySelector('#combobox-1').placeholder =
+				messages['group.context']['combobox.placeholder'];
+		if (actionAddApplication)
+			document.querySelector('#combobox-1').placeholder =
+				messages['group.context']['add.application.placeholder'];
 
 		// Keeps the state of the group context when changing pages
 		if ($groupContext) {
@@ -129,7 +134,7 @@
 		}
 
 		if (searchGroupResults.length === 0) {
-			searchGroupResults = [{ name: 'No Results' }];
+			searchGroupResults = [{ name: messages['group.context']['empty.results'] }];
 		}
 	};
 
@@ -218,7 +223,7 @@
 		<div style="display:inline-flex">
 			<input
 				data-cy="group-input"
-				placeholder="Group *"
+				placeholder={messages['group.context']['group.input.placeholder']}
 				role="combobox"
 				id="combobox-1"
 				aria-autocomplete="list"
@@ -259,7 +264,8 @@
 						searchGroups = '';
 						groupContext.set('clear');
 					}}
-					>Clear
+				>
+					{messages['group.context']['search.clear.button']}
 				</button>
 			{/if}
 		</div>

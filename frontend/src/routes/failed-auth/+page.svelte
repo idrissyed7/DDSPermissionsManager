@@ -1,2 +1,6 @@
-<h1>Authentication Failed</h1>
-<h2>Login was unsuccessful</h2>
+<script>
+	import messages from '$lib/messages.json';
+</script>
+
+<h1>{messages['failed.auth']['header.one']}</h1>
+<h2>{messages['failed.auth']['header.two']}</h2>

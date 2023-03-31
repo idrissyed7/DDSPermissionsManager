@@ -7,6 +7,7 @@
 	import Modal from '../../lib/Modal.svelte';
 	import editSVG from '../../icons/edit.svg';
 	import { httpAdapter } from '../../appconfig';
+	import messages from '$lib/messages.json';
 
 	const dispatch = createEventDispatcher();
 
@@ -46,7 +47,7 @@
 <div style="width:100vw">
 	{#if editGroupVisible}
 		<Modal
-			title="Edit Group"
+			title={messages['group']['edit.title']}
 			actionEditGroup={true}
 			groupCurrentName={group.name}
 			groupCurrentDescription={group.description}
@@ -66,8 +67,8 @@
 
 	<div style="width: fit-content">
 		<div style="margin-top: 1.7rem; width:100%">
-			<span style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 7.2rem"
-				>Group Name:
+			<span style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 7.2rem">
+				{messages['group.detail']['row.one']}
 			</span>
 			<span style="font-size: 1.3rem; font-weight: 500">{group.name} </span>
 
@@ -84,14 +85,17 @@
 		<div style="margin-top: 0.5rem; width:fit-content">
 			<span
 				style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
-				>Description:</span
 			>
+				{messages['group.detail']['row.two']}
+			</span>
 			<span style="font-weight: 400; font-size: 1.1rem" bind:this={descriptionSelector}
 				>{group.description ? group.description : '-'}</span
 			>
 		</div>
 		<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
-			<span style="font-weight: 300; vertical-align: 1rem">Public:</span>
+			<span style="font-weight: 300; vertical-align: 1rem">
+				{messages['group.detail']['row.three']}
+			</span>
 			<input
 				type="checkbox"
 				style="vertical-align: 1rem; margin-left: 4.1rem; width: 15px; height: 15px"
