@@ -424,7 +424,7 @@ public class GroupApiTest {
             HttpResponse<?> response;
             HttpRequest<?> request;
 
-            response = createGroup("Theta");
+            response = createGroup("Theta", "ThetaDescription");
             assertEquals(OK, response.getStatus());
 
             response = createGroup("Beta");
@@ -436,6 +436,10 @@ public class GroupApiTest {
             request = HttpRequest.GET("/groups?filter=EtA");
             Page page = blockingClient.retrieve(request, Page.class);
             assertEquals(2, page.getContent().size());
+
+            request = HttpRequest.GET("/groups?filter=EtADescrip");
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(1, page.getContent().size());
         }
 
         @Test
@@ -809,13 +813,13 @@ public class GroupApiTest {
             userRepository.save(new User("montesm@test.test", true));
             User user = userRepository.save(new User("jjones@test.test"));
 
-            Group group = groupRepository.save(new Group("GroupOne"));
+            Group group = groupRepository.save(new Group("GroupOne", "DescriptionOne", false));
             Topic topic = topicRepository.save(new Topic("TopicOne", TopicKind.B, group));
             Application application = applicationRepository.save(new Application("ApplicationOne", group));
             applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
             groupUserRepository.save(new GroupUser(group, user));
 
-            Group group1 = groupRepository.save(new Group("GroupTwo"));
+            Group group1 = groupRepository.save(new Group("GroupTwo", "DescriptionTwo", false));
             Topic topic1 = topicRepository.save(new Topic("TopicTwo", TopicKind.C, group1));
             Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
             applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
@@ -835,6 +839,16 @@ public class GroupApiTest {
         @Test
         void canOnlySeeGroupsIAmAMemberOf() {
             HttpRequest<?> request = HttpRequest.GET("/groups");
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            List<Map> groups = (List<Map>) responseMap.get("content");
+            assertEquals(1, groups.size());
+            Map group = groups.get(0);
+            assertEquals("GroupOne", group.get("name"));
+        }
+
+        @Test
+        void canSearchGroupsIAmAMemberOf() {
+            HttpRequest<?> request = HttpRequest.GET("/groups?filter=description");
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             List<Map> groups = (List<Map>) responseMap.get("content");
             assertEquals(1, groups.size());
@@ -909,8 +923,13 @@ public class GroupApiTest {
     }
 
     private HttpResponse<?> createGroup(String groupName) {
+        return createGroup(groupName, null);
+    }
+
+    private HttpResponse<?> createGroup(String groupName, String description) {
         SimpleGroupDTO group = new SimpleGroupDTO();
         group.setName(groupName);
+        group.setDescription(description);
         HttpRequest<?> request = HttpRequest.POST("/groups/save", group);
         return blockingClient.exchange(request, SimpleGroupDTO.class);
     }

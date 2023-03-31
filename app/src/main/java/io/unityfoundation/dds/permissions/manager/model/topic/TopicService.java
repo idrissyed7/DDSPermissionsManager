@@ -57,10 +57,10 @@ public class TopicService {
             }
 
             if (groupId == null) {
-                return topicRepository.findAllByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, pageable);
+                return topicRepository.findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter, pageable);
             }
 
-            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
 
             return topicRepository.findAllByIdInAndPermissionsGroupIdIn(all, List.of(groupId), pageable);
         } else {
@@ -80,7 +80,7 @@ public class TopicService {
                 return topicRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            all = topicRepository.findIdByNameContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter);
+            all = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
             if (all.isEmpty()) {
                 return Page.empty();
             }

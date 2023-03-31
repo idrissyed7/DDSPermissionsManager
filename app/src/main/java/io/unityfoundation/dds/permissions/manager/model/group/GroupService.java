@@ -67,7 +67,7 @@ public class GroupService {
                 return groupRepository.findAll(pageable);
             }
 
-            return groupRepository.findAllByNameContainsIgnoreCase(filter, pageable);
+            return groupRepository.findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(filter, filter, pageable);
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
             List<Long> groupsList = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
@@ -79,7 +79,13 @@ public class GroupService {
                 return groupRepository.findAllByIdIn(groupsList, pageable);
             }
 
-            return groupRepository.findAllByIdInAndNameContainsIgnoreCase(groupsList, filter, pageable);
+            List<Long> searchByNameOrDescription = groupRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(filter, filter);
+            List<Long> intersection = searchByNameOrDescription.stream()
+                    .distinct()
+                    .filter(groupsList::contains)
+                    .collect(Collectors.toList());
+
+            return groupRepository.findAllByIdIn(intersection, pageable);
         }
     }
 
@@ -178,7 +184,7 @@ public class GroupService {
                 pageable = pageable.order(Sort.Order.asc("name"));
             }
 
-            return groupRepository.findAllByNameContainsIgnoreCase(filter, pageable);
+            return groupRepository.findAllByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(filter, filter, pageable);
         } else {
             if (!pageable.isSorted()) {
                 pageable = pageable.order(Sort.Order.asc("permissionsGroup.name"));
