@@ -356,7 +356,7 @@
 <div class="modal-backdrop" on:click={closeModal} transition:fade />
 <div class="modal" transition:fly={{ y: 300 }}>
 	<img src={closeSVG} alt="close" class="close-button" on:click={closeModal} />
-	<h2>{title}</h2>
+	<h2 class:condensed={title?.length > 25}>{title}</h2>
 	<hr />
 	<div class="content">
 		{#if errorMsg}
@@ -1302,5 +1302,9 @@
 
 	.button-disabled {
 		cursor: default;
+	}
+
+	.condensed {
+		font-stretch: extra-condensed;
 	}
 </style>
