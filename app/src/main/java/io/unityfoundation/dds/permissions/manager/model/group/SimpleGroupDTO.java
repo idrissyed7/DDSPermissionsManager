@@ -1,12 +1,13 @@
 package io.unityfoundation.dds.permissions.manager.model.group;
 
 import io.micronaut.core.annotation.Introspected;
+import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
 @Introspected
-public class SimpleGroupDTO {
+public class SimpleGroupDTO implements EntityDTO {
 
     private Long id;
     @NotBlank
