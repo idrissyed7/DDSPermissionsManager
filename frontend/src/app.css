@@ -42,8 +42,12 @@ body::before {
 h1,
 h2,
 p {
-	font-weight: 400;
+	font-weight: 300;
 	color: var(--heading-color);
+}
+
+h1 {
+	font-stretch: expanded;
 }
 
 h3 {
@@ -251,6 +255,25 @@ select:focus {
 	cursor: default;
 }
 
+.button-universal-search {
+	height: 2.5rem;
+	text-align: center;
+	color: black; 
+	background-color: transparent; 
+	border-style: solid; 
+	border-color: black;
+	border-width: 0.08rem;
+	cursor: pointer;
+	margin-right: -0.3rem;
+	font-size: 0.9rem;
+}
+
+.button-universal-search-selected {
+	background-color: #e8def8;
+	border-width: 0.08rem;
+	border-style: solid; 
+}
+
 .error-message {
 	position: absolute;
 	color: rgb(205, 0, 0);
@@ -261,6 +284,10 @@ select:focus {
 
 .hidden {
 	display: none;
+}
+
+.invisible {
+	visibility: hidden;
 }
 
 .invalid {

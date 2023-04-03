@@ -185,6 +185,24 @@
         "search.clear.button": "Clear"
     },
 
+    "universal.search":
+    {
+        "title": "Universal Search",
+        "tab.title": "Universal Search | DDS Permissions Manager",
+        "header.title": "Universal Search",
+        "search.placeholder": "Search any Group, Topic or Application",
+        "filter.everything": "Everything",
+        "filter.groups": "Groups",
+        "filter.topics": "Topics",
+        "filter.applications": "Applications",
+        "table.search.results.column.one": "Name",
+        "table.search.results.column.two": "Group",
+        "table.search.results.column.three": "Description",
+        "empty.results": "No Results"
+
+
+    },
+
     "header":
     {
        "title": "DDS Permissions Manager",
@@ -255,6 +273,6 @@
 
     "footer":
     {
-        "message": "© 2022 Unity Foundation. All rights reserved."
+        "message": "© 2023 Unity Foundation. All rights reserved."
     }
 }

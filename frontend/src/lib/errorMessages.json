@@ -101,5 +101,10 @@
     "modal":
     {
         "button.close": "Close"
+    },
+
+    "universal_search":
+    {
+        "loading.error.title": "Error Loading Search Items"
     }
 }

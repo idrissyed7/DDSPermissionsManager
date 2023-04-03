@@ -4,6 +4,7 @@
 	import groupsSVG from '../icons/groups.svg';
 	import topicsSVG from '../icons/topics.svg';
 	import appsSVG from '../icons/apps.svg';
+	import searchSVG from '../icons/search.svg';
 	import { page } from '$app/stores';
 	import groupContext from '../stores/groupContext';
 	import { httpAdapter } from '../appconfig';
@@ -178,6 +179,12 @@
 				<img src={appsSVG} alt="applications" class="menu-icon" />{messages['navigation'][
 					'item.four'
 				]}
+			</a>
+		</li>
+
+		<li class:active={$page.url.pathname === '/search/'}>
+			<a sveltekit:prefetch href="/search">
+				<img src={searchSVG} alt="search" class="menu-icon" />Search
 			</a>
 		</li>
 	</ul>
