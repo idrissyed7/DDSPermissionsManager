@@ -78,6 +78,7 @@
 	<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
 	{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
 		<img
+			data-cy="edit-application-icon"
 			src={editSVG}
 			alt="edit application"
 			width="18rem"
