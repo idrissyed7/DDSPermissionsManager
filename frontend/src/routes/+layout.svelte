@@ -1,17 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
+	import { beforeNavigate, goto } from '$app/navigation';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
-	import { goto } from '$app/navigation';
 	import { browser } from '$app/env';
+	import { page } from '$app/stores';
 	import refreshPage from '../stores/refreshPage';
 	import lastRefresh from '../stores/lastRefresh';
+	import detailView from '../stores/detailView';
 	import permissionsByGroup from '../stores/permissionsByGroup';
 	import groupAdminGroups from '../stores/groupAdminGroups';
 	import topicAdminTopics from '../stores/topicAdminTopics';
 	import applicationAdminApplications from '../stores/applicationAdminApplications';
+	import universalSearchList from '../stores/universalSearchList';
 	import Modal from '$lib/Modal.svelte';
 	import Header from '$lib/Header.svelte';
+	import headerTitle from '../stores/headerTitle';
 	import Navigation from '$lib//Navigation.svelte';
 	import userValidityCheck from '../stores/userValidityCheck';
 	import loginCompleted from '../stores/loginCompleted';
@@ -23,6 +27,36 @@
 	import '../app.css';
 
 	export let data;
+
+	beforeNavigate(async ({ to, from, cancel }) => {
+		if (
+			$page.url.pathname === '/search/' &&
+			$headerTitle !== messages['universal.search']['header.title'] &&
+			$universalSearchList === false
+		) {
+			cancel(); // Cancel default back button behavior
+			headerTitle.set(messages['universal.search']['header.title']);
+			universalSearchList.set(true);
+		}
+
+		if ($page.url.pathname === '/topics/' && $headerTitle !== messages['topic']['title']) {
+			cancel();
+			detailView.set('backToList');
+		}
+
+		if (
+			$page.url.pathname === '/applications/' &&
+			$headerTitle !== messages['application']['title']
+		) {
+			cancel();
+			detailView.set('backToList');
+		}
+
+		if ($page.url.pathname === '/groups/' && $headerTitle !== messages['group']['title']) {
+			cancel();
+			detailView.set('backToList');
+		}
+	});
 
 	let userLoggedCookie;
 	let reminderMessageVisible = false;

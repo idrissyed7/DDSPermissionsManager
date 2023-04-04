@@ -45,9 +45,11 @@
 	export let appCurrentName = '';
 	export let appCurrentDescription = '';
 	export let appCurrentPublic = false;
+	export let appCurrentGroupPublic = false;
 	export let topicCurrentName = '';
 	export let topicCurrentDescription = '';
 	export let topicCurrentPublic = false;
+	export let topicCurrentGroupPublic = false;
 	export let selectedApplicationList = [];
 	export let errorDescription = '';
 	export let reminderDescription = '';
@@ -74,8 +76,7 @@
 	let newGroupPublic;
 	let newAppName = '';
 	let newAppDescription = '';
-	let newAppPublic;
-	let accessTypeSelection;
+	let accessTypeSelection, newAppPublic, topicCurrentPublicInitial, appCurrentPublicInitial;
 
 	// Bind Token
 	let bindToken;
@@ -124,6 +125,8 @@
 
 	onMount(() => {
 		if ($groupContext) selectedGroup = $groupContext.id;
+		topicCurrentPublicInitial = topicCurrentPublic;
+		appCurrentPublicInitial = appCurrentGroupPublic;
 	});
 
 	const validateEmail = (input) => {
@@ -652,14 +655,21 @@
 				>{newAppDescription?.length}/{maxCharactersLength}</span
 			>
 
-			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
-				<span style="font-weight: 300; vertical-align: 1.12rem"
-					>{messages['modal']['public.label']}</span
-				>
+			<div
+				style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content"
+				class:disabled={!appCurrentGroupPublic}
+				disabled={!appCurrentGroupPublic}
+			>
+				<span style="font-weight: 300; vertical-align: 1.12rem">
+					{messages['modal']['public.label']}
+				</span>
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
 					bind:checked={newAppPublic}
+					on:change={() => {
+						if (!appCurrentGroupPublic) newAppPublic = appCurrentPublicInitial;
+					}}
 				/>
 			</div>
 		{/if}
@@ -684,7 +694,11 @@
 				>{topicCurrentDescription?.length}/{maxCharactersLength}</span
 			>
 
-			<div style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content">
+			<div
+				style="font-size: 1rem; margin: 1.1rem 0 0 0.2rem; width: fit-content"
+				class:disabled={!topicCurrentGroupPublic}
+				disabled={!topicCurrentGroupPublic}
+			>
 				<span style="font-weight: 300; vertical-align: 1.12rem"
 					>{messages['modal']['public.label']}</span
 				>
@@ -692,6 +706,9 @@
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
 					bind:checked={topicCurrentPublic}
+					on:change={() => {
+						if (!topicCurrentGroupPublic) topicCurrentPublic = topicCurrentPublicInitial;
+					}}
 				/>
 			</div>
 		{/if}

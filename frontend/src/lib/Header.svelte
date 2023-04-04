@@ -8,7 +8,6 @@
 	import headerTitle from '../stores/headerTitle';
 	import detailView from '../stores/detailView';
 	import pagebackwardsSVG from '../icons/pagebackwards.svg';
-	import editSVG from '../icons/edit.svg';
 	import groupsSVG from '../icons/groups.svg';
 	import topicsSVG from '../icons/topics.svg';
 	import appsSVG from '../icons/apps.svg';
@@ -19,7 +18,6 @@
 	import lastRefresh from '../stores/lastRefresh';
 	import permissionBadges from '../stores/permissionBadges';
 	import showSelectGroupContext from '../stores/showSelectGroupContext';
-	import editAppName from '../stores/editAppName';
 	import tooltips from '$lib/tooltips.json';
 	import createItem from '../stores/createItem';
 	import messages from '$lib/messages.json';
@@ -31,6 +29,7 @@
 	let topicsHeader = messages['header']['topics.header.constant'];
 	let applicationsHeader = messages['header']['applications.header.constant'];
 	let groupsHeader = messages['header']['groups.header.constant'];
+	let searchHeader = messages['header']['search.header.constant'];
 
 	// Constants
 	const waitTime = 1000;
@@ -301,7 +300,7 @@
 
 		{#if $isAuthenticated}
 			<div class="header-title">
-				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader}
+				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $headerTitle !== searchHeader && $page.url.pathname !== '/search/'}
 					<img
 						class="go-back"
 						src={pagebackwardsSVG}
@@ -310,20 +309,9 @@
 					/>
 				{/if}
 
-				<span id="header-label" style="vertical-align: middle; margin-left: 1rem"
-					>{$headerTitle}</span
-				>
-
-				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $editAppName && $page.url.pathname === '/applications'}
-					<img
-						data-cy="edit-application-icon"
-						src={editSVG}
-						alt="edit application"
-						width="20rem"
-						style="vertical-align:middle; margin-left: 1.5rem"
-						on:click={() => editAppName.set('edit')}
-					/>
-				{/if}
+				<div id="header-label" style="vertical-align: middle; margin-left: 1rem">
+					{$headerTitle}
+				</div>
 			</div>
 
 			<div
@@ -425,8 +413,11 @@
 	}
 
 	.header-title {
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
 		font-size: 1.2rem;
-		margin: auto;
+		text-align: center;
 	}
 
 	.icon-logout {

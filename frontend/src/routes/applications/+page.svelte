@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
@@ -21,7 +21,6 @@
 	import pagelastSVG from '../../icons/pagelast.svg';
 	import lockSVG from '../../icons/lock.svg';
 	import copySVG from '../../icons/copy.svg';
-	import editSVG from '../../icons/edit.svg';
 	import errorMessages from '$lib/errorMessages.json';
 	import messages from '$lib/messages.json';
 	import userValidityCheck from '../../stores/userValidityCheck';
@@ -29,10 +28,10 @@
 	import curlCommands from '$lib/curlCommands.json';
 	import showSelectGroupContext from '../../stores/showSelectGroupContext';
 	import singleGroupCheck from '../../stores/singleGroupCheck';
-	import editAppName from '../../stores/editAppName';
 	import createItem from '../../stores/createItem';
 	import applicationsTotalPages from '../../stores/applicationsTotalPages';
 	import applicationsTotalSize from '../../stores/applicationsTotalSize';
+	import ApplicationDetails from './ApplicationDetails.svelte';
 
 	export let data, errors;
 
@@ -77,13 +76,6 @@
 		applicationsRowsSelectedTrue = true;
 	} else {
 		applicationsAllRowsSelectedTrue = false;
-	}
-
-	$: if ($editAppName === 'edit') {
-		previousAppName = $headerTitle;
-		editApplicationVisible = true;
-	} else if ($editAppName === true) {
-		editApplicationVisible = false;
 	}
 
 	// Messages
@@ -174,7 +166,7 @@
 	let previousAppName;
 
 	// Application Detail
-	let applicationDetailId, ApplicationDetailGroupId;
+	let applicationDetailId, ApplicationDetailGroupId, appCurrentGroupPublic;
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
@@ -361,30 +353,6 @@
 		returnToAppsList();
 	};
 
-	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
-		await httpAdapter
-			.post(`/applications/save/`, {
-				id: selectedAppId,
-				name: newAppName,
-				group: selectedAppGroupId,
-				description: newAppDescription,
-				public: newAppPublic
-			})
-			.catch((err) => {
-				if (err.response.data && err.response.status === 400) {
-					const decodedError = decodeError(Object.create(...err.response.data));
-					errorMessage(
-						errorMessages['application']['saving.error.title'],
-						errorMessages[decodedError.category][decodedError.code]
-					);
-				}
-			});
-
-		reloadAllApps();
-
-		canEditAppName();
-	};
-
 	const loadApplicationDetail = async (appId, groupId) => {
 		const appDetail = await httpAdapter.get(`/applications/show/${appId}`);
 		applicationListVisible = false;
@@ -398,23 +366,11 @@
 		selectedAppPublic = appDetail.data.public;
 		isPublic = selectedAppPublic;
 
-		if (!selectedAppDescription && applicationDetailVisible) canEditAppName();
-
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
 		curlCommandsDecode();
-	};
 
-	const canEditAppName = () => {
-		if (
-			($permissionsByGroup &&
-				$permissionsByGroup?.find(
-					(groupPermission) => groupPermission.groupId === ApplicationDetailGroupId
-				)?.isApplicationAdmin) ||
-			$isAdmin
-		)
-			editAppName.set(true);
-		else editAppName.set(false);
+		appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -532,12 +488,23 @@
 		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
 		return { category: cat, code: code };
 	};
+
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+			if (res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
 </script>
 
 <svelte:head>
 	<title>{messages['application']['tab.title']}</title>
 	<meta name="description" content="DDS Permissions Manager Applications" />
 </svelte:head>
+
 {#key $refreshPage}
 	{#if $isAuthenticated}
 		{#await promise then _}
@@ -586,26 +553,6 @@
 					on:cancel={() => (addApplicationVisible = false)}
 					on:addApplication={(e) => {
 						addApplication(e.detail.appName, e.detail.searchGroups, e.detail.selectedGroup);
-					}}
-				/>
-			{/if}
-
-			{#if editApplicationVisible}
-				<Modal
-					title={messages['application']['edit']}
-					actionEditApplication={true}
-					appCurrentName={selectedAppName}
-					appCurrentDescription={selectedAppDescription}
-					appCurrentPublic={isPublic}
-					on:cancel={() => (editApplicationVisible = false)}
-					on:saveNewApp={(e) => {
-						saveNewApp(e.detail.newAppName, e.detail.newAppDescription, e.detail.newAppPublic);
-						canEditAppName();
-						headerTitle.set(e.detail.newAppName);
-						editApplicationVisible = false;
-						selectedAppName = e.detail.newAppName;
-						selectedAppDescription = e.detail.newAppDescription;
-						isPublic = e.detail.newAppPublic;
 					}}
 				/>
 			{/if}
@@ -988,104 +935,20 @@
 
 					{#await promiseDetail then _}
 						{#if $applications && applicationDetailVisible && !applicationListVisible}
-							<div style="margin-top: 2.1rem; width:100%">
-								<span
-									style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 9.2rem"
-								>
-									{messages['application.detail']['row.one']}
-								</span>
-								<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
-								{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
-									<img
-										src={editSVG}
-										alt="edit group"
-										width="18rem"
-										style="margin-left: 7rem; cursor: pointer"
-										on:click={() => (editApplicationVisible = true)}
-									/>
-								{/if}
-							</div>
-							<div style="margin-top: 0.5rem; width:fit-content">
-								<span
-									style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
-								>
-									{messages['application.detail']['row.two']}
-								</span>
-								<span
-									style="font-weight: 400; font-size: 1.1rem; margin-left: 2rem"
-									bind:this={selectedAppDescriptionSelector}
-									>{selectedAppDescription ? selectedAppDescription : '-'}</span
-								>
-							</div>
-							<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
-								<span style="font-weight: 300; vertical-align: 1rem">
-									{messages['application.detail']['row.three']}
-								</span>
-								<input
-									type="checkbox"
-									style="vertical-align: 1rem; margin-left: 6rem; width: 15px; height: 15px"
-									bind:checked={isPublic}
-									on:change={() => (isPublic = selectedAppPublic)}
-									bind:this={checkboxSelector}
-								/>
-							</div>
-
-							<table style="width: 35rem; margin-top: 1rem">
-								<thead>
-									<tr style="border-width: 0px">
-										<td>{messages['application.detail']['table.applications.column.one']}</td>
-										<td>{messages['application.detail']['table.applications.column.two']}</td>
-										<td>{messages['application.detail']['table.applications.column.three']}</td>
-										{#if isApplicationAdmin || $isAdmin}
-											<td />
-										{/if}
-									</tr>
-								</thead>
-								{#if $applicationPermission}
-									{#each $applicationPermission as appPermission}
-										<tbody>
-											<tr style="line-height: 2rem">
-												<td>
-													{appPermission.topicGroup}
-												</td>
-												<td>
-													{appPermission.topicName}
-												</td>
-												<td>
-													{appPermission.accessType === 'READ_WRITE'
-														? 'READ & WRITE'
-														: appPermission.accessType}
-												</td>
-												{#if isApplicationAdmin || $isAdmin}
-													<td>
-														<img
-															src={deleteSVG}
-															alt="delete topic"
-															height="23px"
-															width="23px"
-															style="vertical-align: -0.4rem; float: right; cursor: pointer"
-															on:click={() => {
-																deleteTopicApplicationAssociation(appPermission.id);
-															}}
-														/>
-													</td>
-												{/if}
-											</tr>
-										</tbody>
-									{/each}
-								{:else}
-									<p style="margin:0.3rem 0 0.6rem 0">
-										{messages['application.detail']['empty.topics.associated']}
-									</p>
-								{/if}
-							</table>
-							<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
-								{#if $applicationPermission}
-									{$applicationPermission.length} of {$applicationPermission.length}
-								{:else}
-									0 of 0
-								{/if}
-							</div>
+							<ApplicationDetails
+								{isApplicationAdmin}
+								{selectedAppId}
+								{selectedAppGroupId}
+								{selectedAppName}
+								{selectedAppDescription}
+								{selectedAppPublic}
+								{isPublic}
+								{appCurrentGroupPublic}
+								on:deleteTopicApplicationAssociation={(e) => {
+									deleteTopicApplicationAssociation(e.detail);
+								}}
+								on:reloadAllApps={() => reloadAllApps()}
+							/>
 
 							<div style="display: inline-flex; height: 7rem; margin-left: -1rem">
 								<button
