@@ -25,6 +25,7 @@
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
 	let accessTypeSelection;
+	let topicCurrentGroupPublic;
 
 	// Success Message
 	let notifyApplicationAccessTypeSuccess = false;
@@ -69,6 +70,8 @@
 			selectedTopicGroupId = $topicDetails.group;
 			selectedTopicKind = $topicDetails.kind;
 			isPublic = $topicDetails.public;
+
+			topicCurrentGroupPublic = await getGroupVisibilityPublic(selectedTopicGroupName);
 
 			headerTitle.set(selectedTopicName);
 			detailView.set(true);
@@ -161,6 +164,16 @@
 			errorMessageVisible = true;
 		}
 	};
+
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+			if (res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
 </script>
 
 {#if $isAuthenticated}
@@ -209,6 +222,7 @@
 			topicCurrentName={selectedTopicName}
 			topicCurrentDescription={selectedTopicDescription}
 			topicCurrentPublic={selectedTopicPublic}
+			{topicCurrentGroupPublic}
 			on:saveNewTopic={(e) => {
 				saveNewTopic(e.detail.newTopicName, e.detail.newTopicDescription, e.detail.newTopicPublic);
 				selectedTopicName = e.detail.newTopicName;
@@ -230,7 +244,13 @@
 					<td />
 				</tr>
 				<td>{messages['topic.detail']['row.two']}</td>
-				<td>{selectedTopicDescription}</td>
+				<td>
+					{#if selectedTopicDescription}
+						{selectedTopicDescription}
+					{:else}
+						-
+					{/if}
+				</td>
 				<td />
 				<td />
 				<tr />

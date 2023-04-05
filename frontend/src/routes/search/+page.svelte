@@ -1,9 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
-	import { isAdmin, isAuthenticated } from '../../stores/authentication';
+	import { isAuthenticated } from '../../stores/authentication';
+	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import Modal from '$lib/Modal.svelte';
+	import GroupDetails from '../groups/GroupDetails.svelte';
+	import TopicDetails from '../topics/TopicDetails.svelte';
+	import ApplicationDetails from '../applications/ApplicationDetails.svelte';
 	import errorMessages from '$lib/errorMessages.json';
 	import messages from '$lib/messages.json';
 	import groupsSVG from '../../icons/groups.svg';
@@ -16,8 +20,15 @@
 	import searchResults from '../../stores/searchResults';
 	import searchResultsTotalPages from '../../stores/searchResultsTotalPages';
 	import searchResultsTotalSize from '../../stores/searchResultsTotalSize';
+	import universalSearchList from '../../stores/universalSearchList';
 
 	export let data, errors;
+
+	$: if ($universalSearchList) {
+		groupDetails = false;
+		topicDetails = false;
+		applicationDetails = false;
+	}
 
 	// Pagination
 	let searchResultsPerPage = 10;
@@ -27,6 +38,21 @@
 	const returnKey = 13;
 	const minCharactersToTriggerSearch = 3;
 	const waitTime = 1000;
+
+	// Screens
+	let groupDetails = false,
+		topicDetails = false,
+		applicationDetails = false;
+	let selectedGroup, selectedTopic, isTopicAdmin;
+
+	// Application Parameters
+	let selectedAppGroupId,
+		selectedAppName,
+		selectedAppId,
+		selectedAppPublic,
+		selectedAppDescription,
+		appCurrentGroupPublic,
+		isApplicationAdmin;
 
 	// Timer
 	let timer;
@@ -74,6 +100,59 @@
 		errorMessageVisible = false;
 		errorMsg = '';
 		errorObject = '';
+	};
+
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+			if (res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
+
+	const handleItemSelection = async (result) => {
+		switch (result.type) {
+			case 'GROUP':
+				selectedGroup = result.entity;
+				universalSearchList.set(false);
+				groupDetails = true;
+				break;
+			case 'TOPIC':
+				selectedTopic = result.entity;
+				universalSearchList.set(false);
+
+				if ($permissionsByGroup) {
+					isTopicAdmin = $permissionsByGroup?.includes(
+						(groupPermission) =>
+							groupPermission.isTopicAdmin === true &&
+							groupPermission.groupId === selectedTopic.group
+					);
+				}
+				topicDetails = true;
+				break;
+			case 'APPLICATION':
+				selectedAppId = result.entity.id;
+				selectedAppGroupId = result.entity.group;
+				selectedAppName = result.entity.name;
+				selectedAppPublic = result.entity.public;
+				selectedAppDescription = result.entity.description;
+
+				if ($permissionsByGroup) {
+					isApplicationAdmin = $permissionsByGroup?.includes(
+						(groupPermission) =>
+							groupPermission.isApplicationAdmin === true &&
+							groupPermission.groupId === selectedTopic.group
+					);
+				}
+
+				appCurrentGroupPublic = await getGroupVisibilityPublic(result.entity.groupName);
+
+				universalSearchList.set(false);
+				applicationDetails = true;
+				break;
+		}
 	};
 
 	const handleClick = (identifier) => {
@@ -194,263 +273,296 @@
 			/>
 		{/if}
 
-		<div class="content">
-			<h1>{messages['universal.search']['title']}</h1>
+		{#if groupDetails}
+			<GroupDetails group={selectedGroup} />
+		{/if}
 
-			<form class="searchbox">
-				<input
-					data-cy="search-applications-table"
-					class="searchbox"
-					type="search"
-					style="width: 25rem"
-					placeholder={messages['universal.search']['search.placeholder']}
-					bind:value={universalSearchString}
-					on:blur={() => {
-						universalSearchString = universalSearchString?.trim();
-					}}
-					on:keydown={(event) => {
-						if (event.which === returnKey) {
-							document.activeElement.blur();
+		{#if topicDetails}
+			<TopicDetails selectedTopicId={selectedTopic.id} {isTopicAdmin} />
+		{/if}
+
+		{#if applicationDetails}
+			<ApplicationDetails
+				{selectedAppId}
+				{selectedAppGroupId}
+				{selectedAppName}
+				{selectedAppPublic}
+				{isApplicationAdmin}
+				{appCurrentGroupPublic}
+				{selectedAppDescription}
+			/>
+		{/if}
+
+		{#if $universalSearchList}
+			<div class="content">
+				<h1>{messages['universal.search']['title']}</h1>
+
+				<form class="searchbox">
+					<input
+						data-cy="search-applications-table"
+						class="searchbox"
+						type="search"
+						style="width: 25rem"
+						placeholder={messages['universal.search']['search.placeholder']}
+						bind:value={universalSearchString}
+						on:blur={() => {
 							universalSearchString = universalSearchString?.trim();
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								document.activeElement.blur();
+								universalSearchString = universalSearchString?.trim();
+							}
+						}}
+					/>
+				</form>
+
+				<div class="controls">
+					<button
+						class="button-universal-search"
+						class:button-universal-search-selected={selectedUniversalSearchButton.find(
+							(selection) => selection === UniversalSearchOption.EVERYTHING
+						)}
+						style="border-radius: 25px 0 0 25px; padding: 0 2rem 0 1.2rem"
+						on:click={() => handleClick('EVERYTHING')}
+					>
+						<span
+							class:invisible={selectedUniversalSearchButton.find(
+								(selection) => selection !== UniversalSearchOption.EVERYTHING
+							)}
+							style="margin-right: 0.5rem"
+						>
+							✓
+						</span>
+						{messages['universal.search']['filter.everything']}
+					</button>
+
+					<button
+						class="button-universal-search"
+						class:button-universal-search-selected={selectedUniversalSearchButton.find(
+							(selection) => selection === UniversalSearchOption.GROUPS
+						)}
+						style="padding: 0 2.5rem 0 1rem"
+						on:click={() => handleClick('GROUPS')}
+					>
+						<span
+							class:invisible={selectedUniversalSearchButton.filter(
+								(selection) => selection === UniversalSearchOption.GROUPS
+							).length === 0}
+							style="margin-right: 0.5rem"
+						>
+							✓
+						</span>
+						{messages['universal.search']['filter.groups']}
+					</button>
+
+					<button
+						class="button-universal-search"
+						class:button-universal-search-selected={selectedUniversalSearchButton.find(
+							(selection) => selection === UniversalSearchOption.TOPICS
+						)}
+						style="padding: 0 2.5rem 0 1rem"
+						on:click={() => handleClick('TOPICS')}
+					>
+						<span
+							class:invisible={selectedUniversalSearchButton.filter(
+								(selection) => selection === UniversalSearchOption.TOPICS
+							).length === 0}
+							style="margin-right: 0.5rem"
+						>
+							✓
+						</span>
+						{messages['universal.search']['filter.topics']}
+					</button>
+
+					<button
+						class="button-universal-search"
+						class:button-universal-search-selected={selectedUniversalSearchButton.find(
+							(selection) => selection === UniversalSearchOption.APPLICATIONS
+						)}
+						style="border-radius: 0 25px 25px 0; padding: 0 2rem 0 1.2rem"
+						on:click={() => handleClick('APPLICATIONS')}
+					>
+						<span
+							class:invisible={selectedUniversalSearchButton.filter(
+								(selection) => selection === UniversalSearchOption.APPLICATIONS
+							).length === 0}
+							style="margin-right: 0.5rem"
+						>
+							✓
+						</span>
+						{messages['universal.search']['filter.applications']}
+					</button>
+				</div>
+
+				<table class="universal-search-table">
+					<thead>
+						<tr>
+							<td style="min-width: 5rem"
+								>{messages['universal.search']['table.search.results.column.one']}</td
+							>
+							<td style="min-width: 5rem"
+								>{messages['universal.search']['table.search.results.column.two']}</td
+							>
+							<td style="min-width: 5rem"
+								>{messages['universal.search']['table.search.results.column.three']}</td
+							>
+						</tr>
+					</thead>
+
+					<tbody>
+						{#if $searchResults}
+							{#each $searchResults as result}
+								<tr on:click={handleItemSelection(result)} style="cursor: pointer">
+									<td>
+										{#if result.type === 'GROUP'}
+											<img
+												src={groupsSVG}
+												alt="group"
+												width="21rem"
+												height="21rem"
+												style="vertical-align: middle"
+											/>
+										{:else if result.type === 'TOPIC'}
+											<img
+												src={topicsSVG}
+												alt="topic"
+												width="21rem"
+												height="21rem"
+												style="vertical-align: middle"
+											/>
+										{:else if result.type === 'APPLICATION'}
+											<img
+												src={applicationsSVG}
+												alt="application"
+												width="21rem"
+												height="21rem"
+												style="vertical-align: middle"
+											/>
+										{/if}
+										<span style="vertical-align: middle; margin-left: 0.5rem"
+											>{result.entity.name}</span
+										>
+									</td>
+
+									<td>
+										{#if result.type === 'GROUP'}
+											<span style="vertical-align: middle">{result.entity.name}</span>
+										{:else}
+											<span style="vertical-align: middle">{result.entity.groupName}</span>
+										{/if}
+									</td>
+
+									<td>
+										<span style="vertical-align: middle">
+											{#if result.entity.description}
+												{result.entity.description}
+											{:else}
+												-
+											{/if}
+										</span>
+									</td>
+								</tr>
+							{/each}
+						{:else}
+							<div style="margin-top: 0.5rem; margin-left: 0.3rem">
+								{messages['universal.search']['empty.results']}
+							</div>
+						{/if}
+					</tbody>
+				</table>
+			</div>
+
+			<div class="pagination">
+				<span>{messages['pagination']['rows.per.page']}</span>
+				<select
+					tabindex="-1"
+					on:change={(e) => {
+						searchResultsPerPage = e.target.value;
+						getSearchResults();
+					}}
+					name="RowsPerPage"
+				>
+					<option value="10">10</option>
+					<option value="25">25</option>
+					<option value="50">50</option>
+					<option value="75">75</option>
+					<option value="100">100&nbsp;</option>
+				</select>
+
+				<span style="margin: 0 2rem 0 2rem">
+					{#if $searchResultsTotalSize > 0}
+						{1 + searchResultsCurrentPage * searchResultsPerPage}
+					{:else}
+						0
+					{/if}
+					- {Math.min(
+						searchResultsPerPage * (searchResultsCurrentPage + 1),
+						$searchResultsTotalSize
+					)}
+					of
+					{$searchResultsTotalSize}
+				</span>
+
+				<img
+					src={pagefirstSVG}
+					alt="first page"
+					class="pagination-image"
+					class:disabled-img={searchResultsCurrentPage === 0}
+					on:click={() => {
+						if (searchResultsCurrentPage > 0) {
+							searchResultsCurrentPage = 0;
+							getSearchResults();
 						}
 					}}
 				/>
-			</form>
-
-			<div class="controls">
-				<button
-					class="button-universal-search"
-					class:button-universal-search-selected={selectedUniversalSearchButton.find(
-						(selection) => selection === UniversalSearchOption.EVERYTHING
-					)}
-					style="border-radius: 25px 0 0 25px; padding: 0 2rem 0 1.2rem"
-					on:click={() => handleClick('EVERYTHING')}
-				>
-					<span
-						class:invisible={selectedUniversalSearchButton.find(
-							(selection) => selection !== UniversalSearchOption.EVERYTHING
-						)}
-						style="margin-right: 0.5rem"
-					>
-						✓
-					</span>
-					{messages['universal.search']['filter.everything']}
-				</button>
-
-				<button
-					class="button-universal-search"
-					class:button-universal-search-selected={selectedUniversalSearchButton.find(
-						(selection) => selection === UniversalSearchOption.GROUPS
-					)}
-					style="padding: 0 2.5rem 0 1rem"
-					on:click={() => handleClick('GROUPS')}
-				>
-					<span
-						class:invisible={selectedUniversalSearchButton.filter(
-							(selection) => selection === UniversalSearchOption.GROUPS
-						).length === 0}
-						style="margin-right: 0.5rem"
-					>
-						✓
-					</span>
-					{messages['universal.search']['filter.groups']}
-				</button>
-
-				<button
-					class="button-universal-search"
-					class:button-universal-search-selected={selectedUniversalSearchButton.find(
-						(selection) => selection === UniversalSearchOption.TOPICS
-					)}
-					style="padding: 0 2.5rem 0 1rem"
-					on:click={() => handleClick('TOPICS')}
-				>
-					<span
-						class:invisible={selectedUniversalSearchButton.filter(
-							(selection) => selection === UniversalSearchOption.TOPICS
-						).length === 0}
-						style="margin-right: 0.5rem"
-					>
-						✓
-					</span>
-					{messages['universal.search']['filter.topics']}
-				</button>
-
-				<button
-					class="button-universal-search"
-					class:button-universal-search-selected={selectedUniversalSearchButton.find(
-						(selection) => selection === UniversalSearchOption.APPLICATIONS
-					)}
-					style="border-radius: 0 25px 25px 0; padding: 0 2rem 0 1.2rem"
-					on:click={() => handleClick('APPLICATIONS')}
-				>
-					<span
-						class:invisible={selectedUniversalSearchButton.filter(
-							(selection) => selection === UniversalSearchOption.APPLICATIONS
-						).length === 0}
-						style="margin-right: 0.5rem"
-					>
-						✓
-					</span>
-					{messages['universal.search']['filter.applications']}
-				</button>
+				<img
+					src={pagebackwardsSVG}
+					alt="previous page"
+					class="pagination-image"
+					class:disabled-img={searchResultsCurrentPage === 0}
+					on:click={() => {
+						if (searchResultsCurrentPage > 0) {
+							searchResultsCurrentPage--;
+							getSearchResults(searchResultsCurrentPage);
+						}
+					}}
+				/>
+				<img
+					src={pageforwardSVG}
+					alt="next page"
+					class="pagination-image"
+					class:disabled-img={searchResultsCurrentPage + 1 === $searchResultsTotalPages}
+					on:click={() => {
+						if (searchResultsCurrentPage + 1 < $searchResultsTotalPages) {
+							searchResultsCurrentPage++;
+							getSearchResults(searchResultsCurrentPage);
+						}
+					}}
+				/>
+				<img
+					src={pagelastSVG}
+					alt="last page"
+					class="pagination-image"
+					class:disabled-img={searchResultsCurrentPage + 1 === $searchResultsTotalPages}
+					on:click={() => {
+						if (searchResultsCurrentPage < $searchResultsTotalPages) {
+							searchResultsCurrentPage = $searchResultsTotalPages - 1;
+							getSearchResults(searchResultsCurrentPage);
+						}
+					}}
+				/>
 			</div>
-
-			<table class="universal-search-table">
-				<thead>
-					<tr>
-						<td style="min-width: 5rem"
-							>{messages['universal.search']['table.search.results.column.one']}</td
-						>
-						<td style="min-width: 5rem"
-							>{messages['universal.search']['table.search.results.column.two']}</td
-						>
-						<td style="min-width: 5rem"
-							>{messages['universal.search']['table.search.results.column.three']}</td
-						>
-					</tr>
-				</thead>
-
-				<tbody>
-					{#if $searchResults}
-						{#each $searchResults as result}
-							<tr>
-								<td>
-									{#if result.type === 'GROUP'}
-										<img
-											src={groupsSVG}
-											alt="group"
-											width="21rem"
-											height="21rem"
-											style="vertical-align: middle"
-										/>
-									{:else if result.type === 'TOPIC'}
-										<img
-											src={topicsSVG}
-											alt="topic"
-											width="21rem"
-											height="21rem"
-											style="vertical-align: middle"
-										/>
-									{:else if result.type === 'APPLICATION'}
-										<img
-											src={applicationsSVG}
-											alt="application"
-											width="21rem"
-											height="21rem"
-											style="vertical-align: middle"
-										/>
-									{/if}
-									<span style="vertical-align: middle; margin-left: 0.5rem"
-										>{result.entity.name}</span
-									>
-								</td>
-
-								<td>
-									{#if result.type === 'GROUP'}
-										<span style="vertical-align: middle">{result.entity.name}</span>
-									{:else}
-										<span style="vertical-align: middle">{result.entity.group}</span>
-									{/if}
-								</td>
-
-								<td>
-									<span style="vertical-align: middle">{result.entity.description}</span>
-								</td>
-							</tr>
-						{/each}
-					{:else}
-						<div style="margin-top: 0.5rem; margin-left: 0.3rem">
-							{messages['universal.search']['empty.results']}
-						</div>
-					{/if}
-				</tbody>
-			</table>
-		</div>
-
-		<div class="pagination">
-			<span>{messages['pagination']['rows.per.page']}</span>
-			<select
-				tabindex="-1"
-				on:change={(e) => {
-					searchResultsPerPage = e.target.value;
-					getSearchResults();
-				}}
-				name="RowsPerPage"
-			>
-				<option value="10">10</option>
-				<option value="25">25</option>
-				<option value="50">50</option>
-				<option value="75">75</option>
-				<option value="100">100&nbsp;</option>
-			</select>
-
-			<span style="margin: 0 2rem 0 2rem">
-				{#if $searchResultsTotalSize > 0}
-					{1 + searchResultsCurrentPage * searchResultsPerPage}
-				{:else}
-					0
-				{/if}
-				- {Math.min(searchResultsPerPage * (searchResultsCurrentPage + 1), $searchResultsTotalSize)}
-				of
-				{$searchResultsTotalSize}
-			</span>
-
-			<img
-				src={pagefirstSVG}
-				alt="first page"
-				class="pagination-image"
-				class:disabled-img={searchResultsCurrentPage === 0}
-				on:click={() => {
-					if (searchResultsCurrentPage > 0) {
-						searchResultsCurrentPage = 0;
-						getSearchResults();
-					}
-				}}
-			/>
-			<img
-				src={pagebackwardsSVG}
-				alt="previous page"
-				class="pagination-image"
-				class:disabled-img={searchResultsCurrentPage === 0}
-				on:click={() => {
-					if (searchResultsCurrentPage > 0) {
-						searchResultsCurrentPage--;
-						getSearchResults(searchResultsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pageforwardSVG}
-				alt="next page"
-				class="pagination-image"
-				class:disabled-img={searchResultsCurrentPage + 1 === $searchResultsTotalPages}
-				on:click={() => {
-					if (searchResultsCurrentPage + 1 < $searchResultsTotalPages) {
-						searchResultsCurrentPage++;
-						getSearchResults(searchResultsCurrentPage);
-					}
-				}}
-			/>
-			<img
-				src={pagelastSVG}
-				alt="last page"
-				class="pagination-image"
-				class:disabled-img={searchResultsCurrentPage + 1 === $searchResultsTotalPages}
-				on:click={() => {
-					if (searchResultsCurrentPage < $searchResultsTotalPages) {
-						searchResultsCurrentPage = $searchResultsTotalPages - 1;
-						getSearchResults(searchResultsCurrentPage);
-					}
-				}}
-			/>
-		</div>
-		<p style="margin-top: 8rem">{messages['footer']['message']}</p>
+			<p style="margin-top: 8rem">{messages['footer']['message']}</p>
+		{/if}
 	{/await}
 {/if}
 
 <style>
 	.content {
-		width: 100vw;
+		width: 100%;
+		min-width: 32rem;
+		margin-right: 1rem;
 	}
 
 	.controls {

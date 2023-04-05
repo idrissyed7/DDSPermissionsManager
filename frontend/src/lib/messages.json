@@ -209,6 +209,7 @@
        "topics.header.constant": "My Topics",
        "applications.header.constant": "My Applications",
        "groups.header.constant": "My Groups",
+       "search.header.constant": "Universal Search",
        "avatar.logout.button": "Logout"
     },
 
@@ -217,7 +218,8 @@
         "item.one": "My Groups",
         "item.two": "My Users",
         "item.three": "My Topics",
-        "item.four": "My Applications"
+        "item.four": "My Applications",
+        "item.five": "Search"
     },
 
     "modal":

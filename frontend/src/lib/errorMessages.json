@@ -31,7 +31,8 @@
         "loading.error.title": "Error Loading Groups",
         "adding.error.title": "Error Adding Group",
         "editing.error.title": "Error Editing Group Name",
-        "deleting.error.title": "Error Deleting Group"
+        "deleting.error.title": "Error Deleting Group",
+        "error.loading.visibility": "Error Retrieving Topic's Visibility"
     },
 
     "application":

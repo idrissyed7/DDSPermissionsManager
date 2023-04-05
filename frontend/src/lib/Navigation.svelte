@@ -24,6 +24,7 @@
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
 	import detailView from '../stores/detailView';
+	import universalSearchList from '../stores/universalSearchList';
 	import messages from '$lib/messages.json';
 
 	const itemsPerPage = 10;
@@ -182,9 +183,12 @@
 			</a>
 		</li>
 
-		<li class:active={$page.url.pathname === '/search/'}>
+		<li
+			class:active={$page.url.pathname === '/search/'}
+			on:click={() => universalSearchList.set(true)}
+		>
 			<a sveltekit:prefetch href="/search">
-				<img src={searchSVG} alt="search" class="menu-icon" />Search
+				<img src={searchSVG} alt="search" class="menu-icon" />{messages['navigation']['item.five']}
 			</a>
 		</li>
 	</ul>
