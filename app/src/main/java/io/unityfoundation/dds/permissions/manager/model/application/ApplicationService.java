@@ -282,9 +282,8 @@ public class ApplicationService {
 
         Application application = applicationOptional.get();
         if (!application.getMakePublic() && !securityUtil.isCurrentUserAdmin() &&
-                !groupUserService.isUserMemberOfGroup(
-                        applicationOptional.get().getPermissionsGroup().getId(),
-                        securityUtil.getCurrentlyAuthenticatedUser().get().getId())
+                !groupUserService.isCurrentUserMemberOfGroup(
+                        applicationOptional.get().getPermissionsGroup().getId())
         ){
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }

@@ -171,17 +171,16 @@ public class TopicService {
         }
 
         Topic topic = topicOptional.get();
-        if (!topic.getMakePublic() && !securityUtil.isCurrentUserAdmin() && !isMemberOfTopicGroup(topic.getPermissionsGroup())) {
+        if (!topic.getMakePublic() &&
+                !securityUtil.isCurrentUserAdmin() &&
+                !(groupUserService.isCurrentUserMemberOfGroup(topic.getPermissionsGroup().getId()))
+        ) {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
         TopicDTO topicResponseDTO = new TopicDTO(topic);
         topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
 
         return HttpResponse.ok(topicResponseDTO);
-    }
-
-    private boolean isMemberOfTopicGroup(Group group) {
-        return groupUserService.isUserMemberOfGroup(group.getId(), securityUtil.getCurrentlyAuthenticatedUser().get().getId());
     }
 
     private boolean isUserTopicAdminOfGroup(Group group) {

@@ -163,8 +163,12 @@ public class ApplicationPermissionApiTest {
             Long testTopicId = testTopic.getId();
             addReadPermission(applicationOneId, testTopicId);
 
-            HttpRequest<?> request = HttpRequest.GET("/application_permissions");
+            HttpRequest<?> request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
             Page page = blockingClient.retrieve(request,  Page.class);
+            assertFalse(page.isEmpty());
+
+            request = HttpRequest.GET("/application_permissions/topic/" + testTopicId);
+            page = blockingClient.retrieve(request,  Page.class);
             assertFalse(page.isEmpty());
         }
 
@@ -224,7 +228,7 @@ public class ApplicationPermissionApiTest {
 
             addReadPermission(applicationOneId, testTopicId);
 
-            HttpRequest<?> request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
+            HttpRequest<?> request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
@@ -236,7 +240,7 @@ public class ApplicationPermissionApiTest {
 
             updatePermission(permissionId, AccessType.WRITE);
 
-            request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
+            request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
             responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             content = (List<Map>) responseMap.get("content");
@@ -249,7 +253,7 @@ public class ApplicationPermissionApiTest {
             HttpResponse<Object> response = blockingClient.exchange(request);
             assertEquals(HttpStatus.NO_CONTENT, response.getStatus());
 
-            request = HttpRequest.GET("/application_permissions?applicationId=" + applicationOneId);
+            request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
             responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             content = (List<Map>) responseMap.get("content");
@@ -455,7 +459,7 @@ public class ApplicationPermissionApiTest {
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
-            request = HttpRequest.GET("/application_permissions?application="+applicationOne.getId());
+            request = HttpRequest.GET("/application_permissions/application/"+applicationOne.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
@@ -481,7 +485,7 @@ public class ApplicationPermissionApiTest {
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
-            request = HttpRequest.GET("/application_permissions?topic="+testTopic.getId());
+            request = HttpRequest.GET("/application_permissions/topic/"+testTopic.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
@@ -639,29 +643,13 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
-        public void canOnlyListPermissionsOfGroupsUserIsAMemberOf() {
-            HttpRequest<?> request;
-
-            loginAsApplicationAdmin();
-
-            request = HttpRequest.GET("/application_permissions");
-            Page page = blockingClient.retrieve(request,  Page.class);
-            assertFalse(page.isEmpty());
-            List content = page.getContent();
-            assertNotNull(content);
-            assertEquals(1, content.size());
-            Map m = (Map) content.get(0);
-            assertEquals(applicationPermissionOne.getId().intValue(), m.get("id"));
-        }
-
-        @Test
         public void canOnlyListPermissionsOfGroupsUserIsAMemberOfByApplication() {
             HttpResponse response;
             HttpRequest request;
 
             loginAsApplicationAdmin();
 
-            request = HttpRequest.GET("/application_permissions?application="+applicationOne.getId());
+            request = HttpRequest.GET("/application_permissions/application/"+applicationOne.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
@@ -676,7 +664,7 @@ public class ApplicationPermissionApiTest {
 
             loginAsApplicationAdmin();
 
-            request = HttpRequest.GET("/application_permissions?topic="+testTopic.getId());
+            request = HttpRequest.GET("/application_permissions/topic/"+testTopic.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
@@ -720,7 +708,7 @@ public class ApplicationPermissionApiTest {
             applicationPermissionTwo = applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, testTopicTwo, AccessType.WRITE));
         }
 
-        void loginATopicAdmin() {
+        void loginAsTopicAdmin() {
             mockSecurityService.setServerAuthentication(new ServerAuthentication(
                     "jjones@test.test",
                     Collections.emptyList(),
@@ -781,7 +769,7 @@ public class ApplicationPermissionApiTest {
             Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(accessPermissionDTOOptional.isPresent());
 
-            loginATopicAdmin();
+            loginAsTopicAdmin();
 
             // application permissions delete
             request = HttpRequest.DELETE("/application_permissions/"+accessPermissionDTOOptional.get().getId());
@@ -790,12 +778,12 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
-        public void canOnlyListPermissionsOfGroupsUserIsAMemberOf() {
+        public void canListPermissionsOfGroupsUserIsAMemberOf() {
             HttpRequest<?> request;
 
-            loginATopicAdmin();
+            loginAsTopicAdmin();
 
-            request = HttpRequest.GET("/application_permissions");
+            request = HttpRequest.GET("/application_permissions/application/"+applicationPermissionOne.getId());
             Page page = blockingClient.retrieve(request,  Page.class);
             assertFalse(page.isEmpty());
             List content = page.getContent();
@@ -811,6 +799,7 @@ public class ApplicationPermissionApiTest {
 
         private ApplicationPermission applicationPermissionOne;
         private Application publicApplication;
+        private Topic publicTopic;
         private Application privateApplication;
 
         @BeforeEach
@@ -824,13 +813,13 @@ public class ApplicationPermissionApiTest {
             Application application = applicationRepository.save(new Application("ApplicationOne", group));
             applicationPermissionOne = applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
 
-            Group group1 = groupRepository.save(new Group("TestGroup1"));
-            Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, "topic description", true, group1));
-            publicApplication = applicationRepository.save(new Application("ApplicationTwo", group1, "topic description", true));
-            applicationPermissionRepository.save(new ApplicationPermission(publicApplication, topic1, AccessType.READ_WRITE));
+            Group publicGroup = groupRepository.save(new Group("TestGroup1", "group desc", true));
+            publicTopic = topicRepository.save(new Topic("TestTopic1", TopicKind.C, "topic description", true, publicGroup));
+            publicApplication = applicationRepository.save(new Application("ApplicationTwo", publicGroup, "topic description", true));
+            applicationPermissionRepository.save(new ApplicationPermission(publicApplication, publicTopic, AccessType.READ_WRITE));
 
-            privateApplication = applicationRepository.save(new Application("ApplicationThree", group1, "topic description", false));
-            applicationPermissionRepository.save(new ApplicationPermission(privateApplication, topic1, AccessType.READ_WRITE));
+            privateApplication = applicationRepository.save(new Application("ApplicationThree", group, "application description", false));
+            applicationPermissionRepository.save(new ApplicationPermission(privateApplication, publicTopic, AccessType.READ_WRITE));
         }
 
         void loginAsNonAdmin() {
@@ -843,35 +832,14 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
-        public void cannotViewApplicationPermissions() {
-            loginAsNonAdmin();
-
-            HttpRequest<?> request = HttpRequest.GET("/application_permissions");
-            Page page = blockingClient.retrieve(request,  Page.class);
-            assertTrue(page.isEmpty());
-        }
-
-        @Test
         public void canViewPublicApplicationPermissions() {
             loginAsNonAdmin();
 
             HttpRequest<?> request;
             Page page;
 
-            // all public permissions - should yield permissions with TestTopic1 and ApplicationTwo
-            request = HttpRequest.GET("/application_permissions?publicMode=true");
-            page = blockingClient.retrieve(request, Page.class);
-            assertFalse(page.isEmpty());
-            assertEquals(1, page.getContent().size());
-            assertTrue(page.getContent().stream().allMatch(o -> {
-                Map map1 = (Map) o;
-                String topic = (String) map1.get("topicName");
-                String application = (String) map1.get("applicationName");
-                return topic.contentEquals("TestTopic1") && application.contentEquals("ApplicationTwo");
-            }));
-
-            // public permissions with public application - should yield the same as above
-            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+publicApplication.getId());
+            // public permissions with public application
+            request = HttpRequest.GET("/application_permissions/application/"+publicApplication.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertFalse(page.isEmpty());
             assertEquals(1, page.getContent().size());
@@ -883,12 +851,12 @@ public class ApplicationPermissionApiTest {
             }));
 
             // public permissions call with private application - should not yield results
-            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+privateApplication.getId());
+            request = HttpRequest.GET("/application_permissions/application/"+privateApplication.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertTrue(page.isEmpty());
 
             // public permissions call with public topic - should yield one permission (the one with public application association)
-            request = HttpRequest.GET("/application_permissions?publicMode=true&application="+publicApplication.getId());
+            request = HttpRequest.GET("/application_permissions/topic/"+publicApplication.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertFalse(page.isEmpty());
             assertEquals(1, page.getContent().size());
