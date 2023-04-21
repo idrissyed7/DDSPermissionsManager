@@ -40,16 +40,6 @@ public class GroupMembershipController {
         return groupUserService.findAll(pageable, filter, group);
     }
 
-    @Get("/user_validity")
-    @ApiResponse(responseCode = "200", description = "Valid User")
-    @ApiResponse(responseCode = "4xx", description = "Bad Request.",
-            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
-    )
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse checkIfUserIsValid() {
-        return groupUserService.checkUserValidity();
-    }
-
     @Post
     @ExecuteOn(TaskExecutors.IO)
     @ApiResponse(

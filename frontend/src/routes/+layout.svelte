@@ -151,7 +151,8 @@
 		};
 
 		try {
-			await httpAdapter.post('/oauth/access_token', params, config);
+			// await httpAdapter.post('/oauth/access_token', params, config);
+			await httpAdapter.get('/oauth/access_token');
 			userValidityCheck.set(false);
 
 			await refreshToken_Info();

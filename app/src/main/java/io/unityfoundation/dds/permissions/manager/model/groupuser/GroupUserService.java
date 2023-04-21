@@ -274,7 +274,7 @@ public class GroupUserService {
         return groupUserRepository.countByPermissionsGroup(group);
     }
 
-    public HttpResponse checkUserValidity() {
+    public HashMap<String, Object> checkUserValidity() {
 
         Optional<User> userOptional = securityUtil.getCurrentlyAuthenticatedUser();
         if (userOptional.isEmpty()
@@ -291,7 +291,7 @@ public class GroupUserService {
         attributes.put("isAdmin", user.isAdmin());
         attributes.put("permissionsLastUpdated", user.getPermissionsLastUpdated());
 
-        return HttpResponse.ok(attributes);
+        return attributes;
     }
 
     public void removeByGroup(Group group) {
