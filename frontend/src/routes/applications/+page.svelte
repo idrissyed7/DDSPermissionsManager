@@ -942,7 +942,6 @@
 								{selectedAppName}
 								{selectedAppDescription}
 								{selectedAppPublic}
-								{isPublic}
 								{appCurrentGroupPublic}
 								on:deleteTopicApplicationAssociation={(e) => {
 									deleteTopicApplicationAssociation(e.detail);

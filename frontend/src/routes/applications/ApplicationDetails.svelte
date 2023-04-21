@@ -20,12 +20,14 @@
 
 	const dispatch = createEventDispatcher();
 
-	let selectedAppDescriptionSelector, checkboxSelector, isPublic;
+	let selectedAppDescriptionSelector,
+		checkboxSelector,
+		isPublic = selectedAppPublic;
 
 	let editApplicationVisible = false;
 
 	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
-		await httpAdapter
+		const res = await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: newAppName,
@@ -42,7 +44,6 @@
 					);
 				}
 			});
-
 		dispatch('reloadAllApps');
 	};
 
