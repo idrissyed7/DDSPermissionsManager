@@ -951,7 +951,7 @@
 								{selectedAppName}
 								{selectedAppDescription}
 								{selectedAppPublic}
-								{appCurrentGroupPublic}
+								appCurrentGroupPublic={$groupContext?.public ?? false}
 								on:deleteTopicApplicationAssociation={(e) => {
 									deleteTopicApplicationAssociation(e.detail);
 								}}
