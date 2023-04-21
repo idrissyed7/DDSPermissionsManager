@@ -147,7 +147,7 @@
 
 	// App
 	let applicationListVisible = true;
-	let appName;
+	let appName, appDescription, appPublic;
 	let selectedGroup = '';
 
 	// Pagination
@@ -236,6 +236,8 @@
 				(groupPermission) => groupPermission.isApplicationAdmin === true
 			);
 		}
+
+		appCurrentGroupPublic = await getGroupVisibilityPublic($groupContext.name);
 	});
 
 	const errorMessage = (errMsg, errObj) => {
@@ -298,6 +300,8 @@
 
 	const addApplication = async (
 		forwardedAppName,
+		forwardedAppDescription,
+		forwardedAppPublic,
 		forwardedSearchGroups,
 		forwardedSelectedGroup
 	) => {
@@ -317,6 +321,8 @@
 		try {
 			await httpAdapter.post(`/applications/save`, {
 				name: forwardedAppName,
+				description: forwardedAppDescription,
+				public: forwardedAppPublic,
 				group: forwardedSelectedGroup
 			});
 			addApplicationVisible = false;
@@ -550,9 +556,16 @@
 					applicationName={true}
 					group={true}
 					actionAddApplication={true}
+					{appCurrentGroupPublic}
 					on:cancel={() => (addApplicationVisible = false)}
 					on:addApplication={(e) => {
-						addApplication(e.detail.appName, e.detail.searchGroups, e.detail.selectedGroup);
+						addApplication(
+							e.detail.appName,
+							e.detail.appDescription,
+							e.detail.appPublic,
+							e.detail.searchGroups,
+							e.detail.selectedGroup
+						);
 					}}
 				/>
 			{/if}

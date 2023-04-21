@@ -207,10 +207,12 @@
 		errorObject = '';
 	};
 
-	const addGroup = async (newGroupName) => {
+	const addGroup = async (newGroupName, newGroupDescription, newGroupIsPublic) => {
 		await httpAdapter
 			.post(`/groups/save/`, {
-				name: newGroupName
+				name: newGroupName,
+				description: newGroupDescription,
+				public: newGroupIsPublic
 			})
 			.catch((err) => {
 				addGroupVisible = false;
@@ -335,7 +337,8 @@
 					title={messages['group']['add.title']}
 					actionAddGroup={true}
 					groupNewName={true}
-					on:addGroup={(e) => addGroup(e.detail.newGroupName)}
+					on:addGroup={(e) =>
+						addGroup(e.detail.newGroupName, e.detail.newGroupDescription, e.detail.newGroupPublic)}
 					on:cancel={() => (addGroupVisible = false)}
 				/>
 			{/if}

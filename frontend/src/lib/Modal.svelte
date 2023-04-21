@@ -236,6 +236,8 @@
 	const actionAddTopicEvent = async () => {
 		let newTopic = {
 			newTopicName: newTopicName,
+			newTopicDescription: topicCurrentDescription,
+			newTopicPublic: topicCurrentPublic,
 			searchGroups: searchGroups,
 			selectedGroup: selectedGroup,
 			anyApplicationCanRead: anyApplicationCanRead,
@@ -263,6 +265,8 @@
 	const actionAddApplicationEvent = async () => {
 		let newApplication = {
 			appName: appName,
+			appDescription: newAppDescription,
+			appPublic: newAppPublic,
 			searchGroups: searchGroups,
 			selectedGroup: selectedGroup
 		};
@@ -560,7 +564,7 @@
 			<textarea
 				data-cy="group-new-description"
 				placeholder={messages['modal']['input.group.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 1.4rem 2rem 0 0; resize: none"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0; resize: none"
 				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={newGroupDescription}
@@ -609,38 +613,39 @@
 			{/if}
 		{/if}
 
-		{#if actionEditApplication}
-			<!-- svelte-ignore a11y-autofocus -->
-			<input
-				autofocus
-				data-cy="application-name"
-				placeholder={messages['modal']['input.application.edit.placeholder']}
-				class:invalid={invalidApplicationName}
-				style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
-				bind:value={newAppName}
-				on:blur={() => {
-					newAppName = newAppName.trim();
-				}}
-				on:keydown={(event) => {
-					errorMessageName = '';
-					if (event.which === returnKey) {
+		{#if actionEditApplication || actionAddApplication}
+			{#if actionEditApplication}
+				<!-- svelte-ignore a11y-autofocus -->
+				<input
+					autofocus
+					data-cy="application-name"
+					placeholder={messages['modal']['input.application.edit.placeholder']}
+					class:invalid={invalidApplicationName}
+					style="background: rgb(246, 246, 246); width: 13.2rem; margin-right: 2rem"
+					bind:value={newAppName}
+					on:blur={() => {
 						newAppName = newAppName.trim();
-						invalidApplicationName = !validateNameLength(newAppName, 'application');
-						if (!invalidApplicationName)
-							dispatch('saveNewApp', {
-								newAppName: newAppName,
-								newAppDescription: newAppDescription,
-								newAppPublic: newAppPublic
-							});
-					}
-				}}
-				on:click={() => (errorMessageName = '')}
-			/>
-
+					}}
+					on:keydown={(event) => {
+						errorMessageName = '';
+						if (event.which === returnKey) {
+							newAppName = newAppName.trim();
+							invalidApplicationName = !validateNameLength(newAppName, 'application');
+							if (!invalidApplicationName)
+								dispatch('saveNewApp', {
+									newAppName: newAppName,
+									newAppDescription: newAppDescription,
+									newAppPublic: newAppPublic
+								});
+						}
+					}}
+					on:click={() => (errorMessageName = '')}
+				/>
+			{/if}
 			<textarea
 				data-cy="application-new-description"
 				placeholder={messages['modal']['input.application.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 1.4rem 2rem 0 0; resize: none"
+				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0; resize: none"
 				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={newAppDescription}
@@ -676,11 +681,12 @@
 			</div>
 		{/if}
 
-		{#if actionEditTopic}
+		{#if actionEditTopic || actionAddTopic}
 			<textarea
 				data-cy="topic-new-description"
 				placeholder={messages['modal']['input.topic.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 0 2rem 0 0; resize: none"
+				class:add-topic={actionAddTopic}
+				class:edit-topic={actionEditTopic}
 				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={topicCurrentDescription}
@@ -710,6 +716,7 @@
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
 					bind:checked={topicCurrentPublic}
 					on:change={() => {
+						if (actionAddTopic) return;
 						if (!topicCurrentGroupPublic) topicCurrentPublic = topicCurrentPublicInitial;
 					}}
 				/>
@@ -1326,5 +1333,19 @@
 
 	.condensed {
 		font-stretch: extra-condensed;
+	}
+
+	.add-topic {
+		background: rgb(246, 246, 246);
+		width: 13.2rem;
+		margin: 2rem 2rem 0 0;
+		resize: none;
+	}
+
+	.edit-topic {
+		background: rgb(246, 246, 246);
+		width: 13.6rem;
+		margin: 0 2rem 0 0;
+		resize: none;
 	}
 </style>
