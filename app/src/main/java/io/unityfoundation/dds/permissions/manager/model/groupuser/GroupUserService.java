@@ -118,7 +118,12 @@ public class GroupUserService {
     }
 
     public boolean isUserMemberOfGroup(Long groupId, Long userId) {
-        return groupUserRepository.findByPermissionsGroupIdAndPermissionsUserId(groupId, userId).isPresent();
+        return groupUserRepository.existsByPermissionsGroupIdAndPermissionsUserId(groupId, userId);
+    }
+
+    public boolean isCurrentUserMemberOfGroup(Long groupId) {
+        Long userId = securityUtil.getCurrentlyAuthenticatedUser().get().getId();
+        return isUserMemberOfGroup(groupId, userId);
     }
 
     public List<GroupUser> getUsersOfGroup(Long groupId) {

@@ -50,14 +50,35 @@ public class ApplicationPermissionService {
         this.jwtTokenValidator = jwtTokenValidator;
     }
 
-    public Page<AccessPermissionDTO> findAll(Long applicationId, Long topicId, Pageable pageable, Boolean publicMode) {
+    public Page<AccessPermissionDTO> indexByTopicId(Long topicId, Pageable pageable) {
         Page<ApplicationPermission> page;
-        if (Boolean.TRUE.equals(publicMode)) {
-            page = getPublicApplicationPermissionsPage(applicationId, topicId, pageable);
+        boolean isTopic = true;
+        boolean publicMode = determinePublicMode(isTopic, topicId);
+
+        if (publicMode) {
+            page = getPublicApplicationPermissionsPage(isTopic, topicId, pageable);
         } else {
-            page = getApplicationPermissionsPage(applicationId, topicId, pageable);
+            page = getApplicationPermissionsPage(isTopic, topicId, pageable);
         }
 
+        return getAccessPermissionDTOPage(page);
+    }
+
+    public Page<AccessPermissionDTO> indexByApplicationId(Long applicationId, Pageable pageable) {
+        Page<ApplicationPermission> page;
+        boolean isTopic = false;
+        boolean publicMode = determinePublicMode(isTopic, applicationId);
+
+        if (publicMode) {
+            page = getPublicApplicationPermissionsPage(isTopic, applicationId, pageable);
+        } else {
+            page = getApplicationPermissionsPage(isTopic, applicationId, pageable);
+        }
+
+        return getAccessPermissionDTOPage(page);
+    }
+
+    private static Page<AccessPermissionDTO> getAccessPermissionDTOPage(Page<ApplicationPermission> page) {
         return page.map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(),
                 applicationPermission.getPermissionsTopic().getId(),
@@ -70,17 +91,31 @@ public class ApplicationPermissionService {
         ));
     }
 
-    private Page<ApplicationPermission> getApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
+    private boolean determinePublicMode(boolean isTopic, Long entityId) {
+
+        if (isTopic) {
+            Optional<Topic> topicOptional = topicRepository.findById(entityId);
+            if (topicOptional.isEmpty()) {
+                throw new DPMException(ResponseStatusCodes.TOPIC_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+
+            return !groupUserService.isCurrentUserMemberOfGroup(entityId) && topicOptional.get().getMakePublic();
+        } else {
+            Optional<Application> applicationOptional = applicationRepository.findById(entityId);
+            if (applicationOptional.isEmpty()) {
+                throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+
+            return !groupUserService.isCurrentUserMemberOfGroup(entityId) && applicationOptional.get().getMakePublic();
+        }
+    }
+
+    private Page<ApplicationPermission> getApplicationPermissionsPage(boolean isTopic, Long entityId, Pageable pageable) {
         if (securityUtil.isCurrentUserAdmin()) {
-            if (applicationId == null && topicId == null) {
-                return applicationPermissionRepository.findAll(pageable);
-            } else if (applicationId != null && topicId == null) {
-                return applicationPermissionRepository.findByPermissionsApplicationId(applicationId, pageable);
-            } else if (topicId != null && applicationId == null) {
-                return applicationPermissionRepository.findByPermissionsTopicId(topicId, pageable);
+            if (isTopic) {
+                return applicationPermissionRepository.findByPermissionsTopicId(entityId, pageable);
             } else {
-                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicId(
-                        applicationId, topicId, pageable);
+                return applicationPermissionRepository.findByPermissionsApplicationId(entityId, pageable);
             }
         } else {
             User user = securityUtil.getCurrentlyAuthenticatedUser().get();
@@ -92,29 +127,19 @@ public class ApplicationPermissionService {
             List<Long> groupsApplications = applicationRepository.findIdByPermissionsGroupIdIn(groups);
             List<Long> groupsTopics = topicRepository.findIdByPermissionsGroupIdIn(groups);
 
-            if (applicationId == null && topicId == null) {
-                return applicationPermissionRepository.findByPermissionsApplicationIdInOrPermissionsTopicIdIn(groupsApplications, groupsTopics, pageable);
-            } else if (applicationId != null && topicId == null) {
-                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsApplicationIdIn(applicationId, groupsApplications, pageable);
-            } else if (topicId != null && applicationId == null) {
-                return applicationPermissionRepository.findByPermissionsTopicIdAndPermissionsTopicIdIn(topicId, groupsTopics, pageable);
+            if (isTopic) {
+                return applicationPermissionRepository.findByPermissionsTopicIdAndPermissionsTopicIdIn(entityId, groupsTopics, pageable);
             } else {
-                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsTopicIdAndPermissionsApplicationIdInAndPermissionsTopicIdIn(
-                        applicationId, topicId, groupsApplications, groupsTopics, pageable);
+                return applicationPermissionRepository.findByPermissionsApplicationIdAndPermissionsApplicationIdIn(entityId, groupsApplications, pageable);
             }
         }
     }
 
-    private Page<ApplicationPermission> getPublicApplicationPermissionsPage(Long applicationId, Long topicId, Pageable pageable) {
-        if (applicationId == null && topicId == null) {
-            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrue(pageable);
-        } else if (applicationId != null && topicId == null) {
-            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsApplicationId(applicationId, pageable);
-        } else if (topicId != null && applicationId == null) {
-            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsTopicId(topicId, pageable);
+    private Page<ApplicationPermission> getPublicApplicationPermissionsPage(boolean isTopic, Long entityId, Pageable pageable) {
+        if (isTopic) {
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsTopicId(entityId, pageable);
         } else {
-            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsApplicationIdAndPermissionsTopicId(
-                    applicationId, topicId, pageable);
+            return applicationPermissionRepository.findByPermissionsApplicationMakePublicTrueAndPermissionsTopicMakePublicTrueAndPermissionsApplicationId(entityId, pageable);
         }
     }
 

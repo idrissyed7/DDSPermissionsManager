@@ -375,7 +375,7 @@
 
 	const getAppPermissions = async (appId) => {
 		const appPermissionData = await httpAdapter.get(
-			`/application_permissions?application=${appId}`
+			`/application_permissions/application/${appId}`
 		);
 
 		applicationPermission.set(appPermissionData.data.content);

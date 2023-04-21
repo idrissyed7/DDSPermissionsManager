@@ -29,8 +29,7 @@ public class Topic {
     @Size(max = 4000)
     private String description;
 
-    @Column(columnDefinition="BOOLEAN DEFAULT false")
-    private Boolean makePublic;
+    private boolean makePublic = false;
 
     @ManyToOne
     @JoinColumn(name = "permissions_group_id", nullable = false)
@@ -108,11 +107,11 @@ public class Topic {
         this.description = description;
     }
 
-    public Boolean getMakePublic() {
+    public boolean getMakePublic() {
         return makePublic;
     }
 
-    public void setMakePublic(Boolean isPublic) {
+    public void setMakePublic(boolean isPublic) {
         makePublic = isPublic;
     }
 }
