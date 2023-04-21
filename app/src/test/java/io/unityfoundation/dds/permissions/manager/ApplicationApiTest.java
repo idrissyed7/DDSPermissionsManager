@@ -307,6 +307,39 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void createWithDescriptionWithFourThousandChars() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setDescription("My application description");
+            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO savedApplication = applicationOptional.get();
+            assertNotNull(savedApplication.getDescription());
+            assertEquals("My application description", savedApplication.getDescription());
+
+
+            String FourKString = new String(new char[4000]).replace("\0", "s");;
+            savedApplication.setDescription(FourKString);
+            request = HttpRequest.POST("/applications/save", savedApplication);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
         public void createWithPublicGroup() {
             HttpResponse<?> response;
             HttpRequest<?> request;

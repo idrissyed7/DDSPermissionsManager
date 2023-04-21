@@ -25,8 +25,8 @@ public class Topic {
     @NonNull
     private TopicKind kind;
 
-    @Nullable
     @Size(max = 4000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private boolean makePublic = false;

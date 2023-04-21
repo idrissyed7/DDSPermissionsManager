@@ -24,8 +24,8 @@ public class Application {
     @Nullable
     private String encryptedPassword;
 
-    @Nullable
     @Size(max = 4000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private boolean makePublic = false;

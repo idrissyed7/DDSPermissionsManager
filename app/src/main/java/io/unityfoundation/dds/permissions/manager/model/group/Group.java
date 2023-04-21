@@ -28,8 +28,8 @@ public class Group {
     @Column(unique = true)
     private String name;
 
-    @Nullable
     @Size(max = 4000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(columnDefinition="BOOLEAN DEFAULT false")

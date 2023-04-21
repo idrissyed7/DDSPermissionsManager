@@ -217,6 +217,26 @@ public class GroupApiTest {
         }
 
         @Test
+        public void createWithDescriptionWithFourThousandChars() {
+            SimpleGroupDTO groupDTO = new SimpleGroupDTO();
+            groupDTO.setName("Organization One");
+            groupDTO.setDescription("A description");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", groupDTO);
+            HttpResponse<SimpleGroupDTO> exchange = blockingClient.exchange(request, SimpleGroupDTO.class);
+            Optional<SimpleGroupDTO> body = exchange.getBody(SimpleGroupDTO.class);
+            assertTrue(body.isPresent());
+            SimpleGroupDTO savedGroup = body.get();
+            assertNotNull(savedGroup.getDescription());
+            assertEquals("A description", savedGroup.getDescription());
+
+            String FourKString = new String(new char[4000]).replace("\0", "s");;
+            savedGroup.setDescription(FourKString);
+            request = HttpRequest.POST("/groups/save", savedGroup);
+            HttpResponse<?> response = blockingClient.exchange(request, SimpleGroupDTO.class);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
         public void createWithIsPublic() {
 
             // null isPublic should return false
