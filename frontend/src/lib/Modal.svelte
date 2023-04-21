@@ -4,11 +4,13 @@
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import closeSVG from '../icons/close.svg';
+	import groupnotpublicSVG from '../icons/groupnotpublic.svg';
 	import Switch from './Switch.svelte';
 	import errorMessages from '$lib/errorMessages.json';
 	import messages from '$lib/messages.json';
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
 	import groupContext from '../stores/groupContext';
+	import tooltips from '$lib/tooltips.json';
 
 	export let title;
 	export let email = false;
@@ -100,6 +102,10 @@
 	// SearchBox
 	let selectedGroup;
 
+	// Tooltip
+	let groupNotPublicTooltip,
+		groupNotPublicMouseEnter = false;
+
 	if (actionEditGroup) {
 		newGroupName = groupCurrentName;
 		newGroupDescription = groupCurrentDescription;
@@ -126,7 +132,7 @@
 	onMount(() => {
 		if ($groupContext) selectedGroup = $groupContext.id;
 		topicCurrentPublicInitial = topicCurrentPublic;
-		appCurrentPublicInitial = appCurrentGroupPublic;
+		appCurrentPublicInitial = appCurrentPublic;
 	});
 
 	const validateEmail = (input) => {
@@ -670,6 +676,44 @@
 				<span style="font-weight: 300; vertical-align: 1.12rem">
 					{messages['modal']['public.label']}
 				</span>
+
+				{#if !appCurrentGroupPublic}
+					<img
+						src={groupnotpublicSVG}
+						alt="group not public"
+						height="21rem"
+						style="vertical-align:top; margin-left: 0.5rem"
+						on:mouseenter={() => {
+							groupNotPublicMouseEnter = true;
+							groupNotPublicTooltip = tooltips['group.not.public'];
+							const tooltip = document.querySelector('#group-not-public');
+							setTimeout(() => {
+								if (groupNotPublicMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}
+							}, 1000);
+						}}
+						on:mouseleave={() => {
+							groupNotPublicMouseEnter = false;
+							const tooltip = document.querySelector('#group-not-public');
+							setTimeout(() => {
+								if (!groupNotPublicMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, 1000);
+						}}
+					/>
+
+					<span
+						id="group-not-public"
+						class="tooltip-hidden"
+						style="margin-top: 1.8rem; margin-left: -5rem"
+						>{groupNotPublicTooltip}
+					</span>
+				{/if}
+
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
@@ -711,12 +755,47 @@
 				<span style="font-weight: 300; vertical-align: 1.12rem"
 					>{messages['modal']['public.label']}</span
 				>
+				{#if !topicCurrentGroupPublic}
+					<img
+						src={groupnotpublicSVG}
+						alt="group not public"
+						height="21rem"
+						style="vertical-align:top; margin-left: 0.5rem"
+						on:mouseenter={() => {
+							groupNotPublicMouseEnter = true;
+							groupNotPublicTooltip = tooltips['group.not.public'];
+							const tooltip = document.querySelector('#group-not-public');
+							setTimeout(() => {
+								if (groupNotPublicMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+								}
+							}, 1000);
+						}}
+						on:mouseleave={() => {
+							groupNotPublicMouseEnter = false;
+							const tooltip = document.querySelector('#group-not-public');
+							setTimeout(() => {
+								if (!groupNotPublicMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, 1000);
+						}}
+					/>
+
+					<span
+						id="group-not-public"
+						class="tooltip-hidden"
+						style="margin-top: 1.8rem; margin-left: -5rem"
+						>{groupNotPublicTooltip}
+					</span>
+				{/if}
 				<input
 					type="checkbox"
 					style="vertical-align: 1rem; margin-left: 2rem; width: 15px; height: 15px"
 					bind:checked={topicCurrentPublic}
 					on:change={() => {
-						if (actionAddTopic) return;
 						if (!topicCurrentGroupPublic) topicCurrentPublic = topicCurrentPublicInitial;
 					}}
 				/>

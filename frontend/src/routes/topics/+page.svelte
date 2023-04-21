@@ -127,9 +127,6 @@
 	let anyApplicationCanRead;
 	let selectedApplicationList = [];
 
-	// Group Visibility
-	let topicCurrentGroupPublic = false;
-
 	// Topics Filter Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
 		clearTimeout(timer);
@@ -191,8 +188,6 @@
 				(groupPermission) => groupPermission.isTopicAdmin === true
 			);
 		}
-
-		topicCurrentGroupPublic = await getGroupVisibilityPublic($groupContext.name);
 	});
 
 	const searchTopics = async (searchStr) => {
@@ -327,7 +322,7 @@
 					topicName={true}
 					group={true}
 					actionAddTopic={true}
-					{topicCurrentGroupPublic}
+					topicCurrentGroupPublic={$groupContext?.public ?? false}
 					on:cancel={() => (addTopicVisible = false)}
 					on:addTopic={(e) => {
 						newTopicName = e.detail.newTopicName;

@@ -1,6 +1,6 @@
 <script>
 	import { isAdmin, isAuthenticated } from '../../stores/authentication';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
@@ -57,7 +57,7 @@
 		document.body.classList.remove('modal-open');
 	}
 
-	// checkboxes selection
+	// Checkboxes selection
 	$: if ($groups?.length === groupsRowsSelected?.length) {
 		groupsRowsSelectedTrue = false;
 		groupsAllRowsSelectedTrue = true;
@@ -140,6 +140,7 @@
 		promise = reloadAllGroups();
 		updatePermissionsForAllGroups.set(false);
 	}
+
 	const reloadAllGroups = async (page = 0) => {
 		try {
 			let res;

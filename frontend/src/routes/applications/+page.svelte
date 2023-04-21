@@ -166,7 +166,7 @@
 	let previousAppName;
 
 	// Application Detail
-	let applicationDetailId, ApplicationDetailGroupId, appCurrentGroupPublic;
+	let applicationDetailId, ApplicationDetailGroupId;
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
@@ -236,8 +236,6 @@
 				(groupPermission) => groupPermission.isApplicationAdmin === true
 			);
 		}
-
-		appCurrentGroupPublic = await getGroupVisibilityPublic($groupContext.name);
 	});
 
 	const errorMessage = (errMsg, errObj) => {
@@ -375,8 +373,6 @@
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
 		curlCommandsDecode();
-
-		appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -556,7 +552,7 @@
 					applicationName={true}
 					group={true}
 					actionAddApplication={true}
-					{appCurrentGroupPublic}
+					appCurrentGroupPublic={$groupContext?.public ?? false}
 					on:cancel={() => (addApplicationVisible = false)}
 					on:addApplication={(e) => {
 						addApplication(
