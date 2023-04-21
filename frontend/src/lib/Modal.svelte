@@ -557,10 +557,11 @@
 				}}
 			/>
 
-			<input
+			<textarea
 				data-cy="group-new-description"
 				placeholder={messages['modal']['input.group.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 1.4rem 2rem 0 0; resize: none"
+				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={newGroupDescription}
 				on:blur={() => {
@@ -636,10 +637,11 @@
 				on:click={() => (errorMessageName = '')}
 			/>
 
-			<input
+			<textarea
 				data-cy="application-new-description"
 				placeholder={messages['modal']['input.application.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 1.4rem 2rem 0 0"
+				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 1.4rem 2rem 0 0; resize: none"
+				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={newAppDescription}
 				on:blur={() => {
@@ -675,10 +677,11 @@
 		{/if}
 
 		{#if actionEditTopic}
-			<input
+			<textarea
 				data-cy="topic-new-description"
 				placeholder={messages['modal']['input.topic.description.placeholder']}
-				style="background: rgb(246, 246, 246); width: 13.2rem; margin: 0 2rem 0 0"
+				style="background: rgb(246, 246, 246); width: 13.6rem; margin: 0 2rem 0 0; resize: none"
+				rows="5"
 				maxlength={maxCharactersLength}
 				bind:value={topicCurrentDescription}
 				on:blur={() => {
