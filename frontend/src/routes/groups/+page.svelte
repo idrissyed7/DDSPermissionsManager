@@ -1,6 +1,6 @@
 <script>
 	import { isAdmin, isAuthenticated } from '../../stores/authentication';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
@@ -57,7 +57,7 @@
 		document.body.classList.remove('modal-open');
 	}
 
-	// checkboxes selection
+	// Checkboxes selection
 	$: if ($groups?.length === groupsRowsSelected?.length) {
 		groupsRowsSelectedTrue = false;
 		groupsAllRowsSelectedTrue = true;
@@ -140,6 +140,7 @@
 		promise = reloadAllGroups();
 		updatePermissionsForAllGroups.set(false);
 	}
+
 	const reloadAllGroups = async (page = 0) => {
 		try {
 			let res;
@@ -207,10 +208,12 @@
 		errorObject = '';
 	};
 
-	const addGroup = async (newGroupName) => {
+	const addGroup = async (newGroupName, newGroupDescription, newGroupIsPublic) => {
 		await httpAdapter
 			.post(`/groups/save/`, {
-				name: newGroupName
+				name: newGroupName,
+				description: newGroupDescription,
+				public: newGroupIsPublic
 			})
 			.catch((err) => {
 				addGroupVisible = false;
@@ -335,7 +338,8 @@
 					title={messages['group']['add.title']}
 					actionAddGroup={true}
 					groupNewName={true}
-					on:addGroup={(e) => addGroup(e.detail.newGroupName)}
+					on:addGroup={(e) =>
+						addGroup(e.detail.newGroupName, e.detail.newGroupDescription, e.detail.newGroupPublic)}
 					on:cancel={() => (addGroupVisible = false)}
 				/>
 			{/if}

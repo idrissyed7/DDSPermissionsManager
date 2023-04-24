@@ -97,6 +97,11 @@ input {
 	font-size: 0.8rem;
 }
 
+textarea {
+	padding-left: 0.5rem;
+
+}
+
 input::placeholder {
 	font-size: 0.85rem;
 	padding-left: 0.1rem;

@@ -40,21 +40,30 @@
 		}
 
 		if ($page.url.pathname === '/topics/' && $headerTitle !== messages['topic']['title']) {
-			cancel();
-			detailView.set('backToList');
+			if (to.pathname === '/search') return;
+			else {
+				cancel();
+				detailView.set('backToList');
+			}
 		}
 
 		if (
 			$page.url.pathname === '/applications/' &&
 			$headerTitle !== messages['application']['title']
 		) {
-			cancel();
-			detailView.set('backToList');
+			if (to.pathname === '/search') return;
+			else {
+				cancel();
+				detailView.set('backToList');
+			}
 		}
 
 		if ($page.url.pathname === '/groups/' && $headerTitle !== messages['group']['title']) {
-			cancel();
-			detailView.set('backToList');
+			if (to.pathname === '/search') return;
+			else {
+				cancel();
+				detailView.set('backToList');
+			}
 		}
 	});
 

@@ -147,7 +147,7 @@
 
 	// App
 	let applicationListVisible = true;
-	let appName;
+	let appName, appDescription, appPublic;
 	let selectedGroup = '';
 
 	// Pagination
@@ -166,7 +166,7 @@
 	let previousAppName;
 
 	// Application Detail
-	let applicationDetailId, ApplicationDetailGroupId, appCurrentGroupPublic;
+	let applicationDetailId, ApplicationDetailGroupId;
 
 	// Return to List view
 	$: if ($detailView === 'backToList') {
@@ -298,6 +298,8 @@
 
 	const addApplication = async (
 		forwardedAppName,
+		forwardedAppDescription,
+		forwardedAppPublic,
 		forwardedSearchGroups,
 		forwardedSelectedGroup
 	) => {
@@ -317,6 +319,8 @@
 		try {
 			await httpAdapter.post(`/applications/save`, {
 				name: forwardedAppName,
+				description: forwardedAppDescription,
+				public: forwardedAppPublic,
 				group: forwardedSelectedGroup
 			});
 			addApplicationVisible = false;
@@ -369,8 +373,6 @@
 		promiseDetail = await getAppPermissions(appId);
 		await getCanonicalTopicName();
 		curlCommandsDecode();
-
-		appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 	};
 
 	const getAppPermissions = async (appId) => {
@@ -550,9 +552,16 @@
 					applicationName={true}
 					group={true}
 					actionAddApplication={true}
+					appCurrentGroupPublic={$groupContext?.public ?? false}
 					on:cancel={() => (addApplicationVisible = false)}
 					on:addApplication={(e) => {
-						addApplication(e.detail.appName, e.detail.searchGroups, e.detail.selectedGroup);
+						addApplication(
+							e.detail.appName,
+							e.detail.appDescription,
+							e.detail.appPublic,
+							e.detail.searchGroups,
+							e.detail.selectedGroup
+						);
 					}}
 				/>
 			{/if}
@@ -942,7 +951,7 @@
 								{selectedAppName}
 								{selectedAppDescription}
 								{selectedAppPublic}
-								{appCurrentGroupPublic}
+								appCurrentGroupPublic={$groupContext?.public ?? false}
 								on:deleteTopicApplicationAssociation={(e) => {
 									deleteTopicApplicationAssociation(e.detail);
 								}}

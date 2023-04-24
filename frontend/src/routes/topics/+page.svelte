@@ -120,6 +120,8 @@
 
 	// Topic Creation
 	let newTopicName = '';
+	let newTopicDescription = '';
+	let newTopicPublic;
 	let searchGroups = '';
 	let selectedGroup = '';
 	let anyApplicationCanRead;
@@ -247,6 +249,16 @@
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
 
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+			if (res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
+
 	const addTopic = async () => {
 		if (!selectedGroup) {
 			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
@@ -260,6 +272,8 @@
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,
+				description: newTopicDescription,
+				public: newTopicPublic,
 				kind: anyApplicationCanRead ? 'B' : 'C',
 				group: selectedGroup,
 				groupName: searchGroups
@@ -308,9 +322,12 @@
 					topicName={true}
 					group={true}
 					actionAddTopic={true}
+					topicCurrentGroupPublic={$groupContext?.public ?? false}
 					on:cancel={() => (addTopicVisible = false)}
 					on:addTopic={(e) => {
 						newTopicName = e.detail.newTopicName;
+						newTopicDescription = e.detail.newTopicDescription;
+						newTopicPublic = e.detail.newTopicPublic;
 						searchGroups = e.detail.searchGroups;
 						selectedGroup = e.detail.selectedGroup;
 						anyApplicationCanRead = e.detail.anyApplicationCanRead;
