@@ -92,6 +92,7 @@ public class GroupService {
     public MutableHttpResponse<?> save(SimpleGroupDTO groupRequestDTO) {
 
         Optional<Group> searchGroupByName = groupRepository.findByName(groupRequestDTO.getName().trim());
+        boolean isPublic = Boolean.TRUE.equals(groupRequestDTO.getPublic());
 
         Group group;
         if (groupRequestDTO.getId() == null) {
@@ -101,8 +102,6 @@ public class GroupService {
             if (searchGroupByName.isPresent()) {
                 throw new DPMException(ResponseStatusCodes.GROUP_ALREADY_EXISTS);
             }
-
-            boolean isPublic = Boolean.TRUE.equals(groupRequestDTO.getPublic());
 
             group = groupRepository.save(new Group(groupRequestDTO.getName(), groupRequestDTO.getDescription(), isPublic));
         } else {
@@ -121,10 +120,10 @@ public class GroupService {
             group = groupById.get();
             group.setName(groupRequestDTO.getName());
             group.setDescription(groupRequestDTO.getDescription());
-            if (group.getMakePublic() && !groupRequestDTO.getPublic()) {
+            if (group.getMakePublic() && !isPublic) {
                 cascadePrivate(group);
             }
-            group.setMakePublic(groupRequestDTO.getPublic());
+            group.setMakePublic(isPublic);
 
             group = groupRepository.update(group);
         }

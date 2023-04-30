@@ -222,7 +222,7 @@ public class ApplicationService {
             application = applicationOptional.get();
             application.setName(applicationDTO.getName());
             application.setDescription(applicationDTO.getDescription());
-            application.setMakePublic(applicationDTO.getPublic());
+            application.setMakePublic(isPublic);
 
             return HttpResponse.ok(new ApplicationDTO(applicationRepository.update(application)));
         } else {
