@@ -552,7 +552,7 @@
 					applicationName={true}
 					group={true}
 					actionAddApplication={true}
-					appCurrentGroupPublic={$groupContext?.public ?? false}
+					appCurrentGroupPublic={$groupContext?.public}
 					on:cancel={() => (addApplicationVisible = false)}
 					on:addApplication={(e) => {
 						addApplication(
@@ -948,10 +948,11 @@
 								{isApplicationAdmin}
 								{selectedAppId}
 								{selectedAppGroupId}
+								{selectedAppGroupName}
 								{selectedAppName}
 								{selectedAppDescription}
 								{selectedAppPublic}
-								appCurrentGroupPublic={$groupContext?.public ?? false}
+								appCurrentGroupPublic={$groupContext?.public}
 								on:deleteTopicApplicationAssociation={(e) => {
 									deleteTopicApplicationAssociation(e.detail);
 								}}

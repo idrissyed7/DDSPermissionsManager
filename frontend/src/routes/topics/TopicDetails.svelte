@@ -168,7 +168,7 @@
 	const getGroupVisibilityPublic = async (groupName) => {
 		try {
 			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
-			if (res.data?.content[0]?.public) return true;
+			if (res.data.content?.length > 0 && res.data?.content[0]?.public) return true;
 			else return false;
 		} catch (err) {
 			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);

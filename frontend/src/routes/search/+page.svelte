@@ -47,6 +47,7 @@
 
 	// Application Parameters
 	let selectedAppGroupId,
+		selectedAppGroupName,
 		selectedAppName,
 		selectedAppId,
 		selectedAppPublic,
@@ -105,7 +106,8 @@
 	const getGroupVisibilityPublic = async (groupName) => {
 		try {
 			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
-			if (res.data?.content[0]?.public) return true;
+
+			if (res.data.content?.length > 0 && res.data?.content[0]?.public) return true;
 			else return false;
 		} catch (err) {
 			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
@@ -135,6 +137,7 @@
 			case 'APPLICATION':
 				selectedAppId = result.entity.id;
 				selectedAppGroupId = result.entity.group;
+				selectedAppGroupName = result.entity.groupName;
 				selectedAppName = result.entity.name;
 				selectedAppPublic = result.entity.public;
 				selectedAppDescription = result.entity.description;
@@ -147,7 +150,7 @@
 					);
 				}
 
-				appCurrentGroupPublic = await getGroupVisibilityPublic(result.entity.groupName);
+				appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 
 				universalSearchList.set(false);
 				applicationDetails = true;
@@ -285,6 +288,7 @@
 			<ApplicationDetails
 				{selectedAppId}
 				{selectedAppGroupId}
+				{selectedAppGroupName}
 				{selectedAppName}
 				{selectedAppPublic}
 				{isApplicationAdmin}

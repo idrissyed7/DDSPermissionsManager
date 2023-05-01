@@ -7,6 +7,7 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import messages from '$lib/messages.json';
+	import errorMessages from '$lib/errorMessages.json';
 	import editSVG from '../../icons/edit.svg';
 	import deleteSVG from '../../icons/delete.svg';
 
@@ -16,15 +17,51 @@
 		selectedAppName,
 		selectedAppDescription = '',
 		selectedAppPublic,
-		appCurrentGroupPublic;
+		appCurrentGroupPublic,
+		selectedAppGroupName;
 
 	const dispatch = createEventDispatcher();
+
+	// Error Handling
+	let errorMsg,
+		errorObject,
+		errorMessageVisible = false;
 
 	let selectedAppDescriptionSelector,
 		checkboxSelector,
 		isPublic = selectedAppPublic;
 
 	let editApplicationVisible = false;
+
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
+
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const errorMessageClear = () => {
+		errorMessageVisible = false;
+		errorMsg = '';
+		errorObject = '';
+	};
+
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+
+			if (res.data.content?.length > 0 && res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
 
 	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
 		const res = await httpAdapter
@@ -47,10 +84,26 @@
 		dispatch('reloadAllApps');
 	};
 
-	onMount(() => {
+	onMount(async () => {
 		headerTitle.set(selectedAppName);
+		if (appCurrentGroupPublic === undefined) {
+			appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
+		}
 	});
 </script>
+
+{#if errorMessageVisible}
+	<Modal
+		title={errorMsg}
+		errorMsg={true}
+		errorDescription={errorObject}
+		closeModalText={errorMessages['modal']['button.close']}
+		on:cancel={() => {
+			errorMessageVisible = false;
+			errorMessageClear();
+		}}
+	/>
+{/if}
 
 {#if editApplicationVisible}
 	<Modal
