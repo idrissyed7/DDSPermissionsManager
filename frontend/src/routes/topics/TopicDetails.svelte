@@ -89,7 +89,6 @@
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/topic/${topicId}`);
 		selectedTopicApplications = resApps.data.content;
-		console.log(resApps.data.content);
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
