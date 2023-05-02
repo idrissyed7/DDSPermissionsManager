@@ -783,7 +783,7 @@ public class ApplicationPermissionApiTest {
 
             loginAsTopicAdmin();
 
-            request = HttpRequest.GET("/application_permissions/application/"+applicationPermissionOne.getId());
+            request = HttpRequest.GET("/application_permissions/application/"+applicationOne.getId());
             Page page = blockingClient.retrieve(request,  Page.class);
             assertFalse(page.isEmpty());
             List content = page.getContent();
@@ -856,7 +856,7 @@ public class ApplicationPermissionApiTest {
             assertTrue(page.isEmpty());
 
             // public permissions call with public topic - should yield one permission (the one with public application association)
-            request = HttpRequest.GET("/application_permissions/topic/"+publicApplication.getId());
+            request = HttpRequest.GET("/application_permissions/topic/"+publicTopic.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertFalse(page.isEmpty());
             assertEquals(1, page.getContent().size());
