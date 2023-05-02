@@ -117,8 +117,7 @@
 	let groupsCurrentPage = 0;
 
 	// Selection
-	let selectedGroupId;
-	let selectedGroupName;
+	let selectedGroupId, selectedGroupName, selectedGroupDescription, selectedGroupPublic;
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -231,11 +230,13 @@
 		await reloadAllGroups();
 	};
 
-	const editGroupName = async (groupId, groupNewName) => {
+	const editGroupName = async (groupId, groupNewName, groupNewDescription, groupNewPublic) => {
 		await httpAdapter
 			.post(`/groups/save/`, {
 				id: groupId,
-				name: groupNewName
+				name: groupNewName,
+				description: groupNewDescription,
+				public: groupNewPublic
 			})
 			.catch((err) => {
 				errorMessage(errorMessages['group']['editing.error.title'], err.message);
@@ -351,8 +352,15 @@
 					groupCurrentName={selectedGroupName}
 					groupNewName={true}
 					groupId={selectedGroupId}
+					groupCurrentDescription={selectedGroupDescription}
+					groupCurrentPublic={selectedGroupPublic}
 					on:addGroup={(e) => {
-						editGroupName(e.detail.groupId, e.detail.newGroupName);
+						editGroupName(
+							e.detail.groupId,
+							e.detail.newGroupName,
+							e.detail.newGroupDescription,
+							e.detail.newGroupPublic
+						);
 					}}
 					on:cancel={() => (editGroupVisible = false)}
 				/>
@@ -846,6 +854,8 @@
 														editGroupVisible = true;
 														selectedGroupId = group.id;
 														selectedGroupName = group.name;
+														selectedGroupDescription = group.description;
+														selectedGroupPublic = group.public;
 													}}
 												/>
 											</td>

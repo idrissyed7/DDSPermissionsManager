@@ -663,7 +663,6 @@
 					errorMessageGroup = '';
 				}}
 			/>
-
 			<span style="font-size: 0.75rem; float: right; margin-top: 0.2rem"
 				>{newAppDescription?.length}/{maxCharactersLength}</span
 			>

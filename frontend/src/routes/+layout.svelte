@@ -32,7 +32,8 @@
 		if (
 			$page.url.pathname === '/search/' &&
 			$headerTitle !== messages['universal.search']['header.title'] &&
-			$universalSearchList === false
+			$universalSearchList === false &&
+			to.pathname === '/search/'
 		) {
 			cancel(); // Cancel default back button behavior
 			headerTitle.set(messages['universal.search']['header.title']);
