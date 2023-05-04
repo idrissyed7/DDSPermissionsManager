@@ -147,7 +147,7 @@
 			await httpAdapter.post(`/topics/save/`, {
 				name: newTopicName,
 				id: selectedTopicId,
-				kind: selectedTopicKind ? 'B' : 'C',
+				kind: selectedTopicKind,
 				group: selectedTopicGroupId,
 				groupName: selectedTopicGroupName,
 				description: newTopicDescription,
