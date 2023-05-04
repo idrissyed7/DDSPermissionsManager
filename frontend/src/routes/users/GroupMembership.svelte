@@ -2,7 +2,7 @@
 	import { isAuthenticated, isAdmin, onLoggedIn } from '../../stores/authentication';
 	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import groupAdminGroups from '../../stores/groupAdminGroups';
 	import groupMembershipList from '../../stores/groupMembershipList';
 	import userValidityCheck from '../../stores/userValidityCheck';

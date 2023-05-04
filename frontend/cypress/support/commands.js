@@ -30,3 +30,14 @@ Cypress.Commands.add('login', (username, password) => {
         password: password,
     });
 })
+
+Cypress.Commands.add('assertClipboard', (expectedText) => {
+    cy.window().then((win) => {
+      if (!win.navigator.clipboard.writeText.__cypress_stub__) {
+        cy.stub(win.navigator.clipboard, 'writeText').as('clipboardWriteText');
+      }
+    });
+    cy.get('@clipboardWriteText').should('be.calledWith', expectedText);
+  });
+  
+  

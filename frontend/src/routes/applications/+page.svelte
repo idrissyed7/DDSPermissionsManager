@@ -9,7 +9,7 @@
 	import applications from '../../stores/applications';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
 	import deleteSVG from '../../icons/delete.svg';
@@ -33,6 +33,7 @@
 	import applicationsTotalSize from '../../stores/applicationsTotalSize';
 	import ApplicationDetails from './ApplicationDetails.svelte';
 
+	export const prerender = true;
 	export let data, errors;
 
 	// Group Context

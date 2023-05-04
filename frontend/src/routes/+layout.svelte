@@ -3,7 +3,7 @@
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import refreshPage from '../stores/refreshPage';
 	import lastRefresh from '../stores/lastRefresh';
@@ -30,18 +30,18 @@
 
 	beforeNavigate(async ({ to, from, cancel }) => {
 		if (
-			$page.url.pathname === '/search/' &&
+			$page.url?.pathname === '/search/' &&
 			$headerTitle !== messages['universal.search']['header.title'] &&
 			$universalSearchList === false &&
-			to.pathname === '/search/'
+			to?.pathname === '/search/'
 		) {
 			cancel(); // Cancel default back button behavior
 			headerTitle.set(messages['universal.search']['header.title']);
 			universalSearchList.set(true);
 		}
 
-		if ($page.url.pathname === '/topics/' && $headerTitle !== messages['topic']['title']) {
-			if (to.pathname === '/search') return;
+		if ($page.url?.pathname === '/topics/' && $headerTitle !== messages['topic']['title']) {
+			if (to?.pathname === '/search') return;
 			else {
 				cancel();
 				detailView.set('backToList');
@@ -49,18 +49,18 @@
 		}
 
 		if (
-			$page.url.pathname === '/applications/' &&
+			$page.url?.pathname === '/applications/' &&
 			$headerTitle !== messages['application']['title']
 		) {
-			if (to.pathname === '/search') return;
+			if (to?.pathname === '/search') return;
 			else {
 				cancel();
 				detailView.set('backToList');
 			}
 		}
 
-		if ($page.url.pathname === '/groups/' && $headerTitle !== messages['group']['title']) {
-			if (to.pathname === '/search') return;
+		if ($page.url?.pathname === '/groups/' && $headerTitle !== messages['group']['title']) {
+			if (to?.pathname === '/search') return;
 			else {
 				cancel();
 				detailView.set('backToList');

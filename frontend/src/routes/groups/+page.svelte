@@ -6,7 +6,7 @@
 	import Modal from '../../lib/Modal.svelte';
 	import refreshPage from '../../stores/refreshPage';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import deleteSVG from '../../icons/delete.svg';
 	import editSVG from '../../icons/edit.svg';
 	import addSVG from '../../icons/add.svg';

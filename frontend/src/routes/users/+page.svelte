@@ -7,7 +7,7 @@
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import refreshPage from '../../stores/refreshPage';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import GroupMembership from './GroupMembership.svelte';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
