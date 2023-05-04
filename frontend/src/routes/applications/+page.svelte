@@ -884,6 +884,7 @@
 											<td
 												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width:1rem"
 											>
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="delete-application-icon"
 													src={deleteSVG}
@@ -914,6 +915,7 @@
 							{messages['application']['empty.applications']}
 							<br />
 							{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isApplicationAdmin === true) || $isAdmin)}
+								<!-- svelte-ignore a11y-click-events-have-key-events -->
 								<span
 									class="link"
 									on:click={() => {
@@ -1013,6 +1015,7 @@
 								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
 									{messages['application.detail']['password.label']}
 								</div>
+								<!-- svelte-ignore a11y-click-events-have-key-events -->
 								<div
 									style="margin-top: 0.3rem;  font-weight: 300; cursor: pointer"
 									on:click={() => {
@@ -1049,6 +1052,7 @@
 										style="vertical-align: middle; width: 44.7rem; margin-left: 0.5rem; margin-top: 1rem; resize: none"
 										>{bindToken}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										data-cy="bind-token-copy"
 										src={copySVG}
@@ -1081,6 +1085,7 @@
 									<textarea rows="1" style="width:50rem; resize: none"
 										>{curlCommands.appPassword}
 									</textarea>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										data-cy="curl-command-1-copy"
 										src={copySVG}
@@ -1107,6 +1112,7 @@
 									<textarea rows="1" style="width:50rem; resize: none"
 										>{curlCommands.appNonce}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										data-cy="curl-command-2-copy"
 										src={copySVG}
@@ -1133,6 +1139,7 @@
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeThree}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										data-cy="curl-command-3-copy"
 										src={copySVG}
@@ -1161,6 +1168,7 @@
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeFour}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										src={copySVG}
 										alt="copy code"
@@ -1183,6 +1191,7 @@
 										'curl.commands.download.permission.ca.certificate.label'
 									]}
 								</div>
+								<!-- svelte-ignore a11y-click-events-have-key-events -->
 								<section style="display:inline-flex;">
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeFive}</textarea
@@ -1212,6 +1221,7 @@
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeSix}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										src={copySVG}
 										alt="copy code"
@@ -1237,6 +1247,7 @@
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeSeven}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										src={copySVG}
 										alt="copy code"
@@ -1264,6 +1275,7 @@
 									<textarea rows="2" style="width:50rem; resize: none"
 										>{curlCommandsDecodedCodeEight}</textarea
 									>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										src={copySVG}
 										alt="copy code"
@@ -1288,6 +1300,7 @@
 				</div>
 
 				{#if !applicationDetailVisible}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<div class="pagination">
 						<span>{messages['pagination']['rows.per.page']}</span>
 						<select
@@ -1319,6 +1332,7 @@
 							{$applicationsTotalSize}
 						</span>
 
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagefirstSVG}
 							alt="first page"
@@ -1332,6 +1346,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagebackwardsSVG}
 							alt="previous page"
@@ -1345,6 +1360,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pageforwardSVG}
 							alt="next page"
@@ -1393,7 +1409,7 @@
 	}
 
 	table.application-table-admin {
-		width: 34rem;
+		width: 43.5rem;
 		line-height: 1rem;
 	}
 

@@ -508,6 +508,7 @@
 					{$searchResultsTotalSize}
 				</span>
 
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
 					src={pagefirstSVG}
 					alt="first page"
@@ -520,6 +521,7 @@
 						}
 					}}
 				/>
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
 					src={pagebackwardsSVG}
 					alt="previous page"
@@ -532,6 +534,7 @@
 						}
 					}}
 				/>
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
 					src={pageforwardSVG}
 					alt="next page"
@@ -544,6 +547,7 @@
 						}
 					}}
 				/>
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
 					src={pagelastSVG}
 					alt="last page"
@@ -565,7 +569,7 @@
 <style>
 	.content {
 		width: 100%;
-		min-width: 32rem;
+		min-width: 43.5rem;
 		margin-right: 1rem;
 	}
 
@@ -576,7 +580,7 @@
 
 	.universal-search-table {
 		margin-top: 2rem;
-		min-width: 45vw;
+		min-width: 43.5rem;
 	}
 
 	tr {

@@ -817,7 +817,7 @@
 
 <style>
 	table.main {
-		min-width: 43rem;
+		min-width: 43.5rem;
 		line-height: 2.2rem;
 	}
 
