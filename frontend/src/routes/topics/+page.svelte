@@ -7,7 +7,7 @@
 	import Modal from '../../lib/Modal.svelte';
 	import TopicDetails from './TopicDetails.svelte';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';

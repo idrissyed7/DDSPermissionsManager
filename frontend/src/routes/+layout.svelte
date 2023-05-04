@@ -3,7 +3,7 @@
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import refreshPage from '../stores/refreshPage';
 	import lastRefresh from '../stores/lastRefresh';
