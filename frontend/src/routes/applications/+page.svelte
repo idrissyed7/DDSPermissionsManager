@@ -33,7 +33,6 @@
 	import applicationsTotalSize from '../../stores/applicationsTotalSize';
 	import ApplicationDetails from './ApplicationDetails.svelte';
 
-	export const prerender = true;
 	export let data, errors;
 
 	// Group Context
