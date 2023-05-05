@@ -1,5 +1,5 @@
 <script>
-	import DDSLock from '../icons/ddslock.png';
+	import DDSLock from '../icons/logo.png';
 	import logoutSVG from '../icons/logout.svg';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';

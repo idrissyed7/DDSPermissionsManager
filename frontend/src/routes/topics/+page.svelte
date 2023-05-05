@@ -668,6 +668,7 @@
 											<td
 												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
 											>
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="delete-topic-icon"
 													src={deleteSVG}
@@ -692,6 +693,7 @@
 								{messages['topic']['empty.topics']}
 								<br />
 								{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<span
 										class="link"
 										on:click={() => {
@@ -747,6 +749,7 @@
 							{$topicsTotalSize}
 						</span>
 
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagefirstSVG}
 							alt="first page"
@@ -760,6 +763,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagebackwardsSVG}
 							alt="previous page"
@@ -773,6 +777,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pageforwardSVG}
 							alt="next page"
@@ -787,6 +792,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagelastSVG}
 							alt="last page"
@@ -811,7 +817,7 @@
 
 <style>
 	table.main {
-		min-width: 34rem;
+		min-width: 43.5rem;
 		line-height: 2.2rem;
 	}
 

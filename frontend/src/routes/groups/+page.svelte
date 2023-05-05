@@ -523,7 +523,7 @@
 							class="main"
 							id="groups-table"
 							data-cy="groups-table"
-							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
+							style="margin-top: 0.5rem; min-width: 45rem; width:max-content"
 						>
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
@@ -601,6 +601,7 @@
 										{/if}
 
 										<td style="text-align: center; cursor: pointer">
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
 											<img
 												data-cy="activate-group-context{i}"
 												src={groupSVG}
@@ -639,6 +640,7 @@
 												}}
 											/>
 										</td>
+										<!-- svelte-ignore a11y-click-events-have-key-events -->
 										<td
 											style="width: max-content; cursor: pointer"
 											class:highlighted={group.name === $groupContext?.name}
@@ -654,6 +656,7 @@
 											<div
 												style="display:inline-flex; vertical-align:middle; justify-content: center; width: 7rem"
 											>
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={groupSVG}
 													alt="create new user"
@@ -704,6 +707,7 @@
 													{/if}
 												</span>
 
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={topicsSVG}
 													alt="create new topic"
@@ -750,6 +754,7 @@
 													{/if}
 												</span>
 
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={appsSVG}
 													alt="create application"
@@ -843,6 +848,7 @@
 
 										{#if $isAdmin}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="edit-group-icon-{group.name}"
 													src={editSVG}
@@ -861,6 +867,7 @@
 											</td>
 
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="delete-group-icon-{group.name}"
 													src={deleteSVG}
@@ -881,10 +888,10 @@
 						</table>
 					{:else}
 						<p>
-							{messages['group']['empty.groups']}&nbsp;<span
-								class="link"
-								on:click={() => (addGroupVisible = true)}
-							>
+							{messages['group']['empty.groups']}&nbsp;
+
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<span class="link" on:click={() => (addGroupVisible = true)}>
 								{messages['group']['empty.groups.action']}
 							</span>
 							{messages['group']['empty.groups.action.result']}
@@ -917,6 +924,7 @@
 						- {Math.min(groupsPerPage * (groupsCurrentPage + 1), $groupsTotalSize)} of
 						{$groupsTotalSize}
 					</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagefirstSVG}
 						alt="first page"
@@ -930,6 +938,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagebackwardsSVG}
 						alt="previous page"
@@ -943,6 +952,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pageforwardSVG}
 						alt="next page"
@@ -957,6 +967,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagelastSVG}
 						alt="last page"
@@ -981,7 +992,7 @@
 <style>
 	.content {
 		width: 100%;
-		min-width: 32rem;
+		min-width: 45rem;
 		margin-right: 1rem;
 	}
 
