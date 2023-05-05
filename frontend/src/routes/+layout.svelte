@@ -28,13 +28,6 @@
 
 	export let data;
 
-	// beforeNavigate(async ({ to, from, cancel }) => {
-	// 	if (to.route.id !== from.route.id) {
-	// 		console.log('to.route.id !== from.route.id');
-	// 		return;
-	// 	}
-	// });
-
 	let userLoggedCookie;
 	let reminderMessageVisible = false;
 	let timer;
