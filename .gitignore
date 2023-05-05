@@ -2,4 +2,4 @@
 .gradle
 .DS_Store
 .history/
-frontend/cypress/
+frontend/cypress/videos
