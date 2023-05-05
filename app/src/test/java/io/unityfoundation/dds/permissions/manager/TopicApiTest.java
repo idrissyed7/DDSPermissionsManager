@@ -230,6 +230,41 @@ public class TopicApiTest {
         }
 
         @Test
+        public void createWithDescriptionWithFourThousandChars() {
+            HttpResponse<?> response;
+
+            // create groups
+            Group theta = new Group("Theta");
+            HttpRequest<?> request = HttpRequest.POST("/groups/save", theta);
+            response = blockingClient.exchange(request, Group.class);
+            assertEquals(OK, response.getStatus());
+            Optional<Group> thetaOptional = response.getBody(Group.class);
+            assertTrue(thetaOptional.isPresent());
+            theta = thetaOptional.get();
+
+            // create topics
+            TopicDTO topicDTO = new TopicDTO();
+            topicDTO.setName("A Topic Name");
+            topicDTO.setKind(TopicKind.B);
+            topicDTO.setGroup(theta.getId());
+            topicDTO.setDescription("My topic description");
+            request = HttpRequest.POST("/topics/save", topicDTO);
+            response = blockingClient.exchange(request, TopicDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<TopicDTO> topicOptional = response.getBody(TopicDTO.class);
+            assertTrue(topicOptional.isPresent());
+            TopicDTO savedTopic = topicOptional.get();
+            assertNotNull(savedTopic.getDescription());
+            assertEquals("My topic description", savedTopic.getDescription());
+
+            String FourKString = new String(new char[4000]).replace("\0", "s");;
+            savedTopic.setDescription(FourKString);
+            request = HttpRequest.POST("/topics/save", savedTopic);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
         public void createWithPublicGroup() {
             HttpResponse<?> response;
             HttpRequest<?> request;

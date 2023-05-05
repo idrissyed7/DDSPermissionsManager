@@ -307,6 +307,39 @@ public class ApplicationApiTest {
         }
 
         @Test
+        public void createWithDescriptionWithFourThousandChars() {
+            HttpResponse<?> response;
+
+            // create groups
+            response = createGroup("PrimaryGroup");
+            assertEquals(OK, response.getStatus());
+            Optional<Group> primaryOptional = response.getBody(Group.class);
+            assertTrue(primaryOptional.isPresent());
+            Group primaryGroup = primaryOptional.get();
+
+            // create application
+            ApplicationDTO applicationDTO = new ApplicationDTO();
+            applicationDTO.setName("Abc123");
+            applicationDTO.setGroup(primaryGroup.getId());
+            applicationDTO.setDescription("My application description");
+            HttpRequest<?> request = HttpRequest.POST("/applications/save", applicationDTO);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationOptional.isPresent());
+            ApplicationDTO savedApplication = applicationOptional.get();
+            assertNotNull(savedApplication.getDescription());
+            assertEquals("My application description", savedApplication.getDescription());
+
+
+            String FourKString = new String(new char[4000]).replace("\0", "s");;
+            savedApplication.setDescription(FourKString);
+            request = HttpRequest.POST("/applications/save", savedApplication);
+            response = blockingClient.exchange(request, ApplicationDTO.class);
+            assertEquals(OK, response.getStatus());
+        }
+
+        @Test
         public void createWithPublicGroup() {
             HttpResponse<?> response;
             HttpRequest<?> request;
@@ -2457,82 +2490,6 @@ public class ApplicationApiTest {
             assertTrue(body.contains("GN="+applicationOne.getName()));
             assertTrue(body.contains("SN="+primaryGroup.getId()));
         }
-    }
-
-    @Test
-    public void testApplicationExistenceEndpoint() {
-        mockSecurityService.postConstruct();
-        mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
-
-        HttpResponse<?> response;
-        HttpRequest<?> request;
-
-        // create group
-        response = createGroup("PrimaryGroup");
-        assertEquals(OK, response.getStatus());
-        Optional<Group> primaryOptional = response.getBody(Group.class);
-        assertTrue(primaryOptional.isPresent());
-        Group primaryGroup = primaryOptional.get();
-
-        // create application
-        response = createApplication("TestApplication", primaryGroup.getId());
-        assertEquals(OK, response.getStatus());
-        Optional<ApplicationDTO> applicationOptional = response.getBody(ApplicationDTO.class);
-        assertTrue(applicationOptional.isPresent());
-
-        // create application
-        response = createApplication("TestApplicationOne", primaryGroup.getId());
-        assertEquals(OK, response.getStatus());
-        Optional<ApplicationDTO> applicationOneOptional = response.getBody(ApplicationDTO.class);
-        assertTrue(applicationOneOptional.isPresent());
-
-        // found
-        request = HttpRequest.GET("/applications/check_exists/TestApplication");
-        response = blockingClient.exchange(request, ApplicationDTO.class);
-        assertEquals(OK, response.getStatus());
-        Optional<ApplicationDTO> applicationDTO = response.getBody(ApplicationDTO.class);
-        assertTrue(applicationDTO.isPresent());
-        assertEquals("TestApplication", applicationDTO.get().getName());
-
-        // case insensitive
-        request = HttpRequest.GET("/applications/check_exists/testapplication");
-        response = blockingClient.exchange(request, ApplicationDTO.class);
-        assertEquals(OK, response.getStatus());
-        Optional<ApplicationDTO> applicationCaseInsensitiveDTO = response.getBody(ApplicationDTO.class);
-        assertTrue(applicationCaseInsensitiveDTO.isPresent());
-        assertEquals("TestApplication", applicationCaseInsensitiveDTO.get().getName());
-
-        // not found
-        request = HttpRequest.GET("/applications/check_exists/Application");
-        HttpRequest<?> finalRequest = request;
-        HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest, ApplicationDTO.class);
-        });
-        assertEquals(NOT_FOUND, exception.getStatus());
-        Optional<List> bodyOptional = exception.getResponse().getBody(List.class);
-        assertTrue(bodyOptional.isPresent());
-        List<Map> list = bodyOptional.get();
-        assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NOT_FOUND.equals(group.get("code"))));
-
-        // application is empty string
-        request = HttpRequest.GET("/applications/check_exists/%20");
-        HttpRequest<?> finalRequest1 = request;
-        HttpClientResponseException exception1 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest1, ApplicationDTO.class);
-        });
-        assertEquals(BAD_REQUEST, exception1.getStatus());
-        bodyOptional = exception1.getResponse().getBody(List.class);
-        assertTrue(bodyOptional.isPresent());
-        list = bodyOptional.get();
-        assertTrue(list.stream().anyMatch(group -> ResponseStatusCodes.APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL.equals(group.get("code"))));
-
-        // application is null
-        request = HttpRequest.GET("/applications/check_exists/");
-        HttpRequest<?> finalRequest2 = request;
-        HttpClientResponseException exception2 = assertThrowsExactly(HttpClientResponseException.class, () -> {
-            blockingClient.exchange(finalRequest2, ApplicationDTO.class);
-        });
-        assertEquals(NOT_FOUND, exception2.getStatus()); // Invalid URL
     }
 
     private void assertResultOnlyContainsExpectedApplicationNames(List<Map> results, List<String> expectedApplicationNames) {

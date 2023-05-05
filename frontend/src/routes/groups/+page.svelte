@@ -1,12 +1,12 @@
 <script>
 	import { isAdmin, isAuthenticated } from '../../stores/authentication';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import refreshPage from '../../stores/refreshPage';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import deleteSVG from '../../icons/delete.svg';
 	import editSVG from '../../icons/edit.svg';
 	import addSVG from '../../icons/add.svg';
@@ -57,7 +57,7 @@
 		document.body.classList.remove('modal-open');
 	}
 
-	// checkboxes selection
+	// Checkboxes selection
 	$: if ($groups?.length === groupsRowsSelected?.length) {
 		groupsRowsSelectedTrue = false;
 		groupsAllRowsSelectedTrue = true;
@@ -117,8 +117,7 @@
 	let groupsCurrentPage = 0;
 
 	// Selection
-	let selectedGroupId;
-	let selectedGroupName;
+	let selectedGroupId, selectedGroupName, selectedGroupDescription, selectedGroupPublic;
 
 	// Search Feature
 	$: if (searchString?.trim().length >= searchStringLength) {
@@ -140,6 +139,7 @@
 		promise = reloadAllGroups();
 		updatePermissionsForAllGroups.set(false);
 	}
+
 	const reloadAllGroups = async (page = 0) => {
 		try {
 			let res;
@@ -207,10 +207,12 @@
 		errorObject = '';
 	};
 
-	const addGroup = async (newGroupName) => {
+	const addGroup = async (newGroupName, newGroupDescription, newGroupIsPublic) => {
 		await httpAdapter
 			.post(`/groups/save/`, {
-				name: newGroupName
+				name: newGroupName,
+				description: newGroupDescription,
+				public: newGroupIsPublic
 			})
 			.catch((err) => {
 				addGroupVisible = false;
@@ -228,11 +230,13 @@
 		await reloadAllGroups();
 	};
 
-	const editGroupName = async (groupId, groupNewName) => {
+	const editGroupName = async (groupId, groupNewName, groupNewDescription, groupNewPublic) => {
 		await httpAdapter
 			.post(`/groups/save/`, {
 				id: groupId,
-				name: groupNewName
+				name: groupNewName,
+				description: groupNewDescription,
+				public: groupNewPublic
 			})
 			.catch((err) => {
 				errorMessage(errorMessages['group']['editing.error.title'], err.message);
@@ -335,7 +339,8 @@
 					title={messages['group']['add.title']}
 					actionAddGroup={true}
 					groupNewName={true}
-					on:addGroup={(e) => addGroup(e.detail.newGroupName)}
+					on:addGroup={(e) =>
+						addGroup(e.detail.newGroupName, e.detail.newGroupDescription, e.detail.newGroupPublic)}
 					on:cancel={() => (addGroupVisible = false)}
 				/>
 			{/if}
@@ -347,8 +352,15 @@
 					groupCurrentName={selectedGroupName}
 					groupNewName={true}
 					groupId={selectedGroupId}
+					groupCurrentDescription={selectedGroupDescription}
+					groupCurrentPublic={selectedGroupPublic}
 					on:addGroup={(e) => {
-						editGroupName(e.detail.groupId, e.detail.newGroupName);
+						editGroupName(
+							e.detail.groupId,
+							e.detail.newGroupName,
+							e.detail.newGroupDescription,
+							e.detail.newGroupPublic
+						);
 					}}
 					on:cancel={() => (editGroupVisible = false)}
 				/>
@@ -511,7 +523,7 @@
 							class="main"
 							id="groups-table"
 							data-cy="groups-table"
-							style="margin-top: 0.5rem; min-width: 33rem; width:max-content"
+							style="margin-top: 0.5rem; min-width: 45rem; width:max-content"
 						>
 							<thead>
 								<tr style="border-top: 1px solid black; border-bottom: 2px solid">
@@ -589,6 +601,7 @@
 										{/if}
 
 										<td style="text-align: center; cursor: pointer">
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
 											<img
 												data-cy="activate-group-context{i}"
 												src={groupSVG}
@@ -627,6 +640,7 @@
 												}}
 											/>
 										</td>
+										<!-- svelte-ignore a11y-click-events-have-key-events -->
 										<td
 											style="width: max-content; cursor: pointer"
 											class:highlighted={group.name === $groupContext?.name}
@@ -642,6 +656,7 @@
 											<div
 												style="display:inline-flex; vertical-align:middle; justify-content: center; width: 7rem"
 											>
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={groupSVG}
 													alt="create new user"
@@ -692,6 +707,7 @@
 													{/if}
 												</span>
 
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={topicsSVG}
 													alt="create new topic"
@@ -738,6 +754,7 @@
 													{/if}
 												</span>
 
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													src={appsSVG}
 													alt="create application"
@@ -831,6 +848,7 @@
 
 										{#if $isAdmin}
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="edit-group-icon-{group.name}"
 													src={editSVG}
@@ -842,11 +860,14 @@
 														editGroupVisible = true;
 														selectedGroupId = group.id;
 														selectedGroupName = group.name;
+														selectedGroupDescription = group.description;
+														selectedGroupPublic = group.public;
 													}}
 												/>
 											</td>
 
 											<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="delete-group-icon-{group.name}"
 													src={deleteSVG}
@@ -867,10 +888,10 @@
 						</table>
 					{:else}
 						<p>
-							{messages['group']['empty.groups']}&nbsp;<span
-								class="link"
-								on:click={() => (addGroupVisible = true)}
-							>
+							{messages['group']['empty.groups']}&nbsp;
+
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<span class="link" on:click={() => (addGroupVisible = true)}>
 								{messages['group']['empty.groups.action']}
 							</span>
 							{messages['group']['empty.groups.action.result']}
@@ -903,6 +924,7 @@
 						- {Math.min(groupsPerPage * (groupsCurrentPage + 1), $groupsTotalSize)} of
 						{$groupsTotalSize}
 					</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagefirstSVG}
 						alt="first page"
@@ -916,6 +938,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagebackwardsSVG}
 						alt="previous page"
@@ -929,6 +952,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pageforwardSVG}
 						alt="next page"
@@ -943,6 +967,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagelastSVG}
 						alt="last page"
@@ -967,7 +992,7 @@
 <style>
 	.content {
 		width: 100%;
-		min-width: 32rem;
+		min-width: 45rem;
 		margin-right: 1rem;
 	}
 

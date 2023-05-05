@@ -7,7 +7,7 @@
 	import Modal from '../../lib/Modal.svelte';
 	import TopicDetails from './TopicDetails.svelte';
 	import { goto } from '$app/navigation';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import userValidityCheck from '../../stores/userValidityCheck';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
@@ -120,6 +120,8 @@
 
 	// Topic Creation
 	let newTopicName = '';
+	let newTopicDescription = '';
+	let newTopicPublic;
 	let searchGroups = '';
 	let selectedGroup = '';
 	let anyApplicationCanRead;
@@ -247,6 +249,16 @@
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
 
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+			if (res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
+
 	const addTopic = async () => {
 		if (!selectedGroup) {
 			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
@@ -260,6 +272,8 @@
 		const res = await httpAdapter
 			.post(`/topics/save/`, {
 				name: newTopicName,
+				description: newTopicDescription,
+				public: newTopicPublic,
 				kind: anyApplicationCanRead ? 'B' : 'C',
 				group: selectedGroup,
 				groupName: searchGroups
@@ -308,9 +322,12 @@
 					topicName={true}
 					group={true}
 					actionAddTopic={true}
+					topicCurrentGroupPublic={$groupContext?.public ?? false}
 					on:cancel={() => (addTopicVisible = false)}
 					on:addTopic={(e) => {
 						newTopicName = e.detail.newTopicName;
+						newTopicDescription = e.detail.newTopicDescription;
+						newTopicPublic = e.detail.newTopicPublic;
 						searchGroups = e.detail.searchGroups;
 						selectedGroup = e.detail.selectedGroup;
 						anyApplicationCanRead = e.detail.anyApplicationCanRead;
@@ -651,6 +668,7 @@
 											<td
 												style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
 											>
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
 												<img
 													data-cy="delete-topic-icon"
 													src={deleteSVG}
@@ -675,6 +693,7 @@
 								{messages['topic']['empty.topics']}
 								<br />
 								{#if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin)}
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<span
 										class="link"
 										on:click={() => {
@@ -730,6 +749,7 @@
 							{$topicsTotalSize}
 						</span>
 
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagefirstSVG}
 							alt="first page"
@@ -743,6 +763,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagebackwardsSVG}
 							alt="previous page"
@@ -756,6 +777,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pageforwardSVG}
 							alt="next page"
@@ -770,6 +792,7 @@
 								}
 							}}
 						/>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={pagelastSVG}
 							alt="last page"
@@ -794,7 +817,7 @@
 
 <style>
 	table.main {
-		min-width: 34rem;
+		min-width: 43.5rem;
 		line-height: 2.2rem;
 	}
 

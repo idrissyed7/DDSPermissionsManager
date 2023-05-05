@@ -1,5 +1,5 @@
 <script>
-	import DDSLock from '../icons/ddslock.png';
+	import DDSLock from '../icons/logo.png';
 	import logoutSVG from '../icons/logout.svg';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -129,6 +129,7 @@
 							class:permission-badges={$groupContext?.id}
 							class:permission-badges-hidden={!$groupContext?.id}
 						>
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
 							<img
 								src={groupsSVG}
 								alt="Group Admin"
@@ -177,6 +178,7 @@
 								>{isGroupAdminToolip}
 							</span>
 
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
 							<img
 								src={topicsSVG}
 								alt="Topic Admin"
@@ -225,6 +227,7 @@
 								>{isTopicAdminTooltip}
 							</span>
 
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
 							<img
 								src={appsSVG}
 								alt="Application Admin"
@@ -301,6 +304,7 @@
 		{#if $isAuthenticated}
 			<div class="header-title">
 				{#if $detailView && $headerTitle !== topicsHeader && $headerTitle !== applicationsHeader && $headerTitle !== searchHeader && $page.url.pathname !== '/search/'}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						class="go-back"
 						src={pagebackwardsSVG}
@@ -314,6 +318,7 @@
 				</div>
 			</div>
 
+			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<div
 				data-cy="avatar-dropdown"
 				tabindex="0"

@@ -87,7 +87,7 @@
 	};
 
 	const loadApplicationPermissions = async (topicId) => {
-		const resApps = await httpAdapter.get(`/application_permissions/?topic=${topicId}`);
+		const resApps = await httpAdapter.get(`/application_permissions/topic/${topicId}`);
 		selectedTopicApplications = resApps.data.content;
 	};
 
@@ -147,7 +147,7 @@
 			await httpAdapter.post(`/topics/save/`, {
 				name: newTopicName,
 				id: selectedTopicId,
-				kind: selectedTopicKind ? 'B' : 'C',
+				kind: selectedTopicKind,
 				group: selectedTopicGroupId,
 				groupName: selectedTopicGroupName,
 				description: newTopicDescription,
@@ -168,7 +168,7 @@
 	const getGroupVisibilityPublic = async (groupName) => {
 		try {
 			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
-			if (res.data?.content[0]?.public) return true;
+			if (res.data.content?.length > 0 && res.data?.content[0]?.public) return true;
 			else return false;
 		} catch (err) {
 			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
@@ -326,6 +326,7 @@
 				</tr>
 			</table>
 			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedTopicGroupId && permission.isTopicAdmin)}
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
 					src={editSVG}
 					alt="edit topic"
@@ -340,7 +341,7 @@
 			<div>
 				{#each selectedTopicApplications as application}
 					<div style="display: flex; justify-content: flex-end; font-size: 0.9rem">
-						<span style="width: 10.5rem; margin: auto 0">
+						<span style="width: 10.5rem; margin: auto 0; margin-right: 0.3rem">
 							{application.applicationName} ({application.applicationGroupName})
 						</span>
 
@@ -369,6 +370,7 @@
 							</option>
 						</select>
 
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<img
 							src={deleteSVG}
 							alt="remove application"

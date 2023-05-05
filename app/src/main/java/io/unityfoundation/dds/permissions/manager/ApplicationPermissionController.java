@@ -30,10 +30,16 @@ public class ApplicationPermissionController {
         this.applicationPermissionService = applicationPermissionService;
     }
 
-    @Get("{?application,topic,publicMode")
+    @Get("/topic/{topic}")
     @ExecuteOn(TaskExecutors.IO)
-    public Page<AccessPermissionDTO> index(@Nullable Long application, @Nullable Long topic, @Nullable Boolean publicMode, @Valid Pageable pageable) {
-        return applicationPermissionService.findAll(application, topic, pageable, publicMode);
+    public Page<AccessPermissionDTO> indexIndexByTopicId(Long topic, @Valid Pageable pageable) {
+        return applicationPermissionService.indexByTopicId(topic, pageable);
+    }
+
+    @Get("/application/{application}")
+    @ExecuteOn(TaskExecutors.IO)
+    public Page<AccessPermissionDTO> indexByApplicationId(Long application, @Valid Pageable pageable) {
+        return applicationPermissionService.indexByApplicationId(application, pageable);
     }
 
     @Get("access_types")

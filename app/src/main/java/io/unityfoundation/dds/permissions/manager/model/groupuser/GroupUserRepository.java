@@ -38,7 +38,7 @@ public interface GroupUserRepository extends PageableRepository<GroupUser, Long>
     int countByPermissionsUserId(@NotNull @NonNull Long userId);
     int countByPermissionsUserIdAndPermissionsGroupIdNotEqual(@NotNull @NonNull Long userId, @NotNull @NonNull Long groupId);
 
-    Optional<GroupUser> findByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
+    boolean existsByPermissionsGroupIdAndPermissionsUserId(@NotNull @NonNull Long groupId, @NotNull @NonNull Long userId);
 
     List<GroupUser> findAllByPermissionsGroupId(@NotNull @NonNull Long groupId);
     List<User> findPermissionsUserByPermissionsGroupIdAndPermissionsUserAdminFalse(Long permissionsGroup_id);

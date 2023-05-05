@@ -7,6 +7,7 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import messages from '$lib/messages.json';
+	import errorMessages from '$lib/errorMessages.json';
 	import editSVG from '../../icons/edit.svg';
 	import deleteSVG from '../../icons/delete.svg';
 
@@ -16,16 +17,54 @@
 		selectedAppName,
 		selectedAppDescription = '',
 		selectedAppPublic,
-		appCurrentGroupPublic;
+		appCurrentGroupPublic,
+		selectedAppGroupName;
 
 	const dispatch = createEventDispatcher();
 
-	let selectedAppDescriptionSelector, checkboxSelector, isPublic;
+	// Error Handling
+	let errorMsg,
+		errorObject,
+		errorMessageVisible = false;
+
+	let selectedAppDescriptionSelector,
+		checkboxSelector,
+		isPublic = selectedAppPublic;
 
 	let editApplicationVisible = false;
 
+	const decodeError = (errorObject) => {
+		errorObject = errorObject.code.replaceAll('-', '_');
+		const cat = errorObject.substring(0, errorObject.indexOf('.'));
+		const code = errorObject.substring(errorObject.indexOf('.') + 1, errorObject.length);
+		return { category: cat, code: code };
+	};
+
+	const errorMessage = (errMsg, errObj) => {
+		errorMsg = errMsg;
+		errorObject = errObj;
+		errorMessageVisible = true;
+	};
+
+	const errorMessageClear = () => {
+		errorMessageVisible = false;
+		errorMsg = '';
+		errorObject = '';
+	};
+
+	const getGroupVisibilityPublic = async (groupName) => {
+		try {
+			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+
+			if (res.data.content?.length > 0 && res.data?.content[0]?.public) return true;
+			else return false;
+		} catch (err) {
+			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+		}
+	};
+
 	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
-		await httpAdapter
+		const res = await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
 				name: newAppName,
@@ -42,14 +81,29 @@
 					);
 				}
 			});
-
 		dispatch('reloadAllApps');
 	};
 
-	onMount(() => {
+	onMount(async () => {
 		headerTitle.set(selectedAppName);
+		if (appCurrentGroupPublic === undefined) {
+			appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
+		}
 	});
 </script>
+
+{#if errorMessageVisible}
+	<Modal
+		title={errorMsg}
+		errorMsg={true}
+		errorDescription={errorObject}
+		closeModalText={errorMessages['modal']['button.close']}
+		on:cancel={() => {
+			errorMessageVisible = false;
+			errorMessageClear();
+		}}
+	/>
+{/if}
 
 {#if editApplicationVisible}
 	<Modal
@@ -77,6 +131,7 @@
 	</span>
 	<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
 	{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<img
 			data-cy="edit-application-icon"
 			src={editSVG}
@@ -114,7 +169,7 @@
 	/>
 </div>
 
-<table style="width: 35rem; margin-top: 1rem">
+<table style="max-width: 59rem; margin-top: 1rem">
 	<thead>
 		<tr style="border-width: 0px">
 			<td>{messages['application.detail']['table.applications.column.one']}</td>
@@ -129,17 +184,18 @@
 		{#each $applicationPermission as appPermission}
 			<tbody>
 				<tr style="line-height: 2rem">
-					<td>
+					<td style="min-width: 15rem">
 						{appPermission.topicGroup}
 					</td>
-					<td>
+					<td style="min-width: 15rem">
 						{appPermission.topicName}
 					</td>
-					<td>
+					<td style="min-width: 6.5rem">
 						{appPermission.accessType === 'READ_WRITE' ? 'READ & WRITE' : appPermission.accessType}
 					</td>
 					{#if isApplicationAdmin || $isAdmin}
 						<td>
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
 							<img
 								src={deleteSVG}
 								alt="delete topic"
@@ -161,7 +217,7 @@
 		</p>
 	{/if}
 </table>
-<div style="font-size: 0.7rem; width:35rem; text-align:right;  margin-top: 1rem">
+<div style="font-size: 0.7rem; width:59rem; text-align:right;  margin-top: 1rem">
 	{#if $applicationPermission}
 		{$applicationPermission.length} of {$applicationPermission.length}
 	{:else}

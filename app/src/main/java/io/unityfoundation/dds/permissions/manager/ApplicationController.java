@@ -98,12 +98,6 @@ public class ApplicationController {
         return applicationService.generateBindToken(applicationId);
     }
 
-    @Get("/check_exists/{application}")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse checkApplicationExistence(@NotBlank @Size(min = 3) String application) {
-        return applicationService.existsByName(application);
-    }
-
     @Get("/generate_passphrase/{application}")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
