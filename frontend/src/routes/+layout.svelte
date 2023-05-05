@@ -23,7 +23,6 @@
 	import messages from '$lib/messages.json';
 	import userEmail from '../stores/userEmail';
 	import updatePermissionsForAllGroups from '../stores/updatePermissionsForAllGroups';
-	import permissionsLastUpdated from '../stores/permissionsLastUpdated';
 	import '../app.css';
 
 	export let data;
@@ -58,7 +57,6 @@
 		}
 	});
 
-	let userLoggedCookie;
 	let reminderMessageVisible = false;
 	let timer;
 
@@ -72,31 +70,11 @@
 
 	userValidityCheck.set(false);
 
-	$: if ($userValidityCheck) {
-		refreshToken();
-	}
-
 	$: if (browser && reminderMessageVisible) {
 		document.body.classList.add('modal-open');
 	} else if (browser && !reminderMessageVisible) {
 		document.body.classList.remove('modal-open');
 	}
-
-	onMount(async () => {
-		document.body.addEventListener('click', userClicked);
-		userClicked();
-		userLoggedCookie = document.cookie;
-		if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {
-			userLoggedCookie = userLoggedCookie.substring(
-				userLoggedCookie.indexOf('JWT_REFRESH_TOKEN=') + 18,
-				userLoggedCookie.length
-			);
-
-			await refreshToken_Info();
-
-			setInterval(checkValidity, userValidityInterval);
-		} else loginCompleted.set(false);
-	});
 
 	const userClicked = () => {
 		lastActivity.set(Date.now());
@@ -111,9 +89,45 @@
 		reminderMessageVisible = true;
 	};
 
-	const refreshToken_Info = async () => {
-		const res = await httpAdapter.get(`/token_info`);
-		permissionsByGroup.set(res.data.permissionsByGroup);
+	onMount(async () => {
+		document.body.addEventListener('click', userClicked);
+		userClicked();
+
+		await refreshToken_Info();
+
+		setInterval(checkValidity, userValidityInterval);
+	});
+
+	const refreshToken = async () => {
+		try {
+			await httpAdapter.get('/oauth/access_token');
+			userValidityCheck.set(false);
+
+			await refreshToken_Info();
+		} catch (err) {
+			goto('/api/logout', true);
+		}
+	};
+
+	const refreshToken_Info = async (updatedTokenInfo = '') => {
+		if (!updatedTokenInfo) {
+			const res = await httpAdapter.get(`/token_info`);
+			updatedTokenInfo = res.data;
+
+			// We only have JWT_REFRESH_TOKEN and no JWT
+			if (res.status === 200 && Object.keys(updatedTokenInfo).length === 1) {
+				refreshToken();
+				return;
+			}
+
+			if (updatedTokenInfo === '') {
+				loginCompleted.set(false);
+				return;
+			}
+		}
+
+		permissionsByGroup.set(updatedTokenInfo.permissionsByGroup);
+
 		if ($permissionsByGroup) {
 			let groupsList = [];
 			let topicsList = [];
@@ -129,36 +143,15 @@
 			applicationAdminApplications.set(applicationsList);
 		}
 
-		onLoggedIn(res.data);
+		onLoggedIn(updatedTokenInfo);
 		loginCompleted.set(true);
-		avatarName = res.data.username.slice(0, 1).toUpperCase();
-		userEmail.set(res.data.username);
-		permissionsLastUpdated.set(res.data.permissionsLastUpdated);
+		avatarName = updatedTokenInfo.username.slice(0, 1).toUpperCase();
+		userEmail.set(updatedTokenInfo.username);
 
 		updatePermissionsForAllGroups.set(true);
 
 		refreshPage.set(Date.now());
 		if ($lastRefresh === null) lastRefresh.set($refreshPage);
-	};
-
-	const refreshToken = async () => {
-		var params = new URLSearchParams();
-		params.append('grant_type', 'refresh_token');
-		params.append('refresh_token', userLoggedCookie);
-
-		const config = {
-			headers: { 'content-type': 'application/x-www-form-urlencoded' }
-		};
-
-		try {
-			// await httpAdapter.post('/oauth/access_token', params, config);
-			await httpAdapter.get('/oauth/access_token');
-			userValidityCheck.set(false);
-
-			await refreshToken_Info();
-		} catch (err) {
-			goto('/api/logout', true);
-		}
 	};
 
 	const checkValidity = async () => {
@@ -170,9 +163,14 @@
 				reminderMessage('Session Expiration', msg);
 			}
 
-			const res = await httpAdapter.get(`/group_membership/user_validity`);
+			const res = await httpAdapter.get(`/token_info`);
 
-			if (res.data.permissionsLastUpdated !== $permissionsLastUpdated) refreshToken();
+			// We don't have any of the two JWT tokens
+			if (res.status === 204) goto('/api/logout', true);
+
+			// IF- We only have a JWT_REFRESH_TOKEN; ELSE- We have both JWT tokens
+			if (res.status === 200 && Object.keys(res.data).length === 1) refreshToken();
+			else refreshToken_Info(res.data);
 		} catch (err) {
 			const oneHour = 3600000;
 
