@@ -28,45 +28,12 @@
 
 	export let data;
 
-	beforeNavigate(async ({ to, from, cancel }) => {
-		if (
-			$page.url?.pathname === '/search/' &&
-			$headerTitle !== messages['universal.search']['header.title'] &&
-			$universalSearchList === false &&
-			to?.pathname === '/search/'
-		) {
-			cancel(); // Cancel default back button behavior
-			headerTitle.set(messages['universal.search']['header.title']);
-			universalSearchList.set(true);
-		}
-
-		if ($page.url?.pathname === '/topics/' && $headerTitle !== messages['topic']['title']) {
-			if (to?.pathname === '/search') return;
-			else {
-				cancel();
-				detailView.set('backToList');
-			}
-		}
-
-		if (
-			$page.url?.pathname === '/applications/' &&
-			$headerTitle !== messages['application']['title']
-		) {
-			if (to?.pathname === '/search') return;
-			else {
-				cancel();
-				detailView.set('backToList');
-			}
-		}
-
-		if ($page.url?.pathname === '/groups/' && $headerTitle !== messages['group']['title']) {
-			if (to?.pathname === '/search') return;
-			else {
-				cancel();
-				detailView.set('backToList');
-			}
-		}
-	});
+	// beforeNavigate(async ({ to, from, cancel }) => {
+	// 	if (to.route.id !== from.route.id) {
+	// 		console.log('to.route.id !== from.route.id');
+	// 		return;
+	// 	}
+	// });
 
 	let userLoggedCookie;
 	let reminderMessageVisible = false;
@@ -94,6 +61,33 @@
 
 	onMount(async () => {
 		document.body.addEventListener('click', userClicked);
+
+		window.addEventListener('popstate', (event) => {
+			// Search Button
+			if (
+				$page.url?.pathname === '/search/' &&
+				$headerTitle !== messages['universal.search']['header.title'] &&
+				$universalSearchList === false
+			) {
+				headerTitle.set(messages['universal.search']['header.title']);
+				universalSearchList.set(true);
+			}
+
+			// Topics Button
+			if ($page.url?.pathname === '/topics/' && $headerTitle !== messages['topic']['title'])
+				detailView.set('backToList');
+
+			// Applications Button
+			if (
+				$page.url?.pathname === '/applications/' &&
+				$headerTitle !== messages['application']['title']
+			)
+				detailView.set('backToList');
+
+			if ($page.url?.pathname === '/groups/' && $headerTitle !== messages['group']['title'])
+				detailView.set('backToList');
+		});
+
 		userClicked();
 		userLoggedCookie = document.cookie;
 		if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {

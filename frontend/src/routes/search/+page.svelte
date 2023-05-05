@@ -115,6 +115,9 @@
 	};
 
 	const handleItemSelection = async (result) => {
+		// Add the new path to the browser's history
+		history.pushState({ path: '/search' }, 'Search', '/search');
+
 		switch (result.type) {
 			case 'GROUP':
 				selectedGroup = result.entity;

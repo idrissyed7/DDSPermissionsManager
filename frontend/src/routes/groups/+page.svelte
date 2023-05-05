@@ -647,6 +647,7 @@
 											on:click={() => {
 												selectedGroup = group;
 												groupDetailView = true;
+												history.pushState({ path: '/groups' }, 'My Groups', '/groups');
 											}}
 										>
 											{group.name}

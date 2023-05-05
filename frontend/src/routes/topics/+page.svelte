@@ -632,6 +632,7 @@
 												on:click={() => {
 													selectedTopicId = topic.id;
 													loadTopic();
+													history.pushState({ path: '/topics' }, 'My Topics', '/topics');
 												}}
 												on:keydown={(event) => {
 													if (event.which === returnKey) {

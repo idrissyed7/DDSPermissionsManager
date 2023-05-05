@@ -843,6 +843,11 @@
 													loadApplicationDetail(app.id, app.group);
 													headerTitle.set(app.name);
 													detailView.set(true);
+													history.pushState(
+														{ path: '/applications' },
+														'My Applications',
+														'/applications'
+													);
 												}}
 												on:keydown={(event) => {
 													if (event.which === returnKey) {
