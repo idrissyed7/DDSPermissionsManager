@@ -38,6 +38,9 @@ public class GroupMembershipApiTest {
     MockSecurityService mockSecurityService;
 
     @Inject
+    MockDPMIntrospectionController mockDPMIntrospectionController;
+
+    @Inject
     GroupRepository groupRepository;
 
     @Inject
@@ -64,6 +67,7 @@ public class GroupMembershipApiTest {
             userRepository.save(new User( "montesm@test.test", true));
             userRepository.save(new User("jjones@test.test"));
             mockSecurityService.postConstruct();
+            mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         // create
@@ -526,7 +530,7 @@ public class GroupMembershipApiTest {
 
         @Test
         public void shouldBeConsideredValid() {
-            HttpRequest request = HttpRequest.GET("/group_membership/user_validity");
+            HttpRequest request = HttpRequest.GET("/token_info");
             HttpResponse response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> mapOptional = response.getBody(Map.class);
@@ -925,6 +929,7 @@ public class GroupMembershipApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
@@ -1273,6 +1278,7 @@ public class GroupMembershipApiTest {
         @Test
         public void shouldBeConsideredValid() {
             mockSecurityService.postConstruct();
+            mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest request;
             HttpResponse response;
@@ -1299,7 +1305,7 @@ public class GroupMembershipApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -1307,6 +1313,7 @@ public class GroupMembershipApiTest {
         @Test
         public void shouldHaveGroupPermissionsUpdatedIfAdminUpdatesMembership() {
             mockSecurityService.postConstruct();
+            mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
 
             HttpRequest request;
             HttpResponse response;
@@ -1341,7 +1348,7 @@ public class GroupMembershipApiTest {
             loginAsNonAdmin();
 
             // check value is initialized and what is retrieved is value in db
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> mapOptional = response.getBody(Map.class);
@@ -1350,7 +1357,7 @@ public class GroupMembershipApiTest {
             Long permissionsLastUpdated = (Long) map.get("permissionsLastUpdated");
             assertNotNull(permissionsLastUpdated);
 
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             mapOptional = response.getBody(Map.class);
@@ -1385,7 +1392,7 @@ public class GroupMembershipApiTest {
             // check permissions as affected user and respective updated permissions
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             mapOptional = response.getBody(Map.class);
@@ -1443,7 +1450,7 @@ public class GroupMembershipApiTest {
             // check validity payload
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             Optional<Map> mapOptional = response.getBody(Map.class);
@@ -1463,7 +1470,7 @@ public class GroupMembershipApiTest {
             // check permissions as affected user and respective timestamp
             loginAsNonAdmin();
 
-            request = HttpRequest.GET("/group_membership/user_validity");
+            request = HttpRequest.GET("/token_info");
             response = blockingClient.exchange(request, Map.class);
             assertEquals(OK, response.getStatus());
             mapOptional = response.getBody(Map.class);
@@ -1495,6 +1502,7 @@ public class GroupMembershipApiTest {
                     Collections.emptyList(),
                     Map.of("isAdmin", false)
             ));
+            mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
         }
 
         @Test
@@ -1596,10 +1604,11 @@ public class GroupMembershipApiTest {
             List<Map> list = listOptional.get();
             assertTrue(list.stream().anyMatch(map -> ResponseStatusCodes.UNAUTHORIZED.equals(map.get("code"))));
         }
+
         @Test
         public void shouldBeConsideredInvalid() {
             loginAsNonAdmin();
-            HttpRequest request = HttpRequest.GET("/group_membership/user_validity");
+            HttpRequest request = HttpRequest.GET("/token_info");
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);

@@ -1,10 +1,10 @@
-package io.unityfoundation.dds.permissions.manager.security;
+package io.unityfoundation.dds.permissions.manager;
+
 
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.env.Environment;
 import io.micronaut.core.annotation.NonNull;
-import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.async.annotation.SingleResult;
 import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.http.HttpRequest;
@@ -23,24 +23,20 @@ import io.micronaut.security.endpoints.introspection.IntrospectionResponse;
 import io.micronaut.security.rules.SecurityRule;
 import io.micronaut.security.token.validator.RefreshTokenValidator;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
-import jakarta.inject.Singleton;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
-
 @Replaces(IntrospectionController.class)
-@Requires(notEnv = Environment.TEST)
+@Requires(env = Environment.TEST)
 @Secured(SecurityRule.IS_ANONYMOUS)
 @Controller("${" + IntrospectionConfigurationProperties.PREFIX + ".path:/token_info}")
-public class DPMIntrospectionController {
+public class MockDPMIntrospectionController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(IntrospectionController.class);
+    private Authentication authentication;
 
     protected final IntrospectionProcessor processor;
     private final JsonMapper jsonMapper;
@@ -48,8 +44,7 @@ public class DPMIntrospectionController {
 
     private final RefreshTokenValidator refreshTokenValidator;
 
-
-    public DPMIntrospectionController(IntrospectionProcessor processor, JsonMapper jsonMapper, GroupUserService groupUserService, RefreshTokenValidator refreshTokenValidator) {
+    public MockDPMIntrospectionController(IntrospectionProcessor processor, JsonMapper jsonMapper, GroupUserService groupUserService, RefreshTokenValidator refreshTokenValidator) {
         this.processor = processor;
         this.jsonMapper = jsonMapper;
         this.groupUserService = groupUserService;
@@ -58,8 +53,8 @@ public class DPMIntrospectionController {
 
     @Get
     @SingleResult
-    public Publisher<MutableHttpResponse<?>> echo(@Nullable Authentication authentication, @NonNull HttpRequest<?> request) {
-
+    public Publisher<MutableHttpResponse<?>> echo(@NonNull HttpRequest<?> request) {
+        Authentication authentication = this.authentication;
         if (authentication == null) {
             Optional<Cookie> jwtToken = request.getCookies().findCookie("JWT");
             Optional<Cookie> jwtRefreshTokenOptional = request.getCookies().findCookie("JWT_REFRESH_TOKEN");
@@ -93,8 +88,11 @@ public class DPMIntrospectionController {
         try {
             return new String(jsonMapper.writeValueAsBytes(introspectionResponse), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.warn("{}", e.getMessage());
             return "{\"active:\" false}";
         }
+    }
+
+    public void setAuthentication(Authentication authentication) {
+        this.authentication = authentication;
     }
 }
