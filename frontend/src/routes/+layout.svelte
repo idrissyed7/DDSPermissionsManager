@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import { beforeNavigate, goto } from '$app/navigation';
-	import { onLoggedIn, isAuthenticated, isAdmin } from '../stores/authentication';
+	import { goto } from '$app/navigation';
+	import { onLoggedIn, isAuthenticated } from '../stores/authentication';
 	import { httpAdapter } from '../appconfig';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
@@ -45,49 +45,6 @@
 	} else if (browser && !reminderMessageVisible) {
 		document.body.classList.remove('modal-open');
 	}
-
-	onMount(async () => {
-		document.body.addEventListener('click', userClicked);
-
-		window.addEventListener('popstate', (event) => {
-			// Search Button
-			if (
-				$page.url?.pathname === '/search/' &&
-				$headerTitle !== messages['universal.search']['header.title'] &&
-				$universalSearchList === false
-			) {
-				headerTitle.set(messages['universal.search']['header.title']);
-				universalSearchList.set(true);
-			}
-
-			// Topics Button
-			if ($page.url?.pathname === '/topics/' && $headerTitle !== messages['topic']['title'])
-				detailView.set('backToList');
-
-			// Applications Button
-			if (
-				$page.url?.pathname === '/applications/' &&
-				$headerTitle !== messages['application']['title']
-			)
-				detailView.set('backToList');
-
-			if ($page.url?.pathname === '/groups/' && $headerTitle !== messages['group']['title'])
-				detailView.set('backToList');
-		});
-
-		userClicked();
-		userLoggedCookie = document.cookie;
-		if (userLoggedCookie.includes('JWT_REFRESH_TOKEN')) {
-			userLoggedCookie = userLoggedCookie.substring(
-				userLoggedCookie.indexOf('JWT_REFRESH_TOKEN=') + 18,
-				userLoggedCookie.length
-			);
-
-			await refreshToken_Info();
-
-			setInterval(checkValidity, userValidityInterval);
-		} else loginCompleted.set(false);
-	});
 
 	const userClicked = () => {
 		lastActivity.set(Date.now());
