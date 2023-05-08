@@ -107,7 +107,6 @@
 		userClicked();
 
 		await refreshToken_Info();
-		console.log('logged');
 
 		setInterval(checkValidity, userValidityInterval);
 	});
