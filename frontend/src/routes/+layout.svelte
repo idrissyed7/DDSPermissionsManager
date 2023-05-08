@@ -61,6 +61,30 @@
 
 	onMount(async () => {
 		document.body.addEventListener('click', userClicked);
+
+		window.addEventListener('popstate', (event) => {
+			// Search Button
+			if (
+				$page.url?.pathname === '/search/' &&
+				$headerTitle !== messages['universal.search']['header.title'] &&
+				$universalSearchList === false
+			) {
+				headerTitle.set(messages['universal.search']['header.title']);
+				universalSearchList.set(true);
+			}
+			// Topics Button
+			if ($page.url?.pathname === '/topics/' && $headerTitle !== messages['topic']['title'])
+				detailView.set('backToList');
+			// Applications Button
+			if (
+				$page.url?.pathname === '/applications/' &&
+				$headerTitle !== messages['application']['title']
+			)
+				detailView.set('backToList');
+			if ($page.url?.pathname === '/groups/' && $headerTitle !== messages['group']['title'])
+				detailView.set('backToList');
+		});
+
 		userClicked();
 
 		await refreshToken_Info();
