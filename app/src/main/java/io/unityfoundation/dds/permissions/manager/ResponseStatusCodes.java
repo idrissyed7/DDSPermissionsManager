@@ -58,4 +58,8 @@ public interface ResponseStatusCodes {
     // application permission
     String APPLICATION_PERMISSION_NOT_FOUND = "application.permission.not-found";
     String APPLICATION_PERMISSION_ALREADY_EXISTS = "application.permission.exists";
+
+    // security
+    String JWT_REFRESH_TOKEN_PARSE_EXCEPTION = "security.jwt-refresh-token-parse-exception";
+    String INVALID_TOKEN = "security.invalid-token";
 }
