@@ -122,7 +122,7 @@
 	$: if (bindToken?.length > 0) {
 		const tokenBody = bindToken.substring(
 			bindToken.indexOf('.') + 1,
-			bindToken.lastIndexOf('.') - 1
+			bindToken.lastIndexOf('.')
 		);
 		decodeToken(tokenBody);
 	} else {
@@ -350,7 +350,6 @@
 
 	const decodeToken = async (token) => {
 		let res = atob(token);
-		res = res + '}';
 
 		try {
 			res = JSON.parse(res);
