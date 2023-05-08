@@ -39,6 +39,7 @@ public class UniversalSearchService {
         boolean searchTopics = Boolean.TRUE.equals(searchParams.getTopics());
         boolean searchApplications = Boolean.TRUE.equals(searchParams.getApplications());
         String query = searchParams.getQuery();
+        List<Long> entityIds;
 
         Pageable searchParamsPageable = searchParams.getPageable();
         int pageCount = Math.max(searchParamsPageable.getNumber(), 1);
@@ -54,7 +55,8 @@ public class UniversalSearchService {
             if (!StringUtils.hasText(query)) {
                 groups = groupRepository.findAllByMakePublicTrue(searchParamsPageable);
             } else {
-                groups = groupRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+                entityIds = groupRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                groups = groupRepository.findByMakePublicTrueAndIdIn(entityIds, searchParamsPageable);
             }
             return groups.map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic())));
         } else if (!searchGroups && searchTopics && !searchApplications) {
@@ -63,7 +65,8 @@ public class UniversalSearchService {
             if (!StringUtils.hasText(query)) {
                 topics = topicRepository.findAllByMakePublicTrue(searchParamsPageable);
             } else {
-                topics = topicRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+                entityIds = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                topics = topicRepository.findByMakePublicTrueAndIdIn(entityIds, searchParamsPageable);
             }
             return topics.map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic)));
         } else if (!searchGroups && !searchTopics && searchApplications) {
@@ -72,7 +75,8 @@ public class UniversalSearchService {
             if (!StringUtils.hasText(query)) {
                 applications = applicationRepository.findAllByMakePublicTrue(searchParamsPageable);
             } else {
-                applications = applicationRepository.findAllByNameContainsIgnoreCaseAndMakePublicTrue(query, searchParamsPageable);
+                entityIds = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                applications = applicationRepository.findByMakePublicTrueAndIdIn(entityIds, searchParamsPageable);
             }
             return applications.map(application -> new SearchResponseDTO(DPMEntity.APPLICATION, new ApplicationDTO(application)));
         } else if (searchGroups && searchTopics && !searchApplications) {
@@ -85,8 +89,10 @@ public class UniversalSearchService {
                 groupsTop50 = groupRepository.findTop50ByMakePublicTrue();
                 topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
             } else {
-                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
-                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                entityIds = groupRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
+                entityIds = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
             }
             List<SearchResponseDTO> combined = Stream.concat(
                     groupsTop50.stream().map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
@@ -105,8 +111,10 @@ public class UniversalSearchService {
                 groupsTop50 = groupRepository.findTop50ByMakePublicTrue();
                 applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
             } else {
-                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
-                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                entityIds = groupRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
+                entityIds = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
             }
             List<SearchResponseDTO> combined = Stream.concat(
                     groupsTop50.stream().map(group -> new SearchResponseDTO(DPMEntity.GROUP, new SimpleGroupDTO(group.getId(), group.getName(), group.getDescription(), group.getMakePublic()))),
@@ -124,8 +132,10 @@ public class UniversalSearchService {
                 topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
                 applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
             } else {
-                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
-                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                entityIds = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
+                entityIds = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
             }
             List<SearchResponseDTO> combined = Stream.concat(
                     topicsTop50.stream().map(topic -> new SearchResponseDTO(DPMEntity.TOPIC, new TopicDTO(topic))),
@@ -145,9 +155,12 @@ public class UniversalSearchService {
                 topicsTop50 = topicRepository.findTop50ByMakePublicTrue();
                 applicationsTop50 = applicationRepository.findTop50ByMakePublicTrue();
             } else {
-                groupsTop50 = groupRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
-                topicsTop50 = topicRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
-                applicationsTop50 = applicationRepository.findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(query);
+                entityIds = groupRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                groupsTop50 = groupRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
+                entityIds = topicRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                topicsTop50 = topicRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
+                entityIds = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+                applicationsTop50 = applicationRepository.findTop50ByMakePublicTrueAndIdIn(entityIds);
             }
 
             List<SearchResponseDTO> combined = Stream.concat(

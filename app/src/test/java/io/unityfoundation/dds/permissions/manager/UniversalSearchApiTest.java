@@ -81,10 +81,10 @@ public class UniversalSearchApiTest {
         User jjones = userRepository.save(new User("jjones@test.test"));
         User eclair = userRepository.save(new User("eclair@test.test"));
 
-        Group groupOne = groupRepository.save(new Group("GroupOne", "GroupOne", true));
-        Topic topicOne = topicRepository.save(new Topic("TopicOne", TopicKind.B, "TopicOne", true, groupOne));
-        Topic topicOne1 = topicRepository.save(new Topic("TopicOne!", TopicKind.C, "TopicOne!", true, groupOne));
-        Application applicationOne = applicationRepository.save(new Application("ApplicationOne", groupOne, "ApplicationOne", true));
+        Group groupOne = groupRepository.save(new Group("GroupOne", "GroupOnex", true));
+        Topic topicOne = topicRepository.save(new Topic("TopicOne", TopicKind.B, "TopicOne3", true, groupOne));
+        Topic topicOne1 = topicRepository.save(new Topic("TopicOne1", TopicKind.C, "TopicOneY", true, groupOne));
+        Application applicationOne = applicationRepository.save(new Application("ApplicationOnez3", groupOne, "ApplicationOne", true));
         applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, AccessType.READ_WRITE));
         groupUserRepository.save(new GroupUser(groupOne, jjones));
         groupUserRepository.save(new GroupUser(groupOne, eclair));
@@ -132,6 +132,67 @@ public class UniversalSearchApiTest {
 
         // topics and applications
         request = HttpRequest.GET("/search?query=o&topics=true&applications=true");
+        response = blockingClient.exchange(request, Page.class);
+        assertEquals(OK, response.getStatus());
+        Optional<Page> appTopicsPage = response.getBody(Page.class);
+        assertTrue(appTopicsPage.isPresent());
+        List<Map> appsTopics = appTopicsPage.get().getContent();
+        assertFalse(appsTopics.isEmpty());
+        assertTrue(appsTopics.stream().noneMatch(map -> {
+            String type = (String) map.get("type");
+            return type.equals(DPMEntity.GROUP.name());
+        }));
+
+        // all
+        request = HttpRequest.GET("/search?query=o&topics=true&applications=true&groups=true");
+        response = blockingClient.exchange(request, Page.class);
+        assertEquals(OK, response.getStatus());
+        Optional<Page> allPage = response.getBody(Page.class);
+        assertTrue(allPage.isPresent());
+        List<Map> all = allPage.get().getContent();
+        assertFalse(all.isEmpty());
+        assertTrue(all.stream().allMatch(map -> {
+            String type = (String) map.get("type");
+            return type.equals(DPMEntity.GROUP.name()) ||
+                    type.equals(DPMEntity.APPLICATION.name()) ||
+                    type.equals(DPMEntity.TOPIC.name());
+        }));
+    }
+
+
+
+    @Test
+    void canQueryDescription() {
+        HttpRequest request;
+        HttpResponse response;
+
+        request = HttpRequest.GET("/search?query=y");
+        response = blockingClient.exchange(request, Page.class);
+        assertEquals(OK, response.getStatus());
+        Optional<Page> searchPage = response.getBody(Page.class);
+        assertTrue(searchPage.isPresent());
+        List<Map> searchResults = searchPage.get().getContent();
+        assertFalse(searchResults.isEmpty());
+        assertTrue(searchResults.stream().allMatch(map -> {
+            String type = (String) map.get("type");
+            return type.equals(DPMEntity.TOPIC.name()); // topicOne1
+        }));
+
+        // group
+        request = HttpRequest.GET("/search?query=X&groups=true");
+        response = blockingClient.exchange(request, Page.class);
+        assertEquals(OK, response.getStatus());
+        Optional<Page> groupsPage = response.getBody(Page.class);
+        assertTrue(groupsPage.isPresent());
+        List<Map> groups = groupsPage.get().getContent();
+        assertFalse(groups.isEmpty());
+        assertTrue(groups.stream().allMatch(map -> {
+            String type = (String) map.get("type");
+            return type.equals(DPMEntity.GROUP.name());
+        }));
+
+        // topics and applications
+        request = HttpRequest.GET("/search?query=3&topics=true&applications=true");
         response = blockingClient.exchange(request, Page.class);
         assertEquals(OK, response.getStatus());
         Optional<Page> appTopicsPage = response.getBody(Page.class);

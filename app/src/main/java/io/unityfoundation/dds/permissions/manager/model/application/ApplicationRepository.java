@@ -29,11 +29,13 @@ public interface ApplicationRepository extends PageableRepository<Application, L
 
     List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
 
-    Page<Application> findAllByNameContainsIgnoreCaseAndMakePublicTrue(String query, Pageable pageable);
-
-    List<Application> findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(String query);
-
     Page<Application> findAllByMakePublicTrue(Pageable pageable);
 
     List<Application> findTop50ByMakePublicTrue();
+
+    List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String application, String applicationDescription);
+
+    Page<Application> findByMakePublicTrueAndIdIn(List<Long> entityIds, Pageable pageable);
+
+    List<Application> findTop50ByMakePublicTrueAndIdIn(List<Long> entityIds);
 }

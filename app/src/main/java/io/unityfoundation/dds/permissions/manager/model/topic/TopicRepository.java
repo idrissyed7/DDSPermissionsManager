@@ -27,11 +27,13 @@ public interface TopicRepository extends PageableRepository<Topic, Long> {
 
     List<Long> findIdByPermissionsGroupIdIn(List<Long> groups);
 
-    Page<Topic> findAllByNameContainsIgnoreCaseAndMakePublicTrue(String query, Pageable pageable);
-
-    List<Topic> findTop50ByNameContainsIgnoreCaseAndMakePublicTrue(String query);
-
     Page<Topic> findAllByMakePublicTrue(Pageable pageable);
 
     List<Topic> findTop50ByMakePublicTrue();
+
+    List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String topic, String topicDescription);
+
+    Page<Topic> findByMakePublicTrueAndIdIn(List<Long> entityIds, Pageable pageable);
+
+    List<Topic> findTop50ByMakePublicTrueAndIdIn(List<Long> secondEntityIds);
 }
