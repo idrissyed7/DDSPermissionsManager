@@ -528,6 +528,33 @@ public class ApplicationPermissionApiTest {
             assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
         }
 
+        @Test
+        public void canViewAllApplicationPermissionsByApplicationIfPublicTopicPrivateGroup() {
+            HttpResponse response;
+            HttpRequest request;
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + privateApplication.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create permission
+            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            request = HttpRequest.GET("/application_permissions/application/"+privateApplication.getId());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+        }
+
         private void addReadWritePermission(Long applicationId, Long topicId) {
             addPermission(applicationId, topicId, AccessType.READ_WRITE);
         }
