@@ -32,8 +32,7 @@ public class Group {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(columnDefinition="BOOLEAN DEFAULT false")
-    private Boolean makePublic;
+    private boolean makePublic = false;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "permissionsGroup")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -121,11 +120,11 @@ public class Group {
         this.description = description;
     }
 
-    public Boolean getMakePublic() {
+    public boolean getMakePublic() {
         return makePublic;
     }
 
-    public void setMakePublic(Boolean isPublic) {
+    public void setMakePublic(boolean isPublic) {
         makePublic = isPublic;
     }
 }
