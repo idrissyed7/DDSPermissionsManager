@@ -92,6 +92,9 @@ public class ApplicationPermissionService {
     }
 
     private boolean determinePublicMode(boolean isTopic, Long entityId) {
+        if (securityUtil.isCurrentUserAdmin()) {
+            return false;
+        }
 
         if (isTopic) {
             Optional<Topic> topicOptional = topicRepository.findById(entityId);

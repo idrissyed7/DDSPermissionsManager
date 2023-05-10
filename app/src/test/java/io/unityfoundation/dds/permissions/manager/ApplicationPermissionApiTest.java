@@ -95,6 +95,10 @@ public class ApplicationPermissionApiTest {
         private Topic testTopic;
         private Application applicationOne;
 
+        private Group publicGroup;
+        private Application privateApplication;
+        private Topic publicTopic;
+
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
@@ -106,6 +110,10 @@ public class ApplicationPermissionApiTest {
             testGroup = groupRepository.save(new Group("TestGroup"));
             testTopic = topicRepository.save(new Topic("TestTopic", TopicKind.B, testGroup));
             applicationOne = applicationRepository.save(new Application("ApplicationOne", testGroup));
+
+            publicGroup = groupRepository.save(new Group("PublicGroup", "Description", true));
+            publicTopic = topicRepository.save(new Topic("TestTopic", TopicKind.B, "topic desc", true, publicGroup));
+            privateApplication = applicationRepository.save(new Application("ApplicationOne", publicGroup, "app desc", false));
         }
 
         @Test
@@ -486,6 +494,60 @@ public class ApplicationPermissionApiTest {
             assertTrue(permissionOptional.isPresent());
 
             request = HttpRequest.GET("/application_permissions/topic/"+testTopic.getId());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+        }
+
+        @Test
+        public void canViewAllApplicationPermissionsByTopicIfPublicTopicPrivateGroup() {
+            HttpResponse response;
+            HttpRequest request;
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + privateApplication.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create permission
+            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            request = HttpRequest.GET("/application_permissions/topic/"+publicTopic.getId());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+        }
+
+        @Test
+        public void canViewAllApplicationPermissionsByApplicationIfPublicTopicPrivateGroup() {
+            HttpResponse response;
+            HttpRequest request;
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + privateApplication.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            // create permission
+            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            request = HttpRequest.GET("/application_permissions/application/"+privateApplication.getId());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
             List<Map> content = (List<Map>) responseMap.get("content");
