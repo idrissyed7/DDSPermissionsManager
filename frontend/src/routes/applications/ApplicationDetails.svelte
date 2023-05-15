@@ -52,6 +52,14 @@
 		errorObject = '';
 	};
 
+	const getAppPermissions = async () => {
+		const appPermissionData = await httpAdapter.get(
+			`/application_permissions/application/${selectedAppId}`
+		);
+
+		applicationPermission.set(appPermissionData.data.content);
+	};
+
 	const getGroupVisibilityPublic = async (groupName) => {
 		try {
 			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
@@ -86,6 +94,7 @@
 
 	onMount(async () => {
 		headerTitle.set(selectedAppName);
+		await getAppPermissions();
 		if (appCurrentGroupPublic === undefined) {
 			appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 		}
