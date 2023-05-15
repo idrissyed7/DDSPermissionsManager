@@ -765,6 +765,7 @@
 												}
 											}}
 										>
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
 											<img
 												data-cy="edit-users-icon"
 												src={editSVG}
@@ -778,6 +779,7 @@
 										<td
 											style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
 										>
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
 											<img
 												data-cy="delete-users-icon"
 												src={deleteSVG}
@@ -808,6 +810,7 @@
 				{:else if $groupContext && ($permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isGroupAdmin === true) || $isAdmin)}
 					<p>
 						{messages['user']['empty.users']} <br />
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<span
 							class="link"
 							on:click={() => {
@@ -853,6 +856,7 @@
 							$groupMembershipsTotalSize
 						)} of {$groupMembershipsTotalSize}
 					</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagefirstSVG}
 						alt="first page"
@@ -867,6 +871,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagebackwardsSVG}
 						alt="previous page"
@@ -880,6 +885,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pageforwardSVG}
 						alt="next page"
@@ -894,6 +900,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagelastSVG}
 						alt="last page"
