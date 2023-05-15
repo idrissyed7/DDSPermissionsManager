@@ -231,7 +231,7 @@
 		<td style="border: none" />
 		<td style="border: none" />
 		<td style="border: none" />
-		<td style="border: none">
+		<td style="border: none; min-width: 3.5rem; text-align:right">
 			{#if $applicationPermission}
 				{$applicationPermission.length} of {$applicationPermission.length}
 			{:else}
