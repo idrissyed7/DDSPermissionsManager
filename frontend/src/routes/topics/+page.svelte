@@ -191,7 +191,14 @@
 	});
 
 	const searchTopics = async (searchStr) => {
-		const res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
+		let res;
+
+		if ($groupContext?.id)
+			res = await httpAdapter.get(
+				`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}&group=${$groupContext.id}`
+			);
+		else res = await httpAdapter.get(`/topics?page=0&size=${topicsPerPage}&filter=${searchStr}`);
+
 		if (res.data.content) {
 			topicsA.set(res.data.content);
 		} else {

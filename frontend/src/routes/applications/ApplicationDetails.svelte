@@ -52,6 +52,14 @@
 		errorObject = '';
 	};
 
+	const getAppPermissions = async () => {
+		const appPermissionData = await httpAdapter.get(
+			`/application_permissions/application/${selectedAppId}`
+		);
+
+		applicationPermission.set(appPermissionData.data.content);
+	};
+
 	const getGroupVisibilityPublic = async (groupName) => {
 		try {
 			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
@@ -86,6 +94,7 @@
 
 	onMount(async () => {
 		headerTitle.set(selectedAppName);
+		await getAppPermissions();
 		if (appCurrentGroupPublic === undefined) {
 			appCurrentGroupPublic = await getGroupVisibilityPublic(selectedAppGroupName);
 		}
@@ -125,53 +134,55 @@
 	/>
 {/if}
 
-<div style="margin-top: 2.1rem; width:100%">
-	<span style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 9.2rem">
-		{messages['application.detail']['row.one']}
-	</span>
-	<span style="font-size: 1.3rem; font-weight: 500">{selectedAppName} </span>
-	{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<img
-			data-cy="edit-application-icon"
-			src={editSVG}
-			alt="edit application"
-			width="18rem"
-			style="margin-left: 7rem; cursor: pointer"
-			on:click={async () => {
-				editApplicationVisible = true;
-			}}
-		/>
-	{/if}
-</div>
-<div style="margin-top: 0.5rem; width:fit-content">
-	<span
-		style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
-	>
-		{messages['application.detail']['row.two']}
-	</span>
-	<span
-		style="font-weight: 400; font-size: 1.1rem; margin-left: 2rem"
-		bind:this={selectedAppDescriptionSelector}
-		>{selectedAppDescription ? selectedAppDescription : '-'}</span
-	>
-</div>
-<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
-	<span style="font-weight: 300; vertical-align: 1rem">
-		{messages['application.detail']['row.three']}
-	</span>
-	<input
-		type="checkbox"
-		style="vertical-align: 1rem; margin-left: 6rem; width: 15px; height: 15px"
-		bind:checked={isPublic}
-		on:change={() => (isPublic = selectedAppPublic)}
-		bind:this={checkboxSelector}
-	/>
-</div>
+<table>
+	<tr>
+		<td style="font-weight: 300; width: 11.5rem">
+			{messages['application.detail']['row.one']}
+		</td>
 
-<table style="max-width: 59rem; margin-top: 1rem">
+		<td style="font-weight: 500">{selectedAppName} </td>
+		{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<img
+				data-cy="edit-application-icon"
+				src={editSVG}
+				alt="edit application"
+				width="18rem"
+				style="margin-left: 1rem; cursor: pointer"
+				on:click={async () => {
+					editApplicationVisible = true;
+				}}
+			/>
+		{/if}
+	</tr>
+	<tr>
+		<td style="font-weight: 300; margin-right: 1rem; width: 6.2rem;">
+			{messages['application.detail']['row.two']}
+		</td>
+
+		<td style="font-weight: 400; margin-left: 2rem" bind:this={selectedAppDescriptionSelector}
+			>{selectedAppDescription ? selectedAppDescription : '-'}</td
+		>
+	</tr>
+	<tr>
+		<td style="font-weight: 300">
+			{messages['application.detail']['row.three']}
+		</td>
+		<td>
+			<input
+				type="checkbox"
+				style="width: 15px; height: 15px"
+				bind:checked={isPublic}
+				on:change={() => (isPublic = selectedAppPublic)}
+				bind:this={checkboxSelector}
+			/>
+		</td>
+	</tr>
+</table>
+
+<table style="max-width: 59rem; margin-top: 3.5rem">
 	<thead>
-		<tr style="border-width: 0px">
+		<tr>
 			<td>{messages['application.detail']['table.applications.column.one']}</td>
 			<td>{messages['application.detail']['table.applications.column.two']}</td>
 			<td>{messages['application.detail']['table.applications.column.three']}</td>
@@ -187,7 +198,7 @@
 					<td style="min-width: 15rem">
 						{appPermission.topicGroup}
 					</td>
-					<td style="min-width: 15rem">
+					<td style="min-width: 20rem">
 						{appPermission.topicName}
 					</td>
 					<td style="min-width: 6.5rem">
@@ -216,11 +227,22 @@
 			{messages['application.detail']['empty.topics.associated']}
 		</p>
 	{/if}
+	<tr style="font-size: 0.7rem; text-align: right">
+		<td style="border: none" />
+		<td style="border: none" />
+		<td style="border: none" />
+		<td style="border: none; min-width: 3.5rem; text-align:right">
+			{#if $applicationPermission}
+				{$applicationPermission.length} of {$applicationPermission.length}
+			{:else}
+				0 of 0
+			{/if}
+		</td>
+	</tr>
 </table>
-<div style="font-size: 0.7rem; width:59rem; text-align:right;  margin-top: 1rem">
-	{#if $applicationPermission}
-		{$applicationPermission.length} of {$applicationPermission.length}
-	{:else}
-		0 of 0
-	{/if}
-</div>
+
+<style>
+	td {
+		height: 2.2rem;
+	}
+</style>

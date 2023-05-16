@@ -65,48 +65,56 @@
 				on:cancel={() => (editGroupVisible = false)}
 			/>
 		{/if}
-		<div style="min-width: 43.5rem">
-			<div style="width: fit-content">
-				<div style="margin-top: 1.7rem">
-					<span style="font-size: 1.1rem; font-weight: 300; display: inline-flex; width: 7.2rem">
-						{messages['group.detail']['row.one']}
-					</span>
-					<span style="font-size: 1.3rem; font-weight: 500">{group.name} </span>
 
-					{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === group.id && permission.isGroupAdmin)}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<img
-							src={editSVG}
-							alt="edit group"
-							width="18rem"
-							style="margin-left: 1.5rem; float: right; cursor: pointer"
-							on:click={() => (editGroupVisible = true)}
-						/>
-					{/if}
-				</div>
-				<div style="margin-top: 0.5rem; width:fit-content">
-					<span
-						style="font-weight: 300; font-size: 1.1rem; margin-right: 1rem; display: inline-flex; width: 6.2rem;"
-					>
-						{messages['group.detail']['row.two']}
-					</span>
-					<span style="font-weight: 400; font-size: 1.1rem" bind:this={descriptionSelector}
-						>{group.description ? group.description : '-'}</span
-					>
-				</div>
-				<div style="font-size: 1.1rem; margin-top: 0.5rem; width: fit-content">
-					<span style="font-weight: 300; vertical-align: 1rem">
-						{messages['group.detail']['row.three']}
-					</span>
+		<table style="margin-top: 1.6rem">
+			<tr>
+				<td style="font-weight: 300; width: 10.2rem">
+					{messages['group.detail']['row.one']}
+				</td>
+
+				<td style="font-weight: 500">{group.name} </td>
+
+				{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === group.id && permission.isGroupAdmin)}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<img
+						src={editSVG}
+						alt="edit group"
+						width="18rem"
+						style="margin-left: 1.5rem; float: right; cursor: pointer"
+						on:click={() => (editGroupVisible = true)}
+					/>
+				{/if}
+			</tr>
+
+			<tr>
+				<td style="font-weight: 300; width: 6.2rem">
+					{messages['group.detail']['row.two']}
+				</td>
+				<td style="font-weight: 400; white-space: pre" bind:this={descriptionSelector}
+					>{group.description ? group.description : ` -`}
+				</td>
+			</tr>
+
+			<tr>
+				<td style="font-weight: 300">
+					{messages['group.detail']['row.three']}
+				</td>
+				<td>
 					<input
 						type="checkbox"
-						style="vertical-align: 1rem; margin-left: 4.1rem; width: 15px; height: 15px"
+						style="width: 15px; height: 15px"
 						bind:checked={isPublic}
 						on:change={() => (isPublic = group.public)}
 					/>
-				</div>
-				<p style="margin-top: 8rem">{messages['footer']['message']}</p>
-			</div>
-		</div>
+				</td>
+			</tr>
+		</table>
 	</div>
+	<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 {/if}
+
+<style>
+	td {
+		height: 2.2rem;
+	}
+</style>

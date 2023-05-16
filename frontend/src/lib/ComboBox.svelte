@@ -72,6 +72,8 @@
 		}
 	}
 
+	$: console.log('$groupContext', $groupContext);
+
 	onMount(async () => {
 		// Changes the text in the Modal's group field placeholder
 		if (isGroupContext)
@@ -221,6 +223,7 @@
 		aria-haspopup="listbox"
 	>
 		<div style="display:inline-flex">
+			<!-- svelte-ignore a11y-role-has-required-aria-props -->
 			<input
 				data-cy="group-input"
 				placeholder={messages['group.context']['group.input.placeholder']}
