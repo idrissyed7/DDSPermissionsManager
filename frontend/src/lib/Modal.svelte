@@ -120,10 +120,7 @@
 
 	// Bind Token Decode
 	$: if (bindToken?.length > 0) {
-		const tokenBody = bindToken.substring(
-			bindToken.indexOf('.') + 1,
-			bindToken.lastIndexOf('.')
-		);
+		const tokenBody = bindToken.substring(bindToken.indexOf('.') + 1, bindToken.lastIndexOf('.'));
 		decodeToken(tokenBody);
 	} else {
 		errorMessageAssociation.set([]);
@@ -365,8 +362,10 @@
 	};
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="modal-backdrop" on:click={closeModal} transition:fade />
 <div class="modal" transition:fly={{ y: 300 }}>
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<img src={closeSVG} alt="close" class="close-button" on:click={closeModal} />
 	<h2 class:condensed={title?.length > 25}>{title}</h2>
 	<hr />
@@ -380,6 +379,9 @@
 		{/if}
 
 		{#if email}
+			{#if !actionEditUser}
+				<div style="float: right; font-size: 0.75rem; margin-bottom: -0.1rem">*</div>
+			{/if}
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				data-cy="email-input"
@@ -430,6 +432,7 @@
 		{/if}
 
 		{#if topicName}
+			<div style="float: right; font-size: 0.75rem; margin-bottom: -0.1rem">*</div>
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				data-cy="topic-name"
@@ -477,6 +480,7 @@
 		{/if}
 
 		{#if applicationName}
+			<div style="float: right; font-size: 0.75rem; margin-bottom: -0.1rem">*</div>
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				data-cy="application-name"
@@ -524,6 +528,7 @@
 		{/if}
 
 		{#if groupNewName}
+			<div style="float: right; font-size: 0.75rem; margin-bottom: -0.1rem">*</div>
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				data-cy="group-new-name"
@@ -620,6 +625,7 @@
 
 		{#if actionEditApplication || actionAddApplication}
 			{#if actionEditApplication}
+				<div style="float: right; font-size: 0.75rem; margin-bottom: -0.1rem">*</div>
 				<!-- svelte-ignore a11y-autofocus -->
 				<input
 					autofocus
@@ -721,6 +727,12 @@
 					}}
 				/>
 			</div>
+
+			{#if !actionAddApplication}
+				<span style="font-size:0.7rem; float: right">
+					{messages['modal']['required.field.message.three']}
+				</span>
+			{/if}
 		{/if}
 
 		{#if actionEditTopic || actionAddTopic}
@@ -1004,7 +1016,7 @@
 
 	{#if actionAddApplication}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
-			>{messages['modal']['required.field.message.two']}</span
+			>{messages['modal']['required.field.message.three']}</span
 		>
 		<hr />
 		<button
@@ -1125,6 +1137,9 @@
 	{/if}
 
 	{#if actionEditGroup}
+		<div style="text-align: right; margin-right: 2rem; font-size:0.7rem">
+			{messages['modal']['required.field.message.three']}
+		</div>
 		<hr style="z-index: 1" />
 		<button
 			data-cy="edit-group"
