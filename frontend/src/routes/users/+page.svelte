@@ -414,6 +414,7 @@
 										</td>
 										<td style="margin-left: 0.3rem">{user.email}</td>
 										<td style="cursor: pointer; text-align: right; padding-right: 0.25rem">
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
 											<img
 												data-cy="delete-super-users-icon"
 												src={deleteSVG}
@@ -460,6 +461,7 @@
 						- {Math.min(superUsersPerPage * (superUsersCurrentPage + 1), $superUsersTotalSize)} of
 						{$superUsersTotalSize}
 					</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagefirstSVG}
 						alt="first page"
@@ -473,6 +475,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagebackwardsSVG}
 						alt="previous page"
@@ -486,6 +489,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pageforwardSVG}
 						alt="next page"
@@ -500,6 +504,7 @@
 							}
 						}}
 					/>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={pagelastSVG}
 						alt="last page"

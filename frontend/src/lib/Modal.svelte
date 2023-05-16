@@ -1,7 +1,7 @@
 <script>
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { httpAdapter } from '../appconfig';
 	import closeSVG from '../icons/close.svg';
 	import groupnotpublicSVG from '../icons/groupnotpublic.svg';
@@ -10,6 +10,7 @@
 	import messages from '$lib/messages.json';
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
 	import groupContext from '../stores/groupContext';
+	import modalOpen from '../stores/modalOpen';
 	import tooltips from '$lib/tooltips.json';
 
 	export let title;
@@ -120,20 +121,20 @@
 
 	// Bind Token Decode
 	$: if (bindToken?.length > 0) {
-		const tokenBody = bindToken.substring(
-			bindToken.indexOf('.') + 1,
-			bindToken.lastIndexOf('.')
-		);
+		const tokenBody = bindToken.substring(bindToken.indexOf('.') + 1, bindToken.lastIndexOf('.'));
 		decodeToken(tokenBody);
 	} else {
 		errorMessageAssociation.set([]);
 	}
 
 	onMount(() => {
+		modalOpen.set(true);
 		if ($groupContext) selectedGroup = $groupContext.id;
 		topicCurrentPublicInitial = topicCurrentPublic;
 		appCurrentPublicInitial = appCurrentPublic;
 	});
+
+	onDestroy(() => modalOpen.set(false));
 
 	const validateEmail = (input) => {
 		if (input.match(validRegex)) invalidEmail = false;

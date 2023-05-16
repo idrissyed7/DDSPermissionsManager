@@ -72,8 +72,6 @@
 		}
 	}
 
-	$: console.log('$groupContext', $groupContext);
-
 	onMount(async () => {
 		// Changes the text in the Modal's group field placeholder
 		if (isGroupContext)

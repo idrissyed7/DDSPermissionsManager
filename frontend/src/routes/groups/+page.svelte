@@ -32,6 +32,7 @@
 	import updatePermissionsForAllGroups from '../../stores/updatePermissionsForAllGroups';
 	import permissionsForAllGroups from '../../stores/permissionsForAllGroups';
 	import createItem from '../../stores/createItem';
+	import modalOpen from '../../stores/modalOpen';
 	import GroupDetails from './GroupDetails.svelte';
 
 	export let data;
@@ -136,9 +137,17 @@
 
 	$: if ($updatePermissionsForAllGroups) {
 		getPermissionsForAllGroups();
-		promise = reloadAllGroups();
+		refreshGroups();
 		updatePermissionsForAllGroups.set(false);
 	}
+
+	const refreshGroups = () => {
+		if (!$modalOpen) {
+			promise = reloadAllGroups();
+		} else {
+			setTimeout(refreshGroups, 5000);
+		}
+	};
 
 	const reloadAllGroups = async (page = 0) => {
 		try {
