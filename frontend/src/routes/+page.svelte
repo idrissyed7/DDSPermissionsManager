@@ -1,11 +1,10 @@
 <script>
 	import { isAuthenticated } from '../stores/authentication';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { httpAdapter } from '../appconfig';
 	import wavesSVG from '../icons/waves.svg';
 	import googleSVG from '../icons/google.svg';
-	import loginCompleted from '../stores/loginCompleted';
 	import groups from '../stores/groups';
 	import groupsTotalPages from '../stores/groupsTotalPages';
 	import groupsTotalSize from '../stores/groupsTotalSize';
@@ -41,7 +40,7 @@
 	<meta name="description" content="Permissions Manager" />
 </svelte:head>
 
-{#if $isAuthenticated === false && $loginCompleted !== null}
+{#if $isAuthenticated === false}
 	<center>
 		<h1>{messages['login']['header']}</h1>
 	</center>
@@ -58,6 +57,7 @@
 		>
 		<hr />
 		<center>
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="login-button" on:click={() => goto(`${URL_PREFIX}/oauth/login/google`, true)}>
 				<img
 					src={googleSVG}

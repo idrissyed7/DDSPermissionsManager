@@ -18,17 +18,17 @@
 	import headerTitle from '../stores/headerTitle';
 	import Navigation from '$lib//Navigation.svelte';
 	import userValidityCheck from '../stores/userValidityCheck';
-	import loginCompleted from '../stores/loginCompleted';
 	import lastActivity from '../stores/lastActivity';
-	import messages from '$lib/messages.json';
 	import userEmail from '../stores/userEmail';
+	import modalOpen from '../stores/modalOpen';
 	import updatePermissionsForAllGroups from '../stores/updatePermissionsForAllGroups';
+	import messages from '$lib/messages.json';
 	import '../app.css';
 
 	export let data;
 
 	let reminderMessageVisible = false;
-	let timer;
+	let timer, timeout;
 
 	// Extend Session
 	let reminderMsg, reminderObject;
@@ -115,7 +115,6 @@
 			}
 
 			if (updatedTokenInfo === '') {
-				loginCompleted.set(false);
 				return;
 			}
 		}
@@ -138,14 +137,22 @@
 		}
 
 		onLoggedIn(updatedTokenInfo);
-		loginCompleted.set(true);
 		avatarName = updatedTokenInfo.username.slice(0, 1).toUpperCase();
 		userEmail.set(updatedTokenInfo.username);
 
 		updatePermissionsForAllGroups.set(true);
 
-		refreshPage.set(Date.now());
-		if ($lastRefresh === null) lastRefresh.set($refreshPage);
+		refreshPageFn();
+	};
+
+	const refreshPageFn = () => {
+		if ($modalOpen === false) {
+			clearTimeout(timeout);
+			refreshPage.set(Date.now());
+			if ($lastRefresh === null) lastRefresh.set($refreshPage);
+		} else {
+			timeout = setTimeout(refreshPageFn, 5000);
+		}
 	};
 
 	const checkValidity = async () => {
