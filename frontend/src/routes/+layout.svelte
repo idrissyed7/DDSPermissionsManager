@@ -33,8 +33,7 @@
 	// Extend Session
 	let reminderMsg, reminderObject;
 
-	const userValidityInterval = 10000; // 3 minutes
-	// const userValidityInterval = 180000; // 3 minutes
+	const userValidityInterval = 180000; // 3 minutes
 	const sixtyMin = 3600000;
 
 	let avatarName;
