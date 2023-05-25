@@ -1,6 +1,5 @@
 package io.unityfoundation.dds.permissions.manager;
 
-import freemarker.template.TemplateException;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
@@ -136,7 +135,7 @@ public class ApplicationController {
     @Get("/permissions.xml.p7s{?nonce}")
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException, TemplateException {
+    public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException {
         checkNonceValidFormat(nonce);
         return applicationService.getPermissionsFile(nonce);
     }

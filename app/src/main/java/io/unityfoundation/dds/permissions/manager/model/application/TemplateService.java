@@ -1,29 +1,29 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
-import io.unityfoundation.dds.permissions.manager.FreemarkerConfigurationFactory;
+import io.micronaut.core.io.Writable;
+import io.micronaut.views.ViewsRenderer;
 import jakarta.inject.Singleton;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Map;
 
 @Singleton
 public class TemplateService {
-    private final FreemarkerConfigurationFactory freemarkerConfiguration;
 
-    public TemplateService(FreemarkerConfigurationFactory freemarkerConfiguration) {
-        this.freemarkerConfiguration = freemarkerConfiguration;
+    private final ViewsRenderer viewsRenderer;
+
+    public TemplateService(ViewsRenderer viewsRenderer) {
+        this.viewsRenderer = viewsRenderer;
     }
 
-    public String mergeDataAndTemplate(Map<String, Object> dataModel) throws IOException, TemplateException {
-        Template template = freemarkerConfiguration.getConfiguration().getTemplate("permissions.ftlx");
+    public String mergeDataAndTemplate(Map<String, Object> dataModel) throws IOException {
+        Writable permissions = viewsRenderer.render("permissions", dataModel, null);
 
         String out;
-        try(StringWriter stringWriter = new StringWriter()) {
-            template.process(dataModel, stringWriter);
-            out = stringWriter.toString();
+        try(ByteArrayOutputStream outputStream = new ByteArrayOutputStream();) {
+            permissions.writeTo(outputStream);
+            out = outputStream.toString();
         }
 
         return out;

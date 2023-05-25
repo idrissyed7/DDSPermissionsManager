@@ -8,6 +8,11 @@ netty:
       max-order: 3
 ---
 micronaut:
+  views:
+    freemarker:
+      default-extension: "ftlx"
+---
+micronaut:
   server:
     cors:
       enabled: true
