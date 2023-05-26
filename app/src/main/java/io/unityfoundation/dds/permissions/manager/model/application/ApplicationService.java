@@ -1,7 +1,6 @@
 package io.unityfoundation.dds.permissions.manager.model.application;
 
 import com.nimbusds.jwt.JWTClaimsSet;
-import freemarker.template.TemplateException;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
@@ -439,7 +438,7 @@ public class ApplicationService {
         return HttpResponse.notFound();
     }
 
-    public HttpResponse<?> getPermissionsFile(String nonce) throws IOException, GeneralSecurityException, MessagingException, SMIMEException, OperatorCreationException, TemplateException {
+    public HttpResponse<?> getPermissionsFile(String nonce) throws IOException, GeneralSecurityException, MessagingException, SMIMEException, OperatorCreationException {
         Optional<String> permissionsCAKey = applicationSecretsClient.getPermissionsCAKey();
         Optional<String> permissionsCACert = applicationSecretsClient.getPermissionsCACert();
         Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
@@ -519,7 +518,7 @@ public class ApplicationService {
         return signedAttrs;
     }
 
-    private String generatePermissionsXml(Application application, String nonce) throws TemplateException, IOException {
+    private String generatePermissionsXml(Application application, String nonce) throws IOException {
         Map<String, Object> dataModel = buildTemplateDataModel(nonce, application);
 
         return templateService.mergeDataAndTemplate(dataModel);
