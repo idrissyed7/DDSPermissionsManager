@@ -30,7 +30,6 @@
 	$: if ($detailView === 'backToList') dispatch('groupList');
 
 	const reloadAllGroups = async (page = 0) => {
-		console.log('Reloading all groups');
 		try {
 			const res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
 
