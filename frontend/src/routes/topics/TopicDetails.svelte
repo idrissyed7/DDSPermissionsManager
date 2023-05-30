@@ -50,7 +50,6 @@
 
 	// Error Handling
 	let errorMsg, errorObject;
-	let errorMessageApplication = '';
 
 	// Bind Token
 	let bindToken;
@@ -240,26 +239,20 @@
 				<tr>
 					<td>{messages['topic.detail']['row.one']}</td>
 					<td>{selectedTopicName} ({selectedTopicCanonicalName})</td>
-					<td />
-					<td />
 				</tr>
 				<td>{messages['topic.detail']['row.two']}</td>
-				<td>
+				<td style="width: fit-content">
 					{#if selectedTopicDescription}
 						{selectedTopicDescription}
 					{:else}
 						-
 					{/if}
 				</td>
-				<td />
-				<td />
 				<tr />
 
 				<tr>
 					<td>{messages['topic.detail']['row.three']}</td>
 					<td>{selectedTopicGroupName}</td>
-					<td />
-					<td />
 				</tr>
 
 				<tr>
@@ -271,8 +264,6 @@
 							{messages['topic.detail']['any.application.can.read.no']}
 						{/if}
 					</td>
-					<td />
-					<td />
 				</tr>
 
 				<tr>
@@ -285,46 +276,9 @@
 							on:change={() => (isPublic = selectedTopicPublic)}
 						/>
 					</td>
-					<td />
-					<td />
-				</tr>
-
-				<tr style="border-width: 0px;">
-					<td style="border-bottom-color: transparent;">
-						<span style="margin-right: 1rem">{messages['topic.detail']['row.six']}</span>
-					</td>
-
-					<td style="border-bottom-color: transparent;">
-						<div style="margin-left: 7.4rem">
-							<span class="error-message" class:hidden={errorMessageApplication?.length === 0}>
-								{errorMessageApplication}
-							</span>
-						</div>
-					</td>
-					<td style="border-bottom-color: transparent" />
-
-					<td style="border-bottom-color: transparent">
-						<button
-							data-cy="add-application-button"
-							style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem"
-							class="button-blue"
-							class:button-disabled={!$isAdmin && !isTopicAdmin}
-							disabled={!$isAdmin && !isTopicAdmin}
-							on:click={() => (associateApplicationVisible = true)}
-						>
-							<img
-								src={addSVG}
-								alt="add application"
-								height="20rem"
-								style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-							/>
-							<span style="vertical-align: middle">
-								{messages['topic.detail']['add.application']}
-							</span>
-						</button>
-					</td>
 				</tr>
 			</table>
+
 			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedTopicGroupId && permission.isTopicAdmin)}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<img
@@ -337,64 +291,90 @@
 			{/if}
 		</div>
 
-		{#if selectedTopicApplications}
-			<div>
-				{#each selectedTopicApplications as application}
-					<div style="display: flex; justify-content: flex-end; font-size: 0.9rem">
-						<span style="width: 10.5rem; margin: auto 0; margin-right: 0.3rem">
-							{application.applicationName} ({application.applicationGroupName})
-						</span>
+		<div
+			style="display: flex; padding-left: 0.3rem; padding-top: 0.25rem; padding-bottom: 0.25rem; justify-content: space-between"
+		>
+			{messages['topic.detail']['row.six']}
 
-						<select
-							style="width: 8rem; height: 2rem; margin: auto 0"
-							bind:value={application.accessType}
-							on:change={() => {
-								updateTopicApplicationAssociation(
-									application.id,
-									application.accessType,
-									application.topicId
-								);
-							}}
-						>
-							<option value="" disabled selected>
-								{messages['topic.detail']['selected.applications.access.type']}
-							</option>
-							<option value="READ">
-								{messages['topic.detail']['selected.applications.read']}
-							</option>
-							<option value="WRITE">
-								{messages['topic.detail']['selected.applications.write']}
-							</option>
-							<option value="READ_WRITE">
-								{messages['topic.detail']['selected.applications.read.write']}
-							</option>
-						</select>
+			<button
+				data-cy="add-application-button"
+				style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem; margin-right: 3rem"
+				class="button-blue"
+				class:button-disabled={!$isAdmin && !isTopicAdmin}
+				disabled={!$isAdmin && !isTopicAdmin}
+				on:click={() => (associateApplicationVisible = true)}
+			>
+				<img
+					src={addSVG}
+					alt="add application"
+					height="20rem"
+					style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
+				/>
+				<span style="vertical-align: middle">
+					{messages['topic.detail']['add.application']}
+				</span>
+			</button>
+		</div>
+		<div>
+			{#if selectedTopicApplications}
+				<div>
+					{#each selectedTopicApplications as application}
+						<div style="display: flex; justify-content: flex-end; font-size: 0.9rem">
+							<span style="width: 10.5rem; margin: auto 0; margin-right: 0.3rem">
+								{application.applicationName} ({application.applicationGroupName})
+							</span>
 
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<img
-							src={deleteSVG}
-							alt="remove application"
-							style="background-color: transparent; cursor: pointer; scale: 50%; margin-right: -1rem"
-							on:click={async () => {
-								promise = await deleteTopicApplicationAssociation(
-									application.id,
-									application.topicId
-								);
-							}}
-						/>
+							<select
+								style="width: 8rem; height: 2rem; margin: auto 0"
+								bind:value={application.accessType}
+								on:change={() => {
+									updateTopicApplicationAssociation(
+										application.id,
+										application.accessType,
+										application.topicId
+									);
+								}}
+							>
+								<option value="" disabled selected>
+									{messages['topic.detail']['selected.applications.access.type']}
+								</option>
+								<option value="READ">
+									{messages['topic.detail']['selected.applications.read']}
+								</option>
+								<option value="WRITE">
+									{messages['topic.detail']['selected.applications.write']}
+								</option>
+								<option value="READ_WRITE">
+									{messages['topic.detail']['selected.applications.read.write']}
+								</option>
+							</select>
+
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<img
+								src={deleteSVG}
+								alt="remove application"
+								style="background-color: transparent; cursor: pointer; scale: 50%; margin-right: -1rem"
+								on:click={async () => {
+									promise = await deleteTopicApplicationAssociation(
+										application.id,
+										application.topicId
+									);
+								}}
+							/>
+						</div>
+					{/each}
+					<div style="font-size: 0.7rem; text-align:right; margin-top: 1.1rem">
+						{selectedTopicApplications.length} of {selectedTopicApplications.length}
 					</div>
-				{/each}
-				<div style="font-size: 0.7rem; text-align:right; margin-top: 1.1rem">
-					{selectedTopicApplications.length} of {selectedTopicApplications.length}
 				</div>
-			</div>
-			{#if notifyApplicationAccessTypeSuccess}
-				<span
-					style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
-					>{messages['topic.detail']['updated.success']}</span
-				>
+				{#if notifyApplicationAccessTypeSuccess}
+					<span
+						style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
+						>{messages['topic.detail']['updated.success']}</span
+					>
+				{/if}
 			{/if}
-		{/if}
+		</div>
 		<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 	{/await}
 {/if}

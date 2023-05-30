@@ -150,6 +150,7 @@
 	};
 
 	const reloadAllGroups = async (page = 0) => {
+		console.log('Reloading all groups');
 		try {
 			let res;
 			if (searchString && searchString.length >= searchStringLength) {

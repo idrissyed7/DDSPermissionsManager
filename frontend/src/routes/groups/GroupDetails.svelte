@@ -4,12 +4,17 @@
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import detailView from '../../stores/detailView';
+	import groupsTotalPages from '../../stores/groupsTotalPages';
+	import groupsTotalSize from '../../stores/groupsTotalSize';
+	import groups from '../../stores/groups';
 	import Modal from '../../lib/Modal.svelte';
 	import editSVG from '../../icons/edit.svg';
 	import { httpAdapter } from '../../appconfig';
 	import messages from '$lib/messages.json';
 
 	const dispatch = createEventDispatcher();
+	let groupsPerPage = 10;
+	let groupsCurrentPage = 0;
 
 	export let group;
 
@@ -23,6 +28,25 @@
 	detailView.set(true);
 
 	$: if ($detailView === 'backToList') dispatch('groupList');
+
+	const reloadAllGroups = async (page = 0) => {
+		console.log('Reloading all groups');
+		try {
+			const res = await httpAdapter.get(`/groups?page=${page}&size=${groupsPerPage}`);
+
+			if (res.data) {
+				groupsTotalPages.set(res.data.totalPages);
+				groupsTotalSize.set(res.data.totalSize);
+			}
+			groups.set(res.data.content);
+			groupsTotalPages.set(res.data.totalPages);
+			groupsCurrentPage = page;
+		} catch (err) {
+			userValidityCheck.set(true);
+
+			errorMessage(errorMessages['group']['loading.error.title'], err.message);
+		}
+	};
 
 	onMount(() => {
 		// Adjust style when there is no description
@@ -40,12 +64,14 @@
 		group = res.data;
 		headerTitle.set(group.name);
 
-		dispatch('reload');
+		// dispatch('reload');
+		await reloadAllGroups();
+		dispatch('update-search');
 	};
 </script>
 
 {#if $isAuthenticated}
-	<div style="width: 100%; min-width: 32rem; margin-right: 1rem">
+	<div style="width: 100%; min-width: 45rem; margin-right: 1rem">
 		{#if editGroupVisible}
 			<Modal
 				title={messages['group']['edit.title']}
@@ -90,7 +116,7 @@
 				<td style="font-weight: 300; width: 6.2rem">
 					{messages['group.detail']['row.two']}
 				</td>
-				<td style="font-weight: 400; white-space: pre" bind:this={descriptionSelector}
+				<td style="font-weight: 400" bind:this={descriptionSelector}
 					>{group.description ? group.description : ` -`}
 				</td>
 			</tr>
