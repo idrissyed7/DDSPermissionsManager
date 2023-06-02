@@ -116,10 +116,7 @@ public class DTOConstraintViolationExceptionHandler implements ExceptionHandler<
         }
 
         String errorId = passphraseGenerator.generatePassphrase();
-        LOG.error("Id: " + errorId +
-                " Code: " + code +
-                " Violation: " + violation.getMessage() +
-                ". See exception below:");
+        LOG.error("Id: {} Code: {} Violation: {}. ", errorId, code, violation.getMessage());
 
         return new DPMErrorResponse(errorId, code);
     }
