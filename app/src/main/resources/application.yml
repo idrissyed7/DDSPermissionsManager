@@ -97,10 +97,6 @@ micronaut:
         http-method: GET
         access:
           - isAnonymous()
-      - pattern: /**
-        http-method: GET
-        access:
-          - isAnonymous()
 ---
 datasources:
   default:
