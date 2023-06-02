@@ -58,7 +58,7 @@ public class ApplicationSecretsClient {
                 this.governanceFileETag = getLatestSecretETag(client, project, GOVERNANCE_FILE);
                 client.close();
             } catch (Exception e) {
-                LOG.error("Could not get secrets from GCP: " + e.getMessage());
+                LOG.error("Could not get secrets from GCP", e);
                 // all or nothing
                 this.identityCACert = null;
                 this.identityCACertETag = null;
