@@ -253,9 +253,9 @@
 		}
 	};
 
-	onMount(() => {
+	onMount(async () => {
 		headerTitle.set(messages['universal.search']['header.title']);
-		getSearchResults();
+		await getSearchResults();
 	});
 </script>
 
@@ -280,7 +280,7 @@
 		{/if}
 
 		{#if groupDetails}
-			<GroupDetails group={selectedGroup} />
+			<GroupDetails group={selectedGroup} on:update-search={async () => await getSearchResults()} />
 		{/if}
 
 		{#if topicDetails}
@@ -404,8 +404,8 @@
 
 				<table class="universal-search-table">
 					<thead>
-						<tr>
-							<td style="min-width: 5rem"
+						<tr
+							><td style="min-width: 5rem"
 								>{messages['universal.search']['table.search.results.column.one']}</td
 							>
 							<td style="min-width: 5rem"
@@ -421,7 +421,7 @@
 						{#if $searchResults}
 							{#each $searchResults as result}
 								<tr on:click={handleItemSelection(result)} style="cursor: pointer">
-									<td>
+									<td style="white-space: nowrap">
 										{#if result.type === 'GROUP'}
 											<img
 												src={groupsSVG}
@@ -452,7 +452,7 @@
 										>
 									</td>
 
-									<td>
+									<td style="white-space: nowrap">
 										{#if result.type === 'GROUP'}
 											<span style="vertical-align: middle">{result.entity.name}</span>
 										{:else}
