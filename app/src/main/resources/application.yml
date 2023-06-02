@@ -27,25 +27,8 @@ micronaut:
           cookie-path: /
           cookie-max-age: 1d
       jwt:
-        signatures:
-          secret:
-            generator:
-              secret: pleaseChangeThisSecretForANewOne
-              jws-algorithm: HS256
-        generator:
-          refresh-token:
-            secret: pleaseChangeThisSecretForANewOneRefresh
         cookie:
           cookie-max-age: 1h
-    # redirect:
-    #   login-success: http://localhost:3000
-    #   login-failure: http://localhost:3000/failed-auth
-    #   logout: http://localhost:3000
-    # If hosting the frontend in micronaut
-    redirect:
-      login-success: http://localhost:8080
-      login-failure: http://localhost:8080/failed-auth
-      logout: http://localhost:8080
     authentication: cookie
     oauth2:
       login-uri: "/api/oauth/login{/provider}"

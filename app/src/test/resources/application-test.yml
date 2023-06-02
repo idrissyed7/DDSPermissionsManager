@@ -1,0 +1,12 @@
+micronaut:
+  security:
+    token:
+      jwt:
+        signatures:
+          secret:
+            generator:
+              secret: pleaseChangeThisSecretForANewOne
+              jws-algorithm: HS256
+        generator:
+          refresh-token:
+            secret: pleaseChangeThisSecretForANewOneRefresh
