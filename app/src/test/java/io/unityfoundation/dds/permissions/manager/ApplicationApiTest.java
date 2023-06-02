@@ -1,6 +1,9 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Replaces;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
@@ -10,7 +13,10 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.http.cookie.Cookie;
+import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.ServerAuthentication;
+import io.micronaut.security.filters.AuthenticationFetcher;
+import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
@@ -27,7 +33,9 @@ import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.*;
+import org.reactivestreams.Publisher;
 
 import java.text.Collator;
 import java.util.*;
@@ -38,6 +46,7 @@ import static io.micronaut.http.HttpStatus.*;
 import static io.unityfoundation.dds.permissions.manager.model.application.ApplicationService.E_TAG_HEADER_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Property(name = "spec.name", value = "ApplicationApiTest")
 @MicronautTest(environments={"app-api-test-data"})
 @Property(name = "micronaut.http.client.follow-redirects", value = StringUtils.FALSE)
 public class ApplicationApiTest {
@@ -70,6 +79,18 @@ public class ApplicationApiTest {
     void setup() {
         blockingClient = client.toBlocking();
     }
+
+    @Requires(property = "spec.name", value = "ApplicationApiTest")
+    @Singleton
+    static class MockAuthenticationFetcher extends AuthenticationFetcherReplacement {
+    }
+
+    @Requires(property = "spec.name", value = "ApplicationApiTest")
+    @Replaces(SecurityService.class)
+    @Singleton
+    static class MockSecurityService extends SecurityServiceReplacement {
+    }
+
 
     @Nested
     class WhenAsAdmin {

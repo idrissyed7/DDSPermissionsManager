@@ -1,5 +1,8 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Replaces;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -8,6 +11,7 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
+import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -22,6 +26,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -31,6 +36,7 @@ import java.util.stream.Stream;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Property(name = "spec.name", value = "TopicApiTest")
 @MicronautTest
 public class TopicApiTest {
 
@@ -59,11 +65,22 @@ public class TopicApiTest {
     MockSecurityService mockSecurityService;
 
     @Inject
-    MockAuthenticationFetcher mockAuthenticationFetcher;
+    AuthenticationFetcherReplacement mockAuthenticationFetcher;
 
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
+    }
+
+    @Requires(property = "spec.name", value = "TopicApiTest")
+    @Singleton
+    static class MockAuthenticationFetcher extends AuthenticationFetcherReplacement {
+    }
+
+    @Requires(property = "spec.name", value = "TopicApiTest")
+    @Replaces(SecurityService.class)
+    @Singleton
+    static class MockSecurityService extends SecurityServiceReplacement {
     }
 
     @Nested

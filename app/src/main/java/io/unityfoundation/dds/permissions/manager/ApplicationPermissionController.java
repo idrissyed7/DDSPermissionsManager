@@ -1,6 +1,5 @@
 package io.unityfoundation.dds.permissions.manager;
 
-import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.http.HttpResponse;
@@ -42,7 +41,7 @@ public class ApplicationPermissionController {
         return applicationPermissionService.indexByApplicationId(application, pageable);
     }
 
-    @Get("access_types")
+    @Get("/access_types")
     public AccessType[] getAccessTypes() {
         return AccessType.values();
     }
