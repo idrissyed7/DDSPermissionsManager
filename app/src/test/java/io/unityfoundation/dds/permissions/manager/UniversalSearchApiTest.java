@@ -1,11 +1,16 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.security.authentication.Authentication;
+import io.micronaut.security.filters.AuthenticationFetcher;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.DPMEntity;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
@@ -24,26 +29,24 @@ import io.unityfoundation.dds.permissions.manager.model.topic.TopicKind;
 import io.unityfoundation.dds.permissions.manager.model.topic.TopicRepository;
 import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
+import io.unityfoundation.dds.permissions.manager.model.user.UserRole;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 
 import java.util.*;
 
 import static io.micronaut.http.HttpStatus.OK;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Property(name = "spec.name", value = "UniversalSearchApiTest")
 @MicronautTest
-public class UniversalSearchApiTest {
+class UniversalSearchApiTest {
 
     private BlockingHttpClient blockingClient;
-
-    @Inject
-    MockSecurityService mockSecurityService;
-
-    @Inject
-    MockAuthenticationFetcher mockAuthenticationFetcher;
 
     @Inject
     GroupRepository groupRepository;
@@ -70,12 +73,19 @@ public class UniversalSearchApiTest {
     @Client("/api")
     HttpClient client;
 
+    @Requires(property = "spec.name", value = "UniversalSearchApiTest")
+    @Singleton
+    static class MockAuthenticationFetcher implements AuthenticationFetcher {
+        @Override
+        public Publisher<Authentication> fetchAuthentication(HttpRequest<?> request) {
+            return Publishers.just(Authentication.build("montesm@test.test", List.of(UserRole.ADMIN.toString())));
+        }
+    }
+
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
         dbCleanup.cleanup();
-        mockSecurityService.postConstruct();
-        mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
         userRepository.save(new User("montesm@test.test", true));
         User jjones = userRepository.save(new User("jjones@test.test"));

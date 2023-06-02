@@ -3,34 +3,47 @@ package io.unityfoundation.dds.permissions.manager;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;
-import io.micronaut.http.HttpStatus;
-import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.http.uri.UriBuilder;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.inject.Inject;
+import io.unityfoundation.dds.permissions.manager.model.group.SimpleGroupDTO;
+import io.unityfoundation.dds.permissions.manager.testing.util.SecurityAssertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
+import java.io.IOException;
 import java.net.URI;
-
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Collections;
 
 @Property(name = "micronaut.security.reject-not-found", value = StringUtils.FALSE)
 @MicronautTest
 class GroupControllerSecuredTest {
-    @Inject
-    @Client("/api")
-    HttpClient httpClient;
+    @Test
+    void groupControllerRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
+        URI uri = UriBuilder.of("/api").path("groups").queryParam("filter", "foo").build();
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET(uri));
+    }
 
     @Test
-    void groupControllerRequiresAuthentication() {
-        BlockingHttpClient client = httpClient.toBlocking();
-        URI uri = UriBuilder.of("/groups").path("?filter=").path("foo").build();
-        Executable e = () -> client.exchange(HttpRequest.GET(uri));
-        HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, e);
-        assertEquals(HttpStatus.UNAUTHORIZED, thrown.getStatus());
+    void groupControllerSearchRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
+        URI uri = UriBuilder.of("/api").path("groups").path("search").path("foo").build();
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET(uri));
+    }
+
+    @Test
+    void deleteGroupControllerDeleteRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
+        URI uri = UriBuilder.of("/api").path("/groups").path("delete").path("99").build();
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.POST(uri, Collections.emptyMap()));
+    }
+
+    @Test
+    void postGroupControllerSaveRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
+        SimpleGroupDTO group = new SimpleGroupDTO();
+        group.setName("Beta");
+        group.setDescription("myDescription");
+        group.setPublic(true);
+        URI uri = UriBuilder.of("/api").path("/groups").path("save").build();
+        HttpRequest<?> request = HttpRequest.POST(uri, group);
+        SecurityAssertions.assertUnauthorized(httpClient, request);
     }
 }
