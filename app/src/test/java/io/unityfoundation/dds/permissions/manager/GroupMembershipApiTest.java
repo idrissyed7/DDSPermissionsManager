@@ -1,6 +1,8 @@
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Replaces;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
@@ -11,6 +13,7 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
+import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -20,6 +23,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,8 +33,9 @@ import java.util.*;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@Property(name = "spec.name", value = "GroupMembershipApiTest")
 @Property(name = "micronaut.security.filter.enabled", value = StringUtils.FALSE)
+@MicronautTest
 public class GroupMembershipApiTest {
     private BlockingHttpClient blockingClient;
 
@@ -56,6 +61,17 @@ public class GroupMembershipApiTest {
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
+    }
+
+    @Requires(property = "spec.name", value = "GroupMembershipApiTest")
+    @Singleton
+    static class MockAuthenticationFetcher extends AuthenticationFetcherReplacement {
+    }
+
+    @Requires(property = "spec.name", value = "GroupMembershipApiTest")
+    @Replaces(SecurityService.class)
+    @Singleton
+    static class MockSecurityService extends SecurityServiceReplacement {
     }
 
     @Nested

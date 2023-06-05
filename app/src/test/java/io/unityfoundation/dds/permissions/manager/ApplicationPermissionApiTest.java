@@ -1,5 +1,8 @@
 package io.unityfoundation.dds.permissions.manager;
 
+import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Replaces;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -11,6 +14,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.ServerAuthentication;
 import io.micronaut.security.token.jwt.generator.JwtTokenGenerator;
 import io.micronaut.security.token.jwt.generator.claims.JWTClaimsSetGenerator;
+import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
@@ -29,6 +33,7 @@ import io.unityfoundation.dds.permissions.manager.model.user.User;
 import io.unityfoundation.dds.permissions.manager.model.user.UserRepository;
 import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +43,8 @@ import java.util.*;
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+
+@Property(name = "spec.name", value = "ApplicationPermissionApiTest")
 @MicronautTest
 public class ApplicationPermissionApiTest {
 
@@ -78,7 +85,7 @@ public class ApplicationPermissionApiTest {
     HttpClient client;
 
     @Inject
-    MockAuthenticationFetcher mockAuthenticationFetcher;
+    AuthenticationFetcherReplacement mockAuthenticationFetcher;
 
     @Inject
     MockSecretSignature mockJwtSecret;
@@ -86,6 +93,17 @@ public class ApplicationPermissionApiTest {
     @BeforeEach
     void setup() {
         blockingClient = client.toBlocking();
+    }
+
+    @Requires(property = "spec.name", value = "ApplicationPermissionApiTest")
+    @Singleton
+    static class MockAuthenticationFetcher extends AuthenticationFetcherReplacement {
+    }
+
+    @Requires(property = "spec.name", value = "ApplicationPermissionApiTest")
+    @Replaces(SecurityService.class)
+    @Singleton
+    static class MockSecurityService extends SecurityServiceReplacement {
     }
 
     @Nested

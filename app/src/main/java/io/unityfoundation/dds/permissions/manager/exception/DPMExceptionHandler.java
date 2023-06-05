@@ -41,12 +41,7 @@ public class DPMExceptionHandler implements ExceptionHandler<DPMException, HttpR
         String code = exception.getResponseStatusCode();
         response.body(List.of(new DPMErrorResponse(errorId, code)));
 
-        LOG.error("Id: " + errorId +
-                " Code: " + code +
-                ". See exception below:");
-
-        exception.printStackTrace();
-
+        LOG.error("Id: {} Code: {}. See exception below", errorId, code, exception);
         return response;
     }
 }

@@ -38,7 +38,7 @@ public class TopicController {
         return topicService.findAll(pageable, filter, group);
     }
 
-    @Get("kinds")
+    @Get("/kinds")
     public HttpResponse<TopicKind[]> getKinds() {
         return HttpResponse.ok(TopicKind.values());
     }

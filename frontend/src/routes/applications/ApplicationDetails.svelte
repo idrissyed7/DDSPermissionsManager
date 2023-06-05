@@ -133,115 +133,123 @@
 		}}
 	/>
 {/if}
-
-<table>
-	<tr>
-		<td style="font-weight: 300; width: 11.5rem">
-			{messages['application.detail']['row.one']}
-		</td>
-
-		<td style="font-weight: 500">{selectedAppName} </td>
-		{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<img
-				data-cy="edit-application-icon"
-				src={editSVG}
-				alt="edit application"
-				width="18rem"
-				style="margin-left: 1rem; cursor: pointer"
-				on:click={async () => {
-					editApplicationVisible = true;
-				}}
-			/>
-		{/if}
-	</tr>
-	<tr>
-		<td style="font-weight: 300; margin-right: 1rem; width: 6.2rem;">
-			{messages['application.detail']['row.two']}
-		</td>
-
-		<td style="font-weight: 400; margin-left: 2rem" bind:this={selectedAppDescriptionSelector}
-			>{selectedAppDescription ? selectedAppDescription : '-'}</td
-		>
-	</tr>
-	<tr>
-		<td style="font-weight: 300">
-			{messages['application.detail']['row.three']}
-		</td>
-		<td>
-			<input
-				type="checkbox"
-				style="width: 15px; height: 15px"
-				bind:checked={isPublic}
-				on:change={() => (isPublic = selectedAppPublic)}
-				bind:this={checkboxSelector}
-			/>
-		</td>
-	</tr>
-</table>
-
-<table style="max-width: 59rem; margin-top: 3.5rem">
-	<thead>
+<div class="content">
+	<table>
 		<tr>
-			<td>{messages['application.detail']['table.applications.column.one']}</td>
-			<td>{messages['application.detail']['table.applications.column.two']}</td>
-			<td>{messages['application.detail']['table.applications.column.three']}</td>
-			{#if isApplicationAdmin || $isAdmin}
-				<td />
+			<td style="font-weight: 300; width: 11.5rem">
+				{messages['application.detail']['row.one']}
+			</td>
+
+			<td style="font-weight: 500">{selectedAppName} </td>
+			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<img
+					data-cy="edit-application-icon"
+					src={editSVG}
+					alt="edit application"
+					width="18rem"
+					style="margin-left: 1rem; cursor: pointer"
+					on:click={async () => {
+						editApplicationVisible = true;
+					}}
+				/>
 			{/if}
 		</tr>
-	</thead>
-	{#if $applicationPermission}
-		{#each $applicationPermission as appPermission}
-			<tbody>
-				<tr style="line-height: 2rem">
-					<td style="min-width: 15rem">
-						{appPermission.topicGroup}
-					</td>
-					<td style="min-width: 20rem">
-						{appPermission.topicName}
-					</td>
-					<td style="min-width: 6.5rem">
-						{appPermission.accessType === 'READ_WRITE' ? 'READ & WRITE' : appPermission.accessType}
-					</td>
-					{#if isApplicationAdmin || $isAdmin}
-						<td>
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<img
-								src={deleteSVG}
-								alt="delete topic"
-								height="23px"
-								width="23px"
-								style="vertical-align: -0.4rem; float: right; cursor: pointer"
-								on:click={() => {
-									dispatch('deleteTopicApplicationAssociation', appPermission.id);
-								}}
-							/>
+		<tr>
+			<td style="font-weight: 300; margin-right: 1rem; width: 6.2rem;">
+				{messages['application.detail']['row.two']}
+			</td>
+
+			<td style="font-weight: 400; margin-left: 2rem" bind:this={selectedAppDescriptionSelector}
+				>{selectedAppDescription ? selectedAppDescription : '-'}</td
+			>
+		</tr>
+		<tr>
+			<td style="font-weight: 300">
+				{messages['application.detail']['row.three']}
+			</td>
+			<td>
+				<input
+					type="checkbox"
+					style="width: 15px; height: 15px"
+					bind:checked={isPublic}
+					on:change={() => (isPublic = selectedAppPublic)}
+					bind:this={checkboxSelector}
+				/>
+			</td>
+		</tr>
+	</table>
+
+	<table style="max-width: 59rem; margin-top: 3.5rem">
+		<thead>
+			<tr>
+				<td>{messages['application.detail']['table.applications.column.one']}</td>
+				<td>{messages['application.detail']['table.applications.column.two']}</td>
+				<td>{messages['application.detail']['table.applications.column.three']}</td>
+				{#if isApplicationAdmin || $isAdmin}
+					<td />
+				{/if}
+			</tr>
+		</thead>
+		{#if $applicationPermission}
+			{#each $applicationPermission as appPermission}
+				<tbody>
+					<tr style="line-height: 2rem">
+						<td style="min-width: 15rem">
+							{appPermission.topicGroup}
 						</td>
-					{/if}
-				</tr>
-			</tbody>
-		{/each}
-	{:else}
-		<p style="margin:0.3rem 0 0.6rem 0">
-			{messages['application.detail']['empty.topics.associated']}
-		</p>
-	{/if}
-	<tr style="font-size: 0.7rem; text-align: right">
-		<td style="border: none" />
-		<td style="border: none" />
-		<td style="border: none" />
-		<td style="border: none; min-width: 3.5rem; text-align:right">
-			{#if $applicationPermission}
-				{$applicationPermission.length} of {$applicationPermission.length}
-			{:else}
-				0 of 0
-			{/if}
-		</td>
-	</tr>
-</table>
+						<td style="min-width: 20rem">
+							{appPermission.topicName}
+						</td>
+						<td style="min-width: 6.5rem">
+							{appPermission.accessType === 'READ_WRITE'
+								? 'READ & WRITE'
+								: appPermission.accessType}
+						</td>
+						{#if isApplicationAdmin || $isAdmin}
+							<td>
+								<!-- svelte-ignore a11y-click-events-have-key-events -->
+								<img
+									src={deleteSVG}
+									alt="delete topic"
+									height="23px"
+									width="23px"
+									style="vertical-align: -0.4rem; float: right; cursor: pointer"
+									on:click={() => {
+										dispatch('deleteTopicApplicationAssociation', appPermission.id);
+									}}
+								/>
+							</td>
+						{/if}
+					</tr>
+				</tbody>
+			{/each}
+		{:else}
+			<p style="margin:0.3rem 0 0.6rem 0">
+				{messages['application.detail']['empty.topics.associated']}
+			</p>
+		{/if}
+		<tr style="font-size: 0.7rem; text-align: right">
+			<td style="border: none" />
+			<td style="border: none" />
+			<td style="border: none" />
+			<td style="border: none; min-width: 3.5rem; text-align:right">
+				{#if $applicationPermission}
+					{$applicationPermission.length} of {$applicationPermission.length}
+				{:else}
+					0 of 0
+				{/if}
+			</td>
+		</tr>
+	</table>
+</div>
 
 <style>
+	.content {
+		width: 100%;
+		min-width: 45rem;
+	}
+
 	td {
 		height: 2.2rem;
 	}
