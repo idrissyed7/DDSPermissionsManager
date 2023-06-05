@@ -38,7 +38,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.text.Collator;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.micronaut.http.HttpStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -130,7 +133,7 @@ public class ApplicationPermissionApiTest {
             applicationOne = applicationRepository.save(new Application("ApplicationOne", testGroup));
 
             publicGroup = groupRepository.save(new Group("PublicGroup", "Description", true));
-            publicTopic = topicRepository.save(new Topic("TestTopic", TopicKind.B, "topic desc", true, publicGroup));
+            publicTopic = topicRepository.save(new Topic("PublicTestTopic", TopicKind.B, "topic desc", true, publicGroup));
             privateApplication = applicationRepository.save(new Application("ApplicationOne", publicGroup, "app desc", false));
         }
 
@@ -491,6 +494,42 @@ public class ApplicationPermissionApiTest {
             List<Map> content = (List<Map>) responseMap.get("content");
             assertEquals(1, content.size());
             assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+        }
+
+        @Test
+        public void canViewAllApplicationPermissionsByApplicationOrderedByTopicName() {
+            HttpResponse response;
+            HttpRequest request;
+
+            // generate bind token for application
+            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationBindToken = optional.get();
+
+            response = createApplicationPermission(applicationBindToken, testTopic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional.isPresent());
+
+            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            assertEquals(CREATED, response.getStatus());
+            Optional<AccessPermissionDTO> permissionOptional1 = response.getBody(AccessPermissionDTO.class);
+            assertTrue(permissionOptional1.isPresent());
+
+            request = HttpRequest.GET("/application_permissions/application/"+applicationOne.getId());
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(2, content.size());
+
+            List<String> topicNames = content.stream()
+                    .flatMap(map -> Stream.of((String) map.get("topicName")))
+                    .collect(Collectors.toList());
+            assertEquals(topicNames.stream().sorted().collect(Collectors.toList()), topicNames);
         }
 
         @Test
