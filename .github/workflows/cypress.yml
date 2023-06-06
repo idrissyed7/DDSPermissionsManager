@@ -22,7 +22,7 @@ jobs:
           VITE_BACKEND_URL: /api
           MICRONAUT_ENVIRONMENTS: dev
         run: |
-          ./gradlew app:run &
+          ./gradlew app:run
       - name: Cypress run
         uses: cypress-io/github-action@v4
         # env:
