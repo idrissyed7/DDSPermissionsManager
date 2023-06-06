@@ -69,6 +69,10 @@ public class ApplicationPermissionService {
         boolean isTopic = false;
         boolean publicMode = determinePublicMode(isTopic, applicationId);
 
+        if (!pageable.isSorted()) {
+            pageable = pageable.order("permissionsTopic.name");
+        }
+
         if (publicMode) {
             page = getPublicApplicationPermissionsPage(isTopic, applicationId, pageable);
         } else {
