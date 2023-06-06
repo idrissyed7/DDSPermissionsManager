@@ -151,6 +151,17 @@ public class ApplicationService {
                 return applicationRepository.findAllByPermissionsGroupIdIn(List.of(groupId), pageable);
             }
 
+            try {
+                long applicationId = Long.parseLong(filter);
+                if (groupId == null) {
+                    return applicationRepository.findById(applicationId, pageable);
+                }
+
+                return applicationRepository.findByIdAndPermissionsGroupId(applicationId, groupId, pageable);
+            } catch (NumberFormatException e) {
+                // Not an application id
+            }
+
             if (groupId == null) {
                 return applicationRepository.findByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter, pageable);
             }
@@ -173,6 +184,12 @@ public class ApplicationService {
 
             if (filter == null) {
                 return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
+            }
+
+            try {
+                return applicationRepository.findByIdAndPermissionsGroupIdIn(Long.parseLong(filter), groups, pageable);
+            } catch (NumberFormatException e) {
+                // Not an application id
             }
 
             all = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);

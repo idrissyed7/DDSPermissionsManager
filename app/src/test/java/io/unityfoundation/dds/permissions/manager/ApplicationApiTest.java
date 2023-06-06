@@ -566,6 +566,9 @@ public class ApplicationApiTest {
 
             response = createApplication("Abc123", secondaryGroup.getId());
             assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationDTOOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationDTOOptional.isPresent());
+            ApplicationDTO applicationAbc123 = applicationDTOOptional.get();
 
             // support case-insensitive
             request = HttpRequest.GET("/applications?filter=abc");
@@ -585,6 +588,14 @@ public class ApplicationApiTest {
 
             // application description
             request = HttpRequest.GET("/applications?filter=zdes");
+            response = blockingClient.exchange(request, Page.class);
+            assertEquals(OK, response.getStatus());
+            applicationPage = response.getBody(Page.class);
+            assertTrue(applicationPage.isPresent());
+            assertEquals(1, applicationPage.get().getContent().size());
+
+            // application id
+            request = HttpRequest.GET("/applications?filter="+applicationAbc123.getId());
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
             applicationPage = response.getBody(Page.class);
@@ -1270,11 +1281,19 @@ public class ApplicationApiTest {
             assertEquals(OK, response.getStatus());
             response = createApplication("TestApplicationTwo", primaryGroup.getId(), "TwoDescription");
             assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationDTOOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationDTOOptional.isPresent());
+            ApplicationDTO testApplicationTwo = applicationDTOOptional.get();
 
             response = createApplication("Three", secondaryGroupOptional.get().getId());
             assertEquals(OK, response.getStatus());
             response = createApplication("Four", secondaryGroupOptional.get().getId());
             assertEquals(OK, response.getStatus());
+            response = createApplication("ApplicationFive", secondaryGroupOptional.get().getId());
+            assertEquals(OK, response.getStatus());
+            Optional<ApplicationDTO> applicationFiveDTOOptional = response.getBody(ApplicationDTO.class);
+            assertTrue(applicationFiveDTOOptional.isPresent());
+            ApplicationDTO applicationFive = applicationFiveDTOOptional.get();
 
             loginAsNonAdmin();
 
@@ -1287,6 +1306,21 @@ public class ApplicationApiTest {
                 String groupName = (String) map.get("groupName");
                 return Objects.equals(groupName, "SecondaryGroup");
             }));
+
+            // application id
+            request = HttpRequest.GET("/applications?filter="+testApplicationTwo.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertEquals(1, page.getContent().size());
+            content = page.getContent();
+            assertTrue(content.stream().noneMatch(map -> {
+                String groupName = (String) map.get("groupName");
+                return Objects.equals(groupName, "SecondaryGroup");
+            }));
+
+            // request outside of membership by application id
+            request = HttpRequest.GET("/applications?filter="+applicationFive.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertTrue(page.getContent().isEmpty());
 
             // group
             request = HttpRequest.GET("/applications?filter=aryGrouP");

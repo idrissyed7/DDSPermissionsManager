@@ -21,6 +21,8 @@ public interface ApplicationRepository extends PageableRepository<Application, L
 
     Optional<Application> findByNameEquals(@NotBlank String name);
 
+    Page<Application> findById(Long id, Pageable pageable);
+
     Page<Application> findAllByPermissionsGroupIdIn(List<Long> groups, Pageable pageable);
 
     List<Long> findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(String application, String applicationDescription, String group);
@@ -38,4 +40,8 @@ public interface ApplicationRepository extends PageableRepository<Application, L
     Page<Application> findByMakePublicTrueAndIdIn(List<Long> entityIds, Pageable pageable);
 
     List<Application> findTop50ByMakePublicTrueAndIdIn(List<Long> entityIds);
+
+    Page<Application> findByIdAndPermissionsGroupId(Long applicationId, Long groupId, Pageable pageable);
+
+    Page<Application> findByIdAndPermissionsGroupIdIn(Long applicationId, List<Long> groups, Pageable pageable);
 }
