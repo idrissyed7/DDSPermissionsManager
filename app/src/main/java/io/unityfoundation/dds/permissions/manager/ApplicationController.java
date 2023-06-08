@@ -44,9 +44,9 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
-    @Get("{?filter,group}")
-    public Page<ApplicationDTO> index(@Valid Pageable pageable, @Nullable String filter, @Nullable Long group) {
-        return applicationService.findAll(pageable, filter, group);
+    @Get("{?filter,group,applicationId}")
+    public Page<ApplicationDTO> index(@Valid Pageable pageable, @Nullable String filter, @Nullable Long group, @Nullable Long applicationId) {
+        return applicationService.findAll(pageable, filter, applicationId, group);
     }
 
     @Get("/show/{id}")

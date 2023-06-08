@@ -595,7 +595,7 @@ public class ApplicationApiTest {
             assertEquals(1, applicationPage.get().getContent().size());
 
             // application id
-            request = HttpRequest.GET("/applications?filter="+applicationAbc123.getId());
+            request = HttpRequest.GET("/applications?applicationId="+applicationAbc123.getId());
             response = blockingClient.exchange(request, Page.class);
             assertEquals(OK, response.getStatus());
             applicationPage = response.getBody(Page.class);
@@ -1308,7 +1308,7 @@ public class ApplicationApiTest {
             }));
 
             // application id
-            request = HttpRequest.GET("/applications?filter="+testApplicationTwo.getId());
+            request = HttpRequest.GET("/applications?applicationId="+testApplicationTwo.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertEquals(1, page.getContent().size());
             content = page.getContent();
@@ -1318,7 +1318,7 @@ public class ApplicationApiTest {
             }));
 
             // request outside of membership by application id
-            request = HttpRequest.GET("/applications?filter="+applicationFive.getId());
+            request = HttpRequest.GET("/applications?applicationId="+applicationFive.getId());
             page = blockingClient.retrieve(request, Page.class);
             assertTrue(page.getContent().isEmpty());
 
