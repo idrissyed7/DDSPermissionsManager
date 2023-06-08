@@ -44,12 +44,16 @@ dependencies {
 //    nativeImageCompileOnly("com.google.cloud:native-image-support")
 
     String databaseSelection = System.getenv("DPM_DATABASE_DEPENDENCY")
+    String mnEnvs = System.getenv("MICRONAUT_ENVIRONMENTS")
     if (databaseSelection != null) {
         databaseSelection.split(',').each {part ->
             runtimeOnly(part)
         }
-    } else {
-        runtimeOnly("com.h2database:h2")
+    } else if (mnEnvs != null) {
+        def envList = mnEnvs.split(',').each {it.trim()}.collect()
+        if (envList.contains("dev") || envList.contains("test")) {
+            runtimeOnly("com.h2database:h2")
+        }
     }
 }
 
