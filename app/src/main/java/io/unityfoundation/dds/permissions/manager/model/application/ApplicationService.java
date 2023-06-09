@@ -132,16 +132,19 @@ public class ApplicationService {
         this.jwtClaimsSetGenerator = jwtClaimsSetGenerator;
     }
 
-    public Page<ApplicationDTO> findAll(Pageable pageable, String filter, Long groupId) {
-        return getApplicationPage(pageable, filter, groupId).map(ApplicationDTO::new);
-    }
-
-    private Page<Application> getApplicationPage(Pageable pageable, String filter, Long groupId) {
-
+    public Page<ApplicationDTO> findAll(Pageable pageable, String filter, Long applicationId, Long groupId) {
         if(!pageable.isSorted()) {
             pageable = pageable.order("name").order("permissionsGroup.name");
         }
 
+        if (applicationId != null) {
+            return getApplicationPage(pageable, applicationId, groupId).map(ApplicationDTO::new);
+        }
+
+        return getApplicationPage(pageable, filter, groupId).map(ApplicationDTO::new);
+    }
+
+    private Page<Application> getApplicationPage(Pageable pageable, String filter, Long groupId) {
         List<Long> all;
         if (securityUtil.isCurrentUserAdmin()) {
             if (filter == null) {
@@ -149,17 +152,6 @@ public class ApplicationService {
                     return applicationRepository.findAll(pageable);
                 }
                 return applicationRepository.findAllByPermissionsGroupIdIn(List.of(groupId), pageable);
-            }
-
-            try {
-                long applicationId = Long.parseLong(filter);
-                if (groupId == null) {
-                    return applicationRepository.findById(applicationId, pageable);
-                }
-
-                return applicationRepository.findByIdAndPermissionsGroupId(applicationId, groupId, pageable);
-            } catch (NumberFormatException e) {
-                // Not an application id
             }
 
             if (groupId == null) {
@@ -186,18 +178,38 @@ public class ApplicationService {
                 return applicationRepository.findAllByPermissionsGroupIdIn(groups, pageable);
             }
 
-            try {
-                return applicationRepository.findByIdAndPermissionsGroupIdIn(Long.parseLong(filter), groups, pageable);
-            } catch (NumberFormatException e) {
-                // Not an application id
-            }
-
             all = applicationRepository.findIdByNameContainsIgnoreCaseOrDescriptionContainsIgnoreCaseOrPermissionsGroupNameContainsIgnoreCase(filter, filter, filter);
             if (all.isEmpty()) {
                 return Page.empty();
             }
 
             return applicationRepository.findAllByIdInAndPermissionsGroupIdIn(all, groups, pageable);
+        }
+    }
+
+    private Page<Application> getApplicationPage(Pageable pageable, Long applicationId, Long groupId) {
+
+        List<Long> all;
+        if (securityUtil.isCurrentUserAdmin()) {
+            if (groupId == null) {
+                return applicationRepository.findById(applicationId, pageable);
+            }
+
+            return applicationRepository.findByIdAndPermissionsGroupId(applicationId, groupId, pageable);
+        } else {
+            User user = securityUtil.getCurrentlyAuthenticatedUser().get();
+            List<Long> groups = groupUserService.getAllGroupsUserIsAMemberOf(user.getId());
+
+            if (groups.isEmpty() || (groupId != null && !groups.contains(groupId))) {
+                return Page.empty();
+            }
+
+            if (groupId != null) {
+                // implies groupId exists in member's groups
+                groups = List.of(groupId);
+            }
+
+            return applicationRepository.findByIdAndPermissionsGroupIdIn(applicationId, groups, pageable);
         }
     }
 
