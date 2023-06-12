@@ -143,7 +143,7 @@
 	let copiedVisible = false;
 
 	// Timer
-	let timer;
+	let timer, timerTwo;
 
 	// App
 	let applicationListVisible = true;
@@ -168,6 +168,11 @@
 	// Application Detail
 	let applicationDetailId, ApplicationDetailGroupId;
 
+	const isNumericOnly = (str) => {
+		var pattern = /^\d+$/;
+		return pattern.test(str);
+	};
+
 	// Return to List view
 	$: if ($detailView === 'backToList') {
 		headerTitle.set(messages['application']['title']);
@@ -176,14 +181,22 @@
 	}
 
 	// Search Feature
-	$: if (searchString?.trim().length >= searchStringLength) {
+	$: if (
+		searchString?.trim().length >= searchStringLength &&
+		!isNumericOnly(searchString?.trim())
+	) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchApp(searchString.trim());
 		}, waitTime);
+	} else if (isNumericOnly(searchString?.trim())) {
+		clearTimeout(timerTwo);
+		timerTwo = setTimeout(() => {
+			searchApp(searchString.trim());
+		}, waitTime);
 	}
 
-	$: if (searchString?.trim().length < searchStringLength) {
+	$: if (searchString?.trim().length < searchStringLength && !isNumericOnly(searchString?.trim())) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			reloadAllApps();
@@ -282,9 +295,16 @@
 	};
 
 	const searchApp = async (searchString) => {
-		searchAppResults = await httpAdapter.get(
-			`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
-		);
+		if (!isNumericOnly(searchString)) {
+			searchAppResults = await httpAdapter.get(
+				`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
+			);
+		} else {
+			searchAppResults = await httpAdapter.get(
+				`/applications?page=0&size=${applicationsPerPage}&applicationId=${searchString}`
+			);
+		}
+
 		if (searchAppResults.data.content) {
 			applications.set(searchAppResults.data.content);
 		} else {
