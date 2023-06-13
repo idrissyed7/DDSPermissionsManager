@@ -212,7 +212,7 @@ public class GroupUserService {
         Optional<GroupUser> groupUserOptional = groupUserRepository.findById(id);
 
         if (groupUserOptional.isEmpty()) {
-            return HttpResponse.ok();
+            return HttpResponse.notFound();
         }
 
         GroupUser groupUser = groupUserOptional.get();
