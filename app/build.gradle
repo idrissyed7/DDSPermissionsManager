@@ -91,7 +91,13 @@ tasks.register('copyClientResources', Copy) {
 }
 
 tasks.named("dockerfile") {
-    baseImage = "arm64v8/eclipse-temurin"
+    def arch = System.getProperty("os.arch")
+
+    if (arch == "aarch64") {
+        baseImage = "arm64v8/eclipse-temurin:11-jre"
+    } else {
+        baseImage = "eclipse-temurin:11-jre"
+    }
 }
 
 processResources {
