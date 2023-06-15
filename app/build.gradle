@@ -1,3 +1,10 @@
+// buildscript block allow for building docker images on Mac M1. See https://github.com/micronaut-projects/micronaut-gradle-plugin/issues/363
+buildscript {
+    dependencies {
+        classpath("com.github.docker-java:docker-java:3.2.14")
+        classpath("com.github.docker-java:docker-java-transport-httpclient5:3.2.14")
+    }
+}
 plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id 'jacoco'
@@ -81,6 +88,16 @@ tasks.register('copyClientResources', Copy) {
     dependsOn ':frontend:build'
     from "${project(':frontend').projectDir}/build"
     into "${project(':app').buildDir}/resources/main/public"
+}
+
+tasks.named("dockerfile") {
+    def arch = System.getProperty("os.arch")
+
+    if (arch == "aarch64") {
+        baseImage = "arm64v8/eclipse-temurin:11-jre"
+    } else {
+        baseImage = "eclipse-temurin:11-jre"
+    }
 }
 
 processResources {
