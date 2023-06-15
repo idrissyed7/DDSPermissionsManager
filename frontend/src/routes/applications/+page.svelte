@@ -143,7 +143,7 @@
 	let copiedVisible = false;
 
 	// Timer
-	let timer;
+	let timer, timerTwo;
 
 	// App
 	let applicationListVisible = true;
@@ -168,6 +168,11 @@
 	// Application Detail
 	let applicationDetailId, ApplicationDetailGroupId;
 
+	const isNumericOnly = (str) => {
+		var pattern = /^\d+$/;
+		return pattern.test(str);
+	};
+
 	// Return to List view
 	$: if ($detailView === 'backToList') {
 		headerTitle.set(messages['application']['title']);
@@ -176,14 +181,22 @@
 	}
 
 	// Search Feature
-	$: if (searchString?.trim().length >= searchStringLength) {
+	$: if (
+		searchString?.trim().length >= searchStringLength &&
+		!isNumericOnly(searchString?.trim())
+	) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			searchApp(searchString.trim());
 		}, waitTime);
+	} else if (isNumericOnly(searchString?.trim())) {
+		clearTimeout(timerTwo);
+		timerTwo = setTimeout(() => {
+			searchApp(searchString.trim());
+		}, waitTime);
 	}
 
-	$: if (searchString?.trim().length < searchStringLength) {
+	$: if (searchString?.trim().length < searchStringLength && !isNumericOnly(searchString?.trim())) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			reloadAllApps();
@@ -282,9 +295,16 @@
 	};
 
 	const searchApp = async (searchString) => {
-		searchAppResults = await httpAdapter.get(
-			`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
-		);
+		if (!isNumericOnly(searchString)) {
+			searchAppResults = await httpAdapter.get(
+				`/applications?page=0&size=${applicationsPerPage}&filter=${searchString}`
+			);
+		} else {
+			searchAppResults = await httpAdapter.get(
+				`/applications?page=0&size=${applicationsPerPage}&applicationId=${searchString}`
+			);
+		}
+
 		if (searchAppResults.data.content) {
 			applications.set(searchAppResults.data.content);
 		} else {
@@ -1053,6 +1073,7 @@
 									<textarea
 										rows="5"
 										cols="50"
+										readonly
 										style="vertical-align: middle; width: 44.7rem; margin-left: 0.5rem; margin-top: 1rem; resize: none"
 										>{bindToken}</textarea
 									>
@@ -1086,7 +1107,7 @@
 									{messages['application.detail']['curl.commands.export.password.label']}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="1" style="width:50rem; resize: none"
+									<textarea rows="1" style="width:50rem; resize: none" readonly
 										>{curlCommands.appPassword}
 									</textarea>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1113,7 +1134,7 @@
 									{messages['application.detail']['curl.commands.export.nonce.label']}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="1" style="width:50rem; resize: none"
+									<textarea rows="1" style="width:50rem; resize: none" readonly
 										>{curlCommands.appNonce}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1140,7 +1161,7 @@
 									{messages['application.detail']['curl.commands.authenticate.label']}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeThree}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1169,7 +1190,7 @@
 									]}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeFour}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1197,7 +1218,7 @@
 								</div>
 								<!-- svelte-ignore a11y-click-events-have-key-events -->
 								<section style="display:inline-flex;">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeFive}</textarea
 									>
 									<img
@@ -1222,7 +1243,7 @@
 									{messages['application.detail']['curl.commands.download.governance.file.label']}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeSix}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1248,7 +1269,7 @@
 									{messages['application.detail']['curl.commands.download.keypair.label']}
 								</div>
 								<section style="display:inline-flex;">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeSeven}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1276,7 +1297,7 @@
 									]}
 								</div>
 								<section style="display:inline-flex">
-									<textarea rows="2" style="width:50rem; resize: none"
+									<textarea rows="2" style="width:50rem; resize: none" readonly
 										>{curlCommandsDecodedCodeEight}</textarea
 									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1394,8 +1415,8 @@
 							}}
 						/>
 					</div>
-					<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 				{/if}
+				<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 			{/if}
 		{/await}
 	{/if}
