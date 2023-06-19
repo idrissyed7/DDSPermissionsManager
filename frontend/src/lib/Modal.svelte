@@ -913,7 +913,7 @@
 				style="margin-top: 0.5rem; margin-bottom: 1.5rem; width: 13.5rem"
 				type="search"
 				rows="13"
-				placeholder={messages['modal']['input.bind.token.placeholder']}
+				placeholder={messages['modal']['input.grant.token.placeholder']}
 				bind:value={bindToken}
 				on:keydown={(event) => {
 					if (event.which === returnKey) {
@@ -1372,13 +1372,14 @@
 		position: fixed;
 		top: 10vh;
 		left: 50%;
-		margin-left: -10.25rem;
+		transform: translateX(-50%);
 		width: 18.6rem;
-		max-height: fit-content;
+		max-height: 90vh;
 		background: rgb(246, 246, 246);
 		border-radius: 15px;
 		z-index: 100;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+		overflow-y: auto;
 	}
 
 	.content {

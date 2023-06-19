@@ -1002,7 +1002,7 @@
 										style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 									/>
 									<span style="vertical-align: middle">
-										{messages['application.detail']['button.generate.bind.token']}
+										{messages['application.detail']['button.generate.grant.token']}
 									</span>
 								</button>
 
@@ -1068,7 +1068,7 @@
 
 							{#if generateBindTokenVisible}
 								<div style="margin-top: 2rem; font-weight: 500; font-size: 0.9rem">
-									{messages['application.detail']['bind.token.label']}
+									{messages['application.detail']['grant.token.label']}
 
 									<textarea
 										rows="5"
@@ -1093,7 +1093,7 @@
 
 								{#if showCopyBindTokenNotificationVisible}
 									<div class="bubble-bind-token">
-										{messages['application.detail']['bind.token.copied']}
+										{messages['application.detail']['grant.token.copied']}
 									</div>
 								{/if}
 							{/if}

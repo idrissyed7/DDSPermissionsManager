@@ -298,7 +298,7 @@
 
 			<button
 				data-cy="add-application-button"
-				style="width: 11rem; height: 2.35rem; padding: 0 1rem 0 1rem; margin-right: 3rem"
+				style="width: 12rem; height: 2.35rem; padding: 0 1rem 0 1rem; margin-right: 3rem"
 				class="button-blue"
 				class:button-disabled={!$isAdmin && !isTopicAdmin}
 				disabled={!$isAdmin && !isTopicAdmin}
@@ -306,7 +306,7 @@
 			>
 				<img
 					src={addSVG}
-					alt="add application"
+					alt="grant application"
 					height="20rem"
 					style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
 				/>
