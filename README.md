@@ -315,7 +315,21 @@ VALUES (true, '$EMAIL');
 
 The Web Application UI requires the URL of the API when built.
 This is set using the VITE_BACKEND_URL environment variable.
-If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
+If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api` (see the next section for an example).
+
+### Containerization
+
+For convenience, the UI and API can be built into a single container image.
+A suitable version of gradle and npm must be available.
+The following snippet illustrates how to build a container image:
+
+    # Set the database dependency.
+    DPM_DATABASE_DEPENDENCY="mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.7.2"
+    # Set the API url.
+    VITE_BACKEND_URL=/api
+    ./gradlew dockerfile
+    ./gradlew buildLayers
+    docker build -t my-dpm app/build/docker/main
 
 ### Configuring Google as an auth provider
 
