@@ -78,7 +78,8 @@ An Application has a name and belongs to a Group.
 An Application also has a password that allows it to authenticate to the API and download its DDS Security documents.
 Application Admins can edits the list of Applications in a Group and generate Application passwords.
 Generating a new password invalidates the existing one and there is no way show the current password.
-Consequently, Application Admins should record and distribute the password in a secure way.
+Consequently, Application Admins should record and distribute the password over secure, encrypted, and authenticated methods, such as a password or secret manager.
+Passwords should not be distributed over email, text message, or instant message.
 
 ### Topics and Topic Admins
 
