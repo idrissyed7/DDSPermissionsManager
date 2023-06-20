@@ -223,6 +223,8 @@ At a minimum, the secret store should contain the following documents
 * `permissions_ca_key_pem` - The private key of the Permissions CA in PEM format.
 * `permissions_ca_pem` - The public certificate of the Permissions CA in PEM format.
 
+`identity_ca_key_pem` and `permissions_ca_key_pem` must not include elliptic curve (EC) parameters.
+
 The governance file must contain certain rules.
 See [Canonical Topic Names](#canonical-topic-names) for more details.
 
@@ -242,14 +244,14 @@ The script assumes the existence of an `identity.cnf` and `permissions.cnf`.
     echo -n '01' > serial
 
     # Generate a self-signed certificate for the identity CA.
-    openssl ecparam -name prime256v1 -genkey -out identity_ca_key.pem
+    openssl ecparam -name prime256v1 -genkey -noout -out identity_ca_key.pem
     openssl req -config ./identity.cnf -days 3650 -new -x509 -extensions v3_ca -key identity_ca_key.pem -out identity_ca.pem
 
     echo "Identity CA key in identity_ca_key.pem"
     echo "Identity CA certificate in identity_ca.pem"
 
     # Generate a self-signed certificate for the permissions CA.
-    openssl ecparam -name prime256v1 -genkey -out permissions_ca_key.pem
+    openssl ecparam -name prime256v1 -genkey -noout -out permissions_ca_key.pem
     openssl req -config ./permissions.cnf -days 3650 -new -x509 -extensions v3_ca -key permissions_ca_key.pem -out permissions_ca.pem
 
     echo "Permissions CA key in permissions_ca_key.pem"
