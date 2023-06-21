@@ -2,6 +2,12 @@
 
 This project was built using [`Svelte Kit`](https://kit.svelte.dev/docs/introduction).
 
+## Install Node.JS dependencies
+
+```bash
+npm install
+```
+
 ## Starting the UI with Hot Module Replacement
 
 ```bash

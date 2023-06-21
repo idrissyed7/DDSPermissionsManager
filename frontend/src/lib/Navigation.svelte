@@ -131,6 +131,7 @@
 
 <nav>
 	<ul>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li
 			class:active={$page.url.pathname === '/groups/'}
 			on:mouseenter={() => {
@@ -157,6 +158,7 @@
 			</a>
 		</li>
 
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li
 			class:active={$page.url.pathname === '/topics/'}
 			on:mouseenter={() => {
@@ -169,6 +171,7 @@
 			</a>
 		</li>
 
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li
 			class:active={$page.url.pathname === '/applications/'}
 			on:mouseenter={() => {
@@ -183,6 +186,7 @@
 			</a>
 		</li>
 
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li
 			class:active={$page.url.pathname === '/search/'}
 			on:click={() => universalSearchList.set(true)}
