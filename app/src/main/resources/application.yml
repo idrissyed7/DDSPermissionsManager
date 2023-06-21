@@ -81,6 +81,30 @@ micronaut:
         http-method: GET
         access:
           - isAnonymous()
+      - pattern: /applications/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /groups/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /topics/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /users/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /failed-auth/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /search/**
+        http-method: GET
+        access:
+          - isAnonymous()
       - pattern: /login-failed.html
         http-method: GET
         access:
