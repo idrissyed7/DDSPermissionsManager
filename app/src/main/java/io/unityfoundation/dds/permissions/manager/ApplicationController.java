@@ -25,8 +25,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.mail.MessagingException;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -83,7 +81,7 @@ public class ApplicationController {
         return applicationService.deleteById(id);
     }
 
-    @Get("/generate_bind_token/{applicationId}")
+    @Get("/generate_grant_token/{applicationId}")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = "text/plain"))
     @ApiResponse(responseCode = "401", description = "Not authorized.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
@@ -93,8 +91,8 @@ public class ApplicationController {
     )
     @Produces(MediaType.TEXT_PLAIN)
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse generateBindToken(Long applicationId) {
-        return applicationService.generateBindToken(applicationId);
+    public HttpResponse generateGrantToken(Long applicationId) {
+        return applicationService.generateGrantToken(applicationId);
     }
 
     @Get("/generate_passphrase/{application}")
