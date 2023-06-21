@@ -165,7 +165,7 @@
 
 	const validateApplicationName = async () => {
 		const res = await httpAdapter.get(
-			`/applications?page=0&size=${groupsToCompare}&filter=${appName}`
+			`/applications?page=0&size=${groupsToCompare}&filter=${appName}&group=${$groupContext.id}`
 		);
 		if (
 			appName?.length > 0 &&
@@ -421,7 +421,7 @@
 			/>
 			<span
 				class="error-message"
-				style="	top: 9.6rem; right: 2.4rem"
+				style="	top: 10.4rem; right: 2.4rem"
 				class:hidden={errorMessageEmail?.length === 0}
 			>
 				{errorMessageEmail}
@@ -466,7 +466,7 @@
 		{#if errorMessageTopic?.substring(0, errorMessageTopic?.indexOf(' ')) === messages['modal']['error.message.topic.substring'] && errorMessageTopic?.length > 0}
 			<span
 				class="error-message"
-				style="	top: 9.6rem; right: 2.2rem"
+				style="	top: 10.5rem; right: 2.2rem"
 				class:hidden={errorMessageTopic?.length === 0}
 			>
 				{errorMessageTopic}
@@ -476,7 +476,7 @@
 		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === messages['modal']['error.message.topic.substring'] && errorMessageName?.length > 0}
 			<span
 				class="error-message"
-				style="	top: 9.6rem; right: 2.2rem"
+				style="	top: 10.5rem; right: 2.2rem"
 				class:hidden={errorMessageName?.length === 0}
 			>
 				{errorMessageName}
@@ -514,7 +514,7 @@
 		{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === messages['modal']['error.message.application.substring'] && errorMessageName?.length > 0}
 			<span
 				class="error-message"
-				style="	top: 9.6rem; right: 1.4rem"
+				style="	top: 10.5rem; right: 1.4rem"
 				class:hidden={errorMessageName?.length === 0}
 			>
 				{errorMessageName}
@@ -524,7 +524,7 @@
 		{#if errorMessageApplication?.substring(0, errorMessageApplication?.indexOf(' ')) === messages['modal']['error.message.application.substring'] && errorMessageApplication?.length > 0}
 			<span
 				class="error-message"
-				style="	top: 9.6rem; right: 2.3rem"
+				style="	top: 10.5rem; right: 2.3rem"
 				class:hidden={errorMessageApplication?.length === 0}
 			>
 				{errorMessageApplication}
@@ -609,7 +609,7 @@
 			{#if errorMessageName?.substring(0, errorMessageName?.indexOf(' ')) === 'Group' && errorMessageName?.length > 0}
 				<span
 					class="error-message"
-					style="	top: 9.6rem; right: 2.1rem"
+					style="	top: 10.5rem; right: 2.1rem"
 					class:hidden={errorMessageName?.length === 0}
 				>
 					{errorMessageName}
@@ -619,7 +619,7 @@
 			{#if errorMessageGroup?.substring(0, errorMessageGroup?.indexOf(' ')) === messages['modal']['error.message.group.substring'] && errorMessageGroup?.length > 0}
 				<span
 					class="error-message"
-					style="	top: 9.6rem; right: 2.3rem"
+					style="	top: 10.5rem; right: 2.3rem"
 					class:hidden={errorMessageGroup?.length === 0}
 				>
 					{errorMessageGroup}
