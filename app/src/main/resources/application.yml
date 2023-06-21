@@ -69,11 +69,15 @@ micronaut:
       oauth:
         path: /api/oauth/access_token
     intercept-url-map:
-      - pattern: /favicon.ico
+      - pattern: /favicon.png
         http-method: GET
         access:
           - isAnonymous()
       - pattern: /
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /_app/**
         http-method: GET
         access:
           - isAnonymous()
