@@ -456,7 +456,7 @@
 
 	const generateBindToken = async (applicationId) => {
 		try {
-			const res = await httpAdapter.get(`/applications/generate_bind_token/${applicationId}`);
+			const res = await httpAdapter.get(`/applications/generate_grant_token/${applicationId}`);
 			bindToken = res.data;
 			generateBindTokenVisible = true;
 		} catch (err) {

@@ -29,7 +29,7 @@ class ApplicationControllerSecuredTest {
 
     @Test
     void getApiApplicationsGenerateBinTokenRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET("/api/applications/generate_bind_token//99").accept(MediaType.TEXT_PLAIN));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET("/api/applications/generate_grant_token//99").accept(MediaType.TEXT_PLAIN));
     }
 
     @Test

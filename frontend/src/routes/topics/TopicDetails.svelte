@@ -94,7 +94,7 @@
 		const config = {
 			headers: {
 				accept: 'application/json',
-				APPLICATION_BIND_TOKEN: bindToken
+				APPLICATION_GRANT_TOKEN: bindToken
 			}
 		};
 

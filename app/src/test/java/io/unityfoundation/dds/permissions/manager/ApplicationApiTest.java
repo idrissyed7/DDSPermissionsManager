@@ -3,7 +3,6 @@ package io.unityfoundation.dds.permissions.manager;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.data.model.Page;
 import io.micronaut.http.HttpRequest;
@@ -13,9 +12,7 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.http.cookie.Cookie;
-import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.ServerAuthentication;
-import io.micronaut.security.filters.AuthenticationFetcher;
 import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
@@ -35,7 +32,6 @@ import io.unityfoundation.dds.permissions.manager.testing.util.DbCleanup;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.junit.jupiter.api.*;
-import org.reactivestreams.Publisher;
 
 import java.text.Collator;
 import java.util.*;
@@ -955,7 +951,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        void canGenerateApplicationBindToken() {
+        void canGenerateApplicationGrantToken() {
             HttpRequest request;
             HttpResponse response;
 
@@ -974,7 +970,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -982,7 +978,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        void cannotGenerateApplicationBindTokenForApplicationThatDoesNotExist() {
+        void cannotGenerateApplicationGrantTokenForApplicationThatDoesNotExist() {
             HttpRequest request;
             HttpResponse response;
 
@@ -1001,7 +997,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId() + 1);
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId() + 1);
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest, ApplicationDTO.class);
@@ -1615,7 +1611,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        void canGenerateApplicationBindToken() {
+        void canGenerateApplicationGrantToken() {
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
@@ -1651,7 +1647,7 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
@@ -1948,7 +1944,7 @@ public class ApplicationApiTest {
         }
 
         @Test
-        void canGenerateApplicationBindToken() {
+        void canGenerateApplicationGrantToken() {
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
@@ -1972,7 +1968,7 @@ public class ApplicationApiTest {
             loginAsNonAdmin();
 
             // generate passphrase for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -2591,16 +2587,16 @@ public class ApplicationApiTest {
     private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
         HttpRequest<?> request;
 
-        // generate bind token for application
-        request = HttpRequest.GET("/applications/generate_bind_token/" + applicationId);
+        // generate grant token for application
+        request = HttpRequest.GET("/applications/generate_grant_token/" + applicationId);
         HttpResponse<String> response = blockingClient.exchange(request, String.class);
         assertEquals(OK, response.getStatus());
         Optional<String> optional = response.getBody(String.class);
         assertTrue(optional.isPresent());
-        String applicationBindToken = optional.get();
+        String applicationGrantToken = optional.get();
 
         request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
-                .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }

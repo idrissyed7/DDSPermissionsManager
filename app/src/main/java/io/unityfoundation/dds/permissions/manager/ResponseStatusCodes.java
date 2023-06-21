@@ -32,7 +32,7 @@ public interface ResponseStatusCodes {
     String APPLICATION_NAME_CANNOT_BE_BLANK_OR_NULL = "application.name.cannot-be-blank-or-null";
     String APPLICATION_NAME_CANNOT_BE_LESS_THAN_THREE_CHARACTERS = "application.name.cannot-be-less-than-three-characters";
     String APPLICATION_DESCRIPTION_CANNOT_BE_MORE_THAN_FOUR_THOUSAND_CHARACTERS = "application.name.cannot-be-more-than-four-thousand-characters";
-    String APPLICATION_BIND_TOKEN_PARSE_EXCEPTION = "application.bind-token.parse-exception";
+    String APPLICATION_GRANT_TOKEN_PARSE_EXCEPTION = "application.grant-token.parse-exception";
     String IDENTITY_CERT_NOT_FOUND = "application.identity-ca-cert.not-found";
     String PERMISSIONS_CERT_NOT_FOUND = "application.permissions-ca-cert.not-found";
     String GOVERNANCE_FILE_NOT_FOUND = "application.governance-file.not-found";
