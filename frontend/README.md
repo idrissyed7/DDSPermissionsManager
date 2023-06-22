@@ -45,10 +45,22 @@ After authentication is completed, we are redirected to `/groups` that serves as
 
 `stores` folder contains all the Svelte stores (state variables) that share data among all components that imports them.
 
-`.env` file that contains the URL of the backend defined like this:
+`.env` file that contains configuration variables
+
+- VITE_BACKEND_URL - the URL of the backend
+
+By default, the API runs on port 8080.
+So, if the API is running locally (as it usually is during development), `.env` would contain
 
 ```bash
-VITE_BACKEND_URL=http://localhost:8080/api (for example)
+VITE_BACKEND_URL=http://localhost:8080/api
+```
+
+If the UI will be served from the API, then the host portion can be omitted and the necessary URLs will be relative instead of absolute.
+For example,
+
+```bash
+VITE_BACKEND_URL=/api
 ```
 
 ## Application Functionality

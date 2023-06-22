@@ -319,6 +319,7 @@ VALUES (true, '$EMAIL');
 The Web Application UI requires the URL of the API when built.
 This is set using the VITE_BACKEND_URL environment variable.
 If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
+Otherwise, set VITE_BACKEND_URL to the full URL of the API (which should end in `/api`).
 
 ### Configuring Google as an auth provider
 
