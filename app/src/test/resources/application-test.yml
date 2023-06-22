@@ -10,3 +10,10 @@ micronaut:
         generator:
           refresh-token:
             secret: pleaseChangeThisSecretForANewOneRefresh
+---
+permissions-manager:
+  test:
+    username: unity-admin
+    email: unity-admin-test@test.test
+    password: password
+    is-admin: true

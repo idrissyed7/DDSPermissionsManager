@@ -1,5 +1,6 @@
 package io.unityfoundation.dds.permissions.manager.security;
 
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.env.Environment;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.async.publisher.Publishers;
@@ -18,6 +19,21 @@ import java.util.List;
 @Singleton
 public class AuthenticationProviderUserPassword implements AuthenticationProvider {
 
+    @Nullable
+    @Property(name = "permissions-manager.test.username")
+    protected String testUsername;
+
+    @Nullable
+    @Property(name = "permissions-manager.test.password")
+    protected String testPassword;
+
+    @Nullable
+    @Property(name = "permissions-manager.test.email")
+    protected String testEmail;
+
+    @Property(name = "permissions-manager.test.is-admin", defaultValue = "false")
+    protected boolean testUserIsAdmin;
+
     private final Environment environment;
     private final ApplicationService applicationService;
 
@@ -33,18 +49,13 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
         String identity = (String) authenticationRequest.getIdentity();
         String password = (String) authenticationRequest.getSecret();
 
-        if ( (identity.equals("unity") || identity.equals("unity-admin")) && password.equals("password") ) {
-            if (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) {
+        if ( testUsername != null && testPassword != null && testEmail != null &&
+                identity.equals(testUsername) && password.equals(testPassword) &&
+                (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) ) {
 
-                String testEmail = "unity-test@test.test";
-                if ( identity.equals("unity-admin") ){
-                    testEmail = "unity-admin-test@test.test";
-                }
-
-                return Publishers.just(AuthenticationResponse.success( testEmail,
-                        (identity.equals("unity-admin") ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
-                ));
-            }
+            return Publishers.just(AuthenticationResponse.success( testEmail,
+                    (testUserIsAdmin ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
+            ));
         } else {
             // application login
             try {
