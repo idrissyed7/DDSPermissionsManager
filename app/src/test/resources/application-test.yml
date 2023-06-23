@@ -10,3 +10,8 @@ micronaut:
         generator:
           refresh-token:
             secret: pleaseChangeThisSecretForANewOneRefresh
+---
+permissions-manager:
+  application:
+    passphrase:
+      salt: "changeme"

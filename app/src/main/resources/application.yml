@@ -136,4 +136,3 @@ permissions-manager:
       domain: 1
     passphrase:
       length: 16
-      salt: "changeme"
