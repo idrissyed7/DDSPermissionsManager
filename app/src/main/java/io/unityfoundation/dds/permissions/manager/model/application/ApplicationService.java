@@ -97,8 +97,8 @@ public class ApplicationService {
     protected Long permissionExpiry;
     @Property(name = "permissions-manager.application.permissions-file.domain", defaultValue = "1")
     protected Long permissionDomain;
-    @Property(name = "permissions-manager.application.bind-token.time-expiry", defaultValue = "48")
-    protected Integer appBindTokenExpiry;
+    @Property(name = "permissions-manager.application.grant-token.time-expiry", defaultValue = "48")
+    protected Integer appGrantTokenExpiry;
     private final ApplicationRepository applicationRepository;
     private final GroupRepository groupRepository;
     private final SecurityUtil securityUtil;
@@ -682,7 +682,7 @@ public class ApplicationService {
         return new JcaPEMKeyConverter().getPrivateKey(pemKeyPair.getPrivateKeyInfo());
     }
 
-    public HttpResponse generateBindToken(Long applicationId) {
+    public HttpResponse generateGrantToken(Long applicationId) {
         Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isEmpty()) {
             throw new DPMException(ResponseStatusCodes.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -704,7 +704,7 @@ public class ApplicationService {
                 .build();
 
         Map<String, Object> map = jwtClaimsSetGenerator.generateClaims(
-                new AuthenticationJWTClaimsSetAdapter(claimsSet),  appBindTokenExpiry * 60 * 60);
+                new AuthenticationJWTClaimsSetAdapter(claimsSet),  appGrantTokenExpiry * 60 * 60);
         Optional<String> token = jwtTokenGenerator.generateToken(map);
 
         return HttpResponse.ok(token.get());

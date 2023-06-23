@@ -38,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.text.Collator;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -157,13 +156,13 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
@@ -173,7 +172,7 @@ public class ApplicationPermissionApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, topicOptional.get().getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -221,13 +220,13 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
@@ -237,7 +236,7 @@ public class ApplicationPermissionApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, topicOptional.get().getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -320,7 +319,7 @@ public class ApplicationPermissionApiTest {
             Optional<String> s = jwtTokenGenerator.generateToken(stringObjectMap);
 
             request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
-                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, s.get());
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, s.get());
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request, AccessPermissionDTO.class);
             });
@@ -346,13 +345,13 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
@@ -366,7 +365,7 @@ public class ApplicationPermissionApiTest {
 
             // create app permission
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
+                createApplicationPermission(applicationGrantToken, topicOptional.get().getId(), AccessType.READ);
             });
             assertEquals(FORBIDDEN, exception.getStatus());
         }
@@ -397,17 +396,17 @@ public class ApplicationPermissionApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Topic123", topicOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create application permission
             request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
-                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
             response = blockingClient.exchange(request, AccessPermissionDTO.class);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
@@ -438,13 +437,13 @@ public class ApplicationPermissionApiTest {
             assertTrue(applicationOptional.isPresent());
             assertEquals("Application123", applicationOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create topic
             response = createTopic("Topic123", TopicKind.C, primaryGroup.getId());
@@ -454,14 +453,14 @@ public class ApplicationPermissionApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, topicOptional.get().getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
             // second create attempt
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
-                createApplicationPermission(applicationBindToken, topicOptional.get().getId(), AccessType.WRITE);
+                createApplicationPermission(applicationGrantToken, topicOptional.get().getId(), AccessType.WRITE);
             });
             assertEquals(BAD_REQUEST, exception.getStatus());
             Optional<List> body = exception.getResponse().getBody(List.class);
@@ -475,15 +474,15 @@ public class ApplicationPermissionApiTest {
             HttpResponse response;
             HttpRequest request;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
-            response = createApplicationPermission(applicationBindToken, testTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, testTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -501,20 +500,20 @@ public class ApplicationPermissionApiTest {
             HttpResponse response;
             HttpRequest request;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
-            response = createApplicationPermission(applicationBindToken, testTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, testTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
 
-            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, publicTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional1 = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional1.isPresent());
@@ -537,15 +536,15 @@ public class ApplicationPermissionApiTest {
             HttpResponse response;
             HttpRequest request;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOne.getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOne.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
-            response = createApplicationPermission(applicationBindToken, testTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, testTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -563,16 +562,16 @@ public class ApplicationPermissionApiTest {
             HttpResponse response;
             HttpRequest request;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + privateApplication.getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + privateApplication.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create permission
-            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, publicTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -590,16 +589,16 @@ public class ApplicationPermissionApiTest {
             HttpResponse response;
             HttpRequest request;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + privateApplication.getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + privateApplication.getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create permission
-            response = createApplicationPermission(applicationBindToken, publicTopic.getId(), AccessType.READ);
+            response = createApplicationPermission(applicationGrantToken, publicTopic.getId(), AccessType.READ);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -624,16 +623,16 @@ public class ApplicationPermissionApiTest {
             HttpRequest<?> request;
             HashMap<String, Object> responseMap;
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationId);
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationId);
             HttpResponse<String> response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
-                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
             responseMap = blockingClient.retrieve(request, HashMap.class);
 
             assertNotNull(responseMap);
@@ -737,17 +736,17 @@ public class ApplicationPermissionApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Topic123", topicOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create application permission
             request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
-                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
             response = blockingClient.exchange(request, AccessPermissionDTO.class);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
@@ -872,17 +871,17 @@ public class ApplicationPermissionApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Topic123", topicOptional.get().getName());
 
-            // generate bind token for application
-            request = HttpRequest.GET("/applications/generate_bind_token/" + applicationOptional.get().getId());
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOptional.get().getId());
             response = blockingClient.exchange(request, String.class);
             assertEquals(OK, response.getStatus());
             Optional<String> optional = response.getBody(String.class);
             assertTrue(optional.isPresent());
-            String applicationBindToken = optional.get();
+            String applicationGrantToken = optional.get();
 
             // create application permission
             request = HttpRequest.POST("/application_permissions/" + topicOptional.get().getId() + "/" + AccessType.READ.name(), Map.of())
-                    .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
             response = blockingClient.exchange(request, AccessPermissionDTO.class);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> accessPermissionDTOOptional = response.getBody(AccessPermissionDTO.class);
@@ -1030,9 +1029,9 @@ public class ApplicationPermissionApiTest {
         return blockingClient.exchange(request, TopicDTO.class);
     }
 
-    private HttpResponse<?> createApplicationPermission(String applicationBindToken, Long topicId, AccessType accessType) {
+    private HttpResponse<?> createApplicationPermission(String applicationGrantToken, Long topicId, AccessType accessType) {
         HttpRequest<?> request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
-                .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }
