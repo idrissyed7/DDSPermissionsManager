@@ -39,7 +39,7 @@ class ApplicationControllerSecuredTest {
 
     @Test
     void postApiApplicationsDeleteRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.DELETE("/api/applications/delete/99", Collections.emptyMap()));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.DELETE("/api/applications/99", Collections.emptyMap()));
     }
 
     @Test

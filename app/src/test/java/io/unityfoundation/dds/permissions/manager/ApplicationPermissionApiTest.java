@@ -178,7 +178,7 @@ public class ApplicationPermissionApiTest {
             assertTrue(permissionOptional.isPresent());
 
             // topic delete
-            request = HttpRequest.DELETE("/topics/delete/"+topicOptional.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/topics/"+topicOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
@@ -242,7 +242,7 @@ public class ApplicationPermissionApiTest {
             assertTrue(permissionOptional.isPresent());
 
             // application delete
-            request = HttpRequest.DELETE("/applications/delete/"+applicationOptional.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/"+applicationOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
