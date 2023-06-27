@@ -320,7 +320,7 @@ If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api` (see the n
 ### Containerization
 
 For convenience, the UI and API can be built into a single container image.
-A suitable version of gradle and npm must be available.
+A suitable version of Java (11 and up) and npm must be available.
 The following snippet illustrates how to build a container image:
 
     # Set the database dependency.
