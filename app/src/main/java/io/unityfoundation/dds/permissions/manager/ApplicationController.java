@@ -96,12 +96,14 @@ public class ApplicationController {
     }
 
     @Get("/generate_passphrase/{application}")
+    @Produces(MediaType.TEXT_PLAIN)
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> generatePassphrase(@NonNull Long application) {
         return applicationService.generateCleartextPassphrase(application);
     }
 
     @Get("/identity_ca.pem")
+    @Produces(MediaType.TEXT_PLAIN)
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getIdentityCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
@@ -109,6 +111,7 @@ public class ApplicationController {
     }
 
     @Get("/permissions_ca.pem")
+    @Produces(MediaType.TEXT_PLAIN)
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsCACertificate(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
@@ -116,6 +119,7 @@ public class ApplicationController {
     }
 
     @Get("/governance.xml.p7s")
+    @Produces(MediaType.TEXT_PLAIN)
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getGovernanceFile(@Nullable @Header(E_TAG_HEADER_NAME) String etag) {
@@ -131,6 +135,7 @@ public class ApplicationController {
     }
 
     @Get("/permissions.xml.p7s{?nonce}")
+    @Produces(MediaType.TEXT_PLAIN)
     @Secured("APPLICATION")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<?> getPermissionsFile(@Nullable String nonce) throws IOException, OperatorCreationException, GeneralSecurityException, MessagingException, SMIMEException {
