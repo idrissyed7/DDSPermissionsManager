@@ -33,7 +33,7 @@ class GroupControllerSecuredTest {
     @Test
     void deleteGroupControllerDeleteRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
         URI uri = UriBuilder.of("/api").path("/groups").path("delete").path("99").build();
-        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.POST(uri, Collections.emptyMap()));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.DELETE(uri, Collections.emptyMap()));
     }
 
     @Test

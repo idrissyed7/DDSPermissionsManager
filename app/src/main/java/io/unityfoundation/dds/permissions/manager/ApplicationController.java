@@ -71,7 +71,7 @@ public class ApplicationController {
         return applicationService.save(application);
     }
 
-    @Post("/delete/{id}")
+    @Delete("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /applications")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))

@@ -35,7 +35,7 @@ class TopicControllerSecuredTest {
 
     @Test
     void postApiTopicsDeleteIsSecured(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.POST("/api/topics/delete/99", Collections.emptyMap()));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.DELETE("/api/topics/delete/99", Collections.emptyMap()));
     }
 
     @Test

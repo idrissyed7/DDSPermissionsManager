@@ -892,7 +892,7 @@ public class ApplicationApiTest {
             ApplicationDTO applicationOne = applicationOneOptional.get();
 
             // delete
-            request = HttpRequest.POST("/applications/delete/" + applicationOne.getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/delete/" + applicationOne.getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(SEE_OTHER, response.getStatus());
         }
@@ -1605,7 +1605,7 @@ public class ApplicationApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/delete/" + application.getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(SEE_OTHER, response.getStatus());
         }
@@ -1931,7 +1931,7 @@ public class ApplicationApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.POST("/applications/delete/" + application.getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/delete/" + application.getId(), Map.of());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);

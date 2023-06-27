@@ -70,7 +70,7 @@ public class TopicController {
         return topicService.show(id);
     }
 
-    @Post("/delete/{id}")
+    @Delete("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /topics")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))

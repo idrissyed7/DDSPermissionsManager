@@ -59,7 +59,7 @@ public class GroupController {
     }
 
 
-    @Post("/delete/{id}")
+    @Delete("/delete/{id}")
     @ApiResponse(responseCode = "303", description = "Returns result of /groups")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))
