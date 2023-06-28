@@ -133,7 +133,7 @@ public class TopicApiTest {
             assertTrue(topic.isPresent());
 
             // assert expected Canonical Name
-            assertEquals("B."+theta.getId()+".MyTopic789", topic.get().getCanonicalName());
+            assertEquals("B."+theta.getId()+".Abc123", topic.get().getCanonicalName());
         }
 
         @Test
