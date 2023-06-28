@@ -639,9 +639,9 @@ The following environment variables should be set to configure the application:
 
 * MICRONAUT_SECURITY_TOKEN_JWT_SIGNATURES_SECRET_GENERATOR_SECRET - Secret uses to sign JWTs.
 * MICRONAUT_SECURITY_TOKEN_JWT_GENERATOR_REFRESH_TOKEN_SECRET - Secret for JWT renewal tokens.
-* MICRONAUT_SECURITY_REDIRECT_LOGIN_SUCCESS
-* MICRONAUT_SECURITY_REDIRECT_LOGIN_FAILURE
-* MICRONAUT_SECURITY_REDIRECT_LOGOUT
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_SUCCESS - Typically the URL of the Web Application UI, e.g., https://dpm.my.domain.com
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_FAILURE - Typically the `failed-auth` URL of the Web Application UI, e.g., https://dpm.my.domain.com/failed-auth
+* MICRONAUT_SECURITY_REDIRECT_LOGOUT - Typically the URL of the Web Application UI, e.g., https://dpm.my.domain.com
 
 The following environment variables can be used to set the validity of DDS Security Documents produced by the API:
 
