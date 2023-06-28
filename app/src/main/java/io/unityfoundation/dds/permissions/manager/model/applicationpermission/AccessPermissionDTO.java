@@ -7,6 +7,7 @@ import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 public class AccessPermissionDTO implements EntityDTO {
     private final Long topicId;
     private final String topicName;
+    private final String topicCanonicalName;
     private final String topicGroup;
     private final Long applicationId;
     private final String applicationName;
@@ -14,10 +15,11 @@ public class AccessPermissionDTO implements EntityDTO {
     private final AccessType accessType;
     private final Long id;
 
-    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType) {
+    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicCanonicalName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType) {
         this.id = id;
         this.topicId = topicId;
         this.topicName = topicName;
+        this.topicCanonicalName = topicCanonicalName;
         this.topicGroup = topicGroup;
         this.applicationId = applicationId;
         this.applicationName = applicationName;
@@ -55,5 +57,9 @@ public class AccessPermissionDTO implements EntityDTO {
 
     public String getTopicGroup() {
         return topicGroup;
+    }
+
+    public String getTopicCanonicalName() {
+        return topicCanonicalName;
     }
 }

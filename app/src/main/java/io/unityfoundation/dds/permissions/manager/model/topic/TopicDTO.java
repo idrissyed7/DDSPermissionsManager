@@ -35,6 +35,7 @@ public class TopicDTO implements EntityDTO {
         this.isPublic = topic.getMakePublic();
         this.group = topic.getPermissionsGroup().getId();
         this.groupName = topic.getPermissionsGroup().getName();
+        this.canonicalName = topic.deriveCanonicalName();
     }
 
     public Long getId() {

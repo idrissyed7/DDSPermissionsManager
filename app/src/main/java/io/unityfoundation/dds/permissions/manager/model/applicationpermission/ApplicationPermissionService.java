@@ -87,6 +87,7 @@ public class ApplicationPermissionService {
                 applicationPermission.getId(),
                 applicationPermission.getPermissionsTopic().getId(),
                 applicationPermission.getPermissionsTopic().getName(),
+                applicationPermission.getPermissionsTopic().deriveCanonicalName(),
                 applicationPermission.getPermissionsTopic().getPermissionsGroup().getName(),
                 applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getPermissionsApplication().getName(),
@@ -213,6 +214,7 @@ public class ApplicationPermissionService {
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
         String topicName = applicationPermission.getPermissionsTopic().getName();
+        String topicCanonicalName = applicationPermission.getPermissionsTopic().deriveCanonicalName();
         String topicGroup = applicationPermission.getPermissionsTopic().getPermissionsGroup().getName();
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
         String applicationName = applicationPermission.getPermissionsApplication().getName();
@@ -222,6 +224,7 @@ public class ApplicationPermissionService {
                 applicationPermission.getId(),
                 topicId,
                 topicName,
+                topicCanonicalName,
                 topicGroup,
                 applicationId,
                 applicationName,
