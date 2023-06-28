@@ -582,6 +582,9 @@ public class ApplicationPermissionApiTest {
             List<Map> content = (List<Map>) responseMap.get("content");
             assertEquals(1, content.size());
             assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+
+            // expect canonical name is given
+            assertEquals("B."+publicGroup.getId()+".PublicTestTopic", content.get(0).get("topicCanonicalName"));
         }
 
         @Test

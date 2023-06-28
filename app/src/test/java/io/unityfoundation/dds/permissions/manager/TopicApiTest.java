@@ -131,6 +131,9 @@ public class TopicApiTest {
             assertEquals(OK, response.getStatus());
             Optional<TopicDTO> topic = response.getBody(TopicDTO.class);
             assertTrue(topic.isPresent());
+
+            // assert expected Canonical Name
+            assertEquals("B."+theta.getId()+".MyTopic789", topic.get().getCanonicalName());
         }
 
         @Test
