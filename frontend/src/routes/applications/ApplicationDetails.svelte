@@ -199,7 +199,7 @@
 							{appPermission.topicGroup}
 						</td>
 						<td style="min-width: 20rem">
-							{appPermission.topicName}
+							{appPermission.topicName} ({appPermission.topicCanonicalName})
 						</td>
 						<td style="min-width: 6.5rem">
 							{appPermission.accessType === 'READ_WRITE'
