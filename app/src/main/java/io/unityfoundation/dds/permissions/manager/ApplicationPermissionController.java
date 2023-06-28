@@ -17,7 +17,7 @@ import org.reactivestreams.Publisher;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
-import static io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService.APPLICATION_BIND_TOKEN;
+import static io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService.APPLICATION_GRANT_TOKEN;
 
 @Controller("/api/application_permissions")
 @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -50,8 +50,8 @@ public class ApplicationPermissionController {
     @ExecuteOn(TaskExecutors.IO)
     public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(Long topicId,
                                                                   AccessType access,
-                                                                  @NotBlank @Header(APPLICATION_BIND_TOKEN) String bindToken) {
-        return applicationPermissionService.addAccess(bindToken, topicId, access);
+                                                                  @NotBlank @Header(APPLICATION_GRANT_TOKEN) String grantToken) {
+        return applicationPermissionService.addAccess(grantToken, topicId, access);
     }
 
     @Put("/{permissionId}/{access}")

@@ -391,7 +391,6 @@
 		isPublic = selectedAppPublic;
 
 		promiseDetail = await getAppPermissions(appId);
-		await getCanonicalTopicName();
 		curlCommandsDecode();
 	};
 
@@ -401,25 +400,6 @@
 		);
 
 		applicationPermission.set(appPermissionData.data.content);
-	};
-
-	const getCanonicalTopicName = async () => {
-		if ($applicationPermission) {
-			$applicationPermission.forEach(async (topic) => {
-				const topicDetails = await httpAdapter.get(`/topics/show/${topic.topicId}`);
-				$applicationPermission.find((permissionTopic) => {
-					if (permissionTopic.topicId === topic.topicId) {
-						permissionTopic.topicName =
-							permissionTopic.topicName + ' ' + '(' + topicDetails.data.canonicalName + ')';
-						permissionTopic.topicGroup = topicDetails.data.groupName;
-					}
-				});
-
-				applicationPermission.update((appPermission) => {
-					return [...appPermission];
-				});
-			});
-		}
 	};
 
 	const returnToApplicationsList = () => {
@@ -456,7 +436,7 @@
 
 	const generateBindToken = async (applicationId) => {
 		try {
-			const res = await httpAdapter.get(`/applications/generate_bind_token/${applicationId}`);
+			const res = await httpAdapter.get(`/applications/generate_grant_token/${applicationId}`);
 			bindToken = res.data;
 			generateBindTokenVisible = true;
 		} catch (err) {

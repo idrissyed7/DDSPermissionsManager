@@ -30,7 +30,7 @@ import java.util.Optional;
 @Singleton
 public class ApplicationPermissionService {
 
-    public static final String APPLICATION_BIND_TOKEN = "APPLICATION_BIND_TOKEN";
+    public static final String APPLICATION_GRANT_TOKEN = "APPLICATION_GRANT_TOKEN";
 
     private final ApplicationPermissionRepository applicationPermissionRepository;
     private final ApplicationRepository applicationRepository;
@@ -87,6 +87,7 @@ public class ApplicationPermissionService {
                 applicationPermission.getId(),
                 applicationPermission.getPermissionsTopic().getId(),
                 applicationPermission.getPermissionsTopic().getName(),
+                applicationPermission.getPermissionsTopic().deriveCanonicalName(),
                 applicationPermission.getPermissionsTopic().getPermissionsGroup().getName(),
                 applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getPermissionsApplication().getName(),
@@ -150,21 +151,21 @@ public class ApplicationPermissionService {
         }
     }
 
-    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String bindToken, Long topicId, AccessType access) {
-        return Publishers.map(jwtTokenValidator.validateToken(bindToken, null), authentication -> {
+    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String grantToken, Long topicId, AccessType access) {
+        return Publishers.map(jwtTokenValidator.validateToken(grantToken, null), authentication -> {
             JWT jwt;
             JwtClaims claims;
             try {
-                jwt = JWTParser.parse(bindToken);
+                jwt = JWTParser.parse(grantToken);
                 claims = new JwtClaimsSetAdapter(jwt.getJWTClaimsSet());
                 if (claims.get(JwtClaims.SUBJECT) != null) {
                     Long applicationId = Long.valueOf((String) claims.get(JwtClaims.SUBJECT));
                     return addAccess(applicationId, topicId, access);
                 } else {
-                    throw new DPMException(ResponseStatusCodes.APPLICATION_BIND_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
+                    throw new DPMException(ResponseStatusCodes.APPLICATION_GRANT_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
                 }
             } catch (ParseException e) {
-                throw new DPMException(ResponseStatusCodes.APPLICATION_BIND_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
+                throw new DPMException(ResponseStatusCodes.APPLICATION_GRANT_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
             }
         });
     }
@@ -213,6 +214,7 @@ public class ApplicationPermissionService {
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
         Long topicId = applicationPermission.getPermissionsTopic().getId();
         String topicName = applicationPermission.getPermissionsTopic().getName();
+        String topicCanonicalName = applicationPermission.getPermissionsTopic().deriveCanonicalName();
         String topicGroup = applicationPermission.getPermissionsTopic().getPermissionsGroup().getName();
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
         String applicationName = applicationPermission.getPermissionsApplication().getName();
@@ -222,6 +224,7 @@ public class ApplicationPermissionService {
                 applicationPermission.getId(),
                 topicId,
                 topicName,
+                topicCanonicalName,
                 topicGroup,
                 applicationId,
                 applicationName,

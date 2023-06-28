@@ -1010,16 +1010,16 @@ public class GroupApiTest {
     private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
         HttpRequest<?> request;
 
-        // generate bind token for application
-        request = HttpRequest.GET("/applications/generate_bind_token/" + applicationId);
+        // generate grant token for application
+        request = HttpRequest.GET("/applications/generate_grant_token/" + applicationId);
         HttpResponse<String> response = blockingClient.exchange(request, String.class);
         assertEquals(OK, response.getStatus());
         Optional<String> optional = response.getBody(String.class);
         assertTrue(optional.isPresent());
-        String applicationBindToken = optional.get();
+        String applicationGrantToken = optional.get();
 
         request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
-                .header(ApplicationPermissionService.APPLICATION_BIND_TOKEN, applicationBindToken);
+                .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }
 }

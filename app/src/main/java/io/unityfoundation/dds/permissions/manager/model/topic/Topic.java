@@ -114,4 +114,8 @@ public class Topic {
     public void setMakePublic(boolean isPublic) {
         makePublic = isPublic;
     }
+
+    public String deriveCanonicalName() {
+        return kind + "." + permissionsGroup.getId() + "." + name;
+    }
 }
