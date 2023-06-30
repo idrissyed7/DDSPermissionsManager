@@ -26,6 +26,7 @@ import io.unityfoundation.dds.permissions.manager.security.ApplicationSecretsCli
 import io.unityfoundation.dds.permissions.manager.security.BCryptPasswordEncoderService;
 import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
+import io.unityfoundation.dds.permissions.manager.util.XMLEscaper;
 import jakarta.inject.Singleton;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSet;
@@ -110,6 +111,7 @@ public class ApplicationService {
     private final TemplateService templateService;
     private final JwtTokenGenerator jwtTokenGenerator;
     private final JWTClaimsSetGenerator jwtClaimsSetGenerator;
+    private final XMLEscaper xmlEscaper;
 
 
     public ApplicationService(ApplicationRepository applicationRepository, GroupRepository groupRepository,
@@ -118,7 +120,7 @@ public class ApplicationService {
                               PassphraseGenerator passphraseGenerator,
                               BCryptPasswordEncoderService passwordEncoderService, ApplicationSecretsClient applicationSecretsClient,
                               TemplateService templateService, JwtTokenGenerator jwtTokenGenerator,
-                              JWTClaimsSetGenerator jwtClaimsSetGenerator) {
+                              JWTClaimsSetGenerator jwtClaimsSetGenerator, XMLEscaper xmlEscaper) {
         this.applicationRepository = applicationRepository;
         this.groupRepository = groupRepository;
         this.securityUtil = securityUtil;
@@ -130,6 +132,7 @@ public class ApplicationService {
         this.templateService = templateService;
         this.jwtTokenGenerator = jwtTokenGenerator;
         this.jwtClaimsSetGenerator = jwtClaimsSetGenerator;
+        this.xmlEscaper = xmlEscaper;
     }
 
     public Page<ApplicationDTO> findAll(Pageable pageable, String filter, Long applicationId, Long groupId) {
@@ -559,12 +562,12 @@ public class ApplicationService {
         oidMap.put("2.5.4.42", "GN");
 
         HashMap<String, Object> dataModel = new HashMap<>();
-        String sn = (new X500Principal(buildSubject(application, nonce))).getName(X500Principal.RFC2253, oidMap);
-        dataModel.put("subject", sn);
+        final String sn = (new X500Principal(buildSubject(application, nonce))).getName(X500Principal.RFC2253, oidMap);
+        dataModel.put("subject", xmlEscaper.escapeX500Name(sn));
         dataModel.put("applicationId", application.getId());
 
-        String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-        String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(permissionExpiry).format(DateTimeFormatter.ISO_INSTANT);
+        final String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        final String validEnd = ZonedDateTime.now(ZoneOffset.UTC).plusDays(permissionExpiry).format(DateTimeFormatter.ISO_INSTANT);
         dataModel.put("validStart", validStart);
         dataModel.put("validEnd", validEnd);
         dataModel.put("domain", permissionDomain);
@@ -608,10 +611,10 @@ public class ApplicationService {
         }
     }
 
-    private static String buildCanonicalName(Topic permissionsTopic) {
+    private String buildCanonicalName(Topic permissionsTopic) {
         return permissionsTopic.getKind() + "." +
                 permissionsTopic.getPermissionsGroup().getId() + "." +
-                permissionsTopic.getName();
+                xmlEscaper.escape(permissionsTopic.getName());
     }
 
     public X509Certificate makeV3Certificate(
