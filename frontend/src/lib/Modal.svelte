@@ -97,8 +97,7 @@
 	let errorMessageTopic = '';
 	let errorMessageEmail = '';
 	let errorMessageName = '';
-	let validRegex =
-		/^([a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)$/gm;
+	let validRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}$/;
 
 	// SearchBox
 	let selectedGroup;
@@ -150,7 +149,7 @@
 		);
 
 		if (
-			newTopicName?.length > 0 &&
+			newTopicName?.length > minNameLength &&
 			res.data.content?.some(
 				(topic) =>
 					topic.name.toUpperCase() === newTopicName.toUpperCase() &&
@@ -184,7 +183,7 @@
 			`/group_membership?page=0&size=${groupsToCompare}&filter=${emailValue}`
 		);
 		if (
-			emailValue?.length > 0 &&
+			emailValue?.length > minNameLength &&
 			res.data.content?.some(
 				(user) =>
 					user.permissionsUserEmail.toUpperCase() === emailValue.toUpperCase() &&
