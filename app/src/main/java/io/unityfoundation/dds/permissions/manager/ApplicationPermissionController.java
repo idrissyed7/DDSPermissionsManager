@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionBodyDTO;
 import org.reactivestreams.Publisher;
 
 import javax.validation.Valid;
@@ -50,14 +51,17 @@ public class ApplicationPermissionController {
     @ExecuteOn(TaskExecutors.IO)
     public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(Long topicId,
                                                                   AccessType access,
-                                                                  @NotBlank @Header(APPLICATION_GRANT_TOKEN) String grantToken) {
-        return applicationPermissionService.addAccess(grantToken, topicId, access);
+                                                                  @NotBlank @Header(APPLICATION_GRANT_TOKEN) String grantToken,
+                                                                  @Valid @Body AccessPermissionBodyDTO accessPermissionBodyDTO) {
+        return applicationPermissionService.addAccess(grantToken, topicId, access, accessPermissionBodyDTO);
     }
 
     @Put("/{permissionId}/{access}")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access) {
-        return applicationPermissionService.updateAccess(permissionId, access);
+    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId,
+                                                          AccessType access,
+                                                          @Valid @Body AccessPermissionBodyDTO accessPermissionBodyDTO) {
+        return applicationPermissionService.updateAccess(permissionId, access, accessPermissionBodyDTO);
     }
 
     @Delete("/{permissionId}")

@@ -23,9 +23,8 @@ import jakarta.inject.Singleton;
 import org.reactivestreams.Publisher;
 
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Singleton
 public class ApplicationPermissionService {
@@ -35,16 +34,19 @@ public class ApplicationPermissionService {
     private final ApplicationPermissionRepository applicationPermissionRepository;
     private final ApplicationRepository applicationRepository;
     private final TopicRepository topicRepository;
+    private final PartitionRepository partitionRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final JwtTokenValidator jwtTokenValidator;
 
     public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository,
                                         ApplicationRepository applicationRepository, TopicRepository topicRepository,
-                                        SecurityUtil securityUtil, GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
+                                        PartitionRepository partitionRepository, SecurityUtil securityUtil,
+                                        GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
         this.applicationPermissionRepository = applicationPermissionRepository;
         this.applicationRepository = applicationRepository;
         this.topicRepository = topicRepository;
+        this.partitionRepository = partitionRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.jwtTokenValidator = jwtTokenValidator;
@@ -92,7 +94,8 @@ public class ApplicationPermissionService {
                 applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getPermissionsApplication().getName(),
                 applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
-                applicationPermission.getAccessType()
+                applicationPermission.getAccessType(),
+                applicationPermission.getPartitions().stream().map(Partition::getPartition).collect(Collectors.toSet())
         ));
     }
 
@@ -151,7 +154,7 @@ public class ApplicationPermissionService {
         }
     }
 
-    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String grantToken, Long topicId, AccessType access) {
+    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String grantToken, Long topicId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         return Publishers.map(jwtTokenValidator.validateToken(grantToken, null), authentication -> {
             JWT jwt;
             JwtClaims claims;
@@ -160,7 +163,7 @@ public class ApplicationPermissionService {
                 claims = new JwtClaimsSetAdapter(jwt.getJWTClaimsSet());
                 if (claims.get(JwtClaims.SUBJECT) != null) {
                     Long applicationId = Long.valueOf((String) claims.get(JwtClaims.SUBJECT));
-                    return addAccess(applicationId, topicId, access);
+                    return addAccess(applicationId, topicId, access, accessPermissionBodyDTO);
                 } else {
                     throw new DPMException(ResponseStatusCodes.APPLICATION_GRANT_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
                 }
@@ -170,7 +173,7 @@ public class ApplicationPermissionService {
         });
     }
 
-    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access) {
+    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         final HttpResponse response;
 
         Optional<Application> applicationById = applicationRepository.findById(applicationId);
@@ -189,7 +192,7 @@ public class ApplicationPermissionService {
                     throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
                 } else {
                     Application application = applicationById.get();
-                    response = addAccess(application, topic, access);
+                    response = addAccess(application, topic, access, accessPermissionBodyDTO);
                 }
             }
         }
@@ -197,18 +200,20 @@ public class ApplicationPermissionService {
         return response;
     }
 
-    public HttpResponse addAccess(Application application, Topic topic, AccessType access) {
-        ApplicationPermission newPermission = saveNewPermission(application, topic, access);
+    public HttpResponse addAccess(Application application, Topic topic, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
+        ApplicationPermission newPermission = saveNewPermission(application, topic, access, accessPermissionBodyDTO);
         AccessPermissionDTO dto = createDTO(newPermission);
         return HttpResponse.created(dto);
     }
 
-    public ApplicationPermission saveNewPermission(Application application, Topic topic, AccessType access) {
+    public ApplicationPermission saveNewPermission(Application application, Topic topic, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         if (applicationPermissionRepository.existsByPermissionsApplicationAndPermissionsTopic(application, topic)) {
             throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_ALREADY_EXISTS);
         }
-        ApplicationPermission applicationPermission = new ApplicationPermission(application, topic, access);
-        return applicationPermissionRepository.save(applicationPermission);
+        ApplicationPermission applicationPermission = applicationPermissionRepository.save(new ApplicationPermission(application, topic, access));
+        addPartitionsToPermission(accessPermissionBodyDTO, applicationPermission);
+
+        return applicationPermissionRepository.update(applicationPermission);
     }
 
     public AccessPermissionDTO createDTO(ApplicationPermission applicationPermission) {
@@ -229,8 +234,8 @@ public class ApplicationPermissionService {
                 applicationId,
                 applicationName,
                 applicationGroupName,
-                accessType
-        );
+                accessType,
+                applicationPermission.getPartitions().stream().map(Partition::getPartition).collect(Collectors.toSet()));
     }
 
     public HttpResponse deleteById(Long permissionId) {
@@ -257,7 +262,7 @@ public class ApplicationPermissionService {
         return HttpResponse.noContent();
     }
 
-    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access) {
+    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         if (Arrays.stream(AccessType.values()).noneMatch(accessType -> accessType.equals(access))) {
             return HttpResponse.badRequest();
         }
@@ -278,7 +283,20 @@ public class ApplicationPermissionService {
         ApplicationPermission applicationPermission = applicationPermissionOptional.get();
         applicationPermission.setAccessType(access);
 
+        partitionRepository.deleteAll(applicationPermission.getPartitions());
+        addPartitionsToPermission(accessPermissionBodyDTO, applicationPermission);
+
         return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
+    }
+
+    private void addPartitionsToPermission(AccessPermissionBodyDTO accessPermissionBodyDTO, ApplicationPermission applicationPermission) {
+        Set<String> partitions = accessPermissionBodyDTO.getPartitions();
+        if (partitions != null) {
+            applicationPermission.setPartitions(partitions.stream().map(s -> {
+                Partition partition = new Partition(applicationPermission, s);
+                return partitionRepository.save(partition);
+            }).collect(Collectors.toSet()));
+        }
     }
 
     public void deleteAllByTopic(Topic topic) {

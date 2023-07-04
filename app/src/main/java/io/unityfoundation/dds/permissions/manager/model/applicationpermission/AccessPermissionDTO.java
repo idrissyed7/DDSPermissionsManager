@@ -3,6 +3,8 @@ package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 import io.micronaut.core.annotation.Introspected;
 import io.unityfoundation.dds.permissions.manager.model.EntityDTO;
 
+import java.util.Set;
+
 @Introspected
 public class AccessPermissionDTO implements EntityDTO {
     private final Long topicId;
@@ -13,9 +15,10 @@ public class AccessPermissionDTO implements EntityDTO {
     private final String applicationName;
     private final String applicationGroupName;
     private final AccessType accessType;
+    private final Set<String> partitions;
     private final Long id;
 
-    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicCanonicalName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType) {
+    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicCanonicalName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType, Set<String> partitions) {
         this.id = id;
         this.topicId = topicId;
         this.topicName = topicName;
@@ -25,6 +28,7 @@ public class AccessPermissionDTO implements EntityDTO {
         this.applicationName = applicationName;
         this.applicationGroupName = applicationGroupName;
         this.accessType = accessType;
+        this.partitions = partitions;
     }
 
     public Long getTopicId() {
@@ -61,5 +65,9 @@ public class AccessPermissionDTO implements EntityDTO {
 
     public String getTopicCanonicalName() {
         return topicCanonicalName;
+    }
+
+    public Set<String> getPartitions() {
+        return partitions;
     }
 }

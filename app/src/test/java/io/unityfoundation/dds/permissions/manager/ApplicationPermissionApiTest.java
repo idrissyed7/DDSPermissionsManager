@@ -289,6 +289,71 @@ public class ApplicationPermissionApiTest {
         }
 
         @Test
+        public void canCreatAndUpdatePermissionsWithPartitions() {
+            HttpRequest<?> request;
+            Long applicationOneId = applicationOne.getId();
+            Long testTopicId = testTopic.getId();
+
+
+            // generate grant token for application
+            request = HttpRequest.GET("/applications/generate_grant_token/" + applicationOneId);
+            HttpResponse<String> response = blockingClient.exchange(request, String.class);
+            assertEquals(OK, response.getStatus());
+            Optional<String> optional = response.getBody(String.class);
+            assertTrue(optional.isPresent());
+            String applicationGrantToken = optional.get();
+
+            // create partitions + permissions
+            HashSet<String> partitions = new HashSet<>();
+            partitions.add("PartitionA");
+            partitions.add("partition9");
+            AccessPermissionBodyDTO accessPermissionBodyDTO = new AccessPermissionBodyDTO(partitions);
+            
+            request = HttpRequest.POST("/application_permissions/" + testTopicId + "/" + AccessType.WRITE.name(), accessPermissionBodyDTO)
+                    .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
+            AccessPermissionDTO accessPermissionDTO = blockingClient.retrieve(request, AccessPermissionDTO.class);
+
+            assertNotNull(accessPermissionDTO);
+            assertEquals(AccessType.WRITE, accessPermissionDTO.getAccessType());
+            assertTrue(accessPermissionDTO.getPartitions().stream().allMatch(s -> s.equals("PartitionA") || s.equals("partition9")));
+
+            // get permission
+            request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
+            HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            List<Map> content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertTrue(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
+            Map first = content.get(0);
+            List partitionList = (List) first.get("partitions");
+            assertTrue(partitionList.stream().allMatch(s -> s.equals("PartitionA") || s.equals("partition9")));
+            int permissionId = (int) first.get("id");
+
+
+            // update partitions
+            partitions.clear();
+            partitions.add("MyPart123");
+            accessPermissionBodyDTO = new AccessPermissionBodyDTO(partitions);
+
+            request = HttpRequest.PUT("/application_permissions/" + permissionId + "/" + AccessType.READ.name(), accessPermissionBodyDTO);
+            accessPermissionDTO = blockingClient.retrieve(request, AccessPermissionDTO.class);
+
+            assertNotNull(accessPermissionDTO);
+            assertEquals(AccessType.READ, accessPermissionDTO.getAccessType());
+            assertTrue(accessPermissionDTO.getPartitions().stream().allMatch(s -> s.equals("MyPart123")));
+
+            request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
+            responseMap = blockingClient.retrieve(request, HashMap.class);
+            assertNotNull(responseMap);
+            content = (List<Map>) responseMap.get("content");
+            assertEquals(1, content.size());
+            assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
+            first = content.get(0);
+            partitionList = (List) first.get("partitions");
+            assertTrue(partitionList.stream().allMatch(s -> s.equals("MyPart123")));
+        }
+
+        @Test
         public void attemptToAssociateApplicationWithInvalidApplicationJwtToken() {
             HttpResponse<?> response;
             HttpRequest<?> request;

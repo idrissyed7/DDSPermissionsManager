@@ -4,8 +4,13 @@ package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissions_application_permission")
@@ -24,6 +29,10 @@ public class ApplicationPermission {
 
     @NonNull
     private AccessType accessType;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "applicationPermission")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<Partition> partitions = new HashSet<>();
 
 
     public ApplicationPermission() {
@@ -67,5 +76,18 @@ public class ApplicationPermission {
 
     public void setAccessType(AccessType accessType) {
         this.accessType = accessType;
+    }
+
+    public Set<Partition> getPartitions() {
+        if (partitions == null) return null;
+        return Collections.unmodifiableSet(partitions);
+    }
+
+    public void setPartitions(Set<Partition> partitions) {
+        this.partitions = partitions;
+    }
+
+    public boolean removePartition(Long partitionId) {
+        return partitions.removeIf(partition -> partitionId != null && partitionId.equals(partition.getId()));
     }
 }
