@@ -15,10 +15,11 @@ public class AccessPermissionDTO implements EntityDTO {
     private final String applicationName;
     private final String applicationGroupName;
     private final AccessType accessType;
-    private final Set<String> partitions;
+    private final Set<String> readPartitions;
+    private final Set<String> writePartitions;
     private final Long id;
 
-    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicCanonicalName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType, Set<String> partitions) {
+    public AccessPermissionDTO(Long id, Long topicId, String topicName, String topicCanonicalName, String topicGroup, Long applicationId, String applicationName, String applicationGroupName, AccessType accessType, Set<String> readPartitions, Set<String> writePartitions) {
         this.id = id;
         this.topicId = topicId;
         this.topicName = topicName;
@@ -28,7 +29,8 @@ public class AccessPermissionDTO implements EntityDTO {
         this.applicationName = applicationName;
         this.applicationGroupName = applicationGroupName;
         this.accessType = accessType;
-        this.partitions = partitions;
+        this.readPartitions = readPartitions;
+        this.writePartitions = writePartitions;
     }
 
     public Long getTopicId() {
@@ -67,7 +69,11 @@ public class AccessPermissionDTO implements EntityDTO {
         return topicCanonicalName;
     }
 
-    public Set<String> getPartitions() {
-        return partitions;
+    public Set<String> getReadPartitions() {
+        return readPartitions;
+    }
+
+    public Set<String> getWritePartitions() {
+        return writePartitions;
     }
 }

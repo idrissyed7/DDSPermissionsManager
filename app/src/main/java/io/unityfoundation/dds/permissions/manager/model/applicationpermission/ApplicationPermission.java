@@ -30,9 +30,13 @@ public class ApplicationPermission {
     @NonNull
     private AccessType accessType;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "applicationPermission")
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "rApplicationPermission")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<Partition> partitions = new HashSet<>();
+    private Set<ReadPartition> readPartitions = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "wApplicationPermission")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<WritePartition> writePartitions = new HashSet<>();
 
 
     public ApplicationPermission() {
@@ -78,16 +82,29 @@ public class ApplicationPermission {
         this.accessType = accessType;
     }
 
-    public Set<Partition> getPartitions() {
-        if (partitions == null) return null;
-        return Collections.unmodifiableSet(partitions);
+    public Set<ReadPartition> getReadPartitions() {
+        if (readPartitions == null) return null;
+        return Collections.unmodifiableSet(readPartitions);
     }
 
-    public void setPartitions(Set<Partition> partitions) {
-        this.partitions = partitions;
+    public void setReadPartitions(Set<ReadPartition> readReadPartitions) {
+        this.readPartitions = readReadPartitions;
     }
 
-    public boolean removePartition(Long partitionId) {
-        return partitions.removeIf(partition -> partitionId != null && partitionId.equals(partition.getId()));
+    public boolean removeReadPartition(Long partitionId) {
+        return readPartitions.removeIf(readPartition -> partitionId != null && partitionId.equals(readPartition.getId()));
+    }
+
+    public Set<WritePartition> getWritePartitions() {
+        if (writePartitions == null) return null;
+        return Collections.unmodifiableSet(writePartitions);
+    }
+
+    public void setWritePartitions(Set<WritePartition> writePartitions) {
+        this.writePartitions = writePartitions;
+    }
+
+    public boolean removeWritePartition(Long partitionId) {
+        return writePartitions.removeIf(readPartition -> partitionId != null && partitionId.equals(readPartition.getId()));
     }
 }

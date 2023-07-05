@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "permissions_partition")
-public class Partition {
+public class WritePartition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,15 +12,15 @@ public class Partition {
 
     @ManyToOne(fetch = FetchType.EAGER)
 //    @JoinColumn(name = "permissions_application_permission_id")
-    private ApplicationPermission applicationPermission;
+    private ApplicationPermission wApplicationPermission;
 
     private String partition;
 
-    public Partition() {
+    public WritePartition() {
     }
 
-    public Partition(ApplicationPermission applicationPermission, String partition) {
-        this.applicationPermission = applicationPermission;
+    public WritePartition(ApplicationPermission applicationPermission, String partition) {
+        this.wApplicationPermission = applicationPermission;
         this.partition = partition;
     }
 
@@ -33,11 +33,11 @@ public class Partition {
     }
 
     public ApplicationPermission getApplicationPermission() {
-        return applicationPermission;
+        return wApplicationPermission;
     }
 
     public void setApplicationPermission(ApplicationPermission applicationPermission) {
-        this.applicationPermission = applicationPermission;
+        this.wApplicationPermission = applicationPermission;
     }
 
     public String getPartition() {

@@ -34,19 +34,21 @@ public class ApplicationPermissionService {
     private final ApplicationPermissionRepository applicationPermissionRepository;
     private final ApplicationRepository applicationRepository;
     private final TopicRepository topicRepository;
-    private final PartitionRepository partitionRepository;
+    private final ReadPartitionRepository readPartitionRepository;
+    private final WritePartitionRepository writePartitionRepository;
     private final SecurityUtil securityUtil;
     private final GroupUserService groupUserService;
     private final JwtTokenValidator jwtTokenValidator;
 
     public ApplicationPermissionService(ApplicationPermissionRepository applicationPermissionRepository,
                                         ApplicationRepository applicationRepository, TopicRepository topicRepository,
-                                        PartitionRepository partitionRepository, SecurityUtil securityUtil,
-                                        GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
+                                        ReadPartitionRepository readPartitionRepository, WritePartitionRepository writePartitionRepository,
+                                        SecurityUtil securityUtil, GroupUserService groupUserService, JwtTokenValidator jwtTokenValidator) {
         this.applicationPermissionRepository = applicationPermissionRepository;
         this.applicationRepository = applicationRepository;
         this.topicRepository = topicRepository;
-        this.partitionRepository = partitionRepository;
+        this.readPartitionRepository = readPartitionRepository;
+        this.writePartitionRepository = writePartitionRepository;
         this.securityUtil = securityUtil;
         this.groupUserService = groupUserService;
         this.jwtTokenValidator = jwtTokenValidator;
@@ -95,7 +97,8 @@ public class ApplicationPermissionService {
                 applicationPermission.getPermissionsApplication().getName(),
                 applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
                 applicationPermission.getAccessType(),
-                applicationPermission.getPartitions().stream().map(Partition::getPartition).collect(Collectors.toSet())
+                applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
+                applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
         ));
     }
 
@@ -235,7 +238,9 @@ public class ApplicationPermissionService {
                 applicationName,
                 applicationGroupName,
                 accessType,
-                applicationPermission.getPartitions().stream().map(Partition::getPartition).collect(Collectors.toSet()));
+                applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
+                applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
+        );
     }
 
     public HttpResponse deleteById(Long permissionId) {
@@ -283,19 +288,25 @@ public class ApplicationPermissionService {
         ApplicationPermission applicationPermission = applicationPermissionOptional.get();
         applicationPermission.setAccessType(access);
 
-        partitionRepository.deleteAll(applicationPermission.getPartitions());
+        readPartitionRepository.deleteAll(applicationPermission.getReadPartitions());
+        writePartitionRepository.deleteAll(applicationPermission.getWritePartitions());
         addPartitionsToPermission(accessPermissionBodyDTO, applicationPermission);
 
         return HttpResponse.ok(createDTO(applicationPermissionRepository.update(applicationPermission)));
     }
 
     private void addPartitionsToPermission(AccessPermissionBodyDTO accessPermissionBodyDTO, ApplicationPermission applicationPermission) {
-        Set<String> partitions = accessPermissionBodyDTO.getPartitions();
-        if (partitions != null) {
-            applicationPermission.setPartitions(partitions.stream().map(s -> {
-                Partition partition = new Partition(applicationPermission, s);
-                return partitionRepository.save(partition);
-            }).collect(Collectors.toSet()));
+        Set<String> readPartitions = accessPermissionBodyDTO.getReadPartitions();
+        Set<String> writePartitions = accessPermissionBodyDTO.getWritePartitions();
+        if (readPartitions != null) {
+            applicationPermission.setReadPartitions(readPartitions.stream()
+                    .map(r -> readPartitionRepository.save(new ReadPartition(applicationPermission, r)))
+                    .collect(Collectors.toSet()));
+        }
+        if (writePartitions != null) {
+            applicationPermission.setWritePartitions(writePartitions.stream()
+                    .map(w -> writePartitionRepository.save(new WritePartition(applicationPermission, w)))
+                    .collect(Collectors.toSet()));
         }
     }
 

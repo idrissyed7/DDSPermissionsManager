@@ -303,11 +303,8 @@ public class ApplicationPermissionApiTest {
             assertTrue(optional.isPresent());
             String applicationGrantToken = optional.get();
 
-            // create partitions + permissions
-            HashSet<String> partitions = new HashSet<>();
-            partitions.add("PartitionA");
-            partitions.add("partition9");
-            AccessPermissionBodyDTO accessPermissionBodyDTO = new AccessPermissionBodyDTO(partitions);
+            // create readPartitions + permissions
+            AccessPermissionBodyDTO accessPermissionBodyDTO = new AccessPermissionBodyDTO(Set.of("PartitionA", "partition9"), null);
             
             request = HttpRequest.POST("/application_permissions/" + testTopicId + "/" + AccessType.WRITE.name(), accessPermissionBodyDTO)
                     .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
@@ -315,7 +312,8 @@ public class ApplicationPermissionApiTest {
 
             assertNotNull(accessPermissionDTO);
             assertEquals(AccessType.WRITE, accessPermissionDTO.getAccessType());
-            assertTrue(accessPermissionDTO.getPartitions().stream().allMatch(s -> s.equals("PartitionA") || s.equals("partition9")));
+            assertEquals(2, accessPermissionDTO.getReadPartitions().stream().count());
+            assertTrue(accessPermissionDTO.getReadPartitions().stream().allMatch(s -> s.equals("PartitionA") || s.equals("partition9")));
 
             // get permission
             request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
@@ -325,23 +323,23 @@ public class ApplicationPermissionApiTest {
             assertEquals(1, content.size());
             assertTrue(content.stream().anyMatch((m) -> "WRITE".equals(m.get("accessType"))));
             Map first = content.get(0);
-            List partitionList = (List) first.get("partitions");
+            List partitionList = (List) first.get("readPartitions");
             assertTrue(partitionList.stream().allMatch(s -> s.equals("PartitionA") || s.equals("partition9")));
             int permissionId = (int) first.get("id");
 
 
-            // update partitions
-            partitions.clear();
-            partitions.add("MyPart123");
-            accessPermissionBodyDTO = new AccessPermissionBodyDTO(partitions);
+            // update readPartitions
+            accessPermissionBodyDTO = new AccessPermissionBodyDTO(Set.of("MyPart123"), Set.of("writePartition456"));
 
             request = HttpRequest.PUT("/application_permissions/" + permissionId + "/" + AccessType.READ.name(), accessPermissionBodyDTO);
             accessPermissionDTO = blockingClient.retrieve(request, AccessPermissionDTO.class);
 
             assertNotNull(accessPermissionDTO);
             assertEquals(AccessType.READ, accessPermissionDTO.getAccessType());
-            assertTrue(accessPermissionDTO.getPartitions().stream().allMatch(s -> s.equals("MyPart123")));
+            assertTrue(accessPermissionDTO.getReadPartitions().stream().allMatch(s -> s.equals("MyPart123")));
+            assertTrue(accessPermissionDTO.getWritePartitions().stream().allMatch(s -> s.equals("writePartition456")));
 
+            // expect index to respond the same as above
             request = HttpRequest.GET("/application_permissions/application/" + applicationOneId);
             responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
@@ -349,8 +347,10 @@ public class ApplicationPermissionApiTest {
             assertEquals(1, content.size());
             assertTrue(content.stream().anyMatch((m) -> "READ".equals(m.get("accessType"))));
             first = content.get(0);
-            partitionList = (List) first.get("partitions");
+            partitionList = (List) first.get("readPartitions");
             assertTrue(partitionList.stream().allMatch(s -> s.equals("MyPart123")));
+            partitionList = (List) first.get("writePartitions");
+            assertTrue(partitionList.stream().allMatch(s -> s.equals("writePartition456")));
         }
 
         @Test
