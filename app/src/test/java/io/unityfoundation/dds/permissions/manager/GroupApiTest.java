@@ -117,7 +117,7 @@ public class GroupApiTest {
             Topic topicOne = topicRepository.save(new Topic("TopicOne", TopicKind.B, groupOne));
             Topic topicOne1 = topicRepository.save(new Topic("TopicOne!", TopicKind.C, groupOne));
             Application applicationOne = applicationRepository.save(new Application("ApplicationOne", groupOne));
-            applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, true, true));
             groupUserRepository.save(new GroupUser(groupOne, jjones));
             groupUserRepository.save(new GroupUser(groupOne, eclair));
 
@@ -125,7 +125,7 @@ public class GroupApiTest {
             Topic topicTwo = topicRepository.save(new Topic("TopicTwo", TopicKind.C, groupTwo));
             Application applicationTwo = applicationRepository.save(new Application("ApplicationTwo", groupTwo));
             Application applicationTwo1 = applicationRepository.save(new Application("ApplicationTwo1", groupTwo));
-            applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, topicTwo, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, topicTwo, true, true));
             groupUserRepository.save(new GroupUser(groupTwo, eclair));
         }
 
@@ -638,7 +638,7 @@ public class GroupApiTest {
             TopicDTO topic = topicOptional.get();
 
             // create application permission
-            response = createApplicationPermission(application.getId(), topic.getId(), AccessType.READ);
+            response = createApplicationPermission(application.getId(), topic.getId(), true, false);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -855,13 +855,13 @@ public class GroupApiTest {
             Group group = groupRepository.save(new Group("GroupOne", "DescriptionOne", false));
             Topic topic = topicRepository.save(new Topic("TopicOne", TopicKind.B, group));
             Application application = applicationRepository.save(new Application("ApplicationOne", group));
-            applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(application, topic, true, true));
             groupUserRepository.save(new GroupUser(group, user));
 
             Group group1 = groupRepository.save(new Group("GroupTwo", "DescriptionTwo", false));
             Topic topic1 = topicRepository.save(new Topic("TopicTwo", TopicKind.C, group1));
             Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
-            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, true, true));
 
             loginAsNonAdmin();
         }
@@ -942,12 +942,12 @@ public class GroupApiTest {
             Group group = groupRepository.save(new Group("TestGroup"));
             Topic topic = topicRepository.save(new Topic("TestTopic", TopicKind.B, group));
             Application application = applicationRepository.save(new Application("ApplicationOne", group));
-            applicationPermissionRepository.save(new ApplicationPermission(application, topic, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(application, topic, true, true));
 
             Group group1 = groupRepository.save(new Group("TestGroup1"));
             Topic topic1 = topicRepository.save(new Topic("TestTopic1", TopicKind.C, group1));
             Application application1 = applicationRepository.save(new Application("ApplicationTwo", group1));
-            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, AccessType.READ_WRITE));
+            applicationPermissionRepository.save(new ApplicationPermission(application1, topic1, true, true));
         }
 
         void loginAsNonAdmin() {
@@ -1007,7 +1007,7 @@ public class GroupApiTest {
         return  blockingClient.exchange(request, GroupUserDTO.class);
     }
 
-    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, boolean read, boolean write) {
         HttpRequest<?> request;
 
         // generate grant token for application
@@ -1018,7 +1018,9 @@ public class GroupApiTest {
         assertTrue(optional.isPresent());
         String applicationGrantToken = optional.get();
 
-        request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+        Map<String, Boolean> payload = Map.of("read", read, "write", write);
+
+        request = HttpRequest.POST("/application_permissions/" + topicId, payload)
                 .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }

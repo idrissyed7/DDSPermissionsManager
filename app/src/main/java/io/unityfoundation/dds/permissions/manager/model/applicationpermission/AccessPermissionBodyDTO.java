@@ -8,12 +8,30 @@ import java.util.Set;
 @Introspected
 public class AccessPermissionBodyDTO implements EntityDTO {
 
+    private boolean read;
+    private boolean write;
     private Set<String> readPartitions;
     private Set<String> writePartitions;
 
     public AccessPermissionBodyDTO(Set<String> readPartitions, Set<String> writePartitions) {
         this.readPartitions = readPartitions;
         this.writePartitions = writePartitions;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
+    }
+
+    public boolean isWrite() {
+        return write;
+    }
+
+    public void setWrite(boolean write) {
+        this.write = write;
     }
 
     public Set<String> getReadPartitions() {

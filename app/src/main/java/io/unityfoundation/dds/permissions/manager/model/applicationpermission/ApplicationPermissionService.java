@@ -96,7 +96,8 @@ public class ApplicationPermissionService {
                 applicationPermission.getPermissionsApplication().getId(),
                 applicationPermission.getPermissionsApplication().getName(),
                 applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
-                applicationPermission.getAccessType(),
+                applicationPermission.isPermissionRead(),
+                applicationPermission.isPermissionWrite(),
                 applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
                 applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
         ));
@@ -157,7 +158,7 @@ public class ApplicationPermissionService {
         }
     }
 
-    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String grantToken, Long topicId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
+    public Publisher<HttpResponse<AccessPermissionDTO>> addAccess(String grantToken, Long topicId, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         return Publishers.map(jwtTokenValidator.validateToken(grantToken, null), authentication -> {
             JWT jwt;
             JwtClaims claims;
@@ -166,7 +167,7 @@ public class ApplicationPermissionService {
                 claims = new JwtClaimsSetAdapter(jwt.getJWTClaimsSet());
                 if (claims.get(JwtClaims.SUBJECT) != null) {
                     Long applicationId = Long.valueOf((String) claims.get(JwtClaims.SUBJECT));
-                    return addAccess(applicationId, topicId, access, accessPermissionBodyDTO);
+                    return addAccess(applicationId, topicId, accessPermissionBodyDTO);
                 } else {
                     throw new DPMException(ResponseStatusCodes.APPLICATION_GRANT_TOKEN_PARSE_EXCEPTION, HttpStatus.BAD_REQUEST);
                 }
@@ -176,7 +177,7 @@ public class ApplicationPermissionService {
         });
     }
 
-    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
+    public HttpResponse<AccessPermissionDTO> addAccess(Long applicationId, Long topicId, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         final HttpResponse response;
 
         Optional<Application> applicationById = applicationRepository.findById(applicationId);
@@ -195,7 +196,7 @@ public class ApplicationPermissionService {
                     throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
                 } else {
                     Application application = applicationById.get();
-                    response = addAccess(application, topic, access, accessPermissionBodyDTO);
+                    response = addAccess(application, topic, accessPermissionBodyDTO);
                 }
             }
         }
@@ -203,17 +204,19 @@ public class ApplicationPermissionService {
         return response;
     }
 
-    public HttpResponse addAccess(Application application, Topic topic, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
-        ApplicationPermission newPermission = saveNewPermission(application, topic, access, accessPermissionBodyDTO);
+    public HttpResponse addAccess(Application application, Topic topic, AccessPermissionBodyDTO accessPermissionBodyDTO) {
+        ApplicationPermission newPermission = saveNewPermission(application, topic, accessPermissionBodyDTO);
         AccessPermissionDTO dto = createDTO(newPermission);
         return HttpResponse.created(dto);
     }
 
-    public ApplicationPermission saveNewPermission(Application application, Topic topic, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
+    public ApplicationPermission saveNewPermission(Application application, Topic topic, AccessPermissionBodyDTO accessPermissionBodyDTO) {
         if (applicationPermissionRepository.existsByPermissionsApplicationAndPermissionsTopic(application, topic)) {
             throw new DPMException(ResponseStatusCodes.APPLICATION_PERMISSION_ALREADY_EXISTS);
         }
-        ApplicationPermission applicationPermission = applicationPermissionRepository.save(new ApplicationPermission(application, topic, access));
+        ApplicationPermission applicationPermission = applicationPermissionRepository.save(
+                new ApplicationPermission(application, topic, accessPermissionBodyDTO.isRead(), accessPermissionBodyDTO.isWrite())
+        );
         addPartitionsToPermission(accessPermissionBodyDTO, applicationPermission);
 
         return applicationPermissionRepository.update(applicationPermission);
@@ -227,7 +230,10 @@ public class ApplicationPermissionService {
         Long applicationId = applicationPermission.getPermissionsApplication().getId();
         String applicationName = applicationPermission.getPermissionsApplication().getName();
         String applicationGroupName = applicationPermission.getPermissionsApplication().getPermissionsGroup().getName();
-        AccessType accessType = applicationPermission.getAccessType();
+        boolean permissionRead = applicationPermission.isPermissionRead();
+        boolean permissionWrite = applicationPermission.isPermissionWrite();
+        Set<String> readPartitions = applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet());
+        Set<String> writePartitions = applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet());
         return new AccessPermissionDTO(
                 applicationPermission.getId(),
                 topicId,
@@ -237,9 +243,10 @@ public class ApplicationPermissionService {
                 applicationId,
                 applicationName,
                 applicationGroupName,
-                accessType,
-                applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
-                applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
+                permissionRead,
+                permissionWrite,
+                readPartitions,
+                writePartitions
         );
     }
 
@@ -267,10 +274,7 @@ public class ApplicationPermissionService {
         return HttpResponse.noContent();
     }
 
-    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessType access, AccessPermissionBodyDTO accessPermissionBodyDTO) {
-        if (Arrays.stream(AccessType.values()).noneMatch(accessType -> accessType.equals(access))) {
-            return HttpResponse.badRequest();
-        }
+    public HttpResponse<AccessPermissionDTO> updateAccess(Long permissionId, AccessPermissionBodyDTO accessPermissionBodyDTO) {
 
         Optional<ApplicationPermission> applicationPermissionOptional = applicationPermissionRepository.findById(permissionId);
 
@@ -286,7 +290,8 @@ public class ApplicationPermissionService {
         }
 
         ApplicationPermission applicationPermission = applicationPermissionOptional.get();
-        applicationPermission.setAccessType(access);
+        applicationPermission.setPermissionRead(accessPermissionBodyDTO.isRead());
+        applicationPermission.setPermissionWrite(accessPermissionBodyDTO.isWrite());
 
         readPartitionRepository.deleteAll(applicationPermission.getReadPartitions());
         writePartitionRepository.deleteAll(applicationPermission.getWritePartitions());
@@ -317,7 +322,7 @@ public class ApplicationPermissionService {
         applicationPermissionRepository.deleteByPermissionsApplicationEquals(application);
     }
 
-    public List<ApplicationPermission> findAllByApplication(Application application) {
-        return applicationPermissionRepository.findByPermissionsApplication(application);
+    public List<ApplicationPermission> findAllByApplicationAndReadAndWrite(Application application, boolean read, boolean write) {
+        return applicationPermissionRepository.findByPermissionsApplicationAndPermissionReadAndPermissionWrite(application, read, write);
     }
 }

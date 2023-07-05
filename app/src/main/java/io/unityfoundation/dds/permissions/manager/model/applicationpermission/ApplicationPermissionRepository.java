@@ -15,6 +15,7 @@ public interface ApplicationPermissionRepository extends PageableRepository<Appl
     boolean existsByPermissionsApplicationAndPermissionsTopic(Application permissionsApplication, Topic permissionsTopic);
     Page<ApplicationPermission> findByPermissionsApplicationId(Long applicationId, Pageable pageable);
     List<ApplicationPermission> findByPermissionsApplication(Application permissionsApplication);
+    List<ApplicationPermission> findByPermissionsApplicationAndPermissionReadAndPermissionWrite(Application permissionsApplication, boolean permissionRead, boolean permissionWrite);
     Page<ApplicationPermission> findByPermissionsTopicId(Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdAndPermissionsTopicId(Long applicationId, Long topicId, Pageable pageable);
     Page<ApplicationPermission> findByPermissionsApplicationIdInOrPermissionsTopicIdIn(Collection<Long> permissionsTopic_id, Collection<Long> permissionsApplication_id, Pageable pageable);

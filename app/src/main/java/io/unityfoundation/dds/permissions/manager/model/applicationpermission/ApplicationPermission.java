@@ -27,8 +27,9 @@ public class ApplicationPermission {
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     private Topic permissionsTopic;
 
-    @NonNull
-    private AccessType accessType;
+    private boolean permissionRead = false;
+
+    private boolean permissionWrite = false;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "rApplicationPermission")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -42,10 +43,11 @@ public class ApplicationPermission {
     public ApplicationPermission() {
     }
 
-    public ApplicationPermission(@NonNull Application application, @NonNull Topic topic, @NonNull AccessType accessType) {
+    public ApplicationPermission(@NonNull Application application, @NonNull Topic topic, boolean permissionRead, boolean permissionWrite) {
         this.permissionsApplication = application;
         this.permissionsTopic = topic;
-        this.accessType = accessType;
+        this.permissionRead = permissionRead;
+        this.permissionWrite = permissionWrite;
     }
 
     public Long getId() {
@@ -74,12 +76,20 @@ public class ApplicationPermission {
         this.permissionsTopic = permissionsTopic;
     }
 
-    public AccessType getAccessType() {
-        return this.accessType;
+    public boolean isPermissionRead() {
+        return permissionRead;
     }
 
-    public void setAccessType(AccessType accessType) {
-        this.accessType = accessType;
+    public void setPermissionRead(boolean permissionRead) {
+        this.permissionRead = permissionRead;
+    }
+
+    public boolean isPermissionWrite() {
+        return permissionWrite;
+    }
+
+    public void setPermissionWrite(boolean permissionWrite) {
+        this.permissionWrite = permissionWrite;
     }
 
     public Set<ReadPartition> getReadPartitions() {
