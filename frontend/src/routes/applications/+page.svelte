@@ -361,7 +361,7 @@
 	const deleteSelectedApplications = async () => {
 		try {
 			for (const app of applicationsRowsSelected) {
-				await httpAdapter.post(`/applications/delete/${app.id}`);
+				await httpAdapter.delete(`/applications/${app.id}`);
 			}
 		} catch (err) {
 			const decodedError = decodeError(Object.create(...err.response.data));

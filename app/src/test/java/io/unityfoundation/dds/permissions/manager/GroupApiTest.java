@@ -579,7 +579,7 @@ public class GroupApiTest {
             assertTrue(betaOptional.isPresent());
             Group beta = betaOptional.get();
 
-            HttpRequest request = HttpRequest.POST("/groups/delete/"+beta.getId(), Map.of());
+            HttpRequest request = HttpRequest.DELETE("/groups/"+beta.getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -602,7 +602,7 @@ public class GroupApiTest {
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest, Page.class);
             });
-            assertEquals(NOT_FOUND, exception.getStatus());
+            assertEquals(METHOD_NOT_ALLOWED, exception.getStatus());
         }
 
         @Test
@@ -645,7 +645,7 @@ public class GroupApiTest {
             AccessPermissionDTO accessPermissionDTO = permissionOptional.get();
 
             // delete group
-            request = HttpRequest.POST("/groups/delete/"+theta.getId(), Map.of());
+            request = HttpRequest.DELETE("/groups/"+theta.getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
 
@@ -737,7 +737,7 @@ public class GroupApiTest {
             loginAsNonAdmin();
 
             Group group = primaryOptional.get();
-            request = HttpRequest.POST("/groups/delete/"+group.getId(), Map.of());
+            request = HttpRequest.DELETE("/groups/"+group.getId(), Map.of());
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
@@ -834,7 +834,7 @@ public class GroupApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.POST("/applications/delete/"+applicationOne.getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/"+applicationOne.getId(), Map.of());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
