@@ -68,6 +68,12 @@ public class ApplicationPermissionApiTest {
     ApplicationPermissionRepository applicationPermissionRepository;
 
     @Inject
+    ReadPartitionRepository readPartitionRepository;
+
+    @Inject
+    WritePartitionRepository writePartitionRepository;
+
+    @Inject
     ApplicationRepository applicationRepository;
 
     @Inject
@@ -1096,7 +1102,13 @@ public class ApplicationPermissionApiTest {
             Group publicGroup = groupRepository.save(new Group("TestGroup1", "group desc", true));
             publicTopic = topicRepository.save(new Topic("TestTopic1", TopicKind.C, "topic description", true, publicGroup));
             publicApplication = applicationRepository.save(new Application("ApplicationTwo", publicGroup, "topic description", true));
-            applicationPermissionRepository.save(new ApplicationPermission(publicApplication, publicTopic, true, true));
+            ApplicationPermission publicApplicationPermission = applicationPermissionRepository.save(new ApplicationPermission(publicApplication, publicTopic, true, true));
+
+            ReadPartition cat = readPartitionRepository.save(new ReadPartition(publicApplicationPermission, "cat"));
+            WritePartition dog = writePartitionRepository.save(new WritePartition(publicApplicationPermission, "dog"));
+            publicApplicationPermission.setReadPartitions(Set.of(cat));
+            publicApplicationPermission.setWritePartitions(Set.of(dog));
+            applicationPermissionRepository.save(publicApplicationPermission);
 
             privateApplication = applicationRepository.save(new Application("ApplicationThree", group, "application description", false));
             applicationPermissionRepository.save(new ApplicationPermission(privateApplication, publicTopic, true, true));
@@ -1146,6 +1158,25 @@ public class ApplicationPermissionApiTest {
                 String application = (String) map1.get("applicationName");
                 return topic.contentEquals("TestTopic1") && application.contentEquals("ApplicationTwo");
             }));
+        }
+
+        @Test
+        public void cannotViewPublicApplicationPermissionPartitions() {
+            loginAsNonAdmin();
+
+            HttpRequest<?> request;
+            Page page;
+
+            // public permissions with public application
+            request = HttpRequest.GET("/application_permissions/application/"+publicApplication.getId());
+            page = blockingClient.retrieve(request, Page.class);
+            assertFalse(page.isEmpty());
+            List<Map> content = page.getContent();
+            assertEquals(1, content.size());
+
+            // read/write Partitions are not included payload for public permissions
+            assertNull(content.get(0).get("readPartitions"));
+            assertNull(content.get(0).get("writePartitions"));
         }
 
         @Test
