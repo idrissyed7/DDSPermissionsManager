@@ -24,8 +24,10 @@
 	let selectedTopicPublic;
 	let selectedTopicApplications = [];
 	let selectedApplicationList;
-	let accessTypeSelection;
+	let readChecked, writeChecked;
 	let topicCurrentGroupPublic;
+	let partitionListRead = [];
+	let partitionListWrite = [];
 
 	// Success Message
 	let notifyApplicationAccessTypeSuccess = false;
@@ -100,11 +102,29 @@
 
 		try {
 			if (selectedApplicationList && !reload) {
-				await httpAdapter.post(`/application_permissions/${topicId}/READ`, {}, config);
+				await httpAdapter.post(
+					`/application_permissions/${topicId}`,
+					{
+						read: readChecked,
+						write: writeChecked,
+						readPartitions: partitionListRead,
+						writePartitions: partitionListWrite
+					},
+					config
+				);
 			}
 			if (reload) {
-				await httpAdapter
-					.post(`/application_permissions/${topicId}/${accessTypeSelection}`, {}, config)
+				const res = await httpAdapter
+					.post(
+						`/application_permissions/${topicId}`,
+						{
+							read: readChecked,
+							write: writeChecked,
+							readPartitions: partitionListRead,
+							writePartitions: partitionListWrite
+						},
+						config
+					)
 					.then(async () => await loadApplicationPermissions(topicId));
 			}
 			errorMessageAssociation.set([]);
@@ -207,7 +227,10 @@
 				}
 			}}
 			on:addTopicApplicationAssociation={(e) => {
-				accessTypeSelection = e.detail.accessTypeSelection;
+				partitionListRead = e.detail.partitionListRead;
+				partitionListWrite = e.detail.partitionListWrite;
+				readChecked = e.detail.readChecked;
+				writeChecked = e.detail.writeChecked;
 				bindToken = e.detail.bindToken;
 				addTopicApplicationAssociation(selectedTopicId, true);
 			}}

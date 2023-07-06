@@ -12,6 +12,7 @@
 	import groupContext from '../stores/groupContext';
 	import modalOpen from '../stores/modalOpen';
 	import tooltips from '$lib/tooltips.json';
+	import CheckBox from '$lib/CheckBox.svelte';
 
 	export let title;
 	export let email = false;
@@ -61,6 +62,12 @@
 	export let closeModalText = messages['modal']['close.modal.label'];
 	export let selectedTopicId = '';
 
+	let partitionListRead = [];
+	let partitionListWrite = [];
+
+	let readChecked;
+	let writeChecked;
+
 	const dispatch = createEventDispatcher();
 
 	// Constants
@@ -73,6 +80,7 @@
 	let selectedIsGroupAdmin = false;
 	let selectedIsTopicAdmin = false;
 	let selectedIsApplicationAdmin = false;
+	let actionAssociateApplicationTwo = false;
 	let appName = '';
 	let newGroupName = '';
 	let newGroupDescription = '';
@@ -929,12 +937,12 @@
 				}}
 			/>
 
-			<select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
+			<!-- <select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
 				<option value="" disabled selected>{messages['modal']['select.access.type.label']}</option>
 				<option value="READ">{messages['modal']['select.read.label']}</option>
 				<option value="WRITE">{messages['modal']['select.write.label']}</option>
 				<option value="READ_WRITE">{messages['modal']['select.read.write.label']}</option>
-			</select>
+			</select> -->
 
 			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
 				<div style="font-size:1rem; margin-top: 1rem">
@@ -955,6 +963,16 @@
 			{/if}
 		{/if}
 	</div>
+
+	{#if actionAssociateApplicationTwo}
+		<div style="margin-left: 2rem">
+			<div style="margin-bottom: 1rem">{messages['modal']['select.access.type.label']}:</div>
+			<CheckBox label="Read" bind:partitionList={partitionListRead} bind:checked={readChecked} />
+		</div>
+		<div style="margin: 1rem 0 1rem 2rem">
+			<CheckBox label="Write" bind:partitionList={partitionListWrite} bind:checked={writeChecked} />
+		</div>
+	{/if}
 
 	{#if actionAddUser}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
@@ -1274,19 +1292,44 @@
 			class:button-disabled={bindToken === undefined ||
 				accessTypeSelection?.length === 0 ||
 				invalidToken}
+			on:click={() => {
+				actionAssociateApplication = false;
+				actionAssociateApplicationTwo = true;
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAssociateApplication = false;
+					actionAssociateApplicationTwo = true;
+				}
+			}}>{messages['modal']['associate.application.button.label']}</button
+		>
+	{/if}
+
+	{#if actionAssociateApplicationTwo}
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			data-cy="add-application-topic-association"
+			class="action-button"
+			disabled={bindToken === undefined || accessTypeSelection?.length === 0 || invalidToken}
+			class:button-disabled={bindToken === undefined ||
+				accessTypeSelection?.length === 0 ||
+				invalidToken}
 			on:click={() =>
 				dispatch('addTopicApplicationAssociation', {
 					bindToken: bindToken,
-					accessTypeSelection: accessTypeSelection
+					partitionListRead: partitionListRead,
+					partitionListWrite: partitionListWrite
 				})}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('addTopicApplicationAssociation', {
 						bindToken: bindToken,
-						accessTypeSelection: accessTypeSelection
+						partitionListRead: partitionListRead,
+						partitionListWrite: partitionListWrite
 					});
 				}
-			}}>{messages['modal']['associate.application.button.label']}</button
+			}}>{messages['modal']['associate.application.button.label.two']}</button
 		>
 	{/if}
 

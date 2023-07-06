@@ -105,7 +105,7 @@
 
     "topic.detail":
     {
-        "application.associate": "Associate an Application",
+        "application.associate": "Grant Access to Topic",
         "edit": "Edit Topic",
         "row.one": "Name:",
         "row.two": "Description:",
@@ -258,7 +258,9 @@
         "button.add.group.label": "Add Group",
         "button.save.changes": "Save Changes",
         "delete.warning": "Are you sure? This is not reversible.",
-        "associate.application.button.label": "Add",
+        "associate.application.button.label": "Next",
+        "associate.application.button.label.two": "Add",
+        "associate.application.input.access.placeholder": "Add a Partition",
         "reminder.message.button.label": "Yes"    
     },
 
