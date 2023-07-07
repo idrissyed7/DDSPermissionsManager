@@ -386,6 +386,7 @@
 					<td>
 						<input
 							type="checkbox"
+							tabindex="-1"
 							style="vertical-align: middle; margin-left: 0.1rem; width: 15px; height: 15px"
 							bind:checked={isPublic}
 							on:change={() => (isPublic = selectedTopicPublic)}
@@ -396,8 +397,10 @@
 
 			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedTopicGroupId && permission.isTopicAdmin)}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<img
 					src={editSVG}
+					tabindex="0"
 					alt="edit topic"
 					height="20rem"
 					style="margin-left: 2rem; cursor:pointer"
@@ -470,9 +473,11 @@
 						>{deleteToolip}
 					</span>
 
+					<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 					<img
 						data-cy="add-topic"
 						src={addSVG}
+						tabindex="0"
 						alt="options"
 						class="dot"
 						class:button-disabled={!$isAdmin &&
@@ -595,9 +600,11 @@
 									}}
 								>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 									<img
 										data-cy="edit-users-icon"
 										src={editSVG}
+										tabindex="0"
 										height="17rem"
 										width="17rem"
 										style="vertical-align: -0.225rem"
@@ -610,9 +617,11 @@
 								</td>
 								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem">
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 									<img
 										data-cy="delete-users-icon"
 										src={deleteSVG}
+										tabindex="0"
 										height="27px"
 										width="27px"
 										style="vertical-align: -0.5rem"

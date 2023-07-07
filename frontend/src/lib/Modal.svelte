@@ -66,8 +66,8 @@
 	export let partitionListRead = [];
 	export let partitionListWrite = [];
 
-	export let readChecked;
-	export let writeChecked;
+	export let readChecked = false;
+	export let writeChecked = false;
 
 	const dispatch = createEventDispatcher();
 
