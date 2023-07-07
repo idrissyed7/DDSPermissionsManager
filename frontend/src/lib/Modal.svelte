@@ -63,11 +63,11 @@
 	export let closeModalText = messages['modal']['close.modal.label'];
 	export let selectedTopicId = '';
 
-	let partitionListRead = [];
-	let partitionListWrite = [];
+	export let partitionListRead = [];
+	export let partitionListWrite = [];
 
-	let readChecked;
-	let writeChecked;
+	export let readChecked;
+	export let writeChecked;
 
 	const dispatch = createEventDispatcher();
 
@@ -78,10 +78,10 @@
 	const maxCharactersLength = 4000;
 
 	// Forms
+	export let actionAssociateApplicationTwo = false;
 	let selectedIsGroupAdmin = false;
 	let selectedIsTopicAdmin = false;
 	let selectedIsApplicationAdmin = false;
-	let actionAssociateApplicationTwo = false;
 	let appName = '';
 	let newGroupName = '';
 	let newGroupDescription = '';
@@ -938,13 +938,6 @@
 				}}
 			/>
 
-			<!-- <select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
-				<option value="" disabled selected>{messages['modal']['select.access.type.label']}</option>
-				<option value="READ">{messages['modal']['select.read.label']}</option>
-				<option value="WRITE">{messages['modal']['select.write.label']}</option>
-				<option value="READ_WRITE">{messages['modal']['select.read.write.label']}</option>
-			</select> -->
-
 			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
 				<div style="font-size:1rem; margin-top: 1rem">
 					<strong>{tokenApplicationName}</strong> ({tokenApplicationGroup})
@@ -1320,8 +1313,10 @@
 					actionAssociateApplication = false;
 					actionAssociateApplicationTwo = true;
 				}
-			}}>{messages['modal']['associate.application.button.label']}</button
+			}}
 		>
+			{messages['modal']['associate.application.button.label']}
+		</button>
 	{/if}
 
 	{#if actionAssociateApplicationTwo}
@@ -1330,9 +1325,12 @@
 			autofocus
 			data-cy="add-application-topic-association"
 			class="action-button"
-			disabled={bindToken === undefined || accessTypeSelection?.length === 0 || invalidToken}
-			class:button-disabled={bindToken === undefined ||
-				accessTypeSelection?.length === 0 ||
+			disabled={(title !== messages['topic.detail']['edit.grant'] && bindToken === undefined) ||
+				(!readChecked && !writeChecked) ||
+				invalidToken}
+			class:button-disabled={(title !== messages['topic.detail']['edit.grant'] &&
+				bindToken === undefined) ||
+				(!readChecked && !writeChecked) ||
 				invalidToken}
 			on:click={() =>
 				dispatch('addTopicApplicationAssociation', {
@@ -1352,8 +1350,14 @@
 						write: writeChecked
 					});
 				}
-			}}>{messages['modal']['associate.application.button.label.two']}</button
+			}}
 		>
+			{#if title === messages['topic.detail']['edit.grant']}
+				{messages['modal']['associate.application.button.label.two.edit']}
+			{:else}
+				{messages['modal']['associate.application.button.label.two']}
+			{/if}
+		</button>
 	{/if}
 
 	{#if reminderMsg}

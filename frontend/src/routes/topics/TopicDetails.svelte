@@ -28,6 +28,7 @@
 		selectedTopicPublic,
 		selectedTopicApplications = [],
 		selectedApplicationList,
+		selectedGrant,
 		readChecked,
 		writeChecked,
 		topicCurrentGroupPublic,
@@ -66,7 +67,8 @@
 	let errorMessageVisible = false,
 		associateApplicationVisible = false,
 		editTopicVisible = false,
-		deleteSelectedGrantsVisible = false;
+		deleteSelectedGrantsVisible = false,
+		editGrantVisible = false;
 
 	// Constants
 	const returnKey = 13,
@@ -115,7 +117,6 @@
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/topic/${topicId}`);
 		selectedTopicApplications = resApps.data.content;
-		console.log('selectedTopicApplications', selectedTopicApplications);
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -171,14 +172,22 @@
 		}
 	};
 
-	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
+	const updateTopicApplicationAssociation = async () => {
 		try {
-			const res = await httpAdapter.put(`/application_permissions/${permissionId}/${accessType}`);
-			if (res.status === 200) notifyApplicationAccessTypeSuccess = true;
+			const res = await httpAdapter.put(`/application_permissions/${selectedGrant.id}`, {
+				read: readChecked,
+				write: writeChecked,
+				readPartitions: partitionListRead,
+				writePartitions: partitionListWrite
+			});
+			if (res.status === 200) {
+				notifyApplicationAccessTypeSuccess = true;
+				editGrantVisible = false;
+			}
 		} catch {
 			errorMessage(errorMessages['topic']['updating.access.type.error.title'], err.message);
 		}
-		await loadApplicationPermissions(topicId);
+		await loadApplicationPermissions(selectedTopicId);
 	};
 
 	const decodeError = (errorObject) => {
@@ -295,6 +304,26 @@
 				editTopicVisible = false;
 			}}
 			on:cancel={() => (editTopicVisible = false)}
+		/>
+	{/if}
+
+	{#if editGrantVisible}
+		<Modal
+			title={messages['topic.detail']['edit.grant']}
+			actionAssociateApplicationTwo={true}
+			readChecked={selectedGrant.read}
+			writeChecked={selectedGrant.write}
+			partitionListRead={selectedGrant.readPartitions}
+			partitionListWrite={selectedGrant.writePartitions}
+			on:addTopicApplicationAssociation={(e) => {
+				partitionListRead = e.detail.partitionListRead;
+				partitionListWrite = e.detail.partitionListWrite;
+				readChecked = e.detail.read;
+				writeChecked = e.detail.write;
+
+				updateTopicApplicationAssociation(selectedTopicId, true);
+			}}
+			on:cancel={() => (editGrantVisible = false)}
 		/>
 	{/if}
 
@@ -534,7 +563,7 @@
 									{/if}
 									{#if appPermission.write}
 										{messages['topic.detail']['table.grants.access.write']}
-									{:else}
+									{:else if !appPermission.read && !appPermission.write}
 										-
 									{/if}
 								</td>
@@ -572,7 +601,10 @@
 										width="17rem"
 										style="vertical-align: -0.225rem"
 										alt="edit user"
-										on:click={() => console.log('a')}
+										on:click={() => {
+											selectedGrant = appPermission;
+											editGrantVisible = true;
+										}}
 									/>
 								</td>
 								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem">
@@ -600,7 +632,7 @@
 			</table>
 			{#if notifyApplicationAccessTypeSuccess}
 				<span
-					style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
+					style="float: right; margin-top: 0.5rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
 					>{messages['topic.detail']['updated.success']}</span
 				>
 			{/if}

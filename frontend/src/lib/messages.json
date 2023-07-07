@@ -107,6 +107,7 @@
     {
         "application.associate": "Grant Access to Topic",
         "edit": "Edit Topic",
+        "edit.grant": "Edit Grant",
         "row.one": "Name:",
         "row.two": "Description:",
         "row.three": "Group:",
@@ -274,6 +275,7 @@
         "delete.warning": "Are you sure? This is not reversible.",
         "associate.application.button.label": "Next",
         "associate.application.button.label.two": "Add",
+        "associate.application.button.label.two.edit": "Save",
         "associate.application.input.access.placeholder": "Add a Partition",
         "reminder.message.button.label": "Yes"    
     },

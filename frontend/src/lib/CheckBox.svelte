@@ -18,7 +18,7 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div class="checkbox-container">
-	<input type="checkbox" class="checkbox" on:click={toggle} />
+	<input type="checkbox" class="checkbox" on:click={toggle} bind:checked />
 	<!-- svelte-ignore a11y-label-has-associated-control -->
 	<label>{label}</label>
 
