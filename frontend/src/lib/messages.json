@@ -112,7 +112,6 @@
         "row.three": "Group:",
         "row.four": "Any application can read:",
         "row.five": "Public:",
-        "row.six": "Applications:",
         "any.application.can.read.yes": "Yes",
         "any.application.can.read.no": "No",
         "add.application": "Grant Application",
@@ -120,7 +119,22 @@
         "selected.applications.read": "Read",
         "selected.applications.write": "Write",
         "selected.applications.read.write": "Read + Write",
-        "updated.success": "Updated Successfully"
+        "updated.success": "Updated Successfully",
+        "table.grants.label": "Grants",
+        "table.grants.column.one": "Group",
+        "table.grants.column.two": "Application",
+        "table.grants.column.three": "Access",
+        "table.grants.column.four": "Write Partitions",
+        "table.grants.column.five": "Read Partitions",
+        "table.grants.access.read": "Read",
+        "table.grants.access.readwrite": "Read,",
+        "table.grants.access.write": "Write",
+        "table.grants.empty":"No Grants Found",
+        "delete.tooltip": "Select grants to delete",
+        "add.tooltip": "Add a new grant",
+        "delete.grants.title": "Delete",
+        "delete.grants.single": "Grant",
+        "delete.grants.multiple": "Grants"
     },
 
     "application":

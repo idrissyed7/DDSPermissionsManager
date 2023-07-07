@@ -1,6 +1,6 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { httpAdapter } from '../../appconfig';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import refreshPage from '../../stores/refreshPage';
@@ -85,9 +85,6 @@
 	const returnKey = 13;
 	const waitTime = 1000;
 	const searchStringLength = 3;
-
-	// DropDowns
-	let topicsDropDownVisible = false;
 
 	// Tables
 	let topicsRowsSelected = [];
@@ -256,15 +253,15 @@
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
 
-	const getGroupVisibilityPublic = async (groupName) => {
-		try {
-			const res = await httpAdapter.get(`/groups?filter=${groupName}`);
-			if (res.data?.content[0]?.public) return true;
-			else return false;
-		} catch (err) {
-			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
-		}
-	};
+	// const getGroupVisibilityPublic = async (groupName) => {
+	// 	try {
+	// 		const res = await httpAdapter.get(`/groups?filter=${groupName}`);
+	// 		if (res.data?.content[0]?.public) return true;
+	// 		else return false;
+	// 	} catch (err) {
+	// 		errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
+	// 	}
+	// };
 
 	const addTopic = async () => {
 		if (!selectedGroup) {
@@ -585,7 +582,6 @@
 													style="margin-right: 0.5rem"
 													bind:indeterminate={topicsRowsSelectedTrue}
 													on:click={(e) => {
-														topicsDropDownVisible = false;
 														if (e.target.checked) {
 															topicsRowsSelected = $topicsA;
 															topicsRowsSelectedTrue = false;
@@ -605,7 +601,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each $topicsA as topic, i}
+									{#each $topicsA as topic}
 										<tr>
 											{#if $permissionsByGroup?.find((gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true) || $isAdmin}
 												<td style="line-height: 1rem; width: 2rem; ">
@@ -615,7 +611,6 @@
 														class="topics-checkbox"
 														checked={topicsAllRowsSelectedTrue}
 														on:change={(e) => {
-															topicsDropDownVisible = false;
 															if (e.target.checked === true) {
 																topicsRowsSelected.push(topic);
 																// reactive statement

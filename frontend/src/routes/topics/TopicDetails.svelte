@@ -13,21 +13,45 @@
 	import messages from '$lib/messages.json';
 	import errorMessageAssociation from '../../stores/errorMessageAssociation';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
+	import groupContext from '../../stores/groupContext';
 
 	export let selectedTopicId, isTopicAdmin;
 
 	const dispatch = createEventDispatcher();
 
-	let selectedTopicName, selectedTopicKind, selectedTopicGroupName, selectedTopicGroupId;
-	let selectedTopicCanonicalName;
-	let selectedTopicDescription;
-	let selectedTopicPublic;
-	let selectedTopicApplications = [];
-	let selectedApplicationList;
-	let readChecked, writeChecked;
-	let topicCurrentGroupPublic;
-	let partitionListRead = [];
-	let partitionListWrite = [];
+	let selectedTopicName,
+		selectedTopicKind,
+		selectedTopicGroupName,
+		selectedTopicGroupId,
+		selectedTopicCanonicalName,
+		selectedTopicDescription,
+		selectedTopicPublic,
+		selectedTopicApplications = [],
+		selectedApplicationList,
+		readChecked,
+		writeChecked,
+		topicCurrentGroupPublic,
+		partitionListRead = [],
+		partitionListWrite = [];
+
+	// Messages
+	let deleteToolip,
+		deleteMouseEnter = false;
+
+	// Selection
+	let grantsRowsSelected = [],
+		grantsRowsSelectedTrue = false,
+		grantsAllRowsSelectedTrue = false;
+
+	// checkboxes selection
+	$: if (selectedTopicApplications?.length === grantsRowsSelected?.length) {
+		grantsRowsSelectedTrue = false;
+		grantsAllRowsSelectedTrue = true;
+	} else if (grantsRowsSelected?.length > 0) {
+		grantsRowsSelectedTrue = true;
+	} else {
+		grantsAllRowsSelectedTrue = false;
+	}
 
 	// Success Message
 	let notifyApplicationAccessTypeSuccess = false;
@@ -39,13 +63,14 @@
 	let promise;
 
 	// Modals
-	let errorMessageVisible = false;
-	let associateApplicationVisible = false;
-	let editTopicVisible = false;
+	let errorMessageVisible = false,
+		associateApplicationVisible = false,
+		editTopicVisible = false,
+		deleteSelectedGrantsVisible = false;
 
 	// Constants
-	const returnKey = 13;
-	const waitTime = 2000;
+	const returnKey = 13,
+		waitTime = 2000;
 
 	// Public flag
 	let isPublic;
@@ -90,6 +115,7 @@
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/topic/${topicId}`);
 		selectedTopicApplications = resApps.data.content;
+		console.log('selectedTopicApplications', selectedTopicApplications);
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
@@ -139,9 +165,10 @@
 		}
 	};
 
-	const deleteTopicApplicationAssociation = async (permissionId, topicId) => {
-		await httpAdapter.delete(`/application_permissions/${permissionId}`);
-		await loadApplicationPermissions(topicId);
+	const deleteTopicApplicationAssociation = async () => {
+		for (const grant of grantsRowsSelected) {
+			await httpAdapter.delete(`/application_permissions/${grant.id}`);
+		}
 	};
 
 	const updateTopicApplicationAssociation = async (permissionId, accessType, topicId) => {
@@ -193,6 +220,20 @@
 			errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
 		}
 	};
+
+	const deselectAllGrantsCheckboxes = () => {
+		grantsAllRowsSelectedTrue = false;
+		grantsRowsSelectedTrue = false;
+		grantsRowsSelected = [];
+		let checkboxes = document.querySelectorAll('.grants-checkbox');
+		checkboxes.forEach((checkbox) => (checkbox.checked = false));
+	};
+
+	const numberOfSelectedCheckboxes = () => {
+		let checkboxes = document.querySelectorAll('.grants-checkbox');
+		checkboxes = Array.from(checkboxes);
+		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
+	};
 </script>
 
 {#if $isAuthenticated}
@@ -229,9 +270,10 @@
 			on:addTopicApplicationAssociation={(e) => {
 				partitionListRead = e.detail.partitionListRead;
 				partitionListWrite = e.detail.partitionListWrite;
-				readChecked = e.detail.readChecked;
-				writeChecked = e.detail.writeChecked;
+				readChecked = e.detail.read;
+				writeChecked = e.detail.write;
 				bindToken = e.detail.bindToken;
+
 				addTopicApplicationAssociation(selectedTopicId, true);
 			}}
 		/>
@@ -253,6 +295,27 @@
 				editTopicVisible = false;
 			}}
 			on:cancel={() => (editTopicVisible = false)}
+		/>
+	{/if}
+
+	{#if deleteSelectedGrantsVisible}
+		<Modal
+			actionDeleteGrants={true}
+			title="{messages['topic.detail']['delete.grants.title']} {grantsRowsSelected.length > 1
+				? messages['topic.detail']['delete.grants.multiple']
+				: messages['topic.detail']['delete.grants.single']}"
+			on:cancel={() => {
+				if (grantsRowsSelected?.length === 1 && numberOfSelectedCheckboxes() === 0)
+					grantsRowsSelected = [];
+				deleteSelectedGrantsVisible = false;
+			}}
+			on:deleteGrants={async () => {
+				await deleteTopicApplicationAssociation();
+
+				await loadApplicationPermissions(selectedTopicId);
+				deselectAllGrantsCheckboxes();
+				deleteSelectedGrantsVisible = false;
+			}}
 		/>
 	{/if}
 
@@ -314,88 +377,232 @@
 			{/if}
 		</div>
 
-		<div
-			style="display: flex; padding-left: 0.3rem; padding-top: 0.25rem; padding-bottom: 0.25rem; justify-content: space-between"
-		>
-			{messages['topic.detail']['row.six']}
-
-			<button
-				data-cy="add-application-button"
-				style="width: 12rem; height: 2.35rem; padding: 0 1rem 0 1rem; margin-right: 3rem"
-				class="button-blue"
-				class:button-disabled={!$isAdmin && !isTopicAdmin}
-				disabled={!$isAdmin && !isTopicAdmin}
-				on:click={() => (associateApplicationVisible = true)}
-			>
-				<img
-					src={addSVG}
-					alt="grant application"
-					height="20rem"
-					style="vertical-align: middle; filter: invert(); margin-right: 0.4rem; margin-left: -0.5rem"
-				/>
-				<span style="vertical-align: middle">
-					{messages['topic.detail']['add.application']}
-				</span>
-			</button>
-		</div>
 		<div>
-			{#if selectedTopicApplications}
-				<div>
-					{#each selectedTopicApplications as application}
-						<div style="display: flex; justify-content: flex-end; font-size: 0.9rem">
-							<span style="width: 10.5rem; margin: auto 0; margin-right: 0.3rem">
-								{application.applicationName} ({application.applicationGroupName})
-							</span>
-
-							<select
-								style="width: 8rem; height: 2rem; margin: auto 0"
-								bind:value={application.accessType}
-								on:change={() => {
-									updateTopicApplicationAssociation(
-										application.id,
-										application.accessType,
-										application.topicId
-									);
-								}}
-							>
-								<option value="" disabled selected>
-									{messages['topic.detail']['selected.applications.access.type']}
-								</option>
-								<option value="READ">
-									{messages['topic.detail']['selected.applications.read']}
-								</option>
-								<option value="WRITE">
-									{messages['topic.detail']['selected.applications.write']}
-								</option>
-								<option value="READ_WRITE">
-									{messages['topic.detail']['selected.applications.read.write']}
-								</option>
-							</select>
-
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<img
-								src={deleteSVG}
-								alt="remove application"
-								style="background-color: transparent; cursor: pointer; scale: 50%; margin-right: -1rem"
-								on:click={async () => {
-									promise = await deleteTopicApplicationAssociation(
-										application.id,
-										application.topicId
-									);
-								}}
-							/>
-						</div>
-					{/each}
-					<div style="font-size: 0.7rem; text-align:right; margin-top: 1.1rem">
-						{selectedTopicApplications.length} of {selectedTopicApplications.length}
-					</div>
+			<div
+				style="display: flex; justify-content: space-between; align-items:center; margin-top: 2rem"
+			>
+				<div style="font-size:1.3rem; margin-bottom: 1rem">
+					{messages['topic.detail']['table.grants.label']}
 				</div>
-				{#if notifyApplicationAccessTypeSuccess}
-					<span
-						style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
-						>{messages['topic.detail']['updated.success']}</span
-					>
+				<div style="margin-bottom: 0.5rem; margin-right: -1rem">
+					<img
+						src={deleteSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={(!$isAdmin && !isTopicAdmin) || grantsRowsSelected?.length === 0}
+						style="margin-left: 0.5rem; margin-right: 1rem"
+						on:click={() => {
+							if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
+							}
+						}}
+						on:mouseenter={() => {
+							deleteMouseEnter = true;
+							if ($isAdmin || isTopicAdmin) {
+								if (grantsRowsSelected.length === 0) {
+									deleteToolip = messages['topic.detail']['delete.tooltip'];
+									const tooltip = document.querySelector('#delete-topics');
+									setTimeout(() => {
+										if (deleteMouseEnter) {
+											tooltip.classList.remove('tooltip-hidden');
+											tooltip.classList.add('tooltip');
+										}
+									}, 1000);
+								}
+							} else {
+								deleteToolip = messages['topic']['delete.tooltip.topic.admin.required'];
+								const tooltip = document.querySelector('#delete-topics');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+										tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
+									}
+								}, 1000);
+							}
+						}}
+						on:mouseleave={() => {
+							deleteMouseEnter = false;
+							if (grantsRowsSelected.length === 0) {
+								const tooltip = document.querySelector('#delete-topics');
+								setTimeout(() => {
+									if (!deleteMouseEnter) {
+										tooltip.classList.add('tooltip-hidden');
+										tooltip.classList.remove('tooltip');
+									}
+								}, 1000);
+							}
+						}}
+					/>
+					<span id="delete-topics" class="tooltip-hidden" style="margin-top: -1.8rem"
+						>{deleteToolip}
+					</span>
+
+					<img
+						data-cy="add-topic"
+						src={addSVG}
+						alt="options"
+						class="dot"
+						class:button-disabled={!$isAdmin &&
+							!$permissionsByGroup?.find(
+								(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+							)}
+						on:click={() => {
+							if ($isAdmin || isTopicAdmin) associateApplicationVisible = true;
+						}}
+						on:keydown={(event) => {
+							if (event.which === returnKey) {
+								if ($isAdmin || isTopicAdmin) associateApplicationVisible = true;
+							}
+						}}
+					/>
+				</div>
+			</div>
+
+			<table style="max-width: 50rem; min-width: 53rem">
+				<thead>
+					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+						<td>
+							<input
+								tabindex="-1"
+								type="checkbox"
+								class="grants-checkbox"
+								style="margin-right: 0.5rem"
+								bind:indeterminate={grantsRowsSelectedTrue}
+								on:click={(e) => {
+									if (e.target.checked) {
+										grantsRowsSelected = selectedTopicApplications;
+										grantsRowsSelectedTrue = false;
+										grantsAllRowsSelectedTrue = true;
+									} else {
+										grantsAllRowsSelectedTrue = false;
+										grantsRowsSelectedTrue = false;
+										grantsRowsSelected = [];
+									}
+								}}
+								checked={grantsAllRowsSelectedTrue}
+							/>
+						</td>
+						<td>{messages['topic.detail']['table.grants.column.one']}</td>
+						<td>{messages['topic.detail']['table.grants.column.two']}</td>
+						<td>{messages['topic.detail']['table.grants.column.three']}</td>
+						<td>{messages['topic.detail']['table.grants.column.four']}</td>
+						<td>{messages['topic.detail']['table.grants.column.five']}</td>
+						<td />
+						<td />
+					</tr>
+				</thead>
+
+				{#if selectedTopicApplications?.length > 0}
+					{#each selectedTopicApplications as appPermission}
+						<tbody>
+							<tr style="line-height: 2rem">
+								<td style="line-height: 1rem;">
+									<input
+										tabindex="-1"
+										type="checkbox"
+										class="grants-checkbox"
+										style="margin-right: 0.5rem"
+										checked={grantsAllRowsSelectedTrue}
+										on:change={(e) => {
+											if (e.target.checked === true) {
+												grantsRowsSelected.push(appPermission);
+												// reactive statement
+												grantsRowsSelected = grantsRowsSelected;
+												grantsRowsSelectedTrue = true;
+											} else {
+												grantsRowsSelected = grantsRowsSelected.filter(
+													(selection) => selection !== appPermission
+												);
+												if (grantsRowsSelected.length === 0) {
+													grantsRowsSelectedTrue = false;
+												}
+											}
+										}}
+									/>
+								</td>
+								<td style="min-width: fit-content"> {appPermission.applicationGroupName} </td>
+								<td style="min-width: fit-content"> {appPermission.applicationName} </td>
+								<td style="min-width: 5.5rem; max-width: 5.5rem">
+									{#if appPermission.read && appPermission.write}
+										{messages['topic.detail']['table.grants.access.readwrite']}
+									{:else if appPermission.read}
+										{messages['topic.detail']['table.grants.access.read']}
+									{/if}
+									{#if appPermission.write}
+										{messages['topic.detail']['table.grants.access.write']}
+									{:else}
+										-
+									{/if}
+								</td>
+								<td style="min-width: 10rem; max-width: 10rem">
+									{#if appPermission.writePartitions?.length > 0}
+										{appPermission.writePartitions
+											.map(function (item) {
+												return '[' + item + ']';
+											})
+											.join(', ')}
+									{/if}
+								</td>
+								<td style="min-width: 10rem; max-width: 10rem">
+									{#if appPermission.readPartitions?.length > 0}
+										{appPermission.readPartitions
+											.map(function (item) {
+												return '[' + item + ']';
+											})
+											.join(', ')}
+									{/if}
+								</td>
+								<td
+									style="cursor: pointer; text-align: right"
+									on:keydown={(event) => {
+										if (event.which === returnKey) {
+											// updateGroupMembershipSelection(groupMembership);
+										}
+									}}
+								>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<img
+										data-cy="edit-users-icon"
+										src={editSVG}
+										height="17rem"
+										width="17rem"
+										style="vertical-align: -0.225rem"
+										alt="edit user"
+										on:click={() => console.log('a')}
+									/>
+								</td>
+								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem">
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<img
+										data-cy="delete-users-icon"
+										src={deleteSVG}
+										height="27px"
+										width="27px"
+										style="vertical-align: -0.5rem"
+										alt="delete user"
+										on:click={() => {
+											if (!grantsRowsSelected.some((grant) => grant === appPermission))
+												grantsRowsSelected.push(appPermission);
+											deleteSelectedGrantsVisible = true;
+										}}
+									/>
+								</td>
+							</tr>
+						</tbody>
+					{/each}
+				{:else}
+					<td style="border: none">{messages['topic.detail']['table.grants.empty']}</td>
 				{/if}
+			</table>
+			{#if notifyApplicationAccessTypeSuccess}
+				<span
+					style="float: right; margin-top: -2.1rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
+					>{messages['topic.detail']['updated.success']}</span
+				>
 			{/if}
 		</div>
 		<p style="margin-top: 8rem">{messages['footer']['message']}</p>

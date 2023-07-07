@@ -34,6 +34,7 @@
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
 	export let actionDeleteTopics = false;
+	export let actionDeleteGrants = false;
 	export let actionDeleteGroups = false;
 	export let actionDeleteApplications = false;
 	export let noneditable = false;
@@ -1246,6 +1247,24 @@
 		>
 	{/if}
 
+	{#if actionDeleteGrants}
+		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
+			{messages['modal']['delete.warning']}
+		</p>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			data-cy="delete-grant"
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteGrants')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteGrants');
+				}
+			}}>{title}</button
+		>
+	{/if}
+
 	{#if actionDeleteApplications}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			{messages['modal']['delete.warning']}
@@ -1319,14 +1338,18 @@
 				dispatch('addTopicApplicationAssociation', {
 					bindToken: bindToken,
 					partitionListRead: partitionListRead,
-					partitionListWrite: partitionListWrite
+					partitionListWrite: partitionListWrite,
+					read: readChecked,
+					write: writeChecked
 				})}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('addTopicApplicationAssociation', {
 						bindToken: bindToken,
 						partitionListRead: partitionListRead,
-						partitionListWrite: partitionListWrite
+						partitionListWrite: partitionListWrite,
+						read: readChecked,
+						write: writeChecked
 					});
 				}
 			}}>{messages['modal']['associate.application.button.label.two']}</button
