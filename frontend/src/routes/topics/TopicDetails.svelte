@@ -589,7 +589,8 @@
 									style="cursor: pointer; text-align: right"
 									on:keydown={(event) => {
 										if (event.which === returnKey) {
-											// updateGroupMembershipSelection(groupMembership);
+											selectedGrant = appPermission;
+											editGrantVisible = true;
 										}
 									}}
 								>

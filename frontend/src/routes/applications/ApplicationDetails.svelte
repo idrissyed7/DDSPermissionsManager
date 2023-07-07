@@ -180,12 +180,18 @@
 		</tr>
 	</table>
 
-	<table style="max-width: 59rem; margin-top: 3.5rem">
+	<div style="font-size:1.3rem; margin-top: 3.5rem; margin-bottom: 1rem">
+		{messages['topic.detail']['table.grants.label']}
+	</div>
+	<table style="min-width: 59rem; max-width: 59rem">
 		<thead>
-			<tr>
+			<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 				<td>{messages['application.detail']['table.applications.column.one']}</td>
 				<td>{messages['application.detail']['table.applications.column.two']}</td>
 				<td>{messages['application.detail']['table.applications.column.three']}</td>
+				<td>{messages['application.detail']['table.applications.column.four']}</td>
+				<td>{messages['application.detail']['table.applications.column.five']}</td>
+
 				{#if isApplicationAdmin || $isAdmin}
 					<td />
 				{/if}
@@ -195,16 +201,39 @@
 			{#each $applicationPermission as appPermission}
 				<tbody>
 					<tr style="line-height: 2rem">
-						<td style="min-width: 15rem">
+						<td style="min-width: 10rem">
 							{appPermission.topicGroup}
 						</td>
-						<td style="min-width: 20rem">
+						<td style="min-width: 18rem">
 							{appPermission.topicName} ({appPermission.topicCanonicalName})
 						</td>
 						<td style="min-width: 6.5rem">
-							{appPermission.accessType === 'READ_WRITE'
-								? 'READ & WRITE'
-								: appPermission.accessType}
+							{#if appPermission.read && appPermission.write}
+								{messages['application.detail']['table.applications.access.readwrite']}
+								{messages['application.detail']['table.applications.access.write']}
+							{:else if appPermission.read}
+								{messages['application.detail']['table.applications.access.read']}
+							{:else if appPermission.write}
+								{messages['application.detail']['table.applications.access.write']}
+							{/if}
+						</td>
+						<td style="min-width: 10rem; max-width: 10rem">
+							{#if appPermission.writePartitions?.length > 0}
+								{appPermission.writePartitions
+									.map(function (item) {
+										return '[' + item + ']';
+									})
+									.join(', ')}
+							{/if}
+						</td>
+						<td style="min-width: 10rem; max-width: 10rem">
+							{#if appPermission.readPartitions?.length > 0}
+								{appPermission.readPartitions
+									.map(function (item) {
+										return '[' + item + ']';
+									})
+									.join(', ')}
+							{/if}
 						</td>
 						{#if isApplicationAdmin || $isAdmin}
 							<td>
@@ -230,6 +259,8 @@
 			</p>
 		{/if}
 		<tr style="font-size: 0.7rem; text-align: right">
+			<td style="border: none" />
+			<td style="border: none" />
 			<td style="border: none" />
 			<td style="border: none" />
 			<td style="border: none" />
