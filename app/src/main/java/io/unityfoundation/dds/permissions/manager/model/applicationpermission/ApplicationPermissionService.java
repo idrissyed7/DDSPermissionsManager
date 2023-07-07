@@ -65,7 +65,7 @@ public class ApplicationPermissionService {
             page = getApplicationPermissionsPage(isTopic, topicId, pageable);
         }
 
-        return getAccessPermissionDTOPage(page);
+        return getAccessPermissionDTOPage(page, publicMode);
     }
 
     public Page<AccessPermissionDTO> indexByApplicationId(Long applicationId, Pageable pageable) {
@@ -83,10 +83,10 @@ public class ApplicationPermissionService {
             page = getApplicationPermissionsPage(isTopic, applicationId, pageable);
         }
 
-        return getAccessPermissionDTOPage(page);
+        return getAccessPermissionDTOPage(page, publicMode);
     }
 
-    private static Page<AccessPermissionDTO> getAccessPermissionDTOPage(Page<ApplicationPermission> page) {
+    private static Page<AccessPermissionDTO> getAccessPermissionDTOPage(Page<ApplicationPermission> page, boolean publicMode) {
         return page.map(applicationPermission -> new AccessPermissionDTO(
                 applicationPermission.getId(),
                 applicationPermission.getPermissionsTopic().getId(),
@@ -98,8 +98,8 @@ public class ApplicationPermissionService {
                 applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
                 applicationPermission.isPermissionRead(),
                 applicationPermission.isPermissionWrite(),
-                applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
-                applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
+                publicMode? Set.of() : applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
+                publicMode? Set.of() : applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
         ));
     }
 
