@@ -209,6 +209,36 @@ The Web Application UI is built using Svelte and is served by the Web API.
 The Web API is built using Micronaut.
 The Web API is horizontally scalable.
 
+### Building the Application
+
+The Web Application UI requires the URL of the API when built.
+This is set using the VITE_BACKEND_URL environment variable.
+If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
+Otherwise, set VITE_BACKEND_URL to the full URL of the API (which should end in `/api`).
+The VITE_BACKEND_URL variable can also be set in `frontend/.env`.
+
+The application is built with gradle, e.g., `./gradlew app:build`.
+This builds both the API and the UI.
+When run this way, gradle will produce three jar files:
+
+* `app/build/libs/app-VERSION-all.jar` - a runnable jar that contains the API, the dependencies for the API, the resources for the API, and the UI as static assets.
+* `app/build/libs/app-VERSION-runner.jar` - a runnable jar that only contains the API (no dependencies, resources, or UI).
+* `app/build/libs/app-VERSION.jar` - a non-runnable jar that contains the API, the resources for the API, and the UI as static assets.
+
+### Containerization
+
+For convenience, the UI and API can be built into a single container image.
+A suitable version of Java (11 and up) and npm must be available.
+The following snippet illustrates how to build a container image:
+
+    # Set the database dependency.
+    DPM_DATABASE_DEPENDENCY="mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.7.2"
+    # Set the API url.
+    VITE_BACKEND_URL=/api
+    ./gradlew dockerfile
+    ./gradlew buildLayers
+    docker build -t my-dpm app/build/docker/main
+
 ### The Secret Store
 
 Currently, the DDS Permissions Manager supports the following Secret Stores:
@@ -617,27 +647,6 @@ following SQL statement where `$EMAIL` is the email address of the super admin:
 INSERT INTO permissions_user (admin, email)
 VALUES (true, '$EMAIL');
 ```
-
-### Building the Web Application UI
-
-The Web Application UI requires the URL of the API when built.
-This is set using the VITE_BACKEND_URL environment variable.
-If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api` (see the next section for an example).
-Otherwise, set VITE_BACKEND_URL to the full URL of the API (which should end in `/api`).
-
-### Containerization
-
-For convenience, the UI and API can be built into a single container image.
-A suitable version of Java (11 and up) and npm must be available.
-The following snippet illustrates how to build a container image:
-
-    # Set the database dependency.
-    DPM_DATABASE_DEPENDENCY="mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.7.2"
-    # Set the API url.
-    VITE_BACKEND_URL=/api
-    ./gradlew dockerfile
-    ./gradlew buildLayers
-    docker build -t my-dpm app/build/docker/main
 
 ### Configuring Google as an auth provider
 
