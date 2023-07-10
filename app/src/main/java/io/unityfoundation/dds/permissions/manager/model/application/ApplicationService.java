@@ -563,7 +563,7 @@ public class ApplicationService {
 
         HashMap<String, Object> dataModel = new HashMap<>();
         final String sn = (new X500Principal(buildSubject(application, nonce))).getName(X500Principal.RFC2253, oidMap);
-        dataModel.put("subject", xmlEscaper.escapeX500Name(sn));
+        dataModel.put("subject", xmlEscaper.escape(sn));
         dataModel.put("applicationId", application.getId());
 
         final String validStart = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
