@@ -6,17 +6,11 @@ import jakarta.inject.Singleton;
 public class XMLEscaper {
     public String escape(String input) {
         // Five characters in XML text that need escaping: <, >, ', ", &
-        return input.replace("<", "\\<")
-                .replace(">", "\\>")
-                .replace("'", "\\'")
-                .replace("\"", "\\\"")
-                .replace("&", "\\&");
-    }
-
-    // Names resulting from X500NameBuilder already have characters
-    // '<', '>', and '"' escaped. Only to escape ''' and '&' here.
-    public String escapeX500Name(String input) {
-        return input.replace("'", "\\'")
-                .replace("&", "\\&");
+        // Replace & first because it appears in other subsitutions.
+        return input.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("'", "&apos;")
+            .replace("\"", "&quot;") ;
     }
 }
