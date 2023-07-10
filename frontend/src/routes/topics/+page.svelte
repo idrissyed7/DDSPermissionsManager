@@ -230,7 +230,7 @@
 	const deleteSelectedTopics = async () => {
 		try {
 			for (const topic of topicsRowsSelected) {
-				await httpAdapter.post(`/topics/delete/${topic.id}`);
+				await httpAdapter.delete(`/topics/${topic.id}`);
 			}
 		} catch (err) {
 			errorMessage(errorMessages['topic']['deleting.error.title'], err.message);

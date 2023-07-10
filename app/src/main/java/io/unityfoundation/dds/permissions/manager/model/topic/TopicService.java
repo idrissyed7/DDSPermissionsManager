@@ -142,7 +142,6 @@ public class TopicService {
         }
 
         TopicDTO responseTopicDTO = new TopicDTO(topic);
-        responseTopicDTO.setCanonicalName(computeCanonicalName(responseTopicDTO));
         return HttpResponse.ok(responseTopicDTO);
     }
 
@@ -178,7 +177,6 @@ public class TopicService {
             throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
         }
         TopicDTO topicResponseDTO = new TopicDTO(topic);
-        topicResponseDTO.setCanonicalName(computeCanonicalName(topicResponseDTO));
 
         return HttpResponse.ok(topicResponseDTO);
     }
@@ -186,18 +184,6 @@ public class TopicService {
     private boolean isUserTopicAdminOfGroup(Group group) {
         User user = securityUtil.getCurrentlyAuthenticatedUser().get();
         return groupUserService.isUserTopicAdminOfGroup(group.getId(), user.getId());
-    }
-
-    private String computeCanonicalName(Topic topic) {
-        return buildCanonicalName(topic.getKind(), topic.getPermissionsGroup().getId(), topic.getName());
-    }
-
-    private String computeCanonicalName(TopicDTO topicDTO) {
-        return buildCanonicalName(topicDTO.getKind(), topicDTO.getGroup(), topicDTO.getName());
-    }
-
-    private String buildCanonicalName(TopicKind kind, Long groupId, String name) {
-        return kind + "." + groupId + "." + name;
     }
 
     public Optional<Topic> findById(Long topicId) {

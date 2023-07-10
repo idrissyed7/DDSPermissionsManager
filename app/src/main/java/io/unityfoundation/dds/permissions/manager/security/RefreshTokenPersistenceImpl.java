@@ -1,6 +1,8 @@
 package io.unityfoundation.dds.permissions.manager.security;
 
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.env.Environment;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.errors.OauthErrorResponseException;
@@ -23,6 +25,13 @@ import static io.micronaut.security.errors.IssuingAnAccessTokenErrorCode.INVALID
 public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
 
     private static final Logger LOG = LoggerFactory.getLogger(RefreshTokenPersistenceImpl.class);
+
+    @Nullable
+    @Property(name = "permissions-manager.test.username")
+    protected String testUsername;
+
+    @Property(name = "permissions-manager.test.is-admin", defaultValue = "false")
+    protected boolean testUserIsAdmin;
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final PermissionsManagerAuthenticationMapper authenticationMapper;
@@ -58,13 +67,12 @@ public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
                 if (username.matches("\\d+")) {
                     // application login
                     return Publishers.just(Authentication.build(username, List.of(UserRole.APPLICATION.toString())));
-                } else if ((username.equals("unity") || username.equals("unity-admin"))) {
-                    if (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) {
+                } else if ( testUsername != null && username.equals(testUsername)  &&
+                        (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) ) {
                         // test/dev login
-                        return Publishers.just(Authentication.build(username,
-                                (username.equals("unity-admin") ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
-                        ));
-                    }
+                    return Publishers.just(Authentication.build(username,
+                            (testUserIsAdmin ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
+                    ));
                 }
 
                 // oauth user login

@@ -178,7 +178,7 @@ public class ApplicationPermissionApiTest {
             assertTrue(permissionOptional.isPresent());
 
             // topic delete
-            request = HttpRequest.POST("/topics/delete/"+topicOptional.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/topics/"+topicOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
@@ -242,7 +242,7 @@ public class ApplicationPermissionApiTest {
             assertTrue(permissionOptional.isPresent());
 
             // application delete
-            request = HttpRequest.POST("/applications/delete/"+applicationOptional.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/"+applicationOptional.get().getId(), Map.of());
             HashMap<String, Object> responseMap = blockingClient.retrieve(request, HashMap.class);
             assertNotNull(responseMap);
 
@@ -582,6 +582,9 @@ public class ApplicationPermissionApiTest {
             List<Map> content = (List<Map>) responseMap.get("content");
             assertEquals(1, content.size());
             assertEquals(permissionOptional.get().getId().intValue(), content.get(0).get("id"));
+
+            // expect canonical name is given
+            assertEquals("B."+publicGroup.getId()+".PublicTestTopic", content.get(0).get("topicCanonicalName"));
         }
 
         @Test

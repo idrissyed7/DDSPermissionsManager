@@ -209,6 +209,36 @@ The Web Application UI is built using Svelte and is served by the Web API.
 The Web API is built using Micronaut.
 The Web API is horizontally scalable.
 
+### Building the Application
+
+The Web Application UI requires the URL of the API when built.
+This is set using the VITE_BACKEND_URL environment variable.
+If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
+Otherwise, set VITE_BACKEND_URL to the full URL of the API (which should end in `/api`).
+The VITE_BACKEND_URL variable can also be set in `frontend/.env`.
+
+The application is built with gradle, e.g., `./gradlew app:build`.
+This builds both the API and the UI.
+When run this way, gradle will produce three jar files:
+
+* `app/build/libs/app-VERSION-all.jar` - a runnable jar that contains the API, the dependencies for the API, the resources for the API, and the UI as static assets.
+* `app/build/libs/app-VERSION-runner.jar` - a runnable jar that only contains the API (no dependencies, resources, or UI).
+* `app/build/libs/app-VERSION.jar` - a non-runnable jar that contains the API, the resources for the API, and the UI as static assets.
+
+### Containerization
+
+For convenience, the UI and API can be built into a single container image.
+A suitable version of Java (11 and up) and npm must be available.
+The following snippet illustrates how to build a container image:
+
+    # Set the database dependency.
+    DPM_DATABASE_DEPENDENCY="mysql:mysql-connector-java:8.0.31,com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.7.2"
+    # Set the API url.
+    VITE_BACKEND_URL=/api
+    ./gradlew dockerfile
+    ./gradlew buildLayers
+    docker build -t my-dpm app/build/docker/main
+
 ### The Secret Store
 
 Currently, the DDS Permissions Manager supports the following Secret Stores:
@@ -232,8 +262,310 @@ In addition to the documents necessary for DDS Security, the Secret Store is a g
 
 ### Steps to produce necessary artifacts (Identity CA, Permissions CA, governance file)
 
-The following shell script shows how to create an Identity CA and Permissions CA and how to sign a governance file.
-The script assumes the existence of an `identity.cnf` and `permissions.cnf`.
+There are a number of different ways to produce a viable Identity CA, Permissions CA, and governance file.
+This sections describes one way of producing these artifacts.
+
+First, let `identity.cnf` be a valid `openssl` configuration file:
+
+    #
+    # OpenSSL example Certificate Authority configuration file.
+
+    ####################################################################
+    [ ca ]
+    default_ca  = CA_default    # The default ca section
+
+    ####################################################################
+    [ CA_default ]
+
+    dir    = .      # Where everything is kept
+    certs    = $dir/certs    # Where the issued certs are kept
+    crl_dir    = $dir/crl    # Where the issued crl are kept
+    database  = $dir/index.txt  # database index file.
+
+    new_certs_dir  = $dir
+
+    certificate  = $dir/identity_ca.pem      # The CA certificate
+    serial    = $dir/serial             # The current serial number
+    crlnumber  = $dir/crlnumber          # the current crl number
+                      # must be commented out to leave a V1 CRL
+    crl    = $dir/crl.pem             # The current CRL
+    private_key  = $dir/identity_ca_key.pem      # The private key
+    RANDFILE  = $dir/.rand            # private random number file
+
+    #x509_extensions  = usr_cert    # The extentions to add to the cert
+
+    # Comment out the following two lines for the "traditional"
+    # (and highly broken) format.
+    name_opt   = ca_default    # Subject Name options
+    cert_opt   = ca_default    # Certificate field options
+
+    # Extension copying option: use with caution.
+    # copy_extensions = copy
+
+    # Extensions to add to a CRL. Note: Netscape communicator chokes on V2 CRLs
+    # so this is commented out by default to leave a V1 CRL.
+    # crlnumber must also be commented out to leave a V1 CRL.
+    # crl_extensions  = crl_ext
+
+    default_days  = 3650      # how long to certify for
+    default_crl_days= 30      # how long before next CRL
+    default_md  = sha256    # which md to use.
+    preserve  = no      # keep passed DN ordering
+
+    # A few difference way of specifying how similar the request should look
+    # For type CA, the listed attributes must be the same, and the optional
+    # and supplied fields are just that :-)
+    policy    = policy_strict
+
+    [ policy_strict ]
+    # The root CA should only sign intermediate certificates that match.
+    # See the POLICY FORMAT section of `man ca`.
+    countryName             = match
+    stateOrProvinceName     = match
+    organizationName        = match
+    organizationalUnitName  = optional
+    commonName              = supplied
+    emailAddress            = optional
+
+    [ policy_loose ]
+    # Allow the intermediate CA to sign a more diverse range of certificates.
+    # See the POLICY FORMAT section of the `ca` man page.
+    countryName             = optional
+    stateOrProvinceName     = optional
+    localityName            = optional
+    organizationName        = optional
+    organizationalUnitName  = optional
+    commonName              = supplied
+    emailAddress            = optional
+
+    [ req ]
+    prompt                  = no
+    default_bits    = 2048
+    #default_keyfile   = privkey.pem
+    distinguished_name  = req_distinguished_name
+    #attributes    = req_attributes
+    default_md          = sha256
+    x509_extensions  = v3_ca  # The extentions to add to the self signed cert
+    string_mask         = utf8only
+
+    [ req_distinguished_name ]
+    countryName         = US
+    stateOrProvinceName = MO
+    localityName        = Saint Louis
+    0.organizationName  = UNITY
+    organizationalUnitName = CommUNITY
+    commonName          = Identity CA
+    emailAddress        = info@test.test
+
+    [ v3_ca ]
+    # Extensions for a typical CA (`man x509v3_config`).
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid:always,issuer
+    basicConstraints = critical, CA:true
+    keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+    [ v3_intermediate_ca ]
+    # Extensions for a typical intermediate CA (`man x509v3_config`).
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid:always,issuer
+    basicConstraints = critical, CA:true, pathlen:0
+    keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+    [ usr_cert ]
+    # Extensions for client certificates (`man x509v3_config`).
+    basicConstraints = CA:FALSE
+    nsCertType = client, email
+    nsComment = "OpenSSL Generated Client Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer
+    keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+    extendedKeyUsage = clientAuth, emailProtection
+
+    [ server_cert ]
+    # Extensions for server certificates (`man x509v3_config`).
+    basicConstraints = CA:FALSE
+    nsCertType = server
+    nsComment = "OpenSSL Generated Server Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer:always
+    keyUsage = critical, digitalSignature, keyEncipherment
+    extendedKeyUsage = serverAuth
+
+    [ crl_ext ]
+    # Extension for CRLs (`man x509v3_config`).
+    authorityKeyIdentifier=keyid:always
+
+Second, let `permissions.cnf` be a valid `openssl` configuration file:
+
+    #
+    # OpenSSL example Certificate Authority configuration file.
+
+    ####################################################################
+    [ ca ]
+    default_ca  = CA_default    # The default ca section
+
+    ####################################################################
+    [ CA_default ]
+
+    dir    = .      # Where everything is kept
+    certs    = $dir/certs    # Where the issued certs are kept
+    crl_dir    = $dir/crl    # Where the issued crl are kept
+    database  = $dir/index.txt  # database index file.
+
+    new_certs_dir  = $dir
+
+    certificate  = $dir/ca.pem      # The CA certificate
+    serial    = $dir/serial             # The current serial number
+    crlnumber  = $dir/crlnumber          # the current crl number
+                      # must be commented out to leave a V1 CRL
+    crl    = $dir/crl.pem             # The current CRL
+    private_key  = $dir/ca_key.pem      # The private key
+    RANDFILE  = $dir/.rand            # private random number file
+
+    #x509_extensions  = usr_cert    # The extentions to add to the cert
+
+    # Comment out the following two lines for the "traditional"
+    # (and highly broken) format.
+    name_opt   = ca_default    # Subject Name options
+    cert_opt   = ca_default    # Certificate field options
+
+    # Extension copying option: use with caution.
+    # copy_extensions = copy
+
+    # Extensions to add to a CRL. Note: Netscape communicator chokes on V2 CRLs
+    # so this is commented out by default to leave a V1 CRL.
+    # crlnumber must also be commented out to leave a V1 CRL.
+    # crl_extensions  = crl_ext
+
+    default_days  = 3650      # how long to certify for
+    default_crl_days= 30      # how long before next CRL
+    default_md  = sha256    # which md to use.
+    preserve  = no      # keep passed DN ordering
+
+    # A few difference way of specifying how similar the request should look
+    # For type CA, the listed attributes must be the same, and the optional
+    # and supplied fields are just that :-)
+    policy    = policy_strict
+
+    [ policy_strict ]
+    # The root CA should only sign intermediate certificates that match.
+    # See the POLICY FORMAT section of `man ca`.
+    countryName             = match
+    stateOrProvinceName     = match
+    organizationName        = match
+    organizationalUnitName  = optional
+    commonName              = supplied
+    emailAddress            = optional
+
+    [ policy_loose ]
+    # Allow the intermediate CA to sign a more diverse range of certificates.
+    # See the POLICY FORMAT section of the `ca` man page.
+    countryName             = optional
+    stateOrProvinceName     = optional
+    localityName            = optional
+    organizationName        = optional
+    organizationalUnitName  = optional
+    commonName              = supplied
+    emailAddress            = optional
+
+    [ req ]
+    prompt                  = no
+    default_bits    = 2048
+    #default_keyfile   = privkey.pem
+    distinguished_name  = req_distinguished_name
+    #attributes    = req_attributes
+    default_md          = sha256
+    x509_extensions  = v3_ca  # The extentions to add to the self signed cert
+    string_mask         = utf8only
+
+    [ req_distinguished_name ]
+    countryName         = US
+    stateOrProvinceName = MO
+    localityName        = Saint Louis
+    0.organizationName  = UNITY
+    organizationalUnitName = CommUNITY
+    commonName          = Permissions CA
+    emailAddress        = info@test.test
+
+    [ v3_ca ]
+    # Extensions for a typical CA (`man x509v3_config`).
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid:always,issuer
+    basicConstraints = critical, CA:true
+    keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+    [ v3_intermediate_ca ]
+    # Extensions for a typical intermediate CA (`man x509v3_config`).
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid:always,issuer
+    basicConstraints = critical, CA:true, pathlen:0
+    keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+    [ usr_cert ]
+    # Extensions for client certificates (`man x509v3_config`).
+    basicConstraints = CA:FALSE
+    nsCertType = client, email
+    nsComment = "OpenSSL Generated Client Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer
+    keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+    extendedKeyUsage = clientAuth, emailProtection
+
+    [ server_cert ]
+    # Extensions for server certificates (`man x509v3_config`).
+    basicConstraints = CA:FALSE
+    nsCertType = server
+    nsComment = "OpenSSL Generated Server Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer:always
+    keyUsage = critical, digitalSignature, keyEncipherment
+    extendedKeyUsage = serverAuth
+
+    [ crl_ext ]
+    # Extension for CRLs (`man x509v3_config`).
+    authorityKeyIdentifier=keyid:always
+
+Third, let `governance.xml` be a valid DDS Security Governance file:
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.omg.org/spec/DDS-SECURITY/20170901/omg_shared_ca_permissions.xsd">
+      <domain_access_rules>
+        <domain_rule>
+          <domains>
+            <id>1</id>
+          </domains>
+          <allow_unauthenticated_participants>false</allow_unauthenticated_participants>
+          <enable_join_access_control>true</enable_join_access_control>
+          <discovery_protection_kind>ENCRYPT</discovery_protection_kind>
+          <liveliness_protection_kind>ENCRYPT</liveliness_protection_kind>
+          <rtps_protection_kind>ENCRYPT</rtps_protection_kind>
+          <topic_access_rules>
+            <topic_rule>
+              <topic_expression>B*</topic_expression>
+              <enable_discovery_protection>true</enable_discovery_protection>
+              <enable_liveliness_protection>true</enable_liveliness_protection>
+              <enable_read_access_control>false</enable_read_access_control>
+              <enable_write_access_control>true</enable_write_access_control>
+              <metadata_protection_kind>ENCRYPT</metadata_protection_kind>
+              <data_protection_kind>NONE</data_protection_kind>
+            </topic_rule>
+            <topic_rule>
+              <topic_expression>C*</topic_expression>
+              <enable_discovery_protection>true</enable_discovery_protection>
+              <enable_liveliness_protection>true</enable_liveliness_protection>
+              <enable_read_access_control>true</enable_read_access_control>
+              <enable_write_access_control>true</enable_write_access_control>
+              <metadata_protection_kind>ENCRYPT</metadata_protection_kind>
+              <data_protection_kind>NONE</data_protection_kind>
+            </topic_rule>
+          </topic_access_rules>
+        </domain_rule>
+      </domain_access_rules>
+    </dds>
+
+See [Canonical Topic Names](#canonical-topic-names) for an explanation of the two topic rules.
+
+The following shell script shows how to create an Identity CA and Permissions CA and how to sign the governance file:
 
     ####################################################################################################
     # The following steps are not performed in the DDS Permissions Manager but are here for reference. #
@@ -261,6 +593,8 @@ The script assumes the existence of an `identity.cnf` and `permissions.cnf`.
     openssl smime -sign -in governance.xml -text -out governance.xml.p7s -signer permissions_ca.pem -inkey permissions_ca_key.pem
 
     echo "Signed governance file in governance.xml.p7s"
+
+See [The Secret Store](#the-secret-store) for how these artifacts should be named when uploaded into the secret store.
 
 ### Configuring GCP Secret Manager as a Secret Store
 
@@ -314,13 +648,6 @@ INSERT INTO permissions_user (admin, email)
 VALUES (true, '$EMAIL');
 ```
 
-### Building the Web Application UI
-
-The Web Application UI requires the URL of the API when built.
-This is set using the VITE_BACKEND_URL environment variable.
-If the Web API will serve the UI, then set VITE_BACKEND_URL to `/api`.
-Otherwise, set VITE_BACKEND_URL to the full URL of the API (which should end in `/api`).
-
 ### Configuring Google as an auth provider
 
 Set the following environment variables to enable Google as an auth provider:
@@ -335,9 +662,9 @@ The following environment variables should be set to configure the application:
 
 * MICRONAUT_SECURITY_TOKEN_JWT_SIGNATURES_SECRET_GENERATOR_SECRET - Secret uses to sign JWTs.
 * MICRONAUT_SECURITY_TOKEN_JWT_GENERATOR_REFRESH_TOKEN_SECRET - Secret for JWT renewal tokens.
-* MICRONAUT_SECURITY_REDIRECT_LOGIN_SUCCESS
-* MICRONAUT_SECURITY_REDIRECT_LOGIN_FAILURE
-* MICRONAUT_SECURITY_REDIRECT_LOGOUT
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_SUCCESS - Typically the URL of the Web Application UI, e.g., https://dpm.my.domain.com
+* MICRONAUT_SECURITY_REDIRECT_LOGIN_FAILURE - Typically the `failed-auth` URL of the Web Application UI, e.g., https://dpm.my.domain.com/failed-auth
+* MICRONAUT_SECURITY_REDIRECT_LOGOUT - Typically the URL of the Web Application UI, e.g., https://dpm.my.domain.com
 
 The following environment variables can be used to set the validity of DDS Security Documents produced by the API:
 

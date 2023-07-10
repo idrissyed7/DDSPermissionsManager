@@ -28,3 +28,8 @@ permissions-manager:
   application:
     passphrase:
       salt: "changeme"
+  test:
+    username: unity-admin
+    email: unity-admin-test@test.test
+    password: password
+    is-admin: true

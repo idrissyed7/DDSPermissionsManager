@@ -260,7 +260,7 @@
 		try {
 			groupContext.set();
 			for (const group of groupsRowsSelected) {
-				await httpAdapter.post(`/groups/delete/${group.id}`);
+				await httpAdapter.delete(`/groups/${group.id}`);
 			}
 		} catch (err) {
 			deleteGroupVisible = false;

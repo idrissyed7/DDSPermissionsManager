@@ -131,6 +131,9 @@ public class TopicApiTest {
             assertEquals(OK, response.getStatus());
             Optional<TopicDTO> topic = response.getBody(TopicDTO.class);
             assertTrue(topic.isPresent());
+
+            // assert expected Canonical Name
+            assertEquals("B."+theta.getId()+".Abc123", topic.get().getCanonicalName());
         }
 
         @Test
@@ -1072,7 +1075,7 @@ public class TopicApiTest {
             loginAsNonAdmin();
 
             // delete attempt
-            request = HttpRequest.POST("/topics/delete/"+topic.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/topics/"+topic.get().getId(), Map.of());
             response = blockingClient.exchange(request);
             assertEquals(OK, response.getStatus());
         }
@@ -1109,7 +1112,7 @@ public class TopicApiTest {
 
             loginAsNonAdmin();
 
-            request = HttpRequest.POST("/applications/delete/"+applicationOne.getId(), Map.of());
+            request = HttpRequest.DELETE("/applications/"+applicationOne.getId(), Map.of());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
@@ -1220,7 +1223,7 @@ public class TopicApiTest {
             loginAsNonAdmin();
 
             // delete attempt
-            HttpRequest<?> request2 = HttpRequest.POST("/topics/delete/"+topic.get().getId(), Map.of());
+            HttpRequest<?> request2 = HttpRequest.DELETE("/topics/"+topic.get().getId(), Map.of());
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request2);
             });
@@ -1811,7 +1814,7 @@ public class TopicApiTest {
             loginAsNonAdmin();
 
             // delete attempt
-            request = HttpRequest.POST("/topics/delete/"+topic.get().getId(), Map.of());
+            request = HttpRequest.DELETE("/topics/"+topic.get().getId(), Map.of());
             HttpRequest<?> finalRequest = request;
             HttpClientResponseException exception = assertThrowsExactly(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(finalRequest);
