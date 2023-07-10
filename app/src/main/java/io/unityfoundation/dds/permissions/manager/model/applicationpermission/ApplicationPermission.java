@@ -115,6 +115,6 @@ public class ApplicationPermission {
     }
 
     public boolean removeWritePartition(Long partitionId) {
-        return writePartitions.removeIf(readPartition -> partitionId != null && partitionId.equals(readPartition.getId()));
+        return writePartitions.removeIf(writePartition -> partitionId != null && partitionId.equals(writePartition.getId()));
     }
 }
