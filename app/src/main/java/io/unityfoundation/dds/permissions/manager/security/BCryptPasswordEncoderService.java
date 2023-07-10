@@ -38,10 +38,8 @@ public class BCryptPasswordEncoderService {
     }
 
     public boolean matches(@NotBlank @NonNull String rawPassword,
-                    @NotBlank @NonNull String encodedPassword) {
-        byte[] result = new byte[32];
-        generator.generateBytes(rawPassword.getBytes(StandardCharsets.UTF_8), result);
-
-        return Arrays.equals(result, Hex.decode(encodedPassword));
+                           @NotBlank @NonNull String encodedPassword) {
+        String encodedRaw = encode(rawPassword);
+        return encodedRaw.equals(encodedPassword);
     }
 }
