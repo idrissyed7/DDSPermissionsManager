@@ -25,6 +25,9 @@ micronaut:
       logout: 'http://localhost:8080'
 ---
 permissions-manager:
+  application:
+    passphrase:
+      salt: "changeme"
   test:
     username: unity-admin
     email: unity-admin-test@test.test
