@@ -575,9 +575,8 @@ public class ApplicationService {
 
     private HashMap buildApplicationPermissions(Application application) {
         HashMap<String, Object> dataModel = new HashMap<>();
-        List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadAndWrite(application, true, false);
-        List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadAndWrite(application, false, true);
-        List<ApplicationPermission> readWriteApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadAndWrite(application, true, true);
+        List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
+        List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
 
         // list of canonical names for each publish-subscribe sections
         List<String> subscribeList = new ArrayList<>();
@@ -588,10 +587,6 @@ public class ApplicationService {
 
         // write
         addCanonicalNamesToList(publishList, writeApplicationPermissions);
-
-        // read+write
-        addCanonicalNamesToList(subscribeList, readWriteApplicationPermissions);
-        addCanonicalNamesToList(publishList, readWriteApplicationPermissions);
 
         dataModel.put("subscribe", subscribeList);
         dataModel.put("publish", publishList);

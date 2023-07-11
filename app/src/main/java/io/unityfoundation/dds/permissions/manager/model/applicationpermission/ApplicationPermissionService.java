@@ -322,7 +322,11 @@ public class ApplicationPermissionService {
         applicationPermissionRepository.deleteByPermissionsApplicationEquals(application);
     }
 
-    public List<ApplicationPermission> findAllByApplicationAndReadAndWrite(Application application, boolean read, boolean write) {
-        return applicationPermissionRepository.findByPermissionsApplicationAndPermissionReadAndPermissionWrite(application, read, write);
+    public List<ApplicationPermission> findAllByApplicationAndReadEqualsTrue(Application application) {
+        return applicationPermissionRepository.findByPermissionsApplicationAndPermissionReadTrue(application);
+    }
+
+    public List<ApplicationPermission> findAllByApplicationAndWriteEqualsTrue(Application application) {
+        return applicationPermissionRepository.findByPermissionsApplicationAndPermissionWriteTrue(application);
     }
 }

@@ -253,16 +253,6 @@
 		return checkboxes.filter((checkbox) => checkbox.checked === true).length;
 	};
 
-	// const getGroupVisibilityPublic = async (groupName) => {
-	// 	try {
-	// 		const res = await httpAdapter.get(`/groups?filter=${groupName}`);
-	// 		if (res.data?.content[0]?.public) return true;
-	// 		else return false;
-	// 	} catch (err) {
-	// 		errorMessage(errorMessages['group']['error.loading.visibility'], err.message);
-	// 	}
-	// };
-
 	const addTopic = async () => {
 		if (!selectedGroup) {
 			const groupId = await httpAdapter.get(`/groups?page=0&size=1&filter=${searchGroups}`);
