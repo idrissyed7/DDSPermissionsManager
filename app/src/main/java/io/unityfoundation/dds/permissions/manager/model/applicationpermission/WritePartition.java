@@ -14,14 +14,14 @@ public class WritePartition {
 //    @JoinColumn(name = "permissions_application_permission_id")
     private ApplicationPermission wApplicationPermission;
 
-    private String partition;
+    private String partitionName;
 
     public WritePartition() {
     }
 
-    public WritePartition(ApplicationPermission applicationPermission, String partition) {
+    public WritePartition(ApplicationPermission applicationPermission, String partitionName) {
         this.wApplicationPermission = applicationPermission;
-        this.partition = partition;
+        this.partitionName = partitionName;
     }
 
     public Long getId() {
@@ -40,11 +40,11 @@ public class WritePartition {
         this.wApplicationPermission = applicationPermission;
     }
 
-    public String getPartition() {
-        return partition;
+    public String getPartitionName() {
+        return partitionName;
     }
 
-    public void setPartition(String partition) {
-        this.partition = partition;
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
     }
 }

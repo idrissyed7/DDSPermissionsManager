@@ -14,14 +14,14 @@ public class ReadPartition {
 //    @JoinColumn(name = "permissions_application_permission_id")
     private ApplicationPermission rApplicationPermission;
 
-    private String partition;
+    private String partitionName;
 
     public ReadPartition() {
     }
 
-    public ReadPartition(ApplicationPermission applicationPermission, String partition) {
+    public ReadPartition(ApplicationPermission applicationPermission, String partitionName) {
         this.rApplicationPermission = applicationPermission;
-        this.partition = partition;
+        this.partitionName = partitionName;
     }
 
     public Long getId() {
@@ -40,11 +40,11 @@ public class ReadPartition {
         this.rApplicationPermission = applicationPermission;
     }
 
-    public String getPartition() {
-        return partition;
+    public String getPartitionName() {
+        return partitionName;
     }
 
-    public void setPartition(String partition) {
-        this.partition = partition;
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
     }
 }
