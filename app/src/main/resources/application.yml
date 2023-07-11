@@ -52,11 +52,39 @@ micronaut:
       oauth:
         path: /api/oauth/access_token
     intercept-url-map:
-      - pattern: /favicon.ico
+      - pattern: /favicon.png
         http-method: GET
         access:
           - isAnonymous()
       - pattern: /
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /_app/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /applications/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /groups/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /topics/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /users/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /failed-auth/**
+        http-method: GET
+        access:
+          - isAnonymous()
+      - pattern: /search/**
         http-method: GET
         access:
           - isAnonymous()
@@ -77,10 +105,6 @@ micronaut:
         access:
           - isAnonymous()
       - pattern: /swagger/**
-        http-method: GET
-        access:
-          - isAnonymous()
-      - pattern: /**
         http-method: GET
         access:
           - isAnonymous()
