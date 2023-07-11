@@ -105,14 +105,14 @@
 
     "topic.detail":
     {
-        "application.associate": "Associate an Application",
+        "application.associate": "Grant Access to Topic",
         "edit": "Edit Topic",
+        "edit.grant": "Edit Grant",
         "row.one": "Name:",
         "row.two": "Description:",
         "row.three": "Group:",
         "row.four": "Any application can read:",
         "row.five": "Public:",
-        "row.six": "Applications:",
         "any.application.can.read.yes": "Yes",
         "any.application.can.read.no": "No",
         "add.application": "Grant Application",
@@ -120,7 +120,22 @@
         "selected.applications.read": "Read",
         "selected.applications.write": "Write",
         "selected.applications.read.write": "Read + Write",
-        "updated.success": "Updated Successfully"
+        "updated.success": "Updated Successfully",
+        "table.grants.label": "Grants",
+        "table.grants.column.one": "Group",
+        "table.grants.column.two": "Application",
+        "table.grants.column.three": "Access",
+        "table.grants.column.four": "Write Partitions",
+        "table.grants.column.five": "Read Partitions",
+        "table.grants.access.read": "Read",
+        "table.grants.access.readwrite": "Read,",
+        "table.grants.access.write": "Write",
+        "table.grants.empty":"No Grants Found",
+        "delete.tooltip": "Select grants to delete",
+        "add.tooltip": "Add a new grant",
+        "delete.grants.title": "Delete",
+        "delete.grants.single": "Grant",
+        "delete.grants.multiple": "Grants"
     },
 
     "application":
@@ -155,6 +170,11 @@
         "table.applications.column.one": "Group",
         "table.applications.column.two": "Topic",
         "table.applications.column.three": "Access",
+        "table.applications.column.four": "Write Partitions",
+        "table.applications.column.five": "Read Partitions",
+        "table.applications.access.read": "Read",
+        "table.applications.access.readwrite": "Read,",
+        "table.applications.access.write": "Write",
         "empty.topics.associated": "No Topics Associated.",
         "button.generate.grant.token": "Generate Grant Token",
         "button.generate.password": "Generate Password",
@@ -199,8 +219,6 @@
         "table.search.results.column.two": "Group",
         "table.search.results.column.three": "Description",
         "empty.results": "No Results"
-
-
     },
 
     "header":
@@ -258,7 +276,10 @@
         "button.add.group.label": "Add Group",
         "button.save.changes": "Save Changes",
         "delete.warning": "Are you sure? This is not reversible.",
-        "associate.application.button.label": "Add",
+        "associate.application.button.label": "Next",
+        "associate.application.button.label.two": "Add",
+        "associate.application.button.label.two.edit": "Save",
+        "associate.application.input.access.placeholder": "Add a Partition",
         "reminder.message.button.label": "Yes"    
     },
 

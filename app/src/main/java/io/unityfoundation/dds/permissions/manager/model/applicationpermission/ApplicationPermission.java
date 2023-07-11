@@ -4,8 +4,13 @@ package io.unityfoundation.dds.permissions.manager.model.applicationpermission;
 import io.micronaut.core.annotation.NonNull;
 import io.unityfoundation.dds.permissions.manager.model.application.Application;
 import io.unityfoundation.dds.permissions.manager.model.topic.Topic;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissions_application_permission")
@@ -22,17 +27,27 @@ public class ApplicationPermission {
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     private Topic permissionsTopic;
 
-    @NonNull
-    private AccessType accessType;
+    private boolean permissionRead = false;
+
+    private boolean permissionWrite = false;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "rApplicationPermission")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<ReadPartition> readPartitions = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "wApplicationPermission")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<WritePartition> writePartitions = new HashSet<>();
 
 
     public ApplicationPermission() {
     }
 
-    public ApplicationPermission(@NonNull Application application, @NonNull Topic topic, @NonNull AccessType accessType) {
+    public ApplicationPermission(@NonNull Application application, @NonNull Topic topic, boolean permissionRead, boolean permissionWrite) {
         this.permissionsApplication = application;
         this.permissionsTopic = topic;
-        this.accessType = accessType;
+        this.permissionRead = permissionRead;
+        this.permissionWrite = permissionWrite;
     }
 
     public Long getId() {
@@ -61,11 +76,45 @@ public class ApplicationPermission {
         this.permissionsTopic = permissionsTopic;
     }
 
-    public AccessType getAccessType() {
-        return this.accessType;
+    public boolean isPermissionRead() {
+        return permissionRead;
     }
 
-    public void setAccessType(AccessType accessType) {
-        this.accessType = accessType;
+    public void setPermissionRead(boolean permissionRead) {
+        this.permissionRead = permissionRead;
+    }
+
+    public boolean isPermissionWrite() {
+        return permissionWrite;
+    }
+
+    public void setPermissionWrite(boolean permissionWrite) {
+        this.permissionWrite = permissionWrite;
+    }
+
+    public Set<ReadPartition> getReadPartitions() {
+        if (readPartitions == null) return null;
+        return Collections.unmodifiableSet(readPartitions);
+    }
+
+    public void setReadPartitions(Set<ReadPartition> readReadPartitions) {
+        this.readPartitions = readReadPartitions;
+    }
+
+    public boolean removeReadPartition(Long partitionId) {
+        return readPartitions.removeIf(readPartition -> partitionId != null && partitionId.equals(readPartition.getId()));
+    }
+
+    public Set<WritePartition> getWritePartitions() {
+        if (writePartitions == null) return null;
+        return Collections.unmodifiableSet(writePartitions);
+    }
+
+    public void setWritePartitions(Set<WritePartition> writePartitions) {
+        this.writePartitions = writePartitions;
+    }
+
+    public boolean removeWritePartition(Long partitionId) {
+        return writePartitions.removeIf(writePartition -> partitionId != null && partitionId.equals(writePartition.getId()));
     }
 }

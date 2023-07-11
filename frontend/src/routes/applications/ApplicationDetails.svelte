@@ -1,5 +1,6 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import { isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
 	import Modal from '../../lib/Modal.svelte';
@@ -29,9 +30,11 @@
 
 	let selectedAppDescriptionSelector,
 		checkboxSelector,
+		selectedPermissionId,
 		isPublic = selectedAppPublic;
 
-	let editApplicationVisible = false;
+	let editApplicationVisible = false,
+		deleteSelectedGrantsVisible = false;
 
 	const decodeError = (errorObject) => {
 		errorObject = errorObject.code.replaceAll('-', '_');
@@ -133,6 +136,22 @@
 		}}
 	/>
 {/if}
+
+{#if deleteSelectedGrantsVisible}
+	<Modal
+		actionDeleteGrants={true}
+		title={messages['topic.detail']['delete.grants.title'] +
+			messages['topic.detail']['delete.grants.single']}
+		on:cancel={() => {
+			deleteSelectedGrantsVisible = false;
+		}}
+		on:deleteGrants={async () => {
+			dispatch('deleteTopicApplicationAssociation', selectedPermissionId);
+			deleteSelectedGrantsVisible = false;
+		}}
+	/>
+{/if}
+
 <div class="content">
 	<table>
 		<tr>
@@ -143,9 +162,11 @@
 			<td style="font-weight: 500">{selectedAppName} </td>
 			{#if $isAdmin || $permissionsByGroup.find((permission) => permission.groupId === selectedAppGroupId && permission.isApplicationAdmin)}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<img
 					data-cy="edit-application-icon"
 					src={editSVG}
+					tabindex="0"
 					alt="edit application"
 					width="18rem"
 					style="margin-left: 1rem; cursor: pointer"
@@ -171,6 +192,7 @@
 			<td>
 				<input
 					type="checkbox"
+					tabindex="-1"
 					style="width: 15px; height: 15px"
 					bind:checked={isPublic}
 					on:change={() => (isPublic = selectedAppPublic)}
@@ -180,12 +202,21 @@
 		</tr>
 	</table>
 
-	<table style="max-width: 59rem; margin-top: 3.5rem">
+	<div style="font-size:1.3rem; margin-top: 3.5rem; margin-bottom: 1rem">
+		{messages['topic.detail']['table.grants.label']}
+	</div>
+
+	<table style="min-width: 59rem; max-width: 59rem">
 		<thead>
-			<tr>
+			<tr style="border-top: 1px solid black; border-bottom: 2px solid">
 				<td>{messages['application.detail']['table.applications.column.one']}</td>
 				<td>{messages['application.detail']['table.applications.column.two']}</td>
 				<td>{messages['application.detail']['table.applications.column.three']}</td>
+				{#if !$page.url.pathname.includes('search')}
+					<td>{messages['application.detail']['table.applications.column.four']}</td>
+					<td>{messages['application.detail']['table.applications.column.five']}</td>
+				{/if}
+
 				{#if isApplicationAdmin || $isAdmin}
 					<td />
 				{/if}
@@ -195,31 +226,66 @@
 			{#each $applicationPermission as appPermission}
 				<tbody>
 					<tr style="line-height: 2rem">
-						<td style="min-width: 15rem">
+						<td style="min-width: 10rem">
 							{appPermission.topicGroup}
 						</td>
-						<td style="min-width: 20rem">
+						<td style="min-width: 18rem">
 							{appPermission.topicName} ({appPermission.topicCanonicalName})
 						</td>
 						<td style="min-width: 6.5rem">
-							{appPermission.accessType === 'READ_WRITE'
-								? 'READ & WRITE'
-								: appPermission.accessType}
+							{#if appPermission.read && appPermission.write}
+								{messages['application.detail']['table.applications.access.readwrite']}
+								{messages['application.detail']['table.applications.access.write']}
+							{:else if appPermission.read}
+								{messages['application.detail']['table.applications.access.read']}
+							{:else if appPermission.write}
+								{messages['application.detail']['table.applications.access.write']}
+							{/if}
 						</td>
+
+						{#if !$page.url.pathname.includes('search')}
+							<td style="min-width: 10rem; max-width: 10rem">
+								{#if appPermission.writePartitions?.length > 0}
+									{appPermission.writePartitions
+										.map(function (item) {
+											return '[' + item + ']';
+										})
+										.join(', ')}
+								{/if}
+							</td>
+							<td style="min-width: 10rem; max-width: 10rem">
+								{#if appPermission.readPartitions?.length > 0}
+									{appPermission.readPartitions
+										.map(function (item) {
+											return '[' + item + ']';
+										})
+										.join(', ')}
+								{/if}
+							</td>
+						{:else}
+							<td />
+							<td />
+						{/if}
+
 						{#if isApplicationAdmin || $isAdmin}
 							<td>
 								<!-- svelte-ignore a11y-click-events-have-key-events -->
+								<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 								<img
 									src={deleteSVG}
+									tabindex="0"
 									alt="delete topic"
 									height="23px"
 									width="23px"
 									style="vertical-align: -0.4rem; float: right; cursor: pointer"
 									on:click={() => {
-										dispatch('deleteTopicApplicationAssociation', appPermission.id);
+										selectedPermissionId = appPermission.id;
+										deleteSelectedGrantsVisible = true;
 									}}
 								/>
 							</td>
+						{:else}
+							<td />
 						{/if}
 					</tr>
 				</tbody>
@@ -230,6 +296,8 @@
 			</p>
 		{/if}
 		<tr style="font-size: 0.7rem; text-align: right">
+			<td style="border: none" />
+			<td style="border: none" />
 			<td style="border: none" />
 			<td style="border: none" />
 			<td style="border: none" />

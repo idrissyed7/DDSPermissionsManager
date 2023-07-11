@@ -95,7 +95,7 @@ class UniversalSearchApiTest {
         Topic topicOne = topicRepository.save(new Topic("TopicOne", TopicKind.B, "TopicOne3", true, groupOne));
         Topic topicOne1 = topicRepository.save(new Topic("TopicOne1", TopicKind.C, "TopicOneY", true, groupOne));
         Application applicationOne = applicationRepository.save(new Application("ApplicationOnez3", groupOne, "ApplicationOne", true));
-        applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, AccessType.READ_WRITE));
+        applicationPermissionRepository.save(new ApplicationPermission(applicationOne, topicOne, true, true));
         groupUserRepository.save(new GroupUser(groupOne, jjones));
         groupUserRepository.save(new GroupUser(groupOne, eclair));
 
@@ -103,7 +103,7 @@ class UniversalSearchApiTest {
         Topic topicTwo = topicRepository.save(new Topic("TopicTwo", TopicKind.C, "TopicTwo", true, groupTwo));
         Application applicationTwo = applicationRepository.save(new Application("ApplicationTwo", groupTwo, "ApplicationTwo", true));
         Application applicationTwo1 = applicationRepository.save(new Application("ApplicationTwo1", groupTwo, "ApplicationTwo1", true));
-        applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, topicTwo, AccessType.READ_WRITE));
+        applicationPermissionRepository.save(new ApplicationPermission(applicationTwo, topicTwo, true, true));
         groupUserRepository.save(new GroupUser(groupTwo, eclair));
     }
 
@@ -377,7 +377,7 @@ class UniversalSearchApiTest {
         return  blockingClient.exchange(request, GroupUserDTO.class);
     }
 
-    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, boolean read, boolean write) {
         HttpRequest<?> request;
 
         // generate grant token for application
@@ -388,7 +388,9 @@ class UniversalSearchApiTest {
         assertTrue(optional.isPresent());
         String applicationGrantToken = optional.get();
 
-        request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+        Map<String, Boolean> payload = Map.of("read", read, "write", write);
+
+        request = HttpRequest.POST("/application_permissions/" + topicId, payload)
                 .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }

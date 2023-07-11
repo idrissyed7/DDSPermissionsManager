@@ -13,7 +13,6 @@ import io.micronaut.security.token.jwt.generator.claims.JWTClaimsSetGenerator;
 import io.micronaut.security.token.jwt.validator.AuthenticationJWTClaimsSetAdapter;
 import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
@@ -579,23 +578,18 @@ public class ApplicationService {
 
     private HashMap buildApplicationPermissions(Application application) {
         HashMap<String, Object> dataModel = new HashMap<>();
-        List<ApplicationPermission> applicationPermissions = applicationPermissionService.findAllByApplication(application);
-        Map<AccessType, List<ApplicationPermission>> accessTypeListMap =
-                applicationPermissions.stream().collect(Collectors.groupingBy(ApplicationPermission::getAccessType));
+        List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
+        List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
 
         // list of canonical names for each publish-subscribe sections
         List<String> subscribeList = new ArrayList<>();
         List<String> publishList = new ArrayList<>();
 
         // read
-        addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ));
+        addCanonicalNamesToList(subscribeList, readApplicationPermissions);
 
         // write
-        addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.WRITE));
-
-        // read+write
-        addCanonicalNamesToList(subscribeList, accessTypeListMap.get(AccessType.READ_WRITE));
-        addCanonicalNamesToList(publishList, accessTypeListMap.get(AccessType.READ_WRITE));
+        addCanonicalNamesToList(publishList, writeApplicationPermissions);
 
         dataModel.put("subscribe", subscribeList);
         dataModel.put("publish", publishList);

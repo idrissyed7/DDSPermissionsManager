@@ -17,7 +17,6 @@ import io.micronaut.security.utils.SecurityService;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.unityfoundation.dds.permissions.manager.model.application.ApplicationDTO;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessPermissionDTO;
-import io.unityfoundation.dds.permissions.manager.model.applicationpermission.AccessType;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
@@ -2354,7 +2353,7 @@ public class ApplicationApiTest {
             assertEquals("Topic123", topicOptional.get().getName());
 
             // create app permission
-            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ);
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), true, false);
             assertEquals(CREATED, response.getStatus());
             Optional<AccessPermissionDTO> permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -2402,7 +2401,7 @@ public class ApplicationApiTest {
             assertTrue(topicOptional.isPresent());
             assertEquals("Topic789", topicOptional.get().getName());
 
-            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), AccessType.READ_WRITE);
+            response = createApplicationPermission(applicationOne.getId(), topicOptional.get().getId(), true, true);
             assertEquals(CREATED, response.getStatus());
             permissionOptional = response.getBody(AccessPermissionDTO.class);
             assertTrue(permissionOptional.isPresent());
@@ -2584,7 +2583,7 @@ public class ApplicationApiTest {
         return blockingClient.exchange(request, TopicDTO.class);
     }
 
-    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, AccessType accessType) {
+    private HttpResponse<?> createApplicationPermission(Long applicationId, Long topicId, boolean read, boolean write) {
         HttpRequest<?> request;
 
         // generate grant token for application
@@ -2595,7 +2594,9 @@ public class ApplicationApiTest {
         assertTrue(optional.isPresent());
         String applicationGrantToken = optional.get();
 
-        request = HttpRequest.POST("/application_permissions/" + topicId + "/" + accessType.name(), Map.of())
+        Map<String, Boolean> payload = Map.of("read", read, "write", write);
+
+        request = HttpRequest.POST("/application_permissions/" + topicId, payload)
                 .header(ApplicationPermissionService.APPLICATION_GRANT_TOKEN, applicationGrantToken);
         return blockingClient.exchange(request, AccessPermissionDTO.class);
     }

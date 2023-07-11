@@ -27,10 +27,4 @@ class ApplicationPermissionControllerSecuredTest {
         URI uri = UriBuilder.of("/api").path("application_permissions").path("application").path("99").build();
         SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET(uri));
     }
-
-    @Test
-    void getApiApplicationPermissionsAccessTypesRequiresAuthentication(@Client("/") HttpClient httpClient) throws IOException {
-        URI uri = UriBuilder.of("/api").path("application_permissions").path("access_types").build();
-        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET(uri));
-    }
 }

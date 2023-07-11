@@ -1088,8 +1088,8 @@
 								</div>
 								<section style="display:inline-flex;">
 									<textarea rows="1" style="width:50rem; resize: none" readonly
-										>{curlCommands.appPassword}
-									</textarea>
+										>{curlCommands.appPassword}</textarea
+									>
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<img
 										data-cy="curl-command-1-copy"

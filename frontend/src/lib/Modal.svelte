@@ -12,6 +12,7 @@
 	import groupContext from '../stores/groupContext';
 	import modalOpen from '../stores/modalOpen';
 	import tooltips from '$lib/tooltips.json';
+	import CheckBox from '$lib/CheckBox.svelte';
 
 	export let title;
 	export let email = false;
@@ -33,6 +34,7 @@
 	export let actionDeleteUsers = false;
 	export let actionDeleteSuperUsers = false;
 	export let actionDeleteTopics = false;
+	export let actionDeleteGrants = false;
 	export let actionDeleteGroups = false;
 	export let actionDeleteApplications = false;
 	export let noneditable = false;
@@ -61,6 +63,12 @@
 	export let closeModalText = messages['modal']['close.modal.label'];
 	export let selectedTopicId = '';
 
+	export let partitionListRead = [];
+	export let partitionListWrite = [];
+
+	export let readChecked = false;
+	export let writeChecked = false;
+
 	const dispatch = createEventDispatcher();
 
 	// Constants
@@ -70,6 +78,7 @@
 	const maxCharactersLength = 4000;
 
 	// Forms
+	export let actionAssociateApplicationTwo = false;
 	let selectedIsGroupAdmin = false;
 	let selectedIsTopicAdmin = false;
 	let selectedIsApplicationAdmin = false;
@@ -928,13 +937,6 @@
 				}}
 			/>
 
-			<select style="width: 8rem; margin: unset" bind:value={accessTypeSelection}>
-				<option value="" disabled selected>{messages['modal']['select.access.type.label']}</option>
-				<option value="READ">{messages['modal']['select.read.label']}</option>
-				<option value="WRITE">{messages['modal']['select.write.label']}</option>
-				<option value="READ_WRITE">{messages['modal']['select.read.write.label']}</option>
-			</select>
-
 			{#if tokenApplicationName !== undefined && tokenApplicationGroup !== undefined}
 				<div style="font-size:1rem; margin-top: 1rem">
 					<strong>{tokenApplicationName}</strong> ({tokenApplicationGroup})
@@ -954,6 +956,16 @@
 			{/if}
 		{/if}
 	</div>
+
+	{#if actionAssociateApplicationTwo}
+		<div style="margin-left: 2rem">
+			<div style="margin-bottom: 1rem">{messages['modal']['select.access.type.label']}:</div>
+			<CheckBox label="Read" bind:partitionList={partitionListRead} bind:checked={readChecked} />
+		</div>
+		<div style="margin: 1rem 0 1rem 2rem">
+			<CheckBox label="Write" bind:partitionList={partitionListWrite} bind:checked={writeChecked} />
+		</div>
+	{/if}
 
 	{#if actionAddUser}
 		<span style="font-size:0.7rem; float: right; margin:0 2rem 0.5rem 0"
@@ -1227,6 +1239,24 @@
 		>
 	{/if}
 
+	{#if actionDeleteGrants}
+		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
+			{messages['modal']['delete.warning']}
+		</p>
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			data-cy="delete-grant"
+			autofocus
+			class="action-button"
+			on:click={() => dispatch('deleteGrants')}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('deleteGrants');
+				}
+			}}>{title}</button
+		>
+	{/if}
+
 	{#if actionDeleteApplications}
 		<p style="margin: 0 1.7rem 1rem 2rem; font-size:0.9rem; font-stretch: condensed; ">
 			{messages['modal']['delete.warning']}
@@ -1273,20 +1303,60 @@
 			class:button-disabled={bindToken === undefined ||
 				accessTypeSelection?.length === 0 ||
 				invalidToken}
+			on:click={() => {
+				actionAssociateApplication = false;
+				actionAssociateApplicationTwo = true;
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					actionAssociateApplication = false;
+					actionAssociateApplicationTwo = true;
+				}
+			}}
+		>
+			{messages['modal']['associate.application.button.label']}
+		</button>
+	{/if}
+
+	{#if actionAssociateApplicationTwo}
+		<!-- svelte-ignore a11y-autofocus -->
+		<button
+			autofocus
+			data-cy="add-application-topic-association"
+			class="action-button"
+			disabled={(title !== messages['topic.detail']['edit.grant'] && bindToken === undefined) ||
+				(!readChecked && !writeChecked) ||
+				invalidToken}
+			class:button-disabled={(title !== messages['topic.detail']['edit.grant'] &&
+				bindToken === undefined) ||
+				(!readChecked && !writeChecked) ||
+				invalidToken}
 			on:click={() =>
 				dispatch('addTopicApplicationAssociation', {
 					bindToken: bindToken,
-					accessTypeSelection: accessTypeSelection
+					partitionListRead: partitionListRead,
+					partitionListWrite: partitionListWrite,
+					read: readChecked,
+					write: writeChecked
 				})}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('addTopicApplicationAssociation', {
 						bindToken: bindToken,
-						accessTypeSelection: accessTypeSelection
+						partitionListRead: partitionListRead,
+						partitionListWrite: partitionListWrite,
+						read: readChecked,
+						write: writeChecked
 					});
 				}
-			}}>{messages['modal']['associate.application.button.label']}</button
+			}}
 		>
+			{#if title === messages['topic.detail']['edit.grant']}
+				{messages['modal']['associate.application.button.label.two.edit']}
+			{:else}
+				{messages['modal']['associate.application.button.label.two']}
+			{/if}
+		</button>
 	{/if}
 
 	{#if reminderMsg}
