@@ -98,8 +98,8 @@ public class ApplicationPermissionService {
                 applicationPermission.getPermissionsApplication().getPermissionsGroup().getName(),
                 applicationPermission.isPermissionRead(),
                 applicationPermission.isPermissionWrite(),
-                publicMode? Set.of() : applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet()),
-                publicMode? Set.of() : applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet())
+                publicMode? Set.of() : applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartitionName).collect(Collectors.toSet()),
+                publicMode? Set.of() : applicationPermission.getWritePartitions().stream().map(WritePartition::getPartitionName).collect(Collectors.toSet())
         ));
     }
 
@@ -232,8 +232,8 @@ public class ApplicationPermissionService {
         String applicationGroupName = applicationPermission.getPermissionsApplication().getPermissionsGroup().getName();
         boolean permissionRead = applicationPermission.isPermissionRead();
         boolean permissionWrite = applicationPermission.isPermissionWrite();
-        Set<String> readPartitions = applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartition).collect(Collectors.toSet());
-        Set<String> writePartitions = applicationPermission.getWritePartitions().stream().map(WritePartition::getPartition).collect(Collectors.toSet());
+        Set<String> readPartitions = applicationPermission.getReadPartitions().stream().map(ReadPartition::getPartitionName).collect(Collectors.toSet());
+        Set<String> writePartitions = applicationPermission.getWritePartitions().stream().map(WritePartition::getPartitionName).collect(Collectors.toSet());
         return new AccessPermissionDTO(
                 applicationPermission.getId(),
                 topicId,
