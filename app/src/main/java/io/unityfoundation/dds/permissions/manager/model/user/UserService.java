@@ -5,6 +5,9 @@ import io.micronaut.data.model.Page;
 import io.micronaut.data.model.Pageable;
 import io.micronaut.data.model.Sort;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
+import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUser;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
@@ -69,6 +72,9 @@ public class UserService {
 
     @Transactional
     public HttpResponse save(AdminDTO adminDTO) {
+        if (!securityUtil.isCurrentUserAdmin()) {
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+        }
         Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
 
         User user;
@@ -107,6 +113,10 @@ public class UserService {
 
     @Transactional
     public boolean removeAdminPrivilegeById(Long id) {
+        if (!securityUtil.isCurrentUserAdmin()) {
+            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+        }
+
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
             return false;
