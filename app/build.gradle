@@ -49,7 +49,8 @@ dependencies {
         databaseSelection.split(',').each {part ->
             runtimeOnly(part)
         }
-    } else if (mnEnvs != null) {
+    }
+    if (mnEnvs != null) {
         def envList = mnEnvs.split(',').each {it.trim()}.collect()
         if (envList.contains("dev") || envList.contains("test")) {
             runtimeOnly("com.h2database:h2")
