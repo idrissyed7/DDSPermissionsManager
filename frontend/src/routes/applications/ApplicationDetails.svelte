@@ -4,7 +4,6 @@
 	import { isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
 	import Modal from '../../lib/Modal.svelte';
-	import applicationPermission from '../../stores/applicationPermission';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import headerTitle from '../../stores/headerTitle';
 	import messages from '$lib/messages.json';
@@ -19,7 +18,8 @@
 		selectedAppDescription = '',
 		selectedAppPublic,
 		appCurrentGroupPublic,
-		selectedAppGroupName;
+		selectedAppGroupName,
+		selectedTopicApplications = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -28,9 +28,30 @@
 		errorObject,
 		errorMessageVisible = false;
 
+	// Constants
+	const returnKey = 13;
+
+	// Messages
+	let deleteToolip,
+		deleteMouseEnter = false;
+
+	// Selection
+	let grantsRowsSelected = [],
+		grantsRowsSelectedTrue = false,
+		grantsAllRowsSelectedTrue = false;
+
+	// checkboxes selection
+	$: if (selectedTopicApplications?.length === grantsRowsSelected?.length) {
+		grantsRowsSelectedTrue = false;
+		grantsAllRowsSelectedTrue = true;
+	} else if (grantsRowsSelected?.length > 0) {
+		grantsRowsSelectedTrue = true;
+	} else {
+		grantsAllRowsSelectedTrue = false;
+	}
+
 	let selectedAppDescriptionSelector,
 		checkboxSelector,
-		selectedPermissionId,
 		isPublic = selectedAppPublic;
 
 	let editApplicationVisible = false,
@@ -59,8 +80,7 @@
 		const appPermissionData = await httpAdapter.get(
 			`/application_permissions/application/${selectedAppId}`
 		);
-
-		applicationPermission.set(appPermissionData.data.content);
+		selectedTopicApplications = appPermissionData.data.content;
 	};
 
 	const getGroupVisibilityPublic = async (groupName) => {
@@ -93,6 +113,20 @@
 				}
 			});
 		dispatch('reloadAllApps');
+	};
+
+	const deleteTopicApplicationAssociation = async () => {
+		for (const grant of grantsRowsSelected) {
+			await httpAdapter.delete(`/application_permissions/${grant.id}`);
+		}
+	};
+
+	const deselectAllGrantsCheckboxes = () => {
+		grantsAllRowsSelectedTrue = false;
+		grantsRowsSelectedTrue = false;
+		grantsRowsSelected = [];
+		let checkboxes = document.querySelectorAll('.grants-checkbox');
+		checkboxes.forEach((checkbox) => (checkbox.checked = false));
 	};
 
 	onMount(async () => {
@@ -140,13 +174,17 @@
 {#if deleteSelectedGrantsVisible}
 	<Modal
 		actionDeleteGrants={true}
-		title={messages['topic.detail']['delete.grants.title'] +
-			messages['topic.detail']['delete.grants.single']}
+		title="{messages['application.detail']['delete.grants.title']} {grantsRowsSelected.length > 1
+			? messages['application.detail']['delete.grants.multiple']
+			: messages['application.detail']['delete.grants.single']}"
 		on:cancel={() => {
 			deleteSelectedGrantsVisible = false;
 		}}
 		on:deleteGrants={async () => {
-			dispatch('deleteTopicApplicationAssociation', selectedPermissionId);
+			await deleteTopicApplicationAssociation();
+			await getAppPermissions();
+
+			deselectAllGrantsCheckboxes();
 			deleteSelectedGrantsVisible = false;
 		}}
 	/>
@@ -202,13 +240,99 @@
 		</tr>
 	</table>
 
-	<div style="font-size:1.3rem; margin-top: 3.5rem; margin-bottom: 1rem">
-		{messages['topic.detail']['table.grants.label']}
+	<div style="margin-top: 3.5rem">
+		<div
+			style="display: flex; justify-content: space-between; align-items:center; margin-top: 2rem"
+		>
+			<div style="font-size:1.3rem; margin-bottom: 1rem">
+				{messages['application.detail']['table.applications.label']}
+			</div>
+
+			<div>
+				<img
+					src={deleteSVG}
+					alt="options"
+					class="dot"
+					class:button-disabled={(!$isAdmin && !isApplicationAdmin) ||
+						grantsRowsSelected?.length === 0}
+					style="margin-left: 0.5rem; margin-right: 1rem"
+					on:click={() => {
+						if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
+					}}
+					on:keydown={(event) => {
+						if (event.which === returnKey) {
+							if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
+						}
+					}}
+					on:mouseenter={() => {
+						deleteMouseEnter = true;
+						if ($isAdmin || isApplicationAdmin) {
+							if (grantsRowsSelected.length === 0) {
+								deleteToolip = messages['topic.detail']['delete.tooltip'];
+								const tooltip = document.querySelector('#delete-topics');
+								setTimeout(() => {
+									if (deleteMouseEnter) {
+										tooltip.classList.remove('tooltip-hidden');
+										tooltip.classList.add('tooltip');
+									}
+								}, 1000);
+							}
+						} else {
+							deleteToolip = messages['topic']['delete.tooltip.topic.admin.required'];
+							const tooltip = document.querySelector('#delete-topics');
+							setTimeout(() => {
+								if (deleteMouseEnter) {
+									tooltip.classList.remove('tooltip-hidden');
+									tooltip.classList.add('tooltip');
+									tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
+								}
+							}, 1000);
+						}
+					}}
+					on:mouseleave={() => {
+						deleteMouseEnter = false;
+						if (grantsRowsSelected.length === 0) {
+							const tooltip = document.querySelector('#delete-topics');
+							setTimeout(() => {
+								if (!deleteMouseEnter) {
+									tooltip.classList.add('tooltip-hidden');
+									tooltip.classList.remove('tooltip');
+								}
+							}, 1000);
+						}
+					}}
+				/>
+				<span id="delete-topics" class="tooltip-hidden" style="margin-top: -1.8rem"
+					>{deleteToolip}
+				</span>
+			</div>
+		</div>
 	</div>
 
 	<table style="min-width: 59rem; max-width: 59rem">
 		<thead>
 			<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+				<td>
+					<input
+						tabindex="-1"
+						type="checkbox"
+						class="grants-checkbox"
+						style="margin-right: 0.5rem"
+						bind:indeterminate={grantsRowsSelectedTrue}
+						on:click={(e) => {
+							if (e.target.checked) {
+								grantsRowsSelected = selectedTopicApplications;
+								grantsRowsSelectedTrue = false;
+								grantsAllRowsSelectedTrue = true;
+							} else {
+								grantsAllRowsSelectedTrue = false;
+								grantsRowsSelectedTrue = false;
+								grantsRowsSelected = [];
+							}
+						}}
+						checked={grantsAllRowsSelectedTrue}
+					/>
+				</td>
 				<td>{messages['application.detail']['table.applications.column.one']}</td>
 				<td>{messages['application.detail']['table.applications.column.two']}</td>
 				<td>{messages['application.detail']['table.applications.column.three']}</td>
@@ -222,10 +346,34 @@
 				{/if}
 			</tr>
 		</thead>
-		{#if $applicationPermission}
-			{#each $applicationPermission as appPermission}
+		{#if selectedTopicApplications}
+			{#each selectedTopicApplications as appPermission}
 				<tbody>
-					<tr style="line-height: 2rem">
+					<tr>
+						<td style="line-height: 1rem;">
+							<input
+								tabindex="-1"
+								type="checkbox"
+								class="grants-checkbox"
+								style="margin-right: 0.5rem"
+								checked={grantsAllRowsSelectedTrue}
+								on:change={(e) => {
+									if (e.target.checked === true) {
+										grantsRowsSelected.push(appPermission);
+										// reactive statement
+										grantsRowsSelected = grantsRowsSelected;
+										grantsRowsSelectedTrue = true;
+									} else {
+										grantsRowsSelected = grantsRowsSelected.filter(
+											(selection) => selection !== appPermission
+										);
+										if (grantsRowsSelected.length === 0) {
+											grantsRowsSelectedTrue = false;
+										}
+									}
+								}}
+							/>
+						</td>
 						<td style="min-width: 10rem">
 							{appPermission.topicGroup}
 						</td>
@@ -245,21 +393,25 @@
 
 						{#if !$page.url.pathname.includes('search')}
 							<td style="min-width: 10rem; max-width: 10rem">
-								{#if appPermission.writePartitions?.length > 0}
-									{appPermission.writePartitions
-										.map(function (item) {
-											return '[' + item + ']';
-										})
-										.join(', ')}
+								{#if appPermission.readPartitions?.length > 0}
+									{#each appPermission.readPartitions as partition}
+										<div
+											style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+										>
+											{partition}
+										</div>
+									{/each}
 								{/if}
 							</td>
 							<td style="min-width: 10rem; max-width: 10rem">
-								{#if appPermission.readPartitions?.length > 0}
-									{appPermission.readPartitions
-										.map(function (item) {
-											return '[' + item + ']';
-										})
-										.join(', ')}
+								{#if appPermission.writePartitions?.length > 0}
+									{#each appPermission.writePartitions as partition}
+										<div
+											style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+										>
+											{partition}
+										</div>
+									{/each}
 								{/if}
 							</td>
 						{:else}
@@ -279,7 +431,8 @@
 									width="23px"
 									style="vertical-align: -0.4rem; float: right; cursor: pointer"
 									on:click={() => {
-										selectedPermissionId = appPermission.id;
+										if (!grantsRowsSelected.some((grant) => grant === appPermission))
+											grantsRowsSelected.push(appPermission);
 										deleteSelectedGrantsVisible = true;
 									}}
 								/>
@@ -301,9 +454,10 @@
 			<td style="border: none" />
 			<td style="border: none" />
 			<td style="border: none" />
+			<td style="border: none" />
 			<td style="border: none; min-width: 3.5rem; text-align:right">
-				{#if $applicationPermission}
-					{$applicationPermission.length} of {$applicationPermission.length}
+				{#if selectedTopicApplications}
+					{selectedTopicApplications.length} of {selectedTopicApplications.length}
 				{:else}
 					0 of 0
 				{/if}
