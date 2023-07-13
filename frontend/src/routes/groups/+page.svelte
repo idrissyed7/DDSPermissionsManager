@@ -225,11 +225,15 @@
 			})
 			.catch((err) => {
 				addGroupVisible = false;
-				const decodedError = decodeError(Object.create(...err.response.data));
-				errorMessage(
-					errorMessages['group']['adding.error.title'],
-					errorMessages[decodedError.category][decodedError.code]
-				);
+				if (err.response.status === 401) {
+					errorMessage('Error Saving Group', errorMessages['group']['error.unauthorized']);
+				} else {
+					const decodedError = decodeError(Object.create(...err.response.data));
+					errorMessage(
+						errorMessages['group']['adding.error.title'],
+						errorMessages[decodedError.category][decodedError.code]
+					);
+				}
 			});
 
 		searchString = '';

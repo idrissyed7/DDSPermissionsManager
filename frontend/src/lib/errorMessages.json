@@ -32,7 +32,8 @@
         "adding.error.title": "Error Adding Group",
         "editing.error.title": "Error Editing Group Name",
         "deleting.error.title": "Error Deleting Group",
-        "error.loading.visibility": "Error Retrieving Topic's Visibility"
+        "error.loading.visibility": "Error Retrieving Topic's Visibility",
+        "error.unauthorized": "Unauthorized Action - Your request cannot be completed because you lack the necessary permissions to perform this operation."
     },
 
     "application":
@@ -85,7 +86,8 @@
     
     "super_user":
     {
-        "loading.error.title": "Error Loading Super Admins"
+        "loading.error.title": "Error Loading Super Admins",
+        "unauthorized.error": "Unauthorized Action - Your request cannot be completed because you lack the necessary permissions to perform this operation."
     },
 
     "application_permission":

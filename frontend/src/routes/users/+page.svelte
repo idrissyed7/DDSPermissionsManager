@@ -160,12 +160,17 @@
 	};
 
 	const addSuperUser = async (userEmail) => {
-		await httpAdapter
+		const res = await httpAdapter
 			.post(`/admins/save`, {
 				email: userEmail
 			})
 			.catch((err) => {
-				errorMessage('Error Saving Super User', err.message);
+				if (err.response.status === 401)
+					errorMessage(
+						'Error Saving Super User',
+						errorMessages['super_user']['unauthorized.error']
+					);
+				else errorMessage('Error Saving Super User', err.message);
 			});
 
 		userValidityCheck.set(true);
