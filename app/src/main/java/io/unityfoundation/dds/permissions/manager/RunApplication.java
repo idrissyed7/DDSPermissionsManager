@@ -29,16 +29,6 @@ import org.bouncycastle.mail.smime.handlers.pkcs7_signature;
         )
 )
 public class RunApplication {
-
-    public static final String ENVIRONMENT_DEV_DATA = "dev-data";
-
-    @ContextConfigurer
-    public static class DefaultEnvironmentConfigurer implements ApplicationContextConfigurer {
-        @Override
-        public void configure(@NonNull ApplicationContextBuilder builder) {
-            builder.defaultEnvironments(Environment.DEVELOPMENT, ENVIRONMENT_DEV_DATA);
-        }
-    }
     public static void main(String[] args) {
         Micronaut.run(RunApplication.class, args);
     }
