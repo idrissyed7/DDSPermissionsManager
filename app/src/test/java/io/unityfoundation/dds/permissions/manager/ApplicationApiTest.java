@@ -1660,7 +1660,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("montesm@test.test", true));
             userRepository.save(new User("jjones@test.test"));
         }
 

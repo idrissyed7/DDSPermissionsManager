@@ -835,7 +835,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("montesm@test.test", true));
             User justin = userRepository.save(new User("jjones@test.test"));
 
             mockSecurityService.postConstruct();
@@ -972,7 +972,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("montesm@test.test", true));
             User justin = userRepository.save(new User("jjones@test.test"));
 
             mockSecurityService.postConstruct();
