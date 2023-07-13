@@ -3,7 +3,6 @@
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { httpAdapter } from '../../appconfig';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
-	import applicationPermission from '../../stores/applicationPermission';
 	import refreshPage from '../../stores/refreshPage';
 	import Modal from '../../lib/Modal.svelte';
 	import applications from '../../stores/applications';
@@ -390,16 +389,7 @@
 		selectedAppPublic = appDetail.data.public;
 		isPublic = selectedAppPublic;
 
-		promiseDetail = await getAppPermissions(appId);
 		curlCommandsDecode();
-	};
-
-	const getAppPermissions = async (appId) => {
-		const appPermissionData = await httpAdapter.get(
-			`/application_permissions/application/${appId}`
-		);
-
-		applicationPermission.set(appPermissionData.data.content);
 	};
 
 	const returnToApplicationsList = () => {

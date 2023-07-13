@@ -125,8 +125,8 @@
         "table.grants.column.one": "Group",
         "table.grants.column.two": "Application",
         "table.grants.column.three": "Access",
-        "table.grants.column.four": "Write Partitions",
-        "table.grants.column.five": "Read Partitions",
+        "table.grants.column.four": "Read Partitions",
+        "table.grants.column.five": "Write Partitions",
         "table.grants.access.read": "Read",
         "table.grants.access.readwrite": "Read,",
         "table.grants.access.write": "Write",
@@ -167,11 +167,12 @@
         "row.one": "Application Name:",
         "row.two": "Description:",
         "row.three": "Public:",
+        "table.applications.label": "Grants",
         "table.applications.column.one": "Group",
         "table.applications.column.two": "Topic",
         "table.applications.column.three": "Access",
-        "table.applications.column.four": "Write Partitions",
-        "table.applications.column.five": "Read Partitions",
+        "table.applications.column.four": "Read Partitions",
+        "table.applications.column.five": "Write Partitions",
         "table.applications.access.read": "Read",
         "table.applications.access.readwrite": "Read,",
         "table.applications.access.write": "Write",
@@ -193,7 +194,10 @@
         "curl.commands.download.permission.ca.certificate.label": "Download the Permissions CA certificate",
         "curl.commands.download.governance.file.label": "Download the governance file",
         "curl.commands.download.keypair.label": "Download a key pair",
-        "curl.commands.download.permissions.document.label": "Download a permissions document"
+        "curl.commands.download.permissions.document.label": "Download a permissions document",
+        "delete.grants.title": "Delete",
+        "delete.grants.single": "Grant",
+        "delete.grants.multiple": "Grants"
     },
 
     "group.context":

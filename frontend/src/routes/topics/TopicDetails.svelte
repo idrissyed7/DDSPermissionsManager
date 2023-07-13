@@ -475,7 +475,7 @@
 
 					<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 					<img
-						data-cy="add-topic"
+						data-cy="add-grant"
 						src={addSVG}
 						tabindex="0"
 						alt="options"
@@ -533,7 +533,7 @@
 				{#if selectedTopicApplications?.length > 0}
 					{#each selectedTopicApplications as appPermission}
 						<tbody>
-							<tr style="line-height: 2rem">
+							<tr>
 								<td style="line-height: 1rem;">
 									<input
 										tabindex="-1"
@@ -573,21 +573,25 @@
 									{/if}
 								</td>
 								<td style="min-width: 10rem; max-width: 10rem">
-									{#if appPermission.writePartitions?.length > 0}
-										{appPermission.writePartitions
-											.map(function (item) {
-												return '[' + item + ']';
-											})
-											.join(', ')}
+									{#if appPermission.readPartitions?.length > 0}
+										{#each appPermission.readPartitions as partition}
+											<div
+												style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+											>
+												{partition}
+											</div>
+										{/each}
 									{/if}
 								</td>
-								<td style="min-width: 10rem; max-width: 10rem">
-									{#if appPermission.readPartitions?.length > 0}
-										{appPermission.readPartitions
-											.map(function (item) {
-												return '[' + item + ']';
-											})
-											.join(', ')}
+								<td style="min-width: 10rem; max-width: 10rem; margin: 0 0.3rem 0 0.3rem">
+									{#if appPermission.writePartitions?.length > 0}
+										{#each appPermission.writePartitions as partition}
+											<div
+												style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+											>
+												{partition}
+											</div>
+										{/each}
 									{/if}
 								</td>
 								<td
