@@ -224,6 +224,7 @@
 				public: newGroupIsPublic
 			})
 			.catch((err) => {
+				alert('hher');
 				addGroupVisible = false;
 				if (err.response.status === 401) {
 					errorMessage('Error Saving Group', errorMessages['group']['error.unauthorized']);
