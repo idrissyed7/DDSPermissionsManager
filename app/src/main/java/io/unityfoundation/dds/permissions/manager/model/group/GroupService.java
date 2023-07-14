@@ -149,9 +149,6 @@ public class GroupService {
     }
 
     public MutableHttpResponse<?> deleteById(Long id) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            return HttpResponse.unauthorized();
-        }
         Optional<Group> groupOptional = groupRepository.findById(id);
         if (groupOptional.isEmpty()) {
             return HttpResponse.notFound("Group not found");

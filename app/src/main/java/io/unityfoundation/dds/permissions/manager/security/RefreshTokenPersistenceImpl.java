@@ -70,9 +70,7 @@ public class RefreshTokenPersistenceImpl implements RefreshTokenPersistence {
                 } else if ( testUsername != null && username.equals(testUsername)  &&
                         (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) ) {
                         // test/dev login
-                    return Publishers.just(Authentication.build(username,
-                            (testUserIsAdmin ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
-                    ));
+                    return Publishers.just(Authentication.build(username));
                 }
 
                 // oauth user login

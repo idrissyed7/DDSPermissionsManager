@@ -254,7 +254,7 @@ public class AdminApiTest {
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(FORBIDDEN, thrown.getStatus());
+            assertEquals(UNAUTHORIZED, thrown.getStatus());
         }
 
         // create
@@ -267,7 +267,7 @@ public class AdminApiTest {
             HttpClientResponseException thrown = assertThrows(HttpClientResponseException.class, () -> {
                 blockingClient.exchange(request);
             });
-            assertEquals(FORBIDDEN, thrown.getStatus());
+            assertEquals(UNAUTHORIZED, thrown.getStatus());
         }
 
         // delete

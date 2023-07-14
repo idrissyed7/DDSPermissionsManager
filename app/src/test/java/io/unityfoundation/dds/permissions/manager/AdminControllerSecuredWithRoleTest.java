@@ -24,17 +24,17 @@ import java.util.Collections;
 class AdminControllerSecuredWithRoleTest {
     @Test
     void getApiAdminsRequiresAdminsRole(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertForbidden(httpClient, HttpRequest.GET("/api/admins"));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.GET("/api/admins"));
     }
 
     @Test
     void postApiAdminsSaveRequiresAdminsRole(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertForbidden(httpClient, HttpRequest.POST("/api/admins/save", Collections.emptyMap()));
+        SecurityAssertions.assertBadRequest(httpClient, HttpRequest.POST("/api/admins/save", Collections.emptyMap()));
     }
 
     @Test
     void putApiAdminsRemoveAdminRequiresAdminsRole(@Client("/") HttpClient httpClient) throws IOException {
-        SecurityAssertions.assertForbidden(httpClient, HttpRequest.PUT("/api/admins/remove_admin/99", Collections.emptyMap()));
+        SecurityAssertions.assertUnauthorized(httpClient, HttpRequest.PUT("/api/admins/remove_admin/99", Collections.emptyMap()));
     }
 
     @Requires(property = "spec.name", value = "AdminControllerSecuredWithRoleTest")

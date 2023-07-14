@@ -26,6 +26,10 @@ public final class SecurityAssertions {
         assertStatus(httpClient, request, HttpStatus.FORBIDDEN);
     }
 
+    public static void assertBadRequest(HttpClient httpClient, MutableHttpRequest<Object> request) throws IOException {
+        assertStatus(httpClient, request, HttpStatus.BAD_REQUEST);
+    }
+
     private static void assertStatus(HttpClient httpClient, HttpRequest<?> request, HttpStatus expectedStatus) throws IOException {
         BlockingHttpClient client = httpClient.toBlocking();
         Executable e = () -> client.exchange(request);

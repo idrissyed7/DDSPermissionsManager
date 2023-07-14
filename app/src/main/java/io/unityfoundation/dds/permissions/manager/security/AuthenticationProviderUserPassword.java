@@ -53,9 +53,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
                 identity.equals(testUsername) && password.equals(testPassword) &&
                 (environment.getActiveNames().contains("dev") || environment.getActiveNames().contains("test")) ) {
 
-            return Publishers.just(AuthenticationResponse.success( testEmail,
-                    (testUserIsAdmin ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList())
-            ));
+            return Publishers.just(AuthenticationResponse.success(testEmail));
         } else {
             // application login
             try {
