@@ -15,6 +15,8 @@ import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ReadPartition;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.WritePartition;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -576,34 +578,82 @@ public class ApplicationService {
         return dataModel;
     }
 
+    class PubSubEntry {
+        Set<String> topics;
+        Set<String> partitions;
+
+        PubSubEntry(Set<String> topics, Set<String> partitions) {
+            this.topics = topics;
+            this.partitions = partitions;
+        }
+    }
+
     private HashMap buildApplicationPermissions(Application application) {
         HashMap<String, Object> dataModel = new HashMap<>();
         List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
         List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
 
         // list of canonical names for each publish-subscribe sections
-        List<String> subscribeList = new ArrayList<>();
-        List<String> publishList = new ArrayList<>();
+        List<PubSubEntry> publishList = new ArrayList<>();
+        List<PubSubEntry> subscribeList = new ArrayList<>();
 
         // read
-        addCanonicalNamesToList(subscribeList, readApplicationPermissions);
+        buildPubSubList(subscribeList, readApplicationPermissions, false);
 
         // write
-        addCanonicalNamesToList(publishList, writeApplicationPermissions);
+        buildPubSubList(publishList, writeApplicationPermissions, true);
 
-        dataModel.put("subscribe", subscribeList);
-        dataModel.put("publish", publishList);
+        dataModel.put("subscribes", subscribeList);
+        dataModel.put("publishes", publishList);
 
         return dataModel;
     }
 
-    private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
-        if (applicationPermissions != null) {
-            list.addAll(applicationPermissions.stream()
-                    .map(applicationPermission -> buildCanonicalName(applicationPermission.getPermissionsTopic()))
-                    .collect(Collectors.toList()));
+    private void buildPubSubList(List<PubSubEntry> list, List<ApplicationPermission> applicationPermissions, boolean publishing) {
+        if (applicationPermissions == null) {
+            return;
         }
+
+        // Collect all topics that have the same set of partitions and create a new entry for them.
+        Map<Set<String>, Set<String>> partitionsTopicMap = new HashMap<>();
+
+        applicationPermissions.forEach(applicationPermission -> {
+            Topic topic = applicationPermission.getPermissionsTopic();
+            Set<String> partitions = new HashSet<>();
+            if (publishing) {
+                Set<WritePartition> writePartitions = applicationPermission.getWritePartitions();
+                writePartitions.forEach(writePartition -> {
+                    partitions.add(writePartition.getPartitionName());
+                });
+            } else {
+                Set<ReadPartition> readPartitions = applicationPermission.getReadPartitions();
+                readPartitions.forEach(readPartition -> {
+                    partitions.add(readPartition.getPartitionName());
+                });
+            }
+            Set<String> immutablePartitions = Collections.unmodifiableSet(partitions);
+            String canonicalTopicName = buildCanonicalName(topic);
+            if (partitionsTopicMap.containsKey(immutablePartitions)) {
+                partitionsTopicMap.get(immutablePartitions).add(canonicalTopicName);
+            } else {
+                Set<String> topicNames = new HashSet<>();
+                topicNames.add(canonicalTopicName);
+                partitionsTopicMap.put(immutablePartitions, topicNames);
+            }
+        });
+
+        partitionsTopicMap.forEach((partitions, topics) -> {
+            list.add(new PubSubEntry(topics, partitions));
+        });
     }
+
+//    private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
+//        if (applicationPermissions != null) {
+//            list.addAll(applicationPermissions.stream()
+//                    .map(applicationPermission -> buildCanonicalName(applicationPermission.getPermissionsTopic()))
+//                    .collect(Collectors.toList()));
+//        }
+//    }
 
     private String buildCanonicalName(Topic permissionsTopic) {
         return permissionsTopic.getKind() + "." +
