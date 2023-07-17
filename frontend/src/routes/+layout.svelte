@@ -16,7 +16,7 @@
 	import Modal from '$lib/Modal.svelte';
 	import Header from '$lib/Header.svelte';
 	import headerTitle from '../stores/headerTitle';
-	import Navigation from '$lib//Navigation.svelte';
+	import Navigation from '$lib/Navigation.svelte';
 	import userValidityCheck from '../stores/userValidityCheck';
 	import lastActivity from '../stores/lastActivity';
 	import userEmail from '../stores/userEmail';
@@ -33,13 +33,12 @@
 	// Extend Session
 	let reminderMsg, reminderObject;
 
-	// const userValidityInterval = 180000; // 3 minutes
-	const userValidityInterval = 15000;
+	const userValidityInterval = 180000; // 3 minutes
 	const sixtyMin = 3600000;
 
 	let avatarName;
 
-	userValidityCheck.set(false);
+	$: if ($userValidityCheck === 'reloadAllSuperUsers') checkValidity();
 
 	$: if (browser && reminderMessageVisible) {
 		document.body.classList.add('modal-open');
@@ -94,8 +93,6 @@
 	});
 
 	const refreshToken = async () => {
-		alert('refreshToken');
-
 		try {
 			await httpAdapter.get('/oauth/access_token');
 			userValidityCheck.set(false);
@@ -111,9 +108,6 @@
 			const res = await httpAdapter.get(`/token_info`);
 			updatedTokenInfo = res.data;
 
-			alert('RefreshToken_Info');
-			console.log('updatedTokenInfo', updatedTokenInfo);
-
 			// We only have JWT_REFRESH_TOKEN and no JWT
 			if (res.status === 200 && Object.keys(updatedTokenInfo).length === 1) {
 				refreshToken();
@@ -124,6 +118,7 @@
 				return;
 			}
 		}
+		userValidityCheck.set(false);
 
 		permissionsByGroup.set(updatedTokenInfo.permissionsByGroup);
 
@@ -171,7 +166,6 @@
 			}
 
 			const res = await httpAdapter.get(`/token_info`);
-			console.log('check validity res.data', res.data);
 
 			// We don't have any of the two JWT tokens
 			if (res.status === 204 || res.status === 404) goto('/api/logout', true);

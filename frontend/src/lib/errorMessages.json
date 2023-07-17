@@ -86,8 +86,10 @@
     
     "super_user":
     {
-        "loading.error.title": "Error Loading Super Admins",
-        "unauthorized.error": "Unauthorized Action - Your request cannot be completed because you lack the necessary permissions to perform this operation."
+        "loading.error.title": "Error Loading Super User",
+        "unauthorized.error": "Unauthorized Action - Your request cannot be completed because you lack the necessary permissions to perform this operation.",
+        "deleting.error.title": "Error Deleting Super User",
+        "saving.error.title": "Error Saving Super User"
     },
 
     "application_permission":
