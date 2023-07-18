@@ -45,7 +45,7 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
                         AuthenticationResponse.failure(AuthenticationFailureReason.USER_DISABLED) :
                         AuthenticationResponse.success(
                                 userEmail,
-                                rolesByUser(user),
+                                Collections.emptyList(),
                                 userAttributes(userEmail, user)
                         ))
                 .orElseGet(() -> AuthenticationResponse.failure(AuthenticationFailureReason.USER_NOT_FOUND));
@@ -53,10 +53,6 @@ public class PermissionsManagerAuthenticationMapper implements OpenIdAuthenticat
 
     private boolean isNonAdminAndNotAMemberOfAnyGroups(User user) {
         return !user.isAdmin() && groupUserService.countMembershipsByUserId(user.getId()) == 0;
-    }
-
-    private List<String> rolesByUser(User user) {
-        return user.isAdmin() ? List.of(UserRole.ADMIN.toString()) : Collections.emptyList();
     }
 
     private HashMap<String, Object> userAttributes(String userEmail, User user) {

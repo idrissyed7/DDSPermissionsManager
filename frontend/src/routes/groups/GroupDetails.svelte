@@ -63,7 +63,6 @@
 		group = res.data;
 		headerTitle.set(group.name);
 
-		// dispatch('reload');
 		await reloadAllGroups();
 		dispatch('update-search');
 	};

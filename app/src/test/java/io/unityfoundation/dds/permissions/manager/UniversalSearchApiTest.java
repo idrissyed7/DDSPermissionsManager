@@ -78,7 +78,7 @@ class UniversalSearchApiTest {
     static class MockAuthenticationFetcher implements AuthenticationFetcher {
         @Override
         public Publisher<Authentication> fetchAuthentication(HttpRequest<?> request) {
-            return Publishers.just(Authentication.build("montesm@test.test", List.of(UserRole.ADMIN.toString())));
+            return Publishers.just(Authentication.build("montesm@test.test"));
         }
     }
 

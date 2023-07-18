@@ -119,9 +119,12 @@
 			users.set(res.data.content);
 			superUsersCurrentPage = page;
 		} catch (err) {
-			userValidityCheck.set(true);
-
-			errorMessage(errorMessages['super_user']['loading.error.title'], err.message);
+			if (err.response.status === 401)
+				errorMessage(
+					errorMessages['super_user']['loading.error.title'],
+					errorMessages['super_user']['unauthorized.error']
+				);
+			else errorMessage(errorMessages['super_user']['loading.error.title'], err.message);
 		}
 	};
 
@@ -160,12 +163,17 @@
 	};
 
 	const addSuperUser = async (userEmail) => {
-		await httpAdapter
+		const res = await httpAdapter
 			.post(`/admins/save`, {
 				email: userEmail
 			})
 			.catch((err) => {
-				errorMessage('Error Saving Super User', err.message);
+				if (err.response.status === 401)
+					errorMessage(
+						errorMessages['super_user']['saving.error.title'],
+						errorMessages['super_user']['unauthorized.error']
+					);
+				else errorMessage(errorMessages['super_user']['saving.error.title'], err.message);
 			});
 
 		userValidityCheck.set(true);
@@ -179,10 +187,16 @@
 		} catch (err) {
 			const decodedError = decodeError(Object.create(...err.response.data));
 
-			errorMessage(
-				'Error Deleting Super User',
-				errorMessages[decodedError.category][decodedError.code]
-			);
+			if (err.response.status === 401)
+				errorMessage(
+					errorMessages['super_user']['deleting.error.title'],
+					errorMessages['super_user']['unauthorized.error']
+				);
+			else
+				errorMessage(
+					errorMessages['super_user']['deleting.error.title'],
+					errorMessages[decodedError.category][decodedError.code]
+				);
 		}
 
 		superUsersRowsSelected = [];
@@ -242,7 +256,7 @@
 						on:cancel={() => (addSuperUserVisible = false)}
 						on:addSuperUser={async (e) => {
 							await addSuperUser(e.detail);
-							reloadAllSuperUsers();
+							await reloadAllSuperUsers();
 							addSuperUserVisible = false;
 						}}
 					/>
@@ -255,8 +269,22 @@
 							: messages['user']['delete.single.super.user']}"
 						actionDeleteSuperUsers={true}
 						on:deleteSuperUsers={async () => {
+							const deleteActiveSuperUser = superUsersRowsSelected.some(
+								(superUser) => superUser.email === $userEmail
+							);
 							await deleteSelectedSuperUsers();
-							reloadAllSuperUsers();
+
+							if (deleteActiveSuperUser) {
+								const checkValidity = async () => {
+									if ($userValidityCheck) {
+										setTimeout(() => checkValidity, 500);
+									} else {
+										await reloadAllSuperUsers();
+									}
+								};
+
+								checkValidity();
+							} else await reloadAllSuperUsers();
 							deselectAllSuperUsersCheckboxes();
 							deleteSuperUserVisible = false;
 						}}

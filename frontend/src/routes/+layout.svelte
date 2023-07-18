@@ -16,7 +16,7 @@
 	import Modal from '$lib/Modal.svelte';
 	import Header from '$lib/Header.svelte';
 	import headerTitle from '../stores/headerTitle';
-	import Navigation from '$lib//Navigation.svelte';
+	import Navigation from '$lib/Navigation.svelte';
 	import userValidityCheck from '../stores/userValidityCheck';
 	import lastActivity from '../stores/lastActivity';
 	import userEmail from '../stores/userEmail';
@@ -38,7 +38,7 @@
 
 	let avatarName;
 
-	userValidityCheck.set(false);
+	$: if ($userValidityCheck === 'reloadAllSuperUsers') checkValidity();
 
 	$: if (browser && reminderMessageVisible) {
 		document.body.classList.add('modal-open');
@@ -118,6 +118,7 @@
 				return;
 			}
 		}
+		userValidityCheck.set(false);
 
 		permissionsByGroup.set(updatedTokenInfo.permissionsByGroup);
 
@@ -167,7 +168,7 @@
 			const res = await httpAdapter.get(`/token_info`);
 
 			// We don't have any of the two JWT tokens
-			if (res.status === 204) goto('/api/logout', true);
+			if (res.status === 204 || res.status === 404) goto('/api/logout', true);
 
 			// IF- We only have a JWT_REFRESH_TOKEN; ELSE- We have both JWT tokens
 			if (res.status === 200 && Object.keys(res.data).length === 1) refreshToken();

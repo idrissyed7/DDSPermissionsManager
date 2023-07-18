@@ -226,11 +226,18 @@
 			})
 			.catch((err) => {
 				addGroupVisible = false;
-				const decodedError = decodeError(Object.create(...err.response.data));
-				errorMessage(
-					errorMessages['group']['adding.error.title'],
-					errorMessages[decodedError.category][decodedError.code]
-				);
+				if (err.response.status === 401) {
+					errorMessage(
+						errorMessages['group']['adding.error.title'],
+						errorMessages['group']['error.unauthorized']
+					);
+				} else {
+					const decodedError = decodeError(Object.create(...err.response.data));
+					errorMessage(
+						errorMessages['group']['adding.error.title'],
+						errorMessages[decodedError.category][decodedError.code]
+					);
+				}
 			});
 
 		searchString = '';
@@ -265,7 +272,18 @@
 			}
 		} catch (err) {
 			deleteGroupVisible = false;
-			errorMessage(errorMessages['group']['deleting.error.title'], err.response.data);
+			if (err.response.status === 401) {
+				errorMessage(
+					errorMessages['group']['deleting.error.title'],
+					errorMessages['group']['error.unauthorized']
+				);
+			} else {
+				const decodedError = decodeError(Object.create(...err.response.data));
+				errorMessage(
+					errorMessages['group']['deleting.error.title'],
+					errorMessages[decodedError.category][decodedError.code]
+				);
+			}
 		}
 	};
 

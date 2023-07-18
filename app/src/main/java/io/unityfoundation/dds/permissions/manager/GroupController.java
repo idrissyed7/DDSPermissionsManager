@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.unityfoundation.dds.permissions.manager.exception.DPMErrorResponse;
 import io.unityfoundation.dds.permissions.manager.model.group.*;
+import io.unityfoundation.dds.permissions.manager.security.UserIsAdmin;
 
 import javax.validation.Valid;
 
@@ -60,6 +61,7 @@ public class GroupController {
 
 
     @Delete("/{id}")
+    @UserIsAdmin
     @ApiResponse(responseCode = "303", description = "Returns result of /groups")
     @ApiResponse(responseCode = "4xx", description = "Bad Request.",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DPMErrorResponse.class)))

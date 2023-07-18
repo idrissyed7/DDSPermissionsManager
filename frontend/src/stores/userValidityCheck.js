@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
 
-const userValidityCheck = writable(null);
+const userValidityCheck = writable(false);
 
 export default userValidityCheck;

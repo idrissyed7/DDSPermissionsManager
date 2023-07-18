@@ -72,9 +72,6 @@ public class UserService {
 
     @Transactional
     public HttpResponse save(AdminDTO adminDTO) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
-        }
         Optional<User> userSearchByEmail = userRepository.findByEmail(adminDTO.getEmail());
 
         User user;
@@ -113,9 +110,6 @@ public class UserService {
 
     @Transactional
     public boolean removeAdminPrivilegeById(Long id) {
-        if (!securityUtil.isCurrentUserAdmin()) {
-            throw new DPMException(ResponseStatusCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
-        }
 
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
