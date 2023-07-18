@@ -29,7 +29,6 @@ import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import io.unityfoundation.dds.permissions.manager.util.XMLEscaper;
 import jakarta.inject.Singleton;
-import net.bytebuddy.implementation.bytecode.ShiftRight;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -579,13 +578,19 @@ public class ApplicationService {
         return dataModel;
     }
 
-    public class PubSubEntry {
+    public static class PubSubEntry {
         private List<String> topics;
         private List<String> partitions;
 
-        PubSubEntry(Set<String> topics, Set<String> partitions) {
+        public PubSubEntry(Set<String> topics, Set<String> partitions) {
             this.topics = new ArrayList<>(topics);
             this.partitions = new ArrayList<>(partitions);
+        }
+
+        // Use when a pre-determined order of the items in the data members is desired, e.g. for testing.
+        public PubSubEntry(List<String> topics, List<String> partitions) {
+            this.topics = topics;
+            this.partitions = partitions;
         }
 
         public List<String> getTopics() {
@@ -640,12 +645,12 @@ public class ApplicationService {
             if (publishing) {
                 Set<WritePartition> writePartitions = applicationPermission.getWritePartitions();
                 writePartitions.forEach(writePartition -> {
-                    partitions.add(writePartition.getPartitionName());
+                    partitions.add(xmlEscaper.escape(writePartition.getPartitionName()));
                 });
             } else {
                 Set<ReadPartition> readPartitions = applicationPermission.getReadPartitions();
                 readPartitions.forEach(readPartition -> {
-                    partitions.add(readPartition.getPartitionName());
+                    partitions.add(xmlEscaper.escape(readPartition.getPartitionName()));
                 });
             }
             Set<String> immutablePartitions = Collections.unmodifiableSet(partitions);
