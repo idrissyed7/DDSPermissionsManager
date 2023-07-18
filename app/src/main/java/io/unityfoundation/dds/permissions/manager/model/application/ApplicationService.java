@@ -29,6 +29,7 @@ import io.unityfoundation.dds.permissions.manager.security.PassphraseGenerator;
 import io.unityfoundation.dds.permissions.manager.security.SecurityUtil;
 import io.unityfoundation.dds.permissions.manager.util.XMLEscaper;
 import jakarta.inject.Singleton;
+import net.bytebuddy.implementation.bytecode.ShiftRight;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -506,7 +507,7 @@ public class ApplicationService {
         Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
 
         if (applicationOptional.isPresent()) {
-            HashMap applicationPermissions = buildApplicationPermissions(applicationOptional.get());
+            HashMap applicationPermissions = buildApplicationPermissionsJson(applicationOptional.get());
             String etag = generateMD5Hash(applicationPermissions.toString());
             if (requestEtag != null && requestEtag.contentEquals(etag)) {
                 return HttpResponse.notModified();
@@ -578,12 +579,28 @@ public class ApplicationService {
         return dataModel;
     }
 
-    class PubSubEntry {
-        Set<String> topics;
-        Set<String> partitions;
+    public class PubSubEntry {
+        private List<String> topics;
+        private List<String> partitions;
 
         PubSubEntry(Set<String> topics, Set<String> partitions) {
+            this.topics = new ArrayList<>(topics);
+            this.partitions = new ArrayList<>(partitions);
+        }
+
+        public List<String> getTopics() {
+            return topics;
+        }
+
+        public void setTopics(List<String> topics) {
             this.topics = topics;
+        }
+
+        public List<String> getPartitions() {
+            return partitions;
+        }
+
+        public void setPartitions(List<String> partitions) {
             this.partitions = partitions;
         }
     }
@@ -647,13 +664,43 @@ public class ApplicationService {
         });
     }
 
-//    private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
-//        if (applicationPermissions != null) {
-//            list.addAll(applicationPermissions.stream()
-//                    .map(applicationPermission -> buildCanonicalName(applicationPermission.getPermissionsTopic()))
-//                    .collect(Collectors.toList()));
-//        }
-//    }
+    private HashMap buildApplicationPermissionsJson(Application application) {
+        HashMap<String, Object> dataModel = new HashMap<>();
+        List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
+        List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
+
+        // Map each topic name to a list of its partitions.
+        Map<String, List<String>> publishPartitions = new HashMap<>();
+        Map<String, List<String>> subscribePartitions = new HashMap<>();
+
+        buildTopicPartitionsMap(publishPartitions, writeApplicationPermissions, true);
+        buildTopicPartitionsMap(subscribePartitions, readApplicationPermissions, false);
+
+        dataModel.put("publishes", publishPartitions);
+        dataModel.put("subscribes", subscribePartitions);
+        return dataModel;
+    }
+
+    private void buildTopicPartitionsMap(Map<String, List<String>> partitionsMap, List<ApplicationPermission> applicationPermissions, boolean publishing) {
+        if (applicationPermissions == null) {
+            return;
+        }
+
+        applicationPermissions.forEach(applicationPermission -> {
+            String topicName = buildCanonicalName(applicationPermission.getPermissionsTopic());
+            List<String> partitions = new ArrayList<>();
+            if (publishing) {
+                applicationPermission.getWritePartitions().forEach(writePartition -> {
+                    partitions.add(writePartition.getPartitionName());
+                });
+            } else {
+                applicationPermission.getReadPartitions().forEach(readPartition -> {
+                    partitions.add(readPartition.getPartitionName());
+                });
+            }
+            partitionsMap.put(topicName, partitions);
+        });
+    }
 
     private String buildCanonicalName(Topic permissionsTopic) {
         return permissionsTopic.getKind() + "." +
