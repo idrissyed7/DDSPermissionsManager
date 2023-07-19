@@ -15,6 +15,8 @@ import io.unityfoundation.dds.permissions.manager.exception.DPMException;
 import io.unityfoundation.dds.permissions.manager.ResponseStatusCodes;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermission;
 import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ApplicationPermissionService;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.ReadPartition;
+import io.unityfoundation.dds.permissions.manager.model.applicationpermission.WritePartition;
 import io.unityfoundation.dds.permissions.manager.model.group.Group;
 import io.unityfoundation.dds.permissions.manager.model.group.GroupRepository;
 import io.unityfoundation.dds.permissions.manager.model.groupuser.GroupUserService;
@@ -504,7 +506,7 @@ public class ApplicationService {
         Optional<Application> applicationOptional = securityUtil.getCurrentlyAuthenticatedApplication();
 
         if (applicationOptional.isPresent()) {
-            HashMap applicationPermissions = buildApplicationPermissions(applicationOptional.get());
+            HashMap applicationPermissions = buildApplicationPermissionsJson(applicationOptional.get());
             String etag = generateMD5Hash(applicationPermissions.toString());
             if (requestEtag != null && requestEtag.contentEquals(etag)) {
                 return HttpResponse.notModified();
@@ -576,33 +578,133 @@ public class ApplicationService {
         return dataModel;
     }
 
+    public static class PubSubEntry {
+        private List<String> topics;
+        private List<String> partitions;
+
+        public PubSubEntry(Set<String> topics, Set<String> partitions) {
+            this.topics = new ArrayList<>(topics);
+            this.partitions = new ArrayList<>(partitions);
+        }
+
+        // Use when a pre-determined order of the items in the data members is desired, e.g. for testing.
+        public PubSubEntry(List<String> topics, List<String> partitions) {
+            this.topics = topics;
+            this.partitions = partitions;
+        }
+
+        public List<String> getTopics() {
+            return topics;
+        }
+
+        public void setTopics(List<String> topics) {
+            this.topics = topics;
+        }
+
+        public List<String> getPartitions() {
+            return partitions;
+        }
+
+        public void setPartitions(List<String> partitions) {
+            this.partitions = partitions;
+        }
+    }
+
     private HashMap buildApplicationPermissions(Application application) {
         HashMap<String, Object> dataModel = new HashMap<>();
         List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
         List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
 
         // list of canonical names for each publish-subscribe sections
-        List<String> subscribeList = new ArrayList<>();
-        List<String> publishList = new ArrayList<>();
+        List<PubSubEntry> publishList = new ArrayList<>();
+        List<PubSubEntry> subscribeList = new ArrayList<>();
 
         // read
-        addCanonicalNamesToList(subscribeList, readApplicationPermissions);
+        buildPubSubList(subscribeList, readApplicationPermissions, false);
 
         // write
-        addCanonicalNamesToList(publishList, writeApplicationPermissions);
+        buildPubSubList(publishList, writeApplicationPermissions, true);
 
-        dataModel.put("subscribe", subscribeList);
-        dataModel.put("publish", publishList);
+        dataModel.put("subscribes", subscribeList);
+        dataModel.put("publishes", publishList);
 
         return dataModel;
     }
 
-    private void addCanonicalNamesToList(List<String> list, List<ApplicationPermission> applicationPermissions) {
-        if (applicationPermissions != null) {
-            list.addAll(applicationPermissions.stream()
-                    .map(applicationPermission -> buildCanonicalName(applicationPermission.getPermissionsTopic()))
-                    .collect(Collectors.toList()));
+    private void buildPubSubList(List<PubSubEntry> list, List<ApplicationPermission> applicationPermissions, boolean publishing) {
+        if (applicationPermissions == null) {
+            return;
         }
+
+        // Collect all topics that have the same set of partitions and create a new entry for them.
+        Map<Set<String>, Set<String>> partitionsTopicMap = new HashMap<>();
+
+        applicationPermissions.forEach(applicationPermission -> {
+            Topic topic = applicationPermission.getPermissionsTopic();
+            Set<String> partitions = new HashSet<>();
+            if (publishing) {
+                Set<WritePartition> writePartitions = applicationPermission.getWritePartitions();
+                writePartitions.forEach(writePartition -> {
+                    partitions.add(xmlEscaper.escape(writePartition.getPartitionName()));
+                });
+            } else {
+                Set<ReadPartition> readPartitions = applicationPermission.getReadPartitions();
+                readPartitions.forEach(readPartition -> {
+                    partitions.add(xmlEscaper.escape(readPartition.getPartitionName()));
+                });
+            }
+            Set<String> immutablePartitions = Collections.unmodifiableSet(partitions);
+            String canonicalTopicName = buildCanonicalName(topic);
+            if (partitionsTopicMap.containsKey(immutablePartitions)) {
+                partitionsTopicMap.get(immutablePartitions).add(canonicalTopicName);
+            } else {
+                Set<String> topicNames = new HashSet<>();
+                topicNames.add(canonicalTopicName);
+                partitionsTopicMap.put(immutablePartitions, topicNames);
+            }
+        });
+
+        partitionsTopicMap.forEach((partitions, topics) -> {
+            list.add(new PubSubEntry(topics, partitions));
+        });
+    }
+
+    private HashMap buildApplicationPermissionsJson(Application application) {
+        HashMap<String, Object> dataModel = new HashMap<>();
+        List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
+        List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
+
+        // Map each topic name to a list of its partitions.
+        Map<String, List<String>> publishPartitions = new HashMap<>();
+        Map<String, List<String>> subscribePartitions = new HashMap<>();
+
+        buildTopicPartitionsMap(publishPartitions, writeApplicationPermissions, true);
+        buildTopicPartitionsMap(subscribePartitions, readApplicationPermissions, false);
+
+        dataModel.put("publishes", publishPartitions);
+        dataModel.put("subscribes", subscribePartitions);
+        return dataModel;
+    }
+
+    private void buildTopicPartitionsMap(Map<String, List<String>> partitionsMap, List<ApplicationPermission> applicationPermissions, boolean publishing) {
+        if (applicationPermissions == null) {
+            return;
+        }
+
+        applicationPermissions.forEach(applicationPermission -> {
+            String topicName = buildCanonicalName(applicationPermission.getPermissionsTopic());
+            List<String> partitions = new ArrayList<>();
+            if (publishing) {
+                applicationPermission.getWritePartitions().forEach(writePartition -> {
+                    partitions.add(writePartition.getPartitionName());
+                });
+            } else {
+                applicationPermission.getReadPartitions().forEach(readPartition -> {
+                    partitions.add(readPartition.getPartitionName());
+                });
+            }
+            partitionsMap.put(topicName, partitions);
+        });
     }
 
     private String buildCanonicalName(Topic permissionsTopic) {

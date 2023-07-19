@@ -11,24 +11,38 @@
                 <domains>
                     <id>${domain}</id>
                 </domains>
-                <#if publish?size != 0>
+                <#list publishes as pub>
                 <publish>
                     <topics>
-                    <#list publish as canonicalName>
+                    <#list pub.topics as canonicalName>
                         <topic>${canonicalName}</topic>
                     </#list>
                     </topics>
+                    <#if pub.partitions?size != 0>
+                    <partitions>
+                    <#list pub.partitions as partitionName>
+                        <partition>${partitionName}</partition>
+                    </#list>
+                    </partitions>
+                    </#if>
                 </publish>
-                </#if>
-                <#if subscribe?size != 0>
+                </#list>
+                <#list subscribes as sub>
                 <subscribe>
                     <topics>
-                    <#list subscribe as canonicalName>
+                    <#list sub.topics as canonicalName>
                         <topic>${canonicalName}</topic>
                     </#list>
                     </topics>
+                    <#if sub.partitions?size != 0>
+                    <partitions>
+                    <#list sub.partitions as partitionName>
+                        <partition>${partitionName}</partition>
+                    </#list>
+                    </partitions>
+                    </#if>
                 </subscribe>
-                </#if>
+                </#list>
             </allow_rule>
             <default>DENY</default>
         </grant>
