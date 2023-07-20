@@ -674,19 +674,20 @@ public class ApplicationService {
         List<ApplicationPermission> readApplicationPermissions = applicationPermissionService.findAllByApplicationAndReadEqualsTrue(application);
         List<ApplicationPermission> writeApplicationPermissions = applicationPermissionService.findAllByApplicationAndWriteEqualsTrue(application);
 
-        // Map each topic name to a list of its partitions.
-        Map<String, List<String>> publishPartitions = new HashMap<>();
-        Map<String, List<String>> subscribePartitions = new HashMap<>();
+        List<Object> publishPartitions = new ArrayList<>();
+        List<Object> subscribePartitions = new ArrayList<>();
 
         buildTopicPartitionsMap(publishPartitions, writeApplicationPermissions, true);
         buildTopicPartitionsMap(subscribePartitions, readApplicationPermissions, false);
 
         dataModel.put("publishes", publishPartitions);
         dataModel.put("subscribes", subscribePartitions);
+
         return dataModel;
     }
 
-    private void buildTopicPartitionsMap(Map<String, List<String>> partitionsMap, List<ApplicationPermission> applicationPermissions, boolean publishing) {
+    private void buildTopicPartitionsMap(List<Object> topicPartitionsList,
+                                         List<ApplicationPermission> applicationPermissions, boolean publishing) {
         if (applicationPermissions == null) {
             return;
         }
@@ -703,7 +704,10 @@ public class ApplicationService {
                     partitions.add(readPartition.getPartitionName());
                 });
             }
-            partitionsMap.put(topicName, partitions);
+            Map<String, Object> topicPartitions = new HashMap<>();
+            topicPartitions.put("topic", topicName);
+            topicPartitions.put("partitions", partitions);
+            topicPartitionsList.add(topicPartitions);
         });
     }
 
