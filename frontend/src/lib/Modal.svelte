@@ -142,6 +142,20 @@
 		if ($groupContext) selectedGroup = $groupContext.id;
 		topicCurrentPublicInitial = topicCurrentPublic;
 		appCurrentPublicInitial = appCurrentPublic;
+
+		// Sort the values left in the unsaved partitions input field
+		if ($nonEmptyInputField) {
+			nonEmptyInputField.set(
+				$nonEmptyInputField.sort((a, b) => {
+					if (a.startsWith('Read:') && b.startsWith('Write:')) {
+						return -1;
+					} else if (a.startsWith('Write:') && b.startsWith('Read:')) {
+						return 1;
+					}
+					return 0;
+				})
+			);
+		}
 	});
 
 	onDestroy(() => modalOpen.set(false));

@@ -41,13 +41,21 @@
 				}
 			}}
 			on:blur={() => {
+				let store = [];
 				if (inputValue && $nonEmptyInputField) {
-					let store = [];
-					store.push($nonEmptyInputField);
+					store.push(...$nonEmptyInputField);
 					store.push(label + ': ' + inputValue);
 					nonEmptyInputField.set(store);
-				} else if (inputValue) nonEmptyInputField.set(label + ': ' + inputValue);
-				else if (!inputValue) nonEmptyInputField.set(false);
+				} else if (inputValue) {
+					store.push(label + ': ' + inputValue);
+					nonEmptyInputField.set(store);
+				} else if (!inputValue && $nonEmptyInputField) {
+					nonEmptyInputField.set(
+						$nonEmptyInputField.filter((partition) => !partition.includes(label))
+					);
+				} else if (!inputValue && !$nonEmptyInputField) {
+					nonEmptyInputField.set(false);
+				}
 			}}
 		/>
 		<button
@@ -63,6 +71,11 @@
 					}
 
 					inputValue = '';
+
+					if ($nonEmptyInputField)
+						nonEmptyInputField.set(
+							$nonEmptyInputField.filter((partition) => !partition.includes(label))
+						);
 				}
 			}}>+</button
 		>

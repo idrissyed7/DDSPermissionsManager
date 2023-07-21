@@ -17,7 +17,7 @@ public class SecurityServiceReplacement implements SecurityService {
 
     @PostConstruct
     void postConstruct() {
-        serverAuthentication = new ServerAuthentication("montesm@test.test", null, null);
+        serverAuthentication = new ServerAuthentication("montesm@test.test.com", null, null);
     }
 
     @Override

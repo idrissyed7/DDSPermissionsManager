@@ -6,9 +6,9 @@ dpm:
       admin-users:
         - jeff@test.test
         - wilsonj@test.test
-        - belloned@test.test
-        - montesm@test.test
-        - pasumarthis@test.test
+        - belloned@test.test.com
+        - montesm@test.test.com
+        - pasumarthis@test.test.com
         - unity-admin-test@test.test
       non-admin-users:
         - kstanley@test.test
@@ -27,7 +27,7 @@ dpm:
               email: kstanley@test.test
               admin-flags: [group]
             -
-              email: montesm@test.test
+              email: montesm@test.test.com
           topics:
             -
               name: Test Topic 123

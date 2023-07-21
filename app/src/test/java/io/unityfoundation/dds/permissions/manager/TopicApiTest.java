@@ -88,7 +88,7 @@ public class TopicApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
@@ -985,7 +985,7 @@ public class TopicApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1131,7 +1131,7 @@ public class TopicApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1694,7 +1694,7 @@ public class TopicApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1896,7 +1896,7 @@ public class TopicApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
         }
 
         void loginAsNonAdmin() {

@@ -1,6 +1,7 @@
 <script>
 	import { isAuthenticated, isAdmin } from '../../stores/authentication';
 	import { onMount, createEventDispatcher } from 'svelte';
+	import { page } from '$app/stores';
 	import { httpAdapter } from '../../appconfig';
 	import topicDetails from '../../stores/groupDetails';
 	import Modal from '../../lib/Modal.svelte';
@@ -157,7 +158,7 @@
 
 		try {
 			if (selectedApplicationList && !reload) {
-				await httpAdapter[editGrant ? 'put' : 'post'](
+				await httpAdapter.post(
 					`/application_permissions/${topicId}`,
 					{
 						read: readChecked,
@@ -169,16 +170,18 @@
 				);
 			}
 			if (reload) {
-				const res = await httpAdapter[editGrant ? 'put' : 'post'](
-					`/application_permissions/${topicId}`,
-					{
-						read: readChecked,
-						write: writeChecked,
-						readPartitions: partitionListRead,
-						writePartitions: partitionListWrite
-					},
-					config
-				).then(async () => await loadApplicationPermissions(topicId));
+				const res = await httpAdapter
+					.post(
+						`/application_permissions/${topicId}`,
+						{
+							read: readChecked,
+							write: writeChecked,
+							readPartitions: partitionListRead,
+							writePartitions: partitionListWrite
+						},
+						config
+					)
+					.then(async () => await loadApplicationPermissions(topicId));
 			}
 			editGrant = false;
 			errorMessageAssociation.set([]);
@@ -188,9 +191,12 @@
 				associateApplicationVisible = false;
 				const decodedError = decodeError(Object.create(...err.response.data));
 				errorMessage(
-					errorMessages[decodedError.category]['adding.error.title'],
+					editGrant
+						? errorMessages[decodedError.category]['saving.error.title']
+						: errorMessages[decodedError.category]['adding.error.title'],
 					errorMessages[decodedError.category][decodedError.code]
 				);
+				editGrant = false;
 			} else {
 				errorMessageAssociation.set(errorMessages['bind_token']['forbidden']);
 			}
@@ -204,6 +210,14 @@
 	};
 
 	const updateTopicApplicationAssociation = async () => {
+		if ($nonEmptyInputField) {
+			const [readValue, writeValue] = extractValues($nonEmptyInputField);
+			nonEmptyInputField.set(false);
+
+			if (readValue) partitionListRead.push(readValue);
+			if (writeValue) partitionListWrite.push(writeValue);
+		}
+
 		try {
 			const res = await httpAdapter.put(`/application_permissions/${selectedGrant.id}`, {
 				read: readChecked,
@@ -214,9 +228,12 @@
 			if (res.status === 200) {
 				notifyApplicationAccessTypeSuccess = true;
 				editGrantVisible = false;
+				editGrant = false;
 			}
 		} catch {
+			editGrantVisible = false;
 			errorMessage(errorMessages['topic']['updating.access.type.error.title'], err.message);
+			editGrant = false;
 		}
 		await loadApplicationPermissions(selectedTopicId);
 	};
@@ -330,10 +347,12 @@
 			on:cancel={() => {
 				nonEmptyInputField.set(false);
 				showUnsavedPartitionsModal = false;
-				addTopicApplicationAssociation(selectedTopicId, true);
+				if (!editGrant) addTopicApplicationAssociation(selectedTopicId, true);
+				else updateTopicApplicationAssociation();
 			}}
 			on:addUnsavedPartitions={() => {
-				addTopicApplicationAssociation(selectedTopicId, true);
+				if (!editGrant) addTopicApplicationAssociation(selectedTopicId, true);
+				else updateTopicApplicationAssociation();
 				showUnsavedPartitionsModal = false;
 			}}
 		/>
@@ -376,7 +395,7 @@
 				if ($nonEmptyInputField) {
 					showUnsavedPartitionsModal = true;
 					editGrantVisible = false;
-				} else addTopicApplicationAssociation(selectedTopicId, true);
+				} else updateTopicApplicationAssociation();
 			}}
 			on:cancel={() => (editGrantVisible = false)}
 		/>
@@ -464,254 +483,260 @@
 			{/if}
 		</div>
 
-		<div>
-			<div
-				style="display: flex; justify-content: space-between; align-items:center; margin-top: 2rem"
-			>
-				<div style="font-size:1.3rem; margin-bottom: 1rem">
-					{messages['topic.detail']['table.grants.label']}
-				</div>
-				<div style="margin-bottom: 0.5rem; margin-right: -1rem">
-					<img
-						src={deleteSVG}
-						alt="options"
-						class="dot"
-						class:button-disabled={(!$isAdmin && !isTopicAdmin) || grantsRowsSelected?.length === 0}
-						style="margin-left: 0.5rem; margin-right: 1rem"
-						on:click={() => {
-							if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
+		{#if !$page.url.pathname.includes('search')}
+			<div>
+				<div
+					style="display: flex; justify-content: space-between; align-items:center; margin-top: 2rem"
+				>
+					<div style="font-size:1.3rem; margin-bottom: 1rem">
+						{messages['topic.detail']['table.grants.label']}
+					</div>
+					<div style="margin-bottom: 0.5rem; margin-right: -1rem">
+						<img
+							src={deleteSVG}
+							alt="options"
+							class="dot"
+							class:button-disabled={(!$isAdmin && !isTopicAdmin) ||
+								grantsRowsSelected?.length === 0}
+							style="margin-left: 0.5rem; margin-right: 1rem"
+							on:click={() => {
 								if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
-							}
-						}}
-						on:mouseenter={() => {
-							deleteMouseEnter = true;
-							if ($isAdmin || isTopicAdmin) {
-								if (grantsRowsSelected.length === 0) {
-									deleteToolip = messages['topic.detail']['delete.tooltip'];
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									if (grantsRowsSelected.length > 0) deleteSelectedGrantsVisible = true;
+								}
+							}}
+							on:mouseenter={() => {
+								deleteMouseEnter = true;
+								if ($isAdmin || isTopicAdmin) {
+									if (grantsRowsSelected.length === 0) {
+										deleteToolip = messages['topic.detail']['delete.tooltip'];
+										const tooltip = document.querySelector('#delete-topics');
+										setTimeout(() => {
+											if (deleteMouseEnter) {
+												tooltip.classList.remove('tooltip-hidden');
+												tooltip.classList.add('tooltip');
+											}
+										}, 1000);
+									}
+								} else {
+									deleteToolip = messages['topic']['delete.tooltip.topic.admin.required'];
 									const tooltip = document.querySelector('#delete-topics');
 									setTimeout(() => {
 										if (deleteMouseEnter) {
 											tooltip.classList.remove('tooltip-hidden');
 											tooltip.classList.add('tooltip');
+											tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
 										}
 									}, 1000);
 								}
-							} else {
-								deleteToolip = messages['topic']['delete.tooltip.topic.admin.required'];
-								const tooltip = document.querySelector('#delete-topics');
-								setTimeout(() => {
-									if (deleteMouseEnter) {
-										tooltip.classList.remove('tooltip-hidden');
-										tooltip.classList.add('tooltip');
-										tooltip.setAttribute('style', 'margin-left:10.2rem; margin-top: -1.8rem');
-									}
-								}, 1000);
-							}
-						}}
-						on:mouseleave={() => {
-							deleteMouseEnter = false;
-							if (grantsRowsSelected.length === 0) {
-								const tooltip = document.querySelector('#delete-topics');
-								setTimeout(() => {
-									if (!deleteMouseEnter) {
-										tooltip.classList.add('tooltip-hidden');
-										tooltip.classList.remove('tooltip');
-									}
-								}, 1000);
-							}
-						}}
-					/>
-					<span id="delete-topics" class="tooltip-hidden" style="margin-top: -1.8rem"
-						>{deleteToolip}
-					</span>
+							}}
+							on:mouseleave={() => {
+								deleteMouseEnter = false;
+								if (grantsRowsSelected.length === 0) {
+									const tooltip = document.querySelector('#delete-topics');
+									setTimeout(() => {
+										if (!deleteMouseEnter) {
+											tooltip.classList.add('tooltip-hidden');
+											tooltip.classList.remove('tooltip');
+										}
+									}, 1000);
+								}
+							}}
+						/>
+						<span id="delete-topics" class="tooltip-hidden" style="margin-top: -1.8rem"
+							>{deleteToolip}
+						</span>
 
-					<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-					<img
-						data-cy="add-grant"
-						src={addSVG}
-						tabindex="0"
-						alt="options"
-						class="dot"
-						class:button-disabled={!$isAdmin &&
-							!$permissionsByGroup?.find(
-								(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
-							)}
-						on:click={() => {
-							if ($isAdmin || isTopicAdmin) {
-								nonEmptyInputField.set(false);
-								associateApplicationVisible = true;
-							}
-						}}
-						on:keydown={(event) => {
-							if (event.which === returnKey) {
+						<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+						<img
+							data-cy="add-grant"
+							src={addSVG}
+							tabindex="0"
+							alt="options"
+							class="dot"
+							class:button-disabled={!$isAdmin &&
+								!$permissionsByGroup?.find(
+									(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
+								)}
+							on:click={() => {
 								if ($isAdmin || isTopicAdmin) {
 									nonEmptyInputField.set(false);
 									associateApplicationVisible = true;
 								}
-							}
-						}}
-					/>
-				</div>
-			</div>
-
-			<table style="max-width: 50rem; min-width: 53rem">
-				<thead>
-					<tr style="border-top: 1px solid black; border-bottom: 2px solid">
-						<td>
-							<input
-								tabindex="-1"
-								type="checkbox"
-								class="grants-checkbox"
-								style="margin-right: 0.5rem"
-								bind:indeterminate={grantsRowsSelectedTrue}
-								on:click={(e) => {
-									if (e.target.checked) {
-										grantsRowsSelected = selectedTopicApplications;
-										grantsRowsSelectedTrue = false;
-										grantsAllRowsSelectedTrue = true;
-									} else {
-										grantsAllRowsSelectedTrue = false;
-										grantsRowsSelectedTrue = false;
-										grantsRowsSelected = [];
+							}}
+							on:keydown={(event) => {
+								if (event.which === returnKey) {
+									if ($isAdmin || isTopicAdmin) {
+										nonEmptyInputField.set(false);
+										associateApplicationVisible = true;
 									}
-								}}
-								checked={grantsAllRowsSelectedTrue}
-							/>
-						</td>
-						<td>{messages['topic.detail']['table.grants.column.one']}</td>
-						<td>{messages['topic.detail']['table.grants.column.two']}</td>
-						<td>{messages['topic.detail']['table.grants.column.three']}</td>
-						<td>{messages['topic.detail']['table.grants.column.four']}</td>
-						<td>{messages['topic.detail']['table.grants.column.five']}</td>
-						<td />
-						<td />
-					</tr>
-				</thead>
+								}
+							}}
+						/>
+					</div>
+				</div>
 
-				{#if selectedTopicApplications?.length > 0}
-					{#each selectedTopicApplications as appPermission}
-						<tbody>
-							<tr>
-								<td style="line-height: 1rem;">
-									<input
-										tabindex="-1"
-										type="checkbox"
-										class="grants-checkbox"
-										style="margin-right: 0.5rem"
-										checked={grantsAllRowsSelectedTrue}
-										on:change={(e) => {
-											if (e.target.checked === true) {
-												grantsRowsSelected.push(appPermission);
-												// reactive statement
-												grantsRowsSelected = grantsRowsSelected;
-												grantsRowsSelectedTrue = true;
-											} else {
-												grantsRowsSelected = grantsRowsSelected.filter(
-													(selection) => selection !== appPermission
-												);
-												if (grantsRowsSelected.length === 0) {
-													grantsRowsSelectedTrue = false;
-												}
-											}
-										}}
-									/>
-								</td>
-								<td style="min-width: fit-content"> {appPermission.applicationGroupName} </td>
-								<td style="min-width: fit-content"> {appPermission.applicationName} </td>
-								<td style="min-width: 5.5rem; max-width: 5.5rem">
-									{#if appPermission.read && appPermission.write}
-										{messages['topic.detail']['table.grants.access.readwrite']}
-									{:else if appPermission.read}
-										{messages['topic.detail']['table.grants.access.read']}
-									{/if}
-									{#if appPermission.write}
-										{messages['topic.detail']['table.grants.access.write']}
-									{:else if !appPermission.read && !appPermission.write}
-										-
-									{/if}
-								</td>
-								<td style="min-width: 10rem; max-width: 10rem">
-									{#if appPermission.readPartitions?.length > 0}
-										{#each appPermission.readPartitions as partition}
-											<div
-												style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
-											>
-												{partition}
-											</div>
-										{/each}
-									{/if}
-								</td>
-								<td style="min-width: 10rem; max-width: 10rem; margin: 0 0.3rem 0 0.3rem">
-									{#if appPermission.writePartitions?.length > 0}
-										{#each appPermission.writePartitions as partition}
-											<div
-												style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
-											>
-												{partition}
-											</div>
-										{/each}
-									{/if}
-								</td>
-								<td
-									style="cursor: pointer; text-align: right"
-									on:keydown={(event) => {
-										if (event.which === returnKey) {
-											selectedGrant = appPermission;
-											editGrantVisible = true;
+				<table style="max-width: 50rem; min-width: 53rem">
+					<thead>
+						<tr style="border-top: 1px solid black; border-bottom: 2px solid">
+							<td>
+								<input
+									tabindex="-1"
+									type="checkbox"
+									class="grants-checkbox"
+									style="margin-right: 0.5rem"
+									bind:indeterminate={grantsRowsSelectedTrue}
+									on:click={(e) => {
+										if (e.target.checked) {
+											grantsRowsSelected = selectedTopicApplications;
+											grantsRowsSelectedTrue = false;
+											grantsAllRowsSelectedTrue = true;
+										} else {
+											grantsAllRowsSelectedTrue = false;
+											grantsRowsSelectedTrue = false;
+											grantsRowsSelected = [];
 										}
 									}}
-								>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-									<img
-										data-cy="edit-users-icon"
-										src={editSVG}
-										tabindex="0"
-										height="17rem"
-										width="17rem"
-										style="vertical-align: -0.225rem"
-										alt="edit user"
-										on:click={() => {
-											selectedGrant = appPermission;
-											editGrantVisible = true;
+									checked={grantsAllRowsSelectedTrue}
+								/>
+							</td>
+							<td>{messages['topic.detail']['table.grants.column.one']}</td>
+							<td>{messages['topic.detail']['table.grants.column.two']}</td>
+							<td>{messages['topic.detail']['table.grants.column.three']}</td>
+							<td>{messages['topic.detail']['table.grants.column.four']}</td>
+							<td>{messages['topic.detail']['table.grants.column.five']}</td>
+							<td />
+							<td />
+						</tr>
+					</thead>
+
+					{#if selectedTopicApplications?.length > 0}
+						{#each selectedTopicApplications as appPermission}
+							<tbody>
+								<tr>
+									<td style="line-height: 1rem;">
+										<input
+											tabindex="-1"
+											type="checkbox"
+											class="grants-checkbox"
+											style="margin-right: 0.5rem"
+											checked={grantsAllRowsSelectedTrue}
+											on:change={(e) => {
+												if (e.target.checked === true) {
+													grantsRowsSelected.push(appPermission);
+													// reactive statement
+													grantsRowsSelected = grantsRowsSelected;
+													grantsRowsSelectedTrue = true;
+												} else {
+													grantsRowsSelected = grantsRowsSelected.filter(
+														(selection) => selection !== appPermission
+													);
+													if (grantsRowsSelected.length === 0) {
+														grantsRowsSelectedTrue = false;
+													}
+												}
+											}}
+										/>
+									</td>
+									<td style="min-width: fit-content"> {appPermission.applicationGroupName} </td>
+									<td style="min-width: fit-content"> {appPermission.applicationName} </td>
+									<td style="min-width: 5.5rem; max-width: 5.5rem">
+										{#if appPermission.read && appPermission.write}
+											{messages['topic.detail']['table.grants.access.readwrite']}
+										{:else if appPermission.read}
+											{messages['topic.detail']['table.grants.access.read']}
+										{/if}
+										{#if appPermission.write}
+											{messages['topic.detail']['table.grants.access.write']}
+										{:else if !appPermission.read && !appPermission.write}
+											-
+										{/if}
+									</td>
+									<td style="min-width: 10rem; max-width: 10rem">
+										{#if appPermission.readPartitions?.length > 0}
+											{#each appPermission.readPartitions as partition}
+												<div
+													style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+												>
+													{partition}
+												</div>
+											{/each}
+										{/if}
+									</td>
+									<td style="min-width: 10rem; max-width: 10rem; margin: 0 0.3rem 0 0.3rem">
+										{#if appPermission.writePartitions?.length > 0}
+											{#each appPermission.writePartitions as partition}
+												<div
+													style="display:inline; align-items: center; background-color: #bad5ff; border-radius: 25px; font-size: 0.8rem; width: fit-content; padding: 0 0.3rem 0 0.3rem; margin: 0 0.1rem 0 0.1rem"
+												>
+													{partition}
+												</div>
+											{/each}
+										{/if}
+									</td>
+									<td
+										style="cursor: pointer; text-align: right"
+										on:keydown={(event) => {
+											if (event.which === returnKey) {
+												selectedGrant = appPermission;
+												editGrantVisible = true;
+											}
 										}}
-									/>
-								</td>
-								<td style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-									<img
-										data-cy="delete-users-icon"
-										src={deleteSVG}
-										tabindex="0"
-										height="27px"
-										width="27px"
-										style="vertical-align: -0.5rem"
-										alt="delete user"
-										on:click={() => {
-											if (!grantsRowsSelected.some((grant) => grant === appPermission))
-												grantsRowsSelected.push(appPermission);
-											deleteSelectedGrantsVisible = true;
-										}}
-									/>
-								</td>
-							</tr>
-						</tbody>
-					{/each}
-				{:else}
-					<td style="border: none">{messages['topic.detail']['table.grants.empty']}</td>
+									>
+										<!-- svelte-ignore a11y-click-events-have-key-events -->
+										<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+										<img
+											data-cy="edit-users-icon"
+											src={editSVG}
+											tabindex="0"
+											height="17rem"
+											width="17rem"
+											style="vertical-align: -0.225rem"
+											alt="edit user"
+											on:click={() => {
+												selectedGrant = appPermission;
+												editGrantVisible = true;
+											}}
+										/>
+									</td>
+									<td
+										style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem"
+									>
+										<!-- svelte-ignore a11y-click-events-have-key-events -->
+										<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+										<img
+											data-cy="delete-users-icon"
+											src={deleteSVG}
+											tabindex="0"
+											height="27px"
+											width="27px"
+											style="vertical-align: -0.5rem"
+											alt="delete user"
+											on:click={() => {
+												if (!grantsRowsSelected.some((grant) => grant === appPermission))
+													grantsRowsSelected.push(appPermission);
+												deleteSelectedGrantsVisible = true;
+											}}
+										/>
+									</td>
+								</tr>
+							</tbody>
+						{/each}
+					{:else}
+						<td style="border: none">{messages['topic.detail']['table.grants.empty']}</td>
+					{/if}
+				</table>
+				{#if notifyApplicationAccessTypeSuccess}
+					<span
+						style="float: right; margin-top: 0.5rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
+						>{messages['topic.detail']['updated.success']}</span
+					>
 				{/if}
-			</table>
-			{#if notifyApplicationAccessTypeSuccess}
-				<span
-					style="float: right; margin-top: 0.5rem; font-size: 0.65rem; color: white; background-color: black; padding: 0.2rem 0.4rem 0.2rem 0.4rem; border-radius: 15px"
-					>{messages['topic.detail']['updated.success']}</span
-				>
-			{/if}
-		</div>
+			</div>
+		{/if}
+
 		<p style="margin-top: 8rem">{messages['footer']['message']}</p>
 	{/await}
 {/if}
