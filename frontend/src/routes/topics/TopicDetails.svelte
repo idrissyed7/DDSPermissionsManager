@@ -14,6 +14,7 @@
 	import errorMessageAssociation from '../../stores/errorMessageAssociation';
 	import permissionsByGroup from '../../stores/permissionsByGroup';
 	import groupContext from '../../stores/groupContext';
+	import nonEmptyInputField from '../../stores/nonEmptyInputField';
 
 	export let selectedTopicId, isTopicAdmin;
 
@@ -68,7 +69,8 @@
 		associateApplicationVisible = false,
 		editTopicVisible = false,
 		deleteSelectedGrantsVisible = false,
-		editGrantVisible = false;
+		editGrantVisible = false,
+		showUnsavedPartitionsModal = false;
 
 	// Constants
 	const returnKey = 13,
@@ -82,6 +84,9 @@
 
 	// Bind Token
 	let bindToken;
+
+	//Grant
+	let editGrant = false;
 
 	onMount(async () => {
 		try {
@@ -114,12 +119,35 @@
 		errorMessageVisible = true;
 	};
 
+	const extractValues = (arr) => {
+		let readValue = null;
+		let writeValue = null;
+
+		arr.forEach((item) => {
+			if (item.includes('Read: ')) {
+				readValue = item.split('Read: ')[1];
+			} else if (item.includes('Write: ')) {
+				writeValue = item.split('Write: ')[1];
+			}
+		});
+
+		return [readValue, writeValue];
+	};
+
 	const loadApplicationPermissions = async (topicId) => {
 		const resApps = await httpAdapter.get(`/application_permissions/topic/${topicId}`);
 		selectedTopicApplications = resApps.data.content;
 	};
 
 	const addTopicApplicationAssociation = async (topicId, reload = false) => {
+		if ($nonEmptyInputField) {
+			const [readValue, writeValue] = extractValues($nonEmptyInputField);
+			nonEmptyInputField.set(false);
+
+			if (readValue) partitionListRead.push(readValue);
+			if (writeValue) partitionListWrite.push(writeValue);
+		}
+
 		const config = {
 			headers: {
 				accept: 'application/json',
@@ -129,7 +157,7 @@
 
 		try {
 			if (selectedApplicationList && !reload) {
-				await httpAdapter.post(
+				await httpAdapter[editGrant ? 'put' : 'post'](
 					`/application_permissions/${topicId}`,
 					{
 						read: readChecked,
@@ -141,25 +169,28 @@
 				);
 			}
 			if (reload) {
-				const res = await httpAdapter
-					.post(
-						`/application_permissions/${topicId}`,
-						{
-							read: readChecked,
-							write: writeChecked,
-							readPartitions: partitionListRead,
-							writePartitions: partitionListWrite
-						},
-						config
-					)
-					.then(async () => await loadApplicationPermissions(topicId));
+				const res = await httpAdapter[editGrant ? 'put' : 'post'](
+					`/application_permissions/${topicId}`,
+					{
+						read: readChecked,
+						write: writeChecked,
+						readPartitions: partitionListRead,
+						writePartitions: partitionListWrite
+					},
+					config
+				).then(async () => await loadApplicationPermissions(topicId));
 			}
+			editGrant = false;
 			errorMessageAssociation.set([]);
 			associateApplicationVisible = false;
 		} catch (err) {
 			if (err.response.data && err.response.status === 400) {
+				associateApplicationVisible = false;
 				const decodedError = decodeError(Object.create(...err.response.data));
-				errorMessageAssociation.set(errorMessages[decodedError.category][decodedError.code]);
+				errorMessage(
+					errorMessages[decodedError.category]['adding.error.title'],
+					errorMessages[decodedError.category][decodedError.code]
+				);
 			} else {
 				errorMessageAssociation.set(errorMessages['bind_token']['forbidden']);
 			}
@@ -283,7 +314,27 @@
 				writeChecked = e.detail.write;
 				bindToken = e.detail.bindToken;
 
+				if ($nonEmptyInputField) {
+					showUnsavedPartitionsModal = true;
+					associateApplicationVisible = false;
+				} else addTopicApplicationAssociation(selectedTopicId, true);
+			}}
+		/>
+	{/if}
+
+	{#if showUnsavedPartitionsModal}
+		<Modal
+			title={messages['topic.detail']['unsaved.partitions.title']}
+			actionUnsavedPartitions={true}
+			closeModalText={messages['modal']['discard.changes']}
+			on:cancel={() => {
+				nonEmptyInputField.set(false);
+				showUnsavedPartitionsModal = false;
 				addTopicApplicationAssociation(selectedTopicId, true);
+			}}
+			on:addUnsavedPartitions={() => {
+				addTopicApplicationAssociation(selectedTopicId, true);
+				showUnsavedPartitionsModal = false;
 			}}
 		/>
 	{/if}
@@ -316,12 +367,16 @@
 			partitionListRead={selectedGrant.readPartitions}
 			partitionListWrite={selectedGrant.writePartitions}
 			on:addTopicApplicationAssociation={(e) => {
+				editGrant = true;
 				partitionListRead = e.detail.partitionListRead;
 				partitionListWrite = e.detail.partitionListWrite;
 				readChecked = e.detail.read;
 				writeChecked = e.detail.write;
 
-				updateTopicApplicationAssociation(selectedTopicId, true);
+				if ($nonEmptyInputField) {
+					showUnsavedPartitionsModal = true;
+					editGrantVisible = false;
+				} else addTopicApplicationAssociation(selectedTopicId, true);
 			}}
 			on:cancel={() => (editGrantVisible = false)}
 		/>
@@ -485,11 +540,17 @@
 								(gm) => gm.groupName === $groupContext?.name && gm.isTopicAdmin === true
 							)}
 						on:click={() => {
-							if ($isAdmin || isTopicAdmin) associateApplicationVisible = true;
+							if ($isAdmin || isTopicAdmin) {
+								nonEmptyInputField.set(false);
+								associateApplicationVisible = true;
+							}
 						}}
 						on:keydown={(event) => {
 							if (event.which === returnKey) {
-								if ($isAdmin || isTopicAdmin) associateApplicationVisible = true;
+								if ($isAdmin || isTopicAdmin) {
+									nonEmptyInputField.set(false);
+									associateApplicationVisible = true;
+								}
 							}
 						}}
 					/>

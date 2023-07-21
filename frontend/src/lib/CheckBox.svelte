@@ -1,6 +1,7 @@
 <script>
 	import messages from '$lib/messages.json';
 	import closeSVG from '../icons/close.svg';
+	import nonEmptyInputField from '../stores/nonEmptyInputField';
 	export let label = '';
 	export let checked = false;
 	export let partitionList = [];
@@ -38,6 +39,15 @@
 						inputValue = '';
 					}
 				}
+			}}
+			on:blur={() => {
+				if (inputValue && $nonEmptyInputField) {
+					let store = [];
+					store.push($nonEmptyInputField);
+					store.push(label + ': ' + inputValue);
+					nonEmptyInputField.set(store);
+				} else if (inputValue) nonEmptyInputField.set(label + ': ' + inputValue);
+				else if (!inputValue) nonEmptyInputField.set(false);
 			}}
 		/>
 		<button
@@ -96,7 +106,7 @@
 	}
 
 	input {
-		width: 7rem;
+		width: 6.65rem;
 		max-height: 1.1rem;
 	}
 
