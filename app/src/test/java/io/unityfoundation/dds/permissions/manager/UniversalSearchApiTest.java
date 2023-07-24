@@ -78,7 +78,7 @@ class UniversalSearchApiTest {
     static class MockAuthenticationFetcher implements AuthenticationFetcher {
         @Override
         public Publisher<Authentication> fetchAuthentication(HttpRequest<?> request) {
-            return Publishers.just(Authentication.build("montesm@test.test"));
+            return Publishers.just(Authentication.build("montesm@test.test.com"));
         }
     }
 
@@ -87,7 +87,7 @@ class UniversalSearchApiTest {
         blockingClient = client.toBlocking();
         dbCleanup.cleanup();
 
-        userRepository.save(new User("montesm@test.test", true));
+        userRepository.save(new User("montesm@test.test.com", true));
         User jjones = userRepository.save(new User("jjones@test.test"));
         User eclair = userRepository.save(new User("eclair@test.test"));
 

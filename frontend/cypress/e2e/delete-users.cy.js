@@ -6,7 +6,7 @@
         cy.wait('@tokenInfo');
     });
 
-it('should delete user montesm@test.test', () => {
+it('should delete user montesm@test.test.com', () => {
         cy.visit('/users');
 
         cy.get(':nth-child(2) > [style="cursor: pointer; text-align: right; padding-right: 0.25rem; width: 1rem;"] > [data-cy="delete-users-icon"]')
@@ -15,7 +15,7 @@ it('should delete user montesm@test.test', () => {
         cy.get('[data-cy="delete-user"]')
         .click();
         
-        cy.get('td').should('not.eq', 'montesm@test.test');
+        cy.get('td').should('not.eq', 'montesm@test.test.com');
         
     });
 });

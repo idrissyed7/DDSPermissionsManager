@@ -80,7 +80,7 @@ public class GroupMembershipApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User( "montesm@test.test", true));
+            userRepository.save(new User( "montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
             mockSecurityService.postConstruct();
             mockDPMIntrospectionController.setAuthentication(mockSecurityService.getAuthentication().get());
@@ -189,7 +189,7 @@ public class GroupMembershipApiTest {
         @Test
         public void cannotCreateIfGroupSpecifiedDoesNotExist() {
             GroupUserDTO dto = new GroupUserDTO();
-            dto.setEmail("bob.builder@test.test");
+            dto.setEmail("bob.builder@test.test.com");
             dto.setPermissionsGroup(100l);
             dto.setTopicAdmin(true);
             HttpRequest<?> request = HttpRequest.POST("/group_membership", dto);
@@ -205,7 +205,7 @@ public class GroupMembershipApiTest {
 
         @Test
         public void cannotCreateWithoutGroupSpecified() {
-            User bob = userRepository.save(new User( "bob.builder@test.test"));
+            User bob = userRepository.save(new User( "bob.builder@test.test.com"));
 
             GroupUserDTO dto = new GroupUserDTO();
             dto.setEmail(bob.getEmail());
@@ -562,7 +562,7 @@ public class GroupMembershipApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -935,7 +935,7 @@ public class GroupMembershipApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1508,7 +1508,7 @@ public class GroupMembershipApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 

@@ -35,8 +35,8 @@ micronaut:
       callback-uri: "/api/oauth/callback{/provider}"
       clients:
         google:
-          client-id: ***REMOVED***
-          client-secret: ***REMOVED***
+          # client-id: Provide client-id.
+          # client-secret: Provide client-secret.
           openid:
             authorization:
               prompt: select_account

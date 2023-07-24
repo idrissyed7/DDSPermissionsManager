@@ -8,18 +8,18 @@ describe('Delete super users', () => {
         cy.wait('@tokenInfo');
     });
 
-    it('should delete pasumarthis@test.test', () => {
+    it('should delete pasumarthis@test.test.com', () => {
         cy.visit('/users');
 
         cy.wait(500);
 
-        cy.get('td').contains('pasumarthis@test.test').siblings().find('[data-cy="delete-super-users-icon"]')
+        cy.get('td').contains('pasumarthis@test.test.com').siblings().find('[data-cy="delete-super-users-icon"]')
         .click();
 
         cy.get('[data-cy="delete-super-user"]')
         .click();
 
-        cy.get('td').should('not.eq', 'pasumarthis@test.test');
+        cy.get('td').should('not.eq', 'pasumarthis@test.test.com');
         
     });
 });

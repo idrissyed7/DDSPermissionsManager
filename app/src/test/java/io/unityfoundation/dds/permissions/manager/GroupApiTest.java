@@ -109,7 +109,7 @@ public class GroupApiTest {
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
 
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             User jjones = userRepository.save(new User("jjones@test.test"));
             User eclair = userRepository.save(new User("eclair@test.test"));
 
@@ -664,7 +664,7 @@ public class GroupApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -849,7 +849,7 @@ public class GroupApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             User user = userRepository.save(new User("jjones@test.test"));
 
             Group group = groupRepository.save(new Group("GroupOne", "DescriptionOne", false));
@@ -936,7 +936,7 @@ public class GroupApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
 
             Group group = groupRepository.save(new Group("TestGroup"));

@@ -135,7 +135,8 @@
         "add.tooltip": "Add a new grant",
         "delete.grants.title": "Delete",
         "delete.grants.single": "Grant",
-        "delete.grants.multiple": "Grants"
+        "delete.grants.multiple": "Grants",
+        "unsaved.partitions.title": "Would you like to save these partitions?"
     },
 
     "application":
@@ -284,7 +285,8 @@
         "associate.application.button.label.two": "Add",
         "associate.application.button.label.two.edit": "Save",
         "associate.application.input.access.placeholder": "Add a Partition",
-        "reminder.message.button.label": "Yes"    
+        "reminder.message.button.label": "Yes",
+        "discard.changes": "Discard Changes"
     },
 
     "pagination":

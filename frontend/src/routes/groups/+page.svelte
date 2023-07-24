@@ -150,7 +150,6 @@
 	};
 
 	const reloadAllGroups = async (page = 0) => {
-		console.log('inside reloadAllGroups()');
 		try {
 			let res;
 			if (searchString && searchString.length >= searchStringLength) {
@@ -960,14 +959,9 @@
 						class="pagination-image"
 						class:disabled-img={groupsCurrentPage === 0}
 						on:click={() => {
-							console.log('groupsCurrentPage', groupsCurrentPage);
-							console.log('$groupsTotalPages', $groupsTotalPages);
-							console.log('groupsCurrentPage', groupsCurrentPage);
-
 							deselectAllGroupsCheckboxes();
 
 							if (groupsCurrentPage > 0) {
-								console.log('inside if (groupsCurrentPage > 0)');
 								groupsCurrentPage = 0;
 								reloadAllGroups();
 							}
@@ -980,14 +974,9 @@
 						class="pagination-image"
 						class:disabled-img={groupsCurrentPage === 0}
 						on:click={() => {
-							console.log('groupsCurrentPage', groupsCurrentPage);
-							console.log('$groupsTotalPages', $groupsTotalPages);
-							console.log('groupsCurrentPage', groupsCurrentPage);
-
 							deselectAllGroupsCheckboxes();
 
 							if (groupsCurrentPage > 0) {
-								console.log('inside if (groupsCurrentPage > 0)');
 								groupsCurrentPage--;
 								reloadAllGroups(groupsCurrentPage);
 							}
@@ -1001,14 +990,9 @@
 						class:disabled-img={groupsCurrentPage + 1 === $groupsTotalPages ||
 							$groups?.length === undefined}
 						on:click={() => {
-							console.log('groupsCurrentPage', groupsCurrentPage);
-							console.log('$groupsTotalPages', $groupsTotalPages);
-							console.log('groupsCurrentPage', groupsCurrentPage);
-
 							deselectAllGroupsCheckboxes();
 
 							if (groupsCurrentPage + 1 < $groupsTotalPages) {
-								console.log('inside if (groupsCurrentPage + 1 < $groupsTotalPages)');
 								groupsCurrentPage++;
 								reloadAllGroups(groupsCurrentPage);
 							}
@@ -1022,14 +1006,9 @@
 						class:disabled-img={groupsCurrentPage + 1 === $groupsTotalPages ||
 							$groups?.length === undefined}
 						on:click={() => {
-							console.log('groupsCurrentPage', groupsCurrentPage);
-							console.log('$groupsTotalPages', $groupsTotalPages);
-							console.log('groupsCurrentPage', groupsCurrentPage);
-
 							deselectAllGroupsCheckboxes();
 
 							if (groupsCurrentPage < $groupsTotalPages) {
-								console.log('inside if (groupsCurrentPage < $groupsTotalPages)');
 								groupsCurrentPage = $groupsTotalPages - 1;
 								reloadAllGroups(groupsCurrentPage);
 							}

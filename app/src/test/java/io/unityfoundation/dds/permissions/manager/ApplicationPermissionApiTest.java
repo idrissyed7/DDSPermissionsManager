@@ -128,7 +128,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
 
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
@@ -835,7 +835,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             User justin = userRepository.save(new User("jjones@test.test"));
 
             mockSecurityService.postConstruct();
@@ -972,7 +972,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             User justin = userRepository.save(new User("jjones@test.test"));
 
             mockSecurityService.postConstruct();
@@ -1091,7 +1091,7 @@ public class ApplicationPermissionApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test"));
+            userRepository.save(new User("montesm@test.test.com"));
             userRepository.save(new User("jjones@test.test"));
 
             Group group = groupRepository.save(new Group("TestGroup"));

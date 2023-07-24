@@ -93,7 +93,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
         }
@@ -1015,7 +1015,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1660,7 +1660,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             userRepository.save(new User("jjones@test.test"));
         }
 
@@ -1985,7 +1985,7 @@ public class ApplicationApiTest {
         @BeforeEach
         void setup() {
             dbCleanup.cleanup();
-            userRepository.save(new User("montesm@test.test", true));
+            userRepository.save(new User("montesm@test.test.com", true));
             mockSecurityService.postConstruct();
             mockAuthenticationFetcher.setAuthentication(mockSecurityService.getAuthentication().get());
             setETagPropsForMockApplicationSecretsClient("abc", false);

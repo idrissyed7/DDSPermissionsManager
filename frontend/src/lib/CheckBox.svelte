@@ -1,6 +1,7 @@
 <script>
 	import messages from '$lib/messages.json';
 	import closeSVG from '../icons/close.svg';
+	import nonEmptyInputField from '../stores/nonEmptyInputField';
 	export let label = '';
 	export let checked = false;
 	export let partitionList = [];
@@ -39,6 +40,23 @@
 					}
 				}
 			}}
+			on:blur={() => {
+				let store = [];
+				if (inputValue && $nonEmptyInputField) {
+					store.push(...$nonEmptyInputField);
+					store.push(label + ': ' + inputValue);
+					nonEmptyInputField.set(store);
+				} else if (inputValue) {
+					store.push(label + ': ' + inputValue);
+					nonEmptyInputField.set(store);
+				} else if (!inputValue && $nonEmptyInputField) {
+					nonEmptyInputField.set(
+						$nonEmptyInputField.filter((partition) => !partition.includes(label))
+					);
+				} else if (!inputValue && !$nonEmptyInputField) {
+					nonEmptyInputField.set(false);
+				}
+			}}
 		/>
 		<button
 			class:button-blue={inputValue}
@@ -53,6 +71,11 @@
 					}
 
 					inputValue = '';
+
+					if ($nonEmptyInputField)
+						nonEmptyInputField.set(
+							$nonEmptyInputField.filter((partition) => !partition.includes(label))
+						);
 				}
 			}}>+</button
 		>
@@ -96,7 +119,7 @@
 	}
 
 	input {
-		width: 7rem;
+		width: 6.65rem;
 		max-height: 1.1rem;
 	}
 

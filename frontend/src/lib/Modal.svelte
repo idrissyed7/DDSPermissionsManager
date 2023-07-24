@@ -11,6 +11,7 @@
 	import errorMessageAssociation from '../stores/errorMessageAssociation';
 	import groupContext from '../stores/groupContext';
 	import modalOpen from '../stores/modalOpen';
+	import nonEmptyInputField from '../stores/nonEmptyInputField';
 	import tooltips from '$lib/tooltips.json';
 	import CheckBox from '$lib/CheckBox.svelte';
 
@@ -37,6 +38,7 @@
 	export let actionDeleteGrants = false;
 	export let actionDeleteGroups = false;
 	export let actionDeleteApplications = false;
+	export let actionUnsavedPartitions = false;
 	export let noneditable = false;
 	export let emailValue = '';
 	export let newTopicName = '';
@@ -140,6 +142,20 @@
 		if ($groupContext) selectedGroup = $groupContext.id;
 		topicCurrentPublicInitial = topicCurrentPublic;
 		appCurrentPublicInitial = appCurrentPublic;
+
+		// Sort the values left in the unsaved partitions input field
+		if ($nonEmptyInputField) {
+			nonEmptyInputField.set(
+				$nonEmptyInputField.sort((a, b) => {
+					if (a.startsWith('Read:') && b.startsWith('Write:')) {
+						return -1;
+					} else if (a.startsWith('Write:') && b.startsWith('Read:')) {
+						return 1;
+					}
+					return 0;
+				})
+			);
+		}
 	});
 
 	onDestroy(() => modalOpen.set(false));
@@ -962,9 +978,31 @@
 			<div style="margin-bottom: 1rem">{messages['modal']['select.access.type.label']}:</div>
 			<CheckBox label="Read" bind:partitionList={partitionListRead} bind:checked={readChecked} />
 		</div>
+
 		<div style="margin: 1rem 0 1rem 2rem">
 			<CheckBox label="Write" bind:partitionList={partitionListWrite} bind:checked={writeChecked} />
 		</div>
+	{/if}
+
+	{#if actionUnsavedPartitions && $nonEmptyInputField}
+		{#each $nonEmptyInputField as field}
+			<div style="margin-left: 2rem; margin-bottom: 1rem">
+				{field}
+			</div>
+		{/each}
+
+		<button
+			class="action-button"
+			on:click={() => {
+				dispatch('addUnsavedPartitions');
+			}}
+			on:keydown={(event) => {
+				if (event.which === returnKey) {
+					dispatch('addUnsavedPartitions');
+				}
+			}}
+			>{messages['modal']['button.save.changes']}
+		</button>
 	{/if}
 
 	{#if actionAddUser}
@@ -1331,14 +1369,15 @@
 				bindToken === undefined) ||
 				(!readChecked && !writeChecked) ||
 				invalidToken}
-			on:click={() =>
+			on:click={() => {
 				dispatch('addTopicApplicationAssociation', {
 					bindToken: bindToken,
 					partitionListRead: partitionListRead,
 					partitionListWrite: partitionListWrite,
 					read: readChecked,
 					write: writeChecked
-				})}
+				});
+			}}
 			on:keydown={(event) => {
 				if (event.which === returnKey) {
 					dispatch('addTopicApplicationAssociation', {
