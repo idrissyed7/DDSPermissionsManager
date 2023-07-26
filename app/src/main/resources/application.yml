@@ -13,13 +13,6 @@ micronaut:
       default-extension: "ftlx"
 ---
 micronaut:
-  server:
-    cors:
-      enabled: true
-      configurations:
-        allowedOrigins:
-          - http://localhost:3000
-          - localhost:3000
   security:
     token:
       refresh:
