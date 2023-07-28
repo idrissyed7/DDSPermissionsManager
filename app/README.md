@@ -127,3 +127,5 @@ corresponding data models, are annotated with field-level validation annotations
 declared in a controller's method parameter like so `HttpResponse<?> save(@Body @Valid ApplicationDTO applicationDTO)`
 and application will parse the request's body, turn it into an ApplicationDTO object, and validate the applicationDTO object
 fields according to the validation annotations in the ApplicationDTO class.
+
+Copyright 2023 DDS Permissions Manager Authors

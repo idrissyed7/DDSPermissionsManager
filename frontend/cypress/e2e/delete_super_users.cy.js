@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 /// <reference types="Cypress" />
 
 describe('Delete super users', () => {

@@ -674,3 +674,5 @@ The following environment variables can be used to set the validity of DDS Secur
 * PERMISSIONS_MANAGER_APPLICATION_PASSPHRASE_LENGTH - The length of the passwords generated for applications.
 
 See `app/src/main/resources/application.yml` for a complete list of configuration options.
+
+Copyright 2023 DDS Permissions Manager Authors

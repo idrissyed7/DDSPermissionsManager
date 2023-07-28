@@ -1,3 +1,4 @@
+<!-- Copyright 2023 DDS Permissions Manager Authors-->
 <script>
 	import DDSLock from '../icons/logo.png';
 	import logoutSVG from '../icons/logout.svg';

@@ -1,3 +1,4 @@
+<!-- Copyright 2023 DDS Permissions Manager Authors-->
 <script>
 	import { fade, fly } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';

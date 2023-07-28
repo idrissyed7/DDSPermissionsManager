@@ -1,3 +1,4 @@
+<!-- Copyright 2023 DDS Permissions Manager Authors-->
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { page } from '$app/stores';

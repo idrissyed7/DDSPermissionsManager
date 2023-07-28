@@ -194,3 +194,5 @@ Videos of the tests can be found within the folder `cypress/videos`.
 
 Within the folder `cypress/e2e` create a new file with `.cy.js` extension.
 Tests in this folder will automatically be performed by Cypress.
+
+Copyright 2023 DDS Permissions Manager Authors

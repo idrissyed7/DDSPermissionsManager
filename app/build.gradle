@@ -1,3 +1,5 @@
+// Copyright 2023 DDS Permissions Manager Authors
+
 // buildscript block allow for building docker images on Mac M1. See https://github.com/micronaut-projects/micronaut-gradle-plugin/issues/363
 buildscript {
     dependencies {

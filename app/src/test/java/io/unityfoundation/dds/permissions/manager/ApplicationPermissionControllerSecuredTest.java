@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 package io.unityfoundation.dds.permissions.manager;
 
 import io.micronaut.context.annotation.Property;

@@ -11,3 +11,5 @@ In order for the tests to run in the proper environment, the backend has to be r
 
 To start the backend (within 'app' directory): ./gradlew run -t
 To start the frontend (within 'frontend' directory): npm run dev
+
+Copyright 2023 DDS Permissions Manager Authors

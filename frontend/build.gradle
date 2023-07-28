@@ -1,3 +1,5 @@
+// Copyright 2023 DDS Permissions Manager Authors
+
 plugins {
     id "com.github.node-gradle.node" version "3.1.0"
 }

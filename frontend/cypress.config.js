@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 import { defineConfig } from "cypress";
 
 export default defineConfig({

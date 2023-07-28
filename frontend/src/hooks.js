@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 import * as cookie from 'cookie';
 
 export const handle = async ({ event, resolve }) => {

@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 // ***********************************************
 // This example commands.js shows you how to
 // create various custom commands and overwrite

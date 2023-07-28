@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
  describe('Users capabilities', () => {
     beforeEach(() => {
         cy.login('unity-admin', 'password');

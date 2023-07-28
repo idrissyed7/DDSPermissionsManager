@@ -1,3 +1,4 @@
+// Copyright 2023 DDS Permissions Manager Authors
 package io.unityfoundation.dds.permissions.manager.model.user;
 
 import io.micronaut.core.annotation.Introspected;
