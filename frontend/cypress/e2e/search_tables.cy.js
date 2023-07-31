@@ -12,7 +12,7 @@ describe('should verify the values of all the tables', () => {
 
     it('should filter Users correctly', () => {
         cy.visit('/users');
-        cy.get('[data-cy="search-users-table"]').type('unity');
+        cy.get('[data-cy="search-users-table"]').type('test');
 
         cy.get('[data-cy="users-table"] > tbody > tr')
         .should('have.length', 2);
