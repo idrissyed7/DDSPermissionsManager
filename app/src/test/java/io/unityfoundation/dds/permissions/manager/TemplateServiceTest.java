@@ -31,8 +31,7 @@ public class TemplateServiceTest {
 
     @Test
     void testPopulatingTemplate() {
-        String expect = "<?-- Copyright 2023 DDS Permissions Manager Authors -->\n" +
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        String expect = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<dds xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.omg.org/spec/DDS-SECURITY/20160303/omg_shared_ca_permissions.xsd\">\n" +
                 "    <permissions>\n" +
                 "        <grant name=\"application_20\">\n" +
@@ -97,8 +96,7 @@ public class TemplateServiceTest {
             System.out.println("Exception: " + exception.toString());
         }
 
-        String expect2 = "<?-- Copyright 2023 DDS Permissions Manager Authors -->\n" +
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        String expect2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<dds xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.omg.org/spec/DDS-SECURITY/20160303/omg_shared_ca_permissions.xsd\">\n" +
                 "    <permissions>\n" +
                 "        <grant name=\"application_20\">\n" +
