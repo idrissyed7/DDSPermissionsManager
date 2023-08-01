@@ -1,3 +1,4 @@
+<!-- Copyright 2023 DDS Permissions Manager Authors-->
 <script>
 	import { isAdmin } from '../stores/authentication';
 	import usersSVG from '../icons/users.svg';
