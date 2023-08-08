@@ -206,7 +206,7 @@ The DDS Permissions Manager consists of
 * An Auth Provider for authenticating users
 
 The Web Application UI is built using Svelte and is served by the Web API.
-The Web API is built using Micronaut.
+The Web API is built using the Micronaut&reg; framework.
 The Web API is horizontally scalable.
 
 ### Building the Application
