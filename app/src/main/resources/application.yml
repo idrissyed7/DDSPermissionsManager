@@ -121,6 +121,7 @@ datasources:
     driverClassName: ${DPM_JDBC_DRIVER:org.h2.Driver}
     username: ${DPM_JDBC_USER:sa}
     password: ${DPM_JDBC_PASSWORD:""}
+    db-type: ${DATASOURCES_DEFAULT_DB_TYPE:h2}
 jpa:
   default:
     entity-scan:
