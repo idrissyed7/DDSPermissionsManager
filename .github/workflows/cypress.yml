@@ -33,7 +33,7 @@ jobs:
       - name: Run the server with Gradle
         env:
           VITE_BACKEND_URL: /api
-          MICRONAUT_ENVIRONMENTS: dev,dev-data
+          MICRONAUT_ENVIRONMENTS: h2,dev,dev-data
         run: |
           ./gradlew app:run &
       - name: Cypress run
