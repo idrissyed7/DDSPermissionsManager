@@ -5,6 +5,10 @@ The project requires JDK 11 or later to build and run. There is no need to
 install the Micronaut framework, or Gradle, or any tools other than the JDK in order to
 build and run the app.
 
+As a prerequisite, please set the `MICRONAUT_ENVIRONMENTS` environment variable to `h2,dev`. 
+This will enable the application to use an in-memory database, namely H2, and sets default values
+for local development environments.
+
 From the project root, the app may be run locally using gradle:
 
     ./gradlew app:run

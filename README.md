@@ -622,6 +622,11 @@ To connect to a database, the following environment variables must be set for th
 * DPM_JDBC_PASSWORD - The database user password.
 * DPM_AUTO_SCHEMA_GEN (Options include `none`, `create-only`, `drop`, `create`, `create-drop`, `validate`, and `update` (default value))
 
+Note: In a deployed environment, it is recommended to set the `MICRONAUT_ENVIRONMENTS` environment variable to include
+the `prod` value so that the above environments variables are registered. Otherwise, in a local development environment,
+please feel free to update datasource configuration either in the application.yml or application-dev.yml files 
+`app/src/main/resources` directory.
+
 The following describes the options for DPM_AUTO_SCHEMA_GEN environment variable in detail:
 
 * *none** - No action will be performed.
