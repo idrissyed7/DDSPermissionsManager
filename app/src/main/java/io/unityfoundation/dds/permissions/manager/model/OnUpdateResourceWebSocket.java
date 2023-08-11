@@ -11,7 +11,7 @@ import io.micronaut.websocket.annotation.ServerWebSocket;
 
 import java.util.function.Predicate;
 
-@ServerWebSocket("/resource/{topicId}")
+@ServerWebSocket("/resource/{topic}/{username}")
 @Secured(SecurityRule.IS_ANONYMOUS)
 public class OnUpdateResourceWebSocket {
 
