@@ -21,9 +21,10 @@ buildscript {
 }
 plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    id 'jacoco'
-    id "com.gorylenko.gradle-git-properties" version "2.3.2"
+    id("jacoco")
+    id("com.gorylenko.gradle-git-properties") version "2.3.2"
     id("io.micronaut.application") version "3.7.8"
+    id("io.micronaut.test-resources") version "3.7.8"
 }
 
 version = "0.1"
@@ -73,7 +74,7 @@ dependencies {
     }
     if (mnEnvs != null) {
         def envList = mnEnvs.split(',').each {it.trim()}.collect()
-        if (envList.contains("dev") || envList.contains("test")) {
+        if (envList.contains("h2")) {
             runtimeOnly("com.h2database:h2")
         }
     }
@@ -95,6 +96,10 @@ micronaut {
     processing {
         incremental(true)
         annotations("io.unityfoundation.dds.permissions.manager.*")
+    }
+    // see https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/#_configuring_the_test_resources_plugin
+    testResources {
+        enabled = true
     }
 }
 

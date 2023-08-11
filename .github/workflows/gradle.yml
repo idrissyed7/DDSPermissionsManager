@@ -44,7 +44,23 @@ jobs:
         distribution: 'temurin'
     - name: Build with Gradle
       env:
-        MICRONAUT_ENVIRONMENTS: dev,dev-data
+        MICRONAUT_ENVIRONMENTS: h2,dev,dev-data
+      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+      with:
+        arguments: 'app:build'
+    - name: Build with Gradle - MySQL Datasource
+      if: ${{ success() }}
+      env:
+        DPM_DATABASE_DEPENDENCY: mysql:mysql-connector-java:8.0.31
+        DPM_DB_TYPE: mysql
+      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+      with:
+        arguments: 'app:build'
+    - name: Build with Gradle - PostgreSQL Datasource
+      if: ${{ success() }}
+      env:
+        DPM_DATABASE_DEPENDENCY: org.postgresql:postgresql:42.4.2
+        DPM_DB_TYPE: postgres
       uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
       with:
         arguments: 'app:build'
