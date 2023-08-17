@@ -60,6 +60,9 @@
 	let editApplicationVisible = false,
 		deleteSelectedGrantsVisible = false;
 
+	// Websocket
+	let applicationSocketIsPaused = false;
+
 	const decodeError = (errorObject) => {
 		errorObject = errorObject.code.replaceAll('-', '_');
 		const cat = errorObject.substring(0, errorObject.indexOf('.'));
@@ -98,6 +101,7 @@
 	};
 
 	const saveNewApp = async (newAppName, newAppDescription, newAppPublic) => {
+		pauseSocketListener();
 		const res = await httpAdapter
 			.post(`/applications/save/`, {
 				id: selectedAppId,
@@ -116,6 +120,7 @@
 				}
 			});
 		dispatch('reloadAllApps');
+		resumeSocketListener();
 	};
 
 	const deleteTopicApplicationAssociation = async () => {
@@ -144,16 +149,25 @@
 		isPublic = selectedAppPublic;
 	};
 
-	const socket = new WebSocket(`ws://localhost:8080/ws/applications/${selectedAppId}`); // Todo: change to real topic url
+	const socket = new WebSocket(`ws://localhost:8080/ws/applications/${selectedAppId}`);
 
-	const subscribeApplicationMessage = (topicSocket) => {
-		topicSocket.addEventListener('message', (event) => {
-			console.log(event.data);
-			if (
-				event.data.includes('application_updated') ||
-				event.data.includes('application_deleted')
-			) {
-				reloadMessageVisible = true;
+	const pauseSocketListener = () => {
+		applicationSocketIsPaused = true;
+	};
+
+	const resumeSocketListener = () => {
+		applicationSocketIsPaused = false;
+	};
+
+	const subscribeApplicationMessage = (applicationSocket) => {
+		applicationSocket.addEventListener('message', (event) => {
+			if (!applicationSocketIsPaused) {
+				if (
+					event.data.includes('application_updated') ||
+					event.data.includes('application_deleted')
+				) {
+					reloadMessageVisible = true;
+				}
 			}
 		});
 	};

@@ -91,6 +91,9 @@
 	//Grant
 	let editGrant = false;
 
+	// Websocket
+	let topicSocketIsPaused = false;
+
 	const fetchAndUpdateTopic = async () => {
 		promise = await httpAdapter.get(`/topics/show/${selectedTopicId}`);
 		topicDetails.set(promise.data);
@@ -112,14 +115,24 @@
 		detailView.set(true);
 	};
 
-	const socket = new WebSocket(`ws://localhost:8080/ws/topics/${selectedTopicId}`); // Todo: change to real topic url
+	const socket = new WebSocket(`ws://localhost:8080/ws/topics/${selectedTopicId}`);
 
 	const subscribeTopicMessage = (topicSocket) => {
 		topicSocket.addEventListener('message', (event) => {
-			if (event.data.includes('topic_updated') || event.data.includes('topic_deleted')) {
-				reloadMessageVisible = true;
+			if (!topicSocketIsPaused) {
+				if (event.data.includes('topic_updated') || event.data.includes('topic_deleted')) {
+					reloadMessageVisible = true;
+				}
 			}
 		});
+	};
+
+	const pauseSocketListener = () => {
+		topicSocketIsPaused = true;
+	};
+
+	const resumeSocketListener = () => {
+		topicSocketIsPaused = false;
 	};
 
 	onMount(async () => {
@@ -268,6 +281,7 @@
 
 	const saveNewTopic = async (newTopicName, newTopicDescription, newTopicPublic) => {
 		try {
+			pauseSocketListener();
 			await httpAdapter.post(`/topics/save/`, {
 				name: newTopicName,
 				id: selectedTopicId,
@@ -279,6 +293,7 @@
 			});
 
 			dispatch('reloadTopics');
+			resumeSocketListener();
 			selectedTopicDescription = newTopicDescription;
 			isPublic = newTopicPublic;
 			editTopicVisible = false;
