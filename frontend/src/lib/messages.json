@@ -289,8 +289,8 @@
         "associate.application.input.access.placeholder": "Add a Partition",
         "reminder.message.button.label": "Yes",
         "discard.changes": "Discard Changes",
-        "topic.update.message": "Topic content has been changed since the page is loaded. Would you like to reload the topic content?",
-        "application.update.message": "Application content has been changed since the page is loaded. Would you like to reload the application content?"
+        "topic.update.message": "Topic content has changed since the page has been loaded. Would you like to reload the topic content?",
+        "application.update.message": "Application content has changed since the page has been loaded. Would you like to reload the application content?"
     },
 
     "pagination":
