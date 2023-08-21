@@ -230,7 +230,6 @@ public class ApplicationService {
         }
     }
 
-    @Transactional
     public MutableHttpResponse<?> save(ApplicationDTO applicationDTO) {
         Optional<Group> groupOptional = groupRepository.findById(applicationDTO.getGroup());
 
